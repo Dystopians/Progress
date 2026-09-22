@@ -179,7 +179,7 @@ func _quarter_close(g: Rig, tag: String) -> void:
 	_check(g.gdp_ok(), "%s GDP 三法恒等（支出 %d == 生产 %d + 价差 %d；收入 %d）" % [tag,
 			g.st.diag.gdp_expenditure, g.st.diag.gdp_production, g.st.diag.price_variance_total,
 			g.st.diag.gdp_income])
-	_check(g.st.accounts.check_cash_closure(g.st.total_cash_uu, g.st.total_cash_uu) == JWResult.OK,
+	_check(g.st.accounts.check_cash_closure(g.st.cash_expected(), g.st.cash_expected()) == JWResult.OK,
 			"%s 现金闭合（含 pubserv 现金 == 0）" % tag)
 	_check(g.pub_cash_total() == 0, "%s 四个 pubserv 现金户全为 0" % tag)
 	_check(g.st.accounts.check_balance_sheet() == JWResult.OK, "%s INV-020 逐主体恒等" % tag)

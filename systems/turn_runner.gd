@@ -899,8 +899,13 @@ func _step_s03() -> int:
 ## 失败：企业现金不足付工资 → WAGE_UNFUNDED；政府现金不足 → 部分支付 + 欠付；
 ##       项目超付 → 拒付并转 suspended；拆分和不等 → SPLIT_MISMATCH
 func _step_s04() -> int:
+	# 第 0 条（R-MONEY-01，只在战役模式）：付款之前按货币规则发行，政府现金与净值同额增加。
+	var rc: int = _issue_money()
+	if rc != JWResult.OK:
+		return rc
+
 	# 第 1 条：企业付工资（**工资先于消费**）。
-	var rc: int = _st.labor.pay_wages(_st.pricing, _st.pop, _st.ledger, _st.accounts)
+	rc = _st.labor.pay_wages(_st.pricing, _st.pop, _st.ledger, _st.accounts)
 	if rc != JWResult.OK:
 		return rc
 
@@ -920,6 +925,29 @@ func _step_s04() -> int:
 
 	# 第 4 条：预留季末归零（INV-033）。
 	return _st.treasury.release_reservations()
+
+
+## R-MONEY-01：本季货币发行（旧剧本 enabled == 0，发行额恒为 0，不过账）。
+## 两腿：政府现金 +X（资产增 +）、政府净值 −X（净值是贷方，增加记 −），行和为 0。
+func _issue_money() -> int:
+	var x: int = _st.money.compute_issue(_st.accounts.total_cash())
+	if x <= 0:
+		return JWResult.OK
+	_money_legs_acc[0] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_CASH)
+	_money_legs_acc[1] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_NW)
+	_money_legs_d[0] = x
+	_money_legs_d[1] = -x
+	var rc: int = _st.ledger.post_multi(JWUnits.Kind.MONEY_ISSUE, _money_legs_acc, _money_legs_d,
+			0, -1, 0, 0)
+	if rc != JWResult.OK:
+		return rc
+	_st.money.note_issued(x)
+	_st.treasury.f_money_issued += x
+	return JWResult.OK
+
+
+var _money_legs_acc: PackedInt64Array = PackedInt64Array([0, 0])
+var _money_legs_d: PackedInt64Array = PackedInt64Array([0, 0])
 
 
 ## 支付一档（docs/12 §04.2 的 2a–2h）。
@@ -1661,7 +1689,7 @@ func _step_s06() -> int:
 	rc = _st.treasury.check_fiscal_identities(_st.bonds, _st.accounts)
 	if rc != JWResult.OK:
 		return rc
-	rc = _st.accounts.check_cash_closure(_st.total_cash_uu, _st.total_cash_uu)
+	rc = _st.accounts.check_cash_closure(_st.cash_expected(), _st.cash_expected())
 	if rc != JWResult.OK:
 		return rc
 	rc = _st.accounts.check_receivable_payable()
@@ -1699,6 +1727,17 @@ func _step_s07() -> int:
 	rc = _st.capital.update_maintenance_and_availability(_st.params)
 	if rc != JWResult.OK:
 		return rc
+
+	# 第 4 条前（R-PRICE-LONG-01 / R-MONEY-01）：按本季现价更新价格水平指数、记下本季实际 GDP，
+	# 战役模式把随价格水平移动的上下限交给定价（旧剧本关闭，定价走原绝对上下限）。
+	rc = _st.money.update_price_level(_st.pricing.price, _st.pricing.base_price)
+	if rc != JWResult.OK:
+		return rc
+	_st.money.record_real_gdp(_st.q, _st.diag.gdp_real)
+	var m: JWMoney = _st.money
+	_st.pricing.set_long_run_bounds(_st.mode == JWUnits.Mode.CAMPAIGN and m.band_ceil_ppm > 0,
+			m.price_level_ppm, m.band_floor_ppm, m.band_ceil_ppm, m.abs_floor_ppm, m.abs_ceil_ppm,
+			m.wage_ceil_mult_ppm)
 
 	# 第 4 条：价格 / 工资 / 租金（**只写 pending**，INV-065..070）。
 	rc = _st.pricing.update_prices(_st.inventory.m_supply, _st.inventory.m_demand,
@@ -2011,7 +2050,7 @@ func _check_invariants(step: int) -> int:
 			return _st.labor.check_employment_views(_st.pop)
 		JWUnits.Phase.S04:
 			# INV-017/018：现金闭合；INV-019：应收 == 应付。
-			var rc: int = _st.accounts.check_cash_closure(_st.total_cash_uu, _st.total_cash_uu)
+			var rc: int = _st.accounts.check_cash_closure(_st.cash_expected(), _st.cash_expected())
 			if rc != JWResult.OK:
 				return rc
 			return _st.accounts.check_receivable_payable()

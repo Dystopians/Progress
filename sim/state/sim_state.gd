@@ -61,7 +61,9 @@ const BLK_COMMISSIONING: int = 18
 const BLK_POLICY: int = 19
 const BLK_BLOCS: int = 20
 const BLK_DIAG: int = 21
-const BLOCK_N: int = 22
+## R-MONEY-01：长期货币与价格水平（四百年重构新增，追加在末尾）。
+const BLK_MONEY: int = 22
+const BLOCK_N: int = 23
 
 ## 各块缺省子系统归属，下标 == BLK_*。
 ##
@@ -74,7 +76,7 @@ const BLOCK_DEFAULT_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_GROUP, JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_CELL,
 	JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_POLICY,
-	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META,
+	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META, JWUnits.SUBSYS_GOV,
 ]
 
 # ── 两个 SoA（docs/11 §6.4 的 soa 段只有这两个） ───────────────────────────
@@ -233,6 +235,7 @@ var commissioning: JWAssetCommissioning = null
 var policy: JWPolicyEngine = null
 var blocs: JWInterestGroups = null
 var diag: JWDiagnostics = null
+var money: JWMoney = null
 
 ## 按上表顺序登记的状态块；顺序进哈希，不得重排（INV-136）。
 var _blocks: Array[RefCounted] = []
@@ -302,6 +305,7 @@ func allocate_all() -> void:
 	policy = JWPolicyEngine.new()
 	blocs = JWInterestGroups.new()
 	diag = JWDiagnostics.new()
+	money = JWMoney.new()
 
 	_blocks.clear()
 	_blocks.resize(BLOCK_N)
@@ -327,6 +331,7 @@ func allocate_all() -> void:
 	_blocks[BLK_POLICY] = policy
 	_blocks[BLK_BLOCS] = blocs
 	_blocks[BLK_DIAG] = diag
+	_blocks[BLK_MONEY] = money
 
 	for b: RefCounted in _blocks:
 		b.allocate()
@@ -810,11 +815,17 @@ func finalize_load() -> int:
 	return inventory.rebase_after_load(sectors.f_output_actual, io)
 
 
+## INV-018 的期望现金总量：剧本登记值 + 累计货币发行（R-MONEY-01；旧剧本发行恒为 0，即剧本登记值）。
+## 全部现金闭合检查都用它，不各自拼。
+func cash_expected() -> int:
+	return total_cash_uu + money.issued_total
+
+
 func check_all_p0() -> int:
 	if _blocks.is_empty():
 		return JWResult.raise_fault(JWResult.Fault.PHASE_VIOLATION, 0, BLOCK_N)
 	# docs/12 §10「季末（全部步骤后）」与「载入后」两行里签名齐备的检查。
-	var rc: int = accounts.check_cash_closure(total_cash_uu, total_cash_uu)
+	var rc: int = accounts.check_cash_closure(cash_expected(), cash_expected())
 	if rc != JWResult.OK:
 		return rc
 	rc = accounts.check_receivable_payable()

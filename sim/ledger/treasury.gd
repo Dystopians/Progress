@@ -69,6 +69,8 @@ const FLOW_SCALAR_IDS: PackedStringArray = [
 	"flow.gov.procurement_budget_q_uu",
 	# R-ROLLOVER-01：本季续发额（已同时计入 new_borrowing 与 principal_paid，本项只作展示与核对）。
 	"flow.gov.rollover_uu",
+	# R-MONEY-01：本季货币发行（战役模式；政府现金增加的一个来源，进 INV-027）。
+	"flow.gov.money_issued_uu",
 ]
 
 # ── 本文件的局部常量（避免裸字面量，check_param_coverage 的白名单只有 0/1/−1/1e6 与维度常量） ──
@@ -1151,6 +1153,8 @@ var procurement_budget_q_uu: int = 0
 var f_procure_budget: int = 0
 ## flow.gov.rollover_uu —— 本季续发额（R-ROLLOVER-01），μU。S02 写，S01 清零。
 var f_rollover: int = 0
+## flow.gov.money_issued_uu —— 本季货币发行额（R-MONEY-01）。写入者 S04
+var f_money_issued: int = 0
 
 
 ## R-PROCURE-01：核定本季政府采购预算（S04 采购档；此前已按 R-FINANCE-01 融资）。
@@ -1329,7 +1333,7 @@ func check_fiscal_identities(bonds: JWBondBook, accounts: JWAccount) -> int:
 
 	# ── INV-027：cash_end == cash_start + 收入 + 新增借款 − 基本支出 − 利息 − 还本 ──
 	var receipts: int = f_receipts_income_tax + f_receipts_profit_tax + f_receipts_other
-	var expect_cash: int = _cash_at_quarter_start + receipts + f_new_borrowing \
+	var expect_cash: int = _cash_at_quarter_start + receipts + f_new_borrowing + f_money_issued \
 			- f_primary_paid - f_interest_paid - f_principal_paid
 	if cash_end != expect_cash:
 		# **不得自动修正，绝不用「平衡修正项」抹平**（docs/12 §6.10）。
@@ -1722,6 +1726,8 @@ func flow_scalar(i: int) -> int:
 		return f_procure_budget
 	if i == 13:
 		return f_rollover
+	if i == 14:
+		return f_money_issued
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, FLOW_SCALAR_IDS.size())
 	return 0
 
@@ -1746,6 +1752,7 @@ func reset_flows() -> void:
 	f_receipts_other = 0
 	f_procure_budget = 0
 	f_rollover = 0
+	f_money_issued = 0
 	f_new_borrowing = 0
 	f_primary_paid = 0
 	f_interest_paid = 0
@@ -1784,6 +1791,9 @@ func flow_abs_sum() -> int:
 	acc += JWMath.absi(f_pay_procurement)
 	acc += JWMath.absi(f_final_consumption)
 	acc += JWMath.absi(f_gross_capital_formation)
+	acc += JWMath.absi(f_procure_budget)
+	acc += JWMath.absi(f_rollover)
+	acc += JWMath.absi(f_money_issued)
 	return acc
 
 # ── 私有实现 ───────────────────────────────────────────────────────────────
@@ -2261,5 +2271,8 @@ func set_flow_scalar(i: int, v: int) -> int:
 		return JWResult.OK
 	if i == 13:
 		f_rollover = v
+		return JWResult.OK
+	if i == 14:
+		f_money_issued = v
 		return JWResult.OK
 	return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, FLOW_SCALAR_IDS.size())

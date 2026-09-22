@@ -95,6 +95,10 @@ func test_v1_save_migrates_to_v2() -> void:
 	check(sc.has("state.meta.mode") and sc.has("state.time.start_year"), "v2 存档含两个新标量")
 	sc.erase("state.meta.mode")
 	sc.erase("state.time.start_year")
+	for k: String in ["state.money.issued_total_uu", "state.money.price_level_ppm",
+			"state.money.target_level_ppm", "flow.gov.money_issued_uu"]:
+		sc.erase(k)
+	(d[JWSimState.SAVE_KEY_ARRAYS] as Dictionary).erase("state.money.real_gdp_ring_uu")
 	d[JWSimState.SAVE_KEY_SCHEMA] = 1
 	var sv: JWSaves = JWSaves.new()
 	var rm: JWResult = sv.migrate(d, 1)

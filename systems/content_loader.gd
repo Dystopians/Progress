@@ -1116,8 +1116,15 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 	"unit_declaration", "horizon_q", "param_set_ref", "param_set_version", "root_seed",
 	"includes", "enabled_policies", "baseline_policies", "enabled_events", "enabled_shocks", "season_factor_ppm",
 	"prices_init", "world_init", "mandate_goals", "total_cash_uu", "notes_zh",
-	"mode", "start_year",
+	"mode", "start_year", "money_rule",
 ]
+
+## R-MONEY-01 / R-PRICE-LONG-01：剧本 money_rule 的字段（只允许战役模式）。下标 == JWMoney 的内容标量槽位。
+const MONEY_RULE_KEYS: PackedStringArray = [
+	"base_real_gdp_q_uu", "target_inflation_ppm_per_year", "adjust_ppm", "issue_cap_ppm",
+	"band_floor_ppm", "band_ceil_ppm", "abs_floor_ppm", "abs_ceil_ppm", "wage_ceil_mult_ppm",
+]
+const MONEY_RULE_SLOTS: PackedInt64Array = [5, 6, 7, 8, 9, 10, 11, 12, 13]
 const MANDATE_GOAL_NAMES: PackedStringArray = ["industry", "livelihood", "fiscal"]
 const SEASON_KEYS: PackedStringArray = ["gov_receipts", "gov_primary", "agri_output"]
 const INCLUDE_KEYS: PackedStringArray = [
@@ -1226,6 +1233,48 @@ func _validate_scenario(st: JWSimState) -> void:
 	if _total_cash_uu < 0 or _total_cash_uu > JWUnits.AMOUNT_MAX:
 		_fail(JWResult.Load.RANGE, w + "/total_cash_uu", _total_cash_uu, JWUnits.AMOUNT_MAX)
 	st.total_cash_uu = _total_cash_uu
+
+	if doc.has("money_rule"):
+		_validate_money_rule(st, doc, w)
+
+
+## R-MONEY-01 / R-PRICE-LONG-01：战役模式的货币发行与长期上下限。
+## 约束：只在战役模式；比率 ≥ 0；带宽下限 ≤ 1e6 ≤ 带宽上限；绝对下限 ≤ 1e6 ≤ 绝对上限；
+## 篮子权重长 S、非负、合计 1e6；基期实际产出 > 0。基期货币量取剧本现金总量。
+func _validate_money_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
+	var mw: String = w + "/money_rule"
+	if st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, mw + "#term-mode", st.mode, JWUnits.Mode.CAMPAIGN)
+		return
+	var mr: Dictionary = _get_dict(doc, "money_rule", w, JWResult.Load.SCHEMA_HEADER)
+	var allowed: PackedStringArray = MONEY_RULE_KEYS.duplicate()
+	allowed.append("level_weight_ppm")
+	_check_keys(mr, allowed, mw)
+	var vals: PackedInt64Array = PackedInt64Array()
+	for i: int in MONEY_RULE_KEYS.size():
+		var v: int = _get_int(mr, MONEY_RULE_KEYS[i], mw, JWResult.Load.SCHEMA_HEADER)
+		if v < 0:
+			_fail(JWResult.Load.RANGE, mw + "/" + MONEY_RULE_KEYS[i], v, 0)
+		vals.append(v)
+		_set_scalar(st.money, MONEY_RULE_SLOTS[i], v, mw + "/" + MONEY_RULE_KEYS[i])
+	if vals[0] <= 0:
+		_fail(JWResult.Load.RANGE, mw + "/base_real_gdp_q_uu", vals[0], 1)
+	if vals[4] > JWUnits.PPM or vals[5] < JWUnits.PPM:
+		_fail(JWResult.Load.RANGE, mw + "/band", vals[4], vals[5])
+	if vals[6] > JWUnits.PPM or vals[7] < JWUnits.PPM:
+		_fail(JWResult.Load.RANGE, mw + "/abs", vals[6], vals[7])
+	var wts: PackedInt64Array = _get_int_array(mr, "level_weight_ppm", JWUnits.S, mw,
+			JWResult.Load.SCHEMA_HEADER)
+	var wsum: int = 0
+	for s: int in wts.size():
+		if wts[s] < 0:
+			_fail(JWResult.Load.RANGE, mw + "/level_weight_ppm/" + str(s), wts[s], 0)
+		wsum += wts[s]
+	if wts.size() == JWUnits.S and wsum != JWUnits.PPM:
+		_fail(JWResult.Load.SCHEMA_HEADER, mw + "/level_weight_ppm", wsum, JWUnits.PPM)
+	_set_arr(st.money, 1, wts, mw + "/level_weight_ppm")
+	_set_scalar(st.money, 4, _total_cash_uu, mw + "#base_money")
+	_set_scalar(st.money, 3, 1, mw + "#enabled")
 
 
 func _validate_prices(st: JWSimState, doc: Dictionary, w: String) -> void:

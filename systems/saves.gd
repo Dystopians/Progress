@@ -99,7 +99,18 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	var sc: Dictionary = out.get(JWSimState.SAVE_KEY_SCALARS, {})
 	sc["state.meta.mode"] = JWUnits.Mode.TERM
 	sc["state.time.start_year"] = 0
+	# R-MONEY-01：旧剧本不发行货币（累计 0）；价格水平与目标水平取基年 1e6（旧剧本不用它们定上下限，每季 S07 重算）。
+	sc["state.money.issued_total_uu"] = 0
+	sc["state.money.price_level_ppm"] = JWUnits.PPM
+	sc["state.money.target_level_ppm"] = JWUnits.PPM
+	sc["flow.gov.money_issued_uu"] = 0
 	out[JWSimState.SAVE_KEY_SCALARS] = sc
+	var ar: Dictionary = out.get(JWSimState.SAVE_KEY_ARRAYS, {})
+	var ring: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+	ar["state.money.real_gdp_ring_uu"] = {JWSimState.SAVE_KEY_N: ring.size(),
+			JWSimState.SAVE_KEY_ENC: JWSimState.ENC_B64LE64,
+			JWSimState.SAVE_KEY_DATA: Marshalls.raw_to_base64(ring.to_byte_array())}
+	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 
 # ── 上一次 load() 的判定结果（INV-134 的两半，供 JWGame 决定运行模式） ─────

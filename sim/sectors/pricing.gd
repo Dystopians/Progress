@@ -217,6 +217,29 @@ func consumer_index_ppm(consumption_weight_uqs: PackedInt64Array) -> int:
 ##
 ## 「不在同一季循环放大」：本函数只写 price_pending 与 flow.price.gap_ppm，
 ## 读的 price 是本季常量，S08 末才 swap（INV-065）。
+## R-PRICE-LONG-01：战役模式的长期上下限（不是状态：S07 定价前由编排器按本季价格水平写入，用完即弃）。
+## 关闭时（旧剧本）走原来的绝对上下限，行为逐位不变。
+var _lr_on: bool = false
+var _lr_level_ppm: int = JWUnits.PPM
+var _lr_band_floor_ppm: int = 0
+var _lr_band_ceil_ppm: int = 0
+var _lr_abs_floor_ppm: int = 0
+var _lr_abs_ceil_ppm: int = 0
+var _lr_wage_ceil_mult_ppm: int = JWUnits.PPM
+
+
+## 写入本季的长期上下限参数（编排器 S07 调用；on == false 即关闭）。
+func set_long_run_bounds(on: bool, level_ppm: int, band_floor_ppm: int, band_ceil_ppm: int,
+		abs_floor_ppm: int, abs_ceil_ppm: int, wage_ceil_mult_ppm: int) -> void:
+	_lr_on = on
+	_lr_level_ppm = maxi(1, level_ppm)
+	_lr_band_floor_ppm = band_floor_ppm
+	_lr_band_ceil_ppm = band_ceil_ppm
+	_lr_abs_floor_ppm = abs_floor_ppm
+	_lr_abs_ceil_ppm = abs_ceil_ppm
+	_lr_wage_ceil_mult_ppm = wage_ceil_mult_ppm
+
+
 func update_prices(supply_uqs: PackedInt64Array, demand_uqs: PackedInt64Array,
 		inventory_uqs: PackedInt64Array, inventory_target_uqs: PackedInt64Array,
 		storable: PackedInt64Array, params: PackedInt64Array) -> int:
@@ -313,6 +336,17 @@ func update_prices(supply_uqs: PackedInt64Array, demand_uqs: PackedInt64Array,
 			p_floor = JWUnits.PRICE_MIN
 		if p_ceil > JWUnits.PRICE_MAX:
 			p_ceil = JWUnits.PRICE_MAX
+		if _lr_on:
+			# R-PRICE-LONG-01：[max(基年价×水平×带宽下限, 基年价×绝对下限), min(基年价×水平×带宽上限, 基年价×绝对上限)]；
+			# 水平越过绝对护栏时两端相交，下限取上限（价格钉在护栏上，照常记夹逼）。
+			var at_level: int = JWMath.mul_ppm(base_price[s], _lr_level_ppm)
+			p_floor = maxi(JWMath.mul_ppm(at_level, _lr_band_floor_ppm),
+					JWMath.mul_ppm(base_price[s], _lr_abs_floor_ppm))
+			p_ceil = mini(JWMath.mul_ppm(at_level, _lr_band_ceil_ppm),
+					JWMath.mul_ppm(base_price[s], _lr_abs_ceil_ppm))
+			p_floor = maxi(p_floor, 1)
+			if p_floor > p_ceil:
+				p_floor = p_ceil
 		if p_floor > p_ceil:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, p_floor, p_ceil)
 		price_pending[s] = _clamp_logged(CLAMP_FIELD_PRICE_BOUND * CLAMP_FIELD_STRIDE + s,
@@ -345,6 +379,10 @@ func update_wages(vacancies_persons: int, unemployed_persons: int,
 	var wage_ceil: int = params[JWUnits.Param.WAGE_CEIL_UU]
 	if step_max_ppm < 0 or wage_floor > wage_ceil:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, wage_floor, wage_ceil)
+	if _lr_on:
+		# R-PRICE-LONG-01：工资上下限随价格水平移动；上限另乘实际工资增长余量（四百年的实际工资可以数倍增长）。
+		wage_floor = JWMath.mul_ppm(wage_floor, _lr_level_ppm)
+		wage_ceil = JWMath.mul_ppm(JWMath.mul_ppm(wage_ceil, _lr_level_ppm), _lr_wage_ceil_mult_ppm)
 	if wage_floor < 1:
 		# docs/10 §9.1：工资率区间 > 0。下界至少 1 μU，避免把工资清成 0。
 		wage_floor = 1
