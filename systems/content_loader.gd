@@ -1054,6 +1054,13 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	# ⑦ 参数包（INV-152）。
 	validate_params(st)
 
+	# ⑦′ R-BUILDING-01：把剧本给出的 cell 产能与资本迁移成「既有设施」建筑堆（每个 cell 一堆）；
+	#     此后 cell 三列是堆表的求和。
+	var rs: int = st.buildings.seed_legacy(st.capital.cell_capacity_active, st.capital.cell_capital_value)
+	if rs != JWResult.OK:
+		_fail(rs, "buildings#seed_legacy", 0, 0)
+	st.capital.sync_cells_from_buildings()
+
 	# ⑧ 构建初始账本：全部初值写成 q = −1 的开账分录（INV-023）。
 	build_opening_ledger(st)
 

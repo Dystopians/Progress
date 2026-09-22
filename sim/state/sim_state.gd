@@ -63,7 +63,9 @@ const BLK_BLOCS: int = 20
 const BLK_DIAG: int = 21
 ## R-MONEY-01：长期货币与价格水平（四百年重构新增，追加在末尾）。
 const BLK_MONEY: int = 22
-const BLOCK_N: int = 23
+## R-BUILDING-01：建筑堆（生产单元产能与资本的唯一来源）。
+const BLK_BUILDINGS: int = 23
+const BLOCK_N: int = 24
 
 ## 各块缺省子系统归属，下标 == BLK_*。
 ##
@@ -76,7 +78,7 @@ const BLOCK_DEFAULT_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_GROUP, JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_CELL,
 	JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_POLICY,
-	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META, JWUnits.SUBSYS_GOV,
+	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_CELL,
 ]
 
 # ── 两个 SoA（docs/11 §6.4 的 soa 段只有这两个） ───────────────────────────
@@ -236,6 +238,7 @@ var policy: JWPolicyEngine = null
 var blocs: JWInterestGroups = null
 var diag: JWDiagnostics = null
 var money: JWMoney = null
+var buildings: JWBuildings = null
 
 ## 按上表顺序登记的状态块；顺序进哈希，不得重排（INV-136）。
 var _blocks: Array[RefCounted] = []
@@ -306,6 +309,8 @@ func allocate_all() -> void:
 	blocs = JWInterestGroups.new()
 	diag = JWDiagnostics.new()
 	money = JWMoney.new()
+	buildings = JWBuildings.new()
+	capital.buildings = buildings
 
 	_blocks.clear()
 	_blocks.resize(BLOCK_N)
@@ -332,6 +337,7 @@ func allocate_all() -> void:
 	_blocks[BLK_BLOCS] = blocs
 	_blocks[BLK_DIAG] = diag
 	_blocks[BLK_MONEY] = money
+	_blocks[BLK_BUILDINGS] = buildings
 
 	for b: RefCounted in _blocks:
 		b.allocate()
@@ -829,6 +835,10 @@ func check_all_p0() -> int:
 	if rc != JWResult.OK:
 		return rc
 	rc = accounts.check_receivable_payable()
+	if rc != JWResult.OK:
+		return rc
+	# INV-B01（R-BUILDING-01）：cell 的产能与资本 == 建筑堆按 cell 求和。
+	rc = capital.check_buildings_consistency()
 	if rc != JWResult.OK:
 		return rc
 	rc = accounts.check_balance_sheet()

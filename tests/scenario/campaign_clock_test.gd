@@ -98,7 +98,13 @@ func test_v1_save_migrates_to_v2() -> void:
 	for k: String in ["state.money.issued_total_uu", "state.money.price_level_ppm",
 			"state.money.target_level_ppm", "flow.gov.money_issued_uu"]:
 		sc.erase(k)
-	(d[JWSimState.SAVE_KEY_ARRAYS] as Dictionary).erase("state.money.real_gdp_ring_uu")
+	var arrs: Dictionary = d[JWSimState.SAVE_KEY_ARRAYS]
+	arrs.erase("state.money.real_gdp_ring_uu")
+	arrs.erase("state.project.entity")
+	arrs.erase("state.bond.entity")
+	for bid: String in JWBuildings.STATE_ARRAY_IDS:
+		arrs.erase(bid)
+	sc.erase("state.building.count")
 	d[JWSimState.SAVE_KEY_SCHEMA] = 1
 	var sv: JWSaves = JWSaves.new()
 	var rm: JWResult = sv.migrate(d, 1)
@@ -109,3 +115,6 @@ func test_v1_save_migrates_to_v2() -> void:
 	var rf: JWResult = st2.from_dict(d)
 	check(rf != null and rf.ok, "迁移后的字典可读入")
 	eq_int(st2.mode, JWUnits.Mode.TERM, "v1 存档迁移为单届")
+	eq_int(st2.buildings.count, JWUnits.CELL, "v1 存档迁移出每个 cell 一个既有设施堆")
+	eq_int(st2.capital.check_buildings_consistency(), JWResult.OK, "迁移后 cell 三列 == 堆表求和")
+	eq_int(st2.bonds.entity[0], -1, "开局存量债的实体号由 ID 解析为 −1")

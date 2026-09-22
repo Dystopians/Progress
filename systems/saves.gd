@@ -115,8 +115,42 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	var soa: Dictionary = out.get(JWSimState.SAVE_KEY_SOA, {})
 	ar["state.project.entity"] = _mig_entity_array(soa, "project", JWUnits.PROJECT_CAP0, -1)
 	ar["state.bond.entity"] = _mig_entity_array(soa, "bond", JWUnits.BOND_CAP0, 0)
+	# R-BUILDING-01：v1 的 cell 产能与资本迁移成每个 cell 一个「既有设施」堆（与载入期 seed_legacy 相同）。
+	var act: PackedInt64Array = _mig_decode(ar.get("state.cell.capacity_active_uqs_per_q", {}))
+	var pen: PackedInt64Array = _mig_decode(ar.get("state.cell.capacity_pending_uqs_per_q", {}))
+	var val: PackedInt64Array = _mig_decode(ar.get("state.cell.capital_value_uu", {}))
+	var n_cell: int = act.size()
+	var cap0: int = JWBuildings.CAP0
+	var cols: Array[PackedInt64Array] = []
+	for k: int in JWBuildings.STATE_ARRAY_IDS.size():
+		var col: PackedInt64Array = PackedInt64Array()
+		col.resize(cap0)
+		col.fill(-1 if k == 10 else 0)
+		cols.append(col)
+	for c: int in n_cell:
+		var row: PackedInt64Array = PackedInt64Array([c, JWBuildings.TYPE_LEGACY, JWBuildings.OWNER_PRIVATE,
+				JWBuildings.METHOD_LEGACY, 1, act[c], pen[c] if c < pen.size() else 0,
+				val[c] if c < val.size() else 0, JWUnits.PPM, -1, -(c + 1)])
+		for k2: int in row.size():
+			var col2: PackedInt64Array = cols[k2]
+			col2[c] = row[k2]
+			cols[k2] = col2
+	for k3: int in cols.size():
+		ar[JWBuildings.STATE_ARRAY_IDS[k3]] = _mig_encode(cols[k3])
+	sc["state.building.count"] = n_cell
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
+
+
+static func _mig_decode(rec: Dictionary) -> PackedInt64Array:
+	if not rec.has(JWSimState.SAVE_KEY_DATA):
+		return PackedInt64Array()
+	return Marshalls.base64_to_raw(String(rec[JWSimState.SAVE_KEY_DATA])).to_int64_array()
+
+
+static func _mig_encode(a: PackedInt64Array) -> Dictionary:
+	return {JWSimState.SAVE_KEY_N: a.size(), JWSimState.SAVE_KEY_ENC: JWSimState.ENC_B64LE64,
+			JWSimState.SAVE_KEY_DATA: Marshalls.raw_to_base64(a.to_byte_array())}
 
 
 static func _mig_entity_array(soa: Dictionary, name: String, cap: int, empty: int) -> Dictionary:

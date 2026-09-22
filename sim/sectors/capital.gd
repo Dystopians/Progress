@@ -138,6 +138,47 @@ var f_emissions: PackedInt64Array = PackedInt64Array()
 ## content.region.area_index[] —— 长度 4，初值剧本，指数。类 C，写入者 LOAD。
 var area_index: PackedInt64Array = PackedInt64Array()
 
+## R-BUILDING-01：建筑堆表（由 JWSimState.allocate_all 注入）。堆表非空时，cell 的在用 / 待投运产能与资本价值
+## 是它按 cell 的求和，一切增减先落到堆上再由 sync_cells_from_buildings() 汇总；堆表为空（单独构造本块的
+## 单元测试夹具）时退回逐 cell 的旧算术。
+var buildings: JWBuildings = null
+
+
+func _use_stacks() -> bool:
+	return buildings != null and buildings.count > 0
+
+
+## 从堆表汇总 cell 的三列（唯一写入点）。
+func sync_cells_from_buildings() -> void:
+	if _use_stacks():
+		buildings.sum_by_cell(cell_capacity_active, cell_capacity_pending, cell_capital_value)
+
+
+## 某 cell 的缺省堆；没有即故障（堆表非空时每个 cell 都应有既有设施堆）。
+func _stack_of(cell: int) -> int:
+	var b: int = buildings.default_stack(cell)
+	if b < 0:
+		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, cell, buildings.count)
+	return b
+
+
+## INV-B01（R-BUILDING-01）：cell 三列 == 堆表按 cell 求和。
+func check_buildings_consistency() -> int:
+	if not _use_stacks():
+		return JWResult.OK
+	var a: PackedInt64Array = PackedInt64Array()
+	var p: PackedInt64Array = PackedInt64Array()
+	var v: PackedInt64Array = PackedInt64Array()
+	a.resize(JWUnits.CELL)
+	p.resize(JWUnits.CELL)
+	v.resize(JWUnits.CELL)
+	buildings.sum_by_cell(a, p, v)
+	for c: int in JWUnits.CELL:
+		if a[c] != cell_capacity_active[c] or p[c] != cell_capacity_pending[c] or v[c] != cell_capital_value[c]:
+			return JWResult.raise_fault(JWResult.Fault.STOCK_IDENTITY, c, a[c] - cell_capacity_active[c])
+	return JWResult.OK
+
+
 ## capitalize_wip 的两腿结转缓冲（科目下标 / 有符号额）。不是状态、不进哈希；
 ## 声明处定长，热路径不新建数组（docs/17 §1.4）。
 var _reclass_acc: PackedInt64Array = PackedInt64Array([0, 0])
@@ -157,7 +198,14 @@ func add_purchased_capital(cell: int, value_uu: int, io: JWIoTable) -> int:
 		return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN, cell, value_uu)
 	if value_uu == 0:
 		return JWResult.OK
-	cell_capital_value[cell] = JWMath.check_amount(cell_capital_value[cell] + value_uu)
+	if _use_stacks():
+		var b: int = _stack_of(cell)
+		if b < 0:
+			return JWResult.pending_code()
+		buildings.capital_value[b] = JWMath.check_amount(buildings.capital_value[b] + value_uu)
+		sync_cells_from_buildings()
+	else:
+		cell_capital_value[cell] = JWMath.check_amount(cell_capital_value[cell] + value_uu)
 	# flow.cell.investment_uu 的唯一写入点（R-SUBSIDY-01）。原先只入资本、不记流量，该流量恒为 0，
 	# P09 的「上季确有已付款的实际投资」前置因此永不成立，补助一分都发不出去。
 	f_cell_investment[cell] = JWMath.check_amount(f_cell_investment[cell] + value_uu)
@@ -182,9 +230,18 @@ func commit_pending() -> int:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE,
 				cell_capacity_active.size(), JWUnits.CELL)
 
-	for i: int in JWUnits.CELL:
-		cell_capacity_active[i] = JWMath.check_qty(cell_capacity_active[i] + cell_capacity_pending[i])
-		cell_capacity_pending[i] = 0
+	if _use_stacks():
+		var b: int = 0
+		while b < buildings.count:
+			buildings.capacity_active[b] = JWMath.check_qty(buildings.capacity_active[b]
+					+ buildings.capacity_pending[b])
+			buildings.capacity_pending[b] = 0
+			b += 1
+		sync_cells_from_buildings()
+	else:
+		for i: int in JWUnits.CELL:
+			cell_capacity_active[i] = JWMath.check_qty(cell_capacity_active[i] + cell_capacity_pending[i])
+			cell_capacity_pending[i] = 0
 
 	for r: int in JWUnits.R:
 		pub_capacity_active[r] = JWMath.check_qty(pub_capacity_active[r] + pub_capacity_pending[r])
@@ -231,7 +288,14 @@ func add_pending(target_code: int, slot: int, delta: int) -> int:
 	if target_code == 4:
 		if slot < 0 or slot >= JWUnits.CELL:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, slot, JWUnits.CELL)
-		cell_capacity_pending[slot] = JWMath.check_qty(cell_capacity_pending[slot] + delta)
+		if _use_stacks():
+			var b: int = _stack_of(slot)
+			if b < 0:
+				return JWResult.pending_code()
+			buildings.capacity_pending[b] = JWMath.check_qty(buildings.capacity_pending[b] + delta)
+			sync_cells_from_buildings()
+		else:
+			cell_capacity_pending[slot] = JWMath.check_qty(cell_capacity_pending[slot] + delta)
 		return JWResult.OK
 
 	if target_code < 0 or target_code > 5:
@@ -267,7 +331,39 @@ func depreciate(io: JWIoTable, ledger: JWLedger, accounts: JWAccount) -> int:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE,
 				cell_capital_value.size(), JWUnits.CELL)
 
-	for i: int in JWUnits.CELL:
+	if _use_stacks():
+		# R-BUILDING-01：逐堆折旧（同一折旧率、各自取整），cell 的折旧额是本 cell 各堆之和；
+		# 单堆 cell 的算术与下面的逐 cell 旧算术逐位相同。
+		f_cell_dep_uu.fill(0)
+		f_cell_dep_uqs.fill(0)
+		var b: int = 0
+		while b < buildings.count:
+			var cb: int = buildings.cell[b]
+			var rate_b: int = io.depreciation(JWIds.SECTOR_OF_CELL[cb])
+			var val_b: int = buildings.capital_value[b]
+			var cap_b: int = buildings.capacity_active[b]
+			if val_b < 0 or cap_b < 0:
+				return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN, cb, val_b)
+			var d_uu: int = JWMath.mul_ppm(val_b, rate_b)
+			var d_uqs: int = JWMath.mul_ppm(cap_b, rate_b)
+			buildings.capital_value[b] = val_b - d_uu
+			buildings.capacity_active[b] = cap_b - d_uqs
+			f_cell_dep_uu[cb] += d_uu
+			f_cell_dep_uqs[cb] += d_uqs
+			b += 1
+		sync_cells_from_buildings()
+		for i2: int in JWUnits.CELL:
+			var dep2: int = f_cell_dep_uu[i2]
+			if dep2 != 0:
+				var agent2: int = JWIds.agent_of_cell(i2)
+				var rc2: int = ledger.post_noncash(JWUnits.Kind.DEPRECIATION, agent2,
+						JWIds.ACC_CAPITAL, -dep2, 0, i2)
+				if rc2 != JWResult.OK:
+					return rc2
+				if accounts.get_balance(JWIds.idx_account(agent2, JWIds.ACC_CAPITAL)) < 0:
+					return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN, agent2, dep2)
+
+	for i: int in (0 if _use_stacks() else JWUnits.CELL):
 		var s: int = JWIds.SECTOR_OF_CELL[i]
 		var rate: int = io.depreciation(s)
 		var value: int = cell_capital_value[i]
@@ -539,7 +635,14 @@ func capitalize_wip(target_agent: int, wip_part_uu: int, ledger: JWLedger, accou
 			return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN,
 					cell_wip[cell], wip_part_uu)
 		cell_wip[cell] = cell_wip[cell] - wip_part_uu
-		cell_capital_value[cell] = JWMath.check_amount(cell_capital_value[cell] + wip_part_uu)
+		if _use_stacks():
+			var bw: int = _stack_of(cell)
+			if bw < 0:
+				return JWResult.pending_code()
+			buildings.capital_value[bw] = JWMath.check_amount(buildings.capital_value[bw] + wip_part_uu)
+			sync_cells_from_buildings()
+		else:
+			cell_capital_value[cell] = JWMath.check_amount(cell_capital_value[cell] + wip_part_uu)
 		if accounts.get_balance(JWIds.idx_account(target_agent, JWIds.ACC_CAPITAL)) < 0:
 			return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN, target_agent, 0)
 		return JWResult.OK
