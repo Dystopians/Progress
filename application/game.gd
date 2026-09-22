@@ -356,6 +356,66 @@ func submit_command(kind: int, args: PackedInt64Array) -> JWResult:
 	return _cmds.submit(kind, args, _st.q, _st.policy_defs)
 
 
+# ── R-CLOCK-01 第二部分：批量推进与暂停原因 ───────────────────────────────
+
+## 批量推进的暂停原因（界面按它显示「为什么停下」）。
+enum Pause { NONE = 0, TERMINATED = 1, CRISIS = 2, GOV_CHANGE = 3, ELECTION = 4, ARREARS = 5, FAILED = 6 }
+
+
+## 推进前的探针：危机各轨级别、政府更替次数、届次、欠付。
+func pause_probe() -> Dictionary:
+	if _st == null:
+		return {}
+	return {"stages": _st.crisis.stage.duplicate(), "gov_changes": _st.crisis.gov_changes,
+			"term_index": _st.politics.term_index, "arrears": _st.treasury.arrears}
+
+
+## 一季推进之后是否该停（按优先级：终局 > 危机升级 > 政府更替 > 选举 > 新增欠付）。
+func pause_reason(before: Dictionary, advance_ok: bool) -> int:
+	if not advance_ok:
+		return Pause.FAILED
+	if _st == null or before.is_empty():
+		return Pause.NONE
+	if _st.politics.run_terminated:
+		return Pause.TERMINATED
+	var st0: PackedInt64Array = before["stages"]
+	for t: int in mini(st0.size(), _st.crisis.stage.size()):
+		if _st.crisis.stage[t] > st0[t]:
+			return Pause.CRISIS
+	if _st.crisis.gov_changes > int(before["gov_changes"]):
+		return Pause.GOV_CHANGE
+	if _st.politics.term_index > int(before["term_index"]):
+		return Pause.ELECTION
+	if _st.treasury.arrears > int(before["arrears"]):
+		return Pause.ARREARS
+	return Pause.NONE
+
+
+## 批量推进 n 季（R-CLOCK-01）：调用方先提交本季业务命令（不含推进标记）；本函数逐季补推进标记并结算，
+## 遇到暂停原因即停。结果与逐季调用 advance_quarter 逐位相同——它就是逐季调用。
+## 返回 {advanced, reason, code}。
+func advance_batch(n: int) -> Dictionary:
+	var done: int = 0
+	var reason: int = Pause.NONE
+	var code: int = 0
+	var empty: PackedInt64Array = PackedInt64Array()
+	empty.resize(JWCommands.ARG_SLOTS)
+	empty.fill(0)
+	while done < n:
+		var before: Dictionary = pause_probe()
+		submit_command(JWCommands.Kind.ADVANCE_QUARTER, empty)
+		var r: JWResult = advance_quarter()
+		var ok: bool = r == null or r.ok
+		if not ok:
+			code = r.code
+		else:
+			done += 1
+		reason = pause_reason(before, ok)
+		if reason != Pause.NONE:
+			break
+	return {"advanced": done, "reason": reason, "code": code}
+
+
 ## 推进一个季度。
 ## 步骤：S01..S08
 ## 前置：!read_only_mode；!run_terminated；本季命令流以一条 advance_quarter 结尾

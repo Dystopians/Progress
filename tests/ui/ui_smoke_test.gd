@@ -959,3 +959,26 @@ func test_campaign_scenario_calendar() -> void:
 	s2.set_sync_mode(true)
 	check(bool(s2.start_new(SEED, -1, "chengwan").get("ok", false)), "切回旧剧本开局")
 	eq_str(JwFormat.quarter(0), JwText.render("fmt.quarter", {"n": "1"}), "旧剧本仍显示「第 1 季」")
+
+
+## R-CLOCK-01：战役剧本的确认框有「推进一年 / 五年」；会话批量推进逐季写历史快照。
+func test_campaign_batch_advance() -> void:
+	var s: JwSession = JwSession.new()
+	s.set_sync_mode(true)
+	check(bool(s.start_new(SEED, -1, "campaign_1600").get("ok", false)), "战役开局")
+	var ca: JwConfirmAdvance = JwConfirmAdvance.new()
+	ca.setup(s, null, "confirm", {})
+	ca.build()
+	check(ca.find_child("ConfirmAdvanceYears1", true, false) != null, "有「推进一年」")
+	check(ca.find_child("ConfirmAdvanceYears5", true, false) != null, "有「推进五年」")
+	ca.free()
+	var h0: int = s.history.size()
+	var r: Dictionary = s.advance_batch(4)
+	check(r.has("batch"), "回执带批量汇总")
+	var done: int = int((r["batch"] as Dictionary)["done"])
+	ge_int(done, 1, "至少推进一季")
+	eq_int(s.model.q, done, "读模型季号 == 推进季数")
+	eq_int(s.history.size() - h0, done, "每季一条历史快照")
+	var s2: JwSession = JwSession.new()
+	s2.set_sync_mode(true)
+	check(bool(s2.start_new(SEED, -1, "chengwan").get("ok", false)), "切回旧剧本（复原公历显示）")

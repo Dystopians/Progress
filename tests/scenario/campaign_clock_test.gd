@@ -122,3 +122,34 @@ func test_v1_save_migrates_to_v2() -> void:
 	eq_int(st2.buildings.count, JWUnits.CELL, "v1 存档迁移出每个 cell 一个既有设施堆")
 	eq_int(st2.capital.check_buildings_consistency(), JWResult.OK, "迁移后 cell 三列 == 堆表求和")
 	eq_int(st2.bonds.entity[0], -1, "开局存量债的实体号由 ID 解析为 −1")
+
+
+## R-CLOCK-01 第二部分：批量推进就是逐季推进，逐位相同。
+func test_batch_equals_quarter_by_quarter() -> void:
+	var a: JWGame = JWGame.new()
+	a.autosave_slot = "autosave_test_batch_a"
+	check(a.new_game(CAMPAIGN, 77, 0).ok, "开局 A")
+	var r: Dictionary = a.advance_batch(6)
+	eq_int(int(r["advanced"]), 6, "批量推进 6 季（第 15 季才选举，途中不该停）")
+	eq_int(int(r["reason"]), JWGame.Pause.NONE, "无暂停原因")
+	var b: JWGame = JWGame.new()
+	b.autosave_slot = "autosave_test_batch_b"
+	check(b.new_game(CAMPAIGN, 77, 0).ok, "开局 B")
+	for i: int in 6:
+		var args: PackedInt64Array = PackedInt64Array()
+		args.resize(JWCommands.ARG_SLOTS)
+		args.fill(0)
+		b.submit_command(JWCommands.Kind.ADVANCE_QUARTER, args)
+		check(b.advance_quarter().ok, "逐季第 %d 季" % i)
+	eq_str((a.get("_st") as JWSimState).state_hash(), (b.get("_st") as JWSimState).state_hash(),
+			"批量与逐季逐位相同")
+
+
+func test_batch_pauses_at_election() -> void:
+	var g: JWGame = JWGame.new()
+	g.autosave_slot = "autosave_test_batch_c"
+	check(g.new_game(CAMPAIGN, 78, 0).ok, "开局")
+	var r: Dictionary = g.advance_batch(40)
+	var reason: int = int(r["reason"])
+	check(reason != JWGame.Pause.NONE, "40 季内必有暂停原因（第 15 季选举）")
+	le_int(int(r["advanced"]), 16, "最迟在第一次选举后停下（推进 %d 季，原因 %d）" % [int(r["advanced"]), reason])

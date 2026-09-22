@@ -11,6 +11,7 @@ var _ack: CheckBox = null
 var _confirm: Button = null
 var _second: bool = false
 var _why: Label = null
+var _batch_buttons: Array[Button] = []
 
 
 func _init() -> void:
@@ -62,6 +63,19 @@ func _fill() -> void:
 	_confirm.custom_minimum_size = Vector2(240, 44)
 	_confirm.pressed.connect(_on_confirm)
 	h.add_child(_confirm)
+	# R-CLOCK-01：战役剧本默认每年规划一次，可一次推进一年或五年（遇到暂停原因提前停下）。
+	_batch_buttons.clear()
+	if session.catalog.scenario_mode() == 1:
+		for yrs: int in [1, 5]:
+			var bb: Button = JwUi.button(JwText.render("ca.confirm_years", {"years": str(yrs)}))
+			bb.name = "ConfirmAdvanceYears%d" % yrs
+			bb.focus_mode = Control.FOCUS_CLICK
+			var nq: int = yrs * 4
+			bb.pressed.connect(func() -> void:
+				close()
+				session.advance_batch(nq))
+			h.add_child(bb)
+			_batch_buttons.append(bb)
 	var back: Button = JwUi.button(JwText.t("ca.back"))
 	back.pressed.connect(close)
 	h.add_child(back)
@@ -88,6 +102,8 @@ func _update_button() -> void:
 	elif _ack != null and not _ack.button_pressed:
 		why = JwText.render("ca.why.ack", {"n": str(int(c["note"]))})
 	_confirm.disabled = why != ""
+	for bb: Button in _batch_buttons:
+		bb.disabled = why != "" or (st == JwSession.Dock.GAP_NOEXIT and not _second)
 	_why.text = why
 	if st == JwSession.Dock.GAP_NOEXIT and not _second and why == "":
 		_confirm.text = JwText.t("ca.confirm_noexit")

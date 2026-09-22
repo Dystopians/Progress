@@ -23,6 +23,12 @@ func build() -> void:
 	if not bool(ctx.get("ok", true)):
 		body.add_child(JwUi.class_line(JwInfo.Cls.ACTUAL, JwText.render("sr.fault", {"code": str(int(ctx.get("code", 0))),
 				"dir": String(ctx.get("fault_dir", ""))}), false, "ochre.hot"))
+	# R-CLOCK-01：批量推进的汇总（推进了几季、为什么停下）。回放本身只演示最后一季。
+	if ctx.has("batch"):
+		var b: Dictionary = ctx["batch"]
+		body.add_child(JwUi.class_line(JwInfo.Cls.ACTUAL, JwText.render("batch.summary", {
+				"done": str(int(b.get("done", 0))), "requested": str(int(b.get("requested", 0))),
+				"reason": JwText.t("batch.reason.%d" % int(b.get("reason", 0)))}), false, "text.secondary"))
 	for i: int in 3:
 		var h: HBoxContainer = JwUi.hbox(10)
 		h.add_child(JwIcon.make("settling", JwTheme.c("warm.text"), 16))

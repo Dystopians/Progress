@@ -943,8 +943,51 @@ func advance() -> Dictionary:
 	return {"ok": true, "pending": true, "q": q0}
 
 
+## 批量推进（R-CLOCK-01，战役模式的「推进一年 / 五年」）：主线程逐季结算，每季照常写历史快照与回执；
+## 遇到暂停原因（终局、危机升级、政府更替、选举、新增欠付）即停；只在最后一季发 settlement_finished。
+## 草案只进第一季。
+func advance_batch(n: int) -> Dictionary:
+	var out: Dictionary = {"ok": false}
+	if game == null or read_only or model.terminated or settling or n < 1:
+		out["code"] = JwReadModel.RJ_PHASE_BUSY if (read_only or settling) else JwReadModel.RJ_RUN_TERMINATED
+		return out
+	_wait_dryrun()
+	_dry_pending = false
+	settling = true
+	settlement_started.emit()
+	var done: int = 0
+	var reason: int = 0
+	var last: Dictionary = {}
+	while done < n:
+		var q0: int = model.q
+		var submitted: Array[Dictionary] = []
+		if done == 0:
+			_record_expectations(q0)
+			for d: Dictionary in drafts:
+				var rr: Dictionary = res(game.submit_command(int(d.get("kind", 0)), d.get("args", _args([]))))
+				submitted.append({"label": String(d.get("label", "")), "kind": int(d.get("kind", 0)),
+						"p": int(d.get("p", -1)), "submit_ok": bool(rr["ok"]), "submit_code": int(rr["code"])})
+		var before: Dictionary = game.pause_probe()
+		var rm: Dictionary = res(game.submit_command(K_ADVANCE, _args([])))
+		_adv_ctx = {"q0": q0, "submitted": submitted, "rm": rm, "arrears0": model.sc("state.gov.arrears_uu")}
+		settling = true
+		var ra: Dictionary = res(game.advance_quarter())
+		last = _finish_advance(ra, false)
+		reason = game.pause_reason(before, bool(ra.get("ok", false)))
+		if bool(ra.get("ok", false)):
+			done += 1
+		if reason != 0:
+			break
+	last["batch"] = {"requested": n, "done": done, "reason": reason}
+	last_receipt = last
+	settlement_finished.emit(last)
+	request_dryrun(true)
+	return last
+
+
 ## 结算完成（主线程）：刷新读模型、写历史快照与回执、发 settlement_finished。
-func _finish_advance(ra: Dictionary) -> Dictionary:
+## final == false 时（批量推进的中间季）不发信号、不请求试算，由 advance_batch 在最后一季统一收尾。
+func _finish_advance(ra: Dictionary, final: bool = true) -> Dictionary:
 	var q0: int = int(_adv_ctx.get("q0", model.q))
 	var submitted: Array = _adv_ctx.get("submitted", [])
 	var rm: Dictionary = _adv_ctx.get("rm", {"ok": false})
@@ -982,6 +1025,8 @@ func _finish_advance(ra: Dictionary) -> Dictionary:
 	_adv_ctx = {}
 	log_event("ev.advance_confirmed", {"q": q0})
 	dry = {}
+	if not final:
+		return out
 	# 不另发 state_changed：外壳在 settlement_finished 里先开回放、下一帧再整体刷新（收尾分两帧，TH-4）。
 	settlement_finished.emit(out)
 	request_dryrun(true)
