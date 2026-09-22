@@ -105,8 +105,13 @@ func refresh() -> void:
 	var q: int = m.q
 	# 执政结束后不再有「本季」：季号停在最后一个已结算季（NN ∈ [1, 40]，§5.1）。
 	var qd: int = maxi(q - 1, 0) if m.terminated else q
-	_country.text = JwText.render("top.country_quarter", {"country": session.catalog.country_label(),
-			"nn": JwFormat.q2(qd), "y": str(JwFormat.year_of(qd)), "m": str(JwFormat.quarter_in_year(qd))})
+	if JwFormat.start_year > 0:
+		# R-CLOCK-01：战役剧本按公历显示（「1605 年春」）。
+		_country.text = JwText.render("top.country_calendar", {"country": session.catalog.country_label(),
+				"quarter": JwFormat.quarter(qd)})
+	else:
+		_country.text = JwText.render("top.country_quarter", {"country": session.catalog.country_label(),
+				"nn": JwFormat.q2(qd), "y": str(JwFormat.year_of(qd)), "m": str(JwFormat.quarter_in_year(qd))})
 	JwUi.clear(_badges)
 	if q % 4 == 3 and not m.terminated:
 		_badges.add_child(_chip(JwText.t("top.badge.review")))

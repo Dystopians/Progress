@@ -3,7 +3,7 @@
 	"command_count": 10,
 	"command_log_hash": "08569207ec641d2c3bdfd8a86640b40ac4be7846fc3272db0bc63619a7626f11",
 	"content_hash": "deecb4f563de5361cfcc20449b4f93e0d9508e1f98fabbf91ef328040dfd7a80",
-	"created_utc": "2026-09-22T04:17:21Z",
+	"created_utc": "2026-09-22T11:08:47Z",
 	"draw_count": [
 		10,
 		1,
@@ -20,6 +20,6 @@
 	"scenario_hash": "5647a76c37e278c5cab53807b8c4c3153c9a6fe8791f01ae5bc091f3c4ea84ec",
 	"scenario_id": "scenario.chengwan",
 	"schema_kind": "save_manifest",
-	"schema_version": 1,
-	"state_hash": "30b7946f20121ab636911911c12ade8a15678bd6d0eb09bbef2bef6d9c7bc70f"
+	"schema_version": 2,
+	"state_hash": "4e3d8977d819a2a9e50b3548e94faf883e9df5a5402c4040d3f3c6f085f2f5e5"
 }

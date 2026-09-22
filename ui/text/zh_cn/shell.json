@@ -2,6 +2,7 @@
   "schema_version": 1,
   "t": {
     "top.country_quarter": "{country} · 第 {nn} 季（第 {y} 年 第 {m} 季）",
+    "top.country_calendar": "{country} · {quarter}",
     "top.cash": "国库现金",
     "top.debt": "债务",
     "top.legend": "实 · 算 · 预 图例",
