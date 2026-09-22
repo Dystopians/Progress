@@ -17,7 +17,7 @@
 ## 纪律：JWResult 的故障登记是静态的，会跨测试方法残留；每个方法前必须 clear_pending()。
 extends JWTest
 
-const G: int = JWUnits.GROUP
+static var G: int = JWUnits.GROUP
 const B: int = JWUnits.BLOC_N
 const PN: int = JWUnits.PARAM_N
 

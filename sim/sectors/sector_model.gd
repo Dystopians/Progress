@@ -1115,10 +1115,31 @@ func allocate() -> void:
 	_split_tb.fill(0)
 	_split_out.resize(JWUnits.S)
 	_split_out.fill(0)
-	_deliver.resize(JWUnits.S)
+	_deliver.resize(JWUnits.R)
 	_deliver.fill(0)
+	# R-SCENARIO-02：按地区排列的季内缓冲随地区数定长（此前是 4 格字面量）。
+	_gen_r = _zeros_n(JWUnits.R)
+	_dom_used_r = _zeros_n(JWUnits.R)
+	_surplus_r = _zeros_n(JWUnits.R)
+	_headroom_r = _zeros_n(JWUnits.R)
+	_gap_r = _zeros_n(JWUnits.R)
+	_in_r = _zeros_n(JWUnits.R)
+	_out_r = _zeros_n(JWUnits.R)
+	_left_r = _zeros_n(JWUnits.R)
+	_tb_r = PackedInt64Array()
+	for r: int in JWUnits.R:
+		_tb_r.append(r)
+	_want_cell = _zeros_n(JWUnits.CELL)
+	_gap_cell = _zeros_n(JWUnits.CELL)
 	_cands.resize(BOUND_N)
 	_cands.fill(0)
+
+
+static func _zeros_n(n: int) -> PackedInt64Array:
+	var a: PackedInt64Array = PackedInt64Array()
+	a.resize(n)
+	a.fill(0)
+	return a
 
 
 ## §1.6 状态块协议：只读取用（返回引用，调用方不得写）。

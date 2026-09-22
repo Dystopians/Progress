@@ -179,6 +179,10 @@ var _o3: PackedInt64Array = PackedInt64Array()
 var _w4: PackedInt64Array = PackedInt64Array()
 var _t4: PackedInt64Array = PackedInt64Array()
 var _o4: PackedInt64Array = PackedInt64Array()
+## 按部门拆分的缓冲（长 S）。R-SCENARIO-02：此前与按地区拆分共用 _w4/_t4/_o4，4 区时 R == S 恰好不出错。
+var _wS: PackedInt64Array = PackedInt64Array()
+var _tS: PackedInt64Array = PackedInt64Array()
+var _oS: PackedInt64Array = PackedInt64Array()
 ## 拆分缓冲：长度 5（买方类）。
 var _w5: PackedInt64Array = PackedInt64Array()
 var _t5: PackedInt64Array = PackedInt64Array()
@@ -728,16 +732,16 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 		if opex <= 0:
 			continue
 		for s: int in JWUnits.S:
-			_w4[s] = PUBSERV_INPUT_SHARE_PPM[s]
-		rc = JWMath.split_lr_into(opex, _w4, _t4, _o4)
+			_wS[s] = PUBSERV_INPUT_SHARE_PPM[s]
+		rc = JWMath.split_lr_into(opex, _wS, _tS, _oS)
 		if JWMath._split_last_fault != 0:
 			return _raise(rc, r, opex)
 		for s: int in JWUnits.S:
 			var price: int = pricing.price_of(s)
-			if price <= 0 or _o4[s] <= 0:
+			if price <= 0 or _oS[s] <= 0:
 				continue
 			# rounding: floor, reason=预算折数量一律 floor
-			var q: int = JWMath.mul_div_floor(_o4[s], JWUnits.Q_SCALE, price)
+			var q: int = JWMath.mul_div_floor(_oS[s], JWUnits.Q_SCALE, price)
 			_pub_demand[JWIds.idx_cell(r, s)] = q
 			var mi: int = JWIds.idx_market(s, JWUnits.BuyerClass.PUBSERV)
 			m_demand[mi] = m_demand[mi] + q
@@ -752,16 +756,16 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 		gov_budget = gov_cash
 	if gov_budget > 0:
 		for s: int in JWUnits.S:
-			_w4[s] = PUBSERV_INPUT_SHARE_PPM[s]
-		rc = JWMath.split_lr_into(gov_budget, _w4, _t4, _o4)
+			_wS[s] = PUBSERV_INPUT_SHARE_PPM[s]
+		rc = JWMath.split_lr_into(gov_budget, _wS, _tS, _oS)
 		if JWMath._split_last_fault != 0:
 			return _raise(rc, JWIds.AGENT_GOV, gov_budget)
 		for s: int in JWUnits.S:
 			var price: int = pricing.price_of(s)
-			if price <= 0 or _o4[s] <= 0:
+			if price <= 0 or _oS[s] <= 0:
 				continue
 			# rounding: floor, reason=预算折数量一律 floor
-			var q: int = JWMath.mul_div_floor(_o4[s], JWUnits.Q_SCALE, price)
+			var q: int = JWMath.mul_div_floor(_oS[s], JWUnits.Q_SCALE, price)
 			_gov_demand[s] = q
 			var mi: int = JWIds.idx_market(s, JWUnits.BuyerClass.GOV_PROCUREMENT)
 			m_demand[mi] = m_demand[mi] + q
@@ -776,7 +780,7 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 	for cell: int in JWUnits.CELL:
 		var need_value: int = 0
 		for j: int in JWUnits.S:
-			_w4[j] = 0
+			_wS[j] = 0
 			var idx: int = JWIds.idx_inv(cell, j)
 			var target: int = 0
 			if _input_target_armed:
@@ -795,7 +799,7 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 				continue
 			_firm_demand[idx] = need
 			var v: int = _trade_value(need, price, 0)
-			_w4[j] = v
+			_wS[j] = v
 			need_value += v
 		if need_value <= 0:
 			continue
@@ -807,7 +811,7 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 		var cash: int = JWUnits.AMOUNT_MAX
 		if need_value > cash:
 			# 现金不够就按各产品需求金额比例缩减，**不是先到先得**（顺序依赖会让重放不可复现）。
-			rc = JWMath.split_lr_into(cash, _w4, _t4, _o4)
+			rc = JWMath.split_lr_into(cash, _wS, _tS, _oS)
 			if JWMath._split_last_fault != 0:
 				return _raise(rc, cell, cash)
 			for j: int in JWUnits.S:
@@ -819,7 +823,7 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 					_firm_demand[idx2] = 0
 					continue
 				# rounding: floor, reason=预算折数量一律 floor
-				_firm_demand[idx2] = JWMath.mul_div_floor(_o4[j], JWUnits.Q_SCALE, price2)
+				_firm_demand[idx2] = JWMath.mul_div_floor(_oS[j], JWUnits.Q_SCALE, price2)
 		for j: int in JWUnits.S:
 			var idx3: int = JWIds.idx_inv(cell, j)
 			var q3: int = _firm_demand[idx3]
@@ -861,14 +865,14 @@ func add_capital_demand(invest_intent_uu: PackedInt64Array, split_ppm: PackedInt
 		var want_uu: int = invest_intent_uu[cell]
 		if want_uu <= 0:
 			continue
-		var rc: int = JWMath.split_lr_into(want_uu, split_ppm, _t4, _o4)
+		var rc: int = JWMath.split_lr_into(want_uu, split_ppm, _tS, _oS)
 		if JWMath._split_last_fault != 0:
 			return _raise(rc, cell, want_uu)
 		if rc != 0:
 			# 构成全 0（内容未给资本品构成）：不发明分配规则，本 cell 不产生资本品需求。
 			continue
 		for s: int in JWUnits.S:
-			var v: int = _o4[s]
+			var v: int = _oS[s]
 			var price: int = pricing.price_of(s)
 			if v <= 0 or price <= 0:
 				continue
@@ -1539,6 +1543,9 @@ func allocate() -> void:
 	_w4.resize(JWUnits.R)
 	_t4.resize(JWUnits.R)
 	_o4.resize(JWUnits.R)
+	_wS.resize(JWUnits.S)
+	_tS.resize(JWUnits.S)
+	_oS.resize(JWUnits.S)
 	_w5.resize(JWUnits.BUYER_CLASS_N)
 	_t5.resize(JWUnits.BUYER_CLASS_N)
 	_o5.resize(JWUnits.BUYER_CLASS_N)
@@ -1553,6 +1560,7 @@ func allocate() -> void:
 	_o36.resize(JWUnits.GROUP)
 	_fill_iota(_t3)
 	_fill_iota(_t4)
+	_fill_iota(_tS)
 	_fill_iota(_t5)
 	_fill_iota(_t9)
 	_fill_iota(_t16)

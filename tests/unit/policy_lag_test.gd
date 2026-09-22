@@ -1216,7 +1216,7 @@ func _seed_p09(st: JWSimState) -> void:
 		# 这样断言复算的是**规则**，而不是「实现恰好读了哪个下标」。
 		_seed_int(st.policy, "params_ppm", JWIds.idx_policy_param(P09, j),
 				P09_SUBSIDY_RATE_PPM)
-	st.policy.set_region_mask(P09, JWPolicyEngine.REGION_MASK_ALL)
+	st.policy.set_region_mask(P09, JWUnits.REGION_MASK_ALL)
 	_seed_int(st.policy, "enabled", P09, 1)
 	_seed_int(st.policy, "enacted_q", P09, 0)
 	_seed_int(st.policy, "effective_from_q", P09, 1)

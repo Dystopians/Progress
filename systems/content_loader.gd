@@ -108,7 +108,13 @@ const SCHEMA_KINDS: PackedStringArray = [
 
 # ── 枚举名 → 稠密下标（docs/10 §0.5 的枚举表，顺序不得改） ──────────────────
 
-const REGION_NAMES: PackedStringArray = ["beiyuan", "zhongzhou", "haijia", "xiling"]
+## 参考剧本的地区名（4 区，chengwan 的顺序）。R-SCENARIO-02 之后地区名取自本剧本 regions.json 的顺序，
+## 这里只作缺省值。
+const REGION_NAMES_DEFAULT: PackedStringArray = ["beiyuan", "zhongzhou", "haijia", "xiling"]
+## 本次载入剧本的地区名（regions.json 的 region_id 去掉 `region.` 前缀，按文件顺序）。
+var _region_names: PackedStringArray = REGION_NAMES_DEFAULT
+## 计划书 §05 的锁定值只约束参考剧本 chengwan；其他剧本以自己的 assertions.json 为准（R-SCENARIO-02）。
+var _plan_locks: bool = true
 const SECTOR_NAMES: PackedStringArray = ["agri", "manu", "energy", "services"]
 const AGE_NAMES: PackedStringArray = ["minor", "working", "elder"]
 const SKILL_NAMES: PackedStringArray = ["low", "mid", "high"]
@@ -565,7 +571,7 @@ func _name_index(names: PackedStringArray, s: String) -> int:
 func _region_index(id: String) -> int:
 	if not id.begins_with("region."):
 		return -1
-	return _name_index(REGION_NAMES, id.substr(7))
+	return _name_index(_region_names, id.substr(7))
 
 
 ## `sector.<name>` → 0..3
@@ -580,7 +586,7 @@ func _cell_index(id: String) -> int:
 	var segs: PackedStringArray = id.split(".")
 	if segs.size() != 3 or segs[0] != "cell":
 		return -1
-	var r: int = _name_index(REGION_NAMES, segs[1])
+	var r: int = _name_index(_region_names, segs[1])
 	var s: int = _name_index(SECTOR_NAMES, segs[2])
 	if r < 0 or s < 0:
 		return -1
@@ -591,7 +597,7 @@ func _cell_index(id: String) -> int:
 func _pubserv_index(id: String) -> int:
 	if not id.begins_with("pubserv."):
 		return -1
-	return _name_index(REGION_NAMES, id.substr(8))
+	return _name_index(_region_names, id.substr(8))
 
 
 ## `group.<region>.<age>.<skill>` → 0..35
@@ -599,7 +605,7 @@ func _group_index(id: String) -> int:
 	var segs: PackedStringArray = id.split(".")
 	if segs.size() != 4 or segs[0] != "group":
 		return -1
-	var r: int = _name_index(REGION_NAMES, segs[1])
+	var r: int = _name_index(_region_names, segs[1])
 	var a: int = _name_index(AGE_NAMES, segs[2])
 	var k: int = _name_index(SKILL_NAMES, segs[3])
 	if r < 0 or a < 0 or k < 0:
@@ -714,6 +720,28 @@ func _in_layout(rel: String) -> bool:
 	return false
 
 
+## 预读本剧本 regions.json 的地区名（R-SCENARIO-02）。读不到或格式不对返回空表，由调用方报错；
+## 正式的逐字段校验仍在 `_validate_regions`。
+func _peek_region_names() -> PackedStringArray:
+	var out: PackedStringArray = PackedStringArray()
+	var f: FileAccess = FileAccess.open(_root + "/" + _scenario_dir + "/regions.json", FileAccess.READ)
+	if f == null:
+		return out
+	var v: Variant = JSON.parse_string(f.get_as_text())
+	f.close()
+	if not (v is Dictionary) or not (v as Dictionary).has("regions"):
+		return out
+	for e: Variant in (v as Dictionary)["regions"]:
+		if not (e is Dictionary):
+			return PackedStringArray()
+		var rid: String = String((e as Dictionary).get("region_id", ""))
+		var nm: String = rid.substr(7)
+		if not rid.begins_with("region.") or not _scenario_name_ok(nm) or out.has(nm):
+			return PackedStringArray()
+		out.append(nm)
+	return out
+
+
 ## 剧本目录名：小写字母、数字、下划线，1—32 字符（R-SCENARIO-01）。
 static func _scenario_name_ok(name: String) -> bool:
 	if name.is_empty() or name.length() > 32:
@@ -812,18 +840,18 @@ func _scenario_doc(name: String) -> Dictionary:
 ## 内容包多一个少一个都由各自的 V-*-01 报错，而不是靠登记表默默扩张。
 func _register_ids() -> void:
 	for r: int in JWUnits.R:
-		_reg(JWIds.IdKind.REGION, "region." + REGION_NAMES[r], r)
+		_reg(JWIds.IdKind.REGION, "region." + _region_names[r], r)
 	for s: int in JWUnits.S:
 		_reg(JWIds.IdKind.SECTOR, "sector." + SECTOR_NAMES[s], s)
 	for r: int in JWUnits.R:
 		for s: int in JWUnits.S:
-			_reg(JWIds.IdKind.CELL, "cell." + REGION_NAMES[r] + "." + SECTOR_NAMES[s],
+			_reg(JWIds.IdKind.CELL, "cell." + _region_names[r] + "." + SECTOR_NAMES[s],
 					JWIds.idx_cell(r, s))
-		_reg(JWIds.IdKind.PUBSERV, "pubserv." + REGION_NAMES[r], r)
+		_reg(JWIds.IdKind.PUBSERV, "pubserv." + _region_names[r], r)
 		for a: int in JWUnits.A:
 			for k: int in JWUnits.K:
 				_reg(JWIds.IdKind.GROUP,
-						"group." + REGION_NAMES[r] + "." + AGE_NAMES[a] + "." + SKILL_NAMES[k],
+						"group." + _region_names[r] + "." + AGE_NAMES[a] + "." + SKILL_NAMES[k],
 						JWIds.idx_group(r, a, k))
 	for p: int in JWUnits.POLICY_N:
 		_reg(JWIds.IdKind.POLICY, "policy.P" + _pad2(p + 1), p)
@@ -846,13 +874,13 @@ func _register_agent_ids() -> void:
 	for r: int in JWUnits.R:
 		for s: int in JWUnits.S:
 			_reg(JWIds.IdKind.AGENT,
-					"agent.cell." + REGION_NAMES[r] + "." + SECTOR_NAMES[s],
+					"agent.cell." + _region_names[r] + "." + SECTOR_NAMES[s],
 					JWIds.agent_of_cell(JWIds.idx_cell(r, s)))
-		_reg(JWIds.IdKind.AGENT, "agent.pubserv." + REGION_NAMES[r], JWIds.agent_of_pubserv(r))
+		_reg(JWIds.IdKind.AGENT, "agent.pubserv." + _region_names[r], JWIds.agent_of_pubserv(r))
 		for a: int in JWUnits.A:
 			for k: int in JWUnits.K:
 				_reg(JWIds.IdKind.AGENT,
-						"agent.group." + REGION_NAMES[r] + "." + AGE_NAMES[a] + "."
+						"agent.group." + _region_names[r] + "." + AGE_NAMES[a] + "."
 								+ SKILL_NAMES[k],
 						JWIds.agent_of_group(JWIds.idx_group(r, a, k)))
 	_reg(JWIds.IdKind.AGENT, "agent.invpool", JWIds.AGENT_INVPOOL)
@@ -951,10 +979,18 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	if not _scenario_name_ok(spec[1]):
 		return _fail(JWResult.Load.FILE_FORMAT, root_path + "#bad-scenario-name", 0, 0)
 	_scenario_dir = SCENARIOS_ROOT + "/" + spec[1]
+	_plan_locks = spec[1] == DEFAULT_SCENARIO
+
+	# R-SCENARIO-02：地区数与地区名取自本剧本 regions.json，先定维度再分配状态。
+	var names: PackedStringArray = _peek_region_names()
+	if names.is_empty() or not JWUnits.set_regions(names.size()):
+		return _fail(JWResult.Load.REGION_SET, _scenario_dir + "/regions.json#count", names.size(), JWUnits.R_MAX)
+	JWIds.apply_dims()
+	_region_names = names
+	if st.registry_size() == 0 or st.dims_r != JWUnits.R:
+		st.allocate_all()
 	if st == null:
 		return _fail(JWResult.Load.SCHEMA_HEADER, "#state-null", 0, 0)
-	if st.registry_size() == 0:
-		st.allocate_all()
 	_ids = JWIds.new()
 	_register_ids()
 
@@ -1517,7 +1553,7 @@ func _validate_regions(st: JWSimState) -> void:
 
 	for r: int in JWUnits.R:
 		if seen[r] == 0:
-			_fail(JWResult.Load.REGION_SET, w + "/regions#missing-" + REGION_NAMES[r], r, 0)
+			_fail(JWResult.Load.REGION_SET, w + "/regions#missing-" + _region_names[r], r, 0)
 		for r2: int in JWUnits.R:
 			# V-REG-02：邻接必须对称。
 			if adjacency[JWIds.idx_od(r, r2)] != adjacency[JWIds.idx_od(r2, r)]:
@@ -1549,11 +1585,11 @@ func _read_od_map(e: Dictionary, key: String, r: int, out: PackedInt64Array,
 		rw: String, code: int) -> void:
 	var m: Dictionary = _get_dict(e, key, rw, code)
 	for r2: int in JWUnits.R:
-		var v: int = _get_int(m, "region." + REGION_NAMES[r2], rw + "/" + key, code)
+		var v: int = _get_int(m, "region." + _region_names[r2], rw + "/" + key, code)
 		if r2 == r and v != 0:
-			_fail(code, rw + "/" + key + "/region." + REGION_NAMES[r2], v, 0)
+			_fail(code, rw + "/" + key + "/region." + _region_names[r2], v, 0)
 		if v < 0:
-			_fail(JWResult.Load.RANGE, rw + "/" + key + "/region." + REGION_NAMES[r2], v, 0)
+			_fail(JWResult.Load.RANGE, rw + "/" + key + "/region." + _region_names[r2], v, 0)
 		out[JWIds.idx_od(r, r2)] = v
 
 
@@ -1722,8 +1758,8 @@ func _validate_population(st: JWSimState) -> void:
 		_unemployment_ppm = JWMath.mul_div_floor(unemployed_total, JWUnits.PPM, labor_force_total)
 	else:
 		_fail(JWResult.Load.POP_UNEMP, w + "#labor-force-zero", 0, 0)
-	if _unemployment_ppm < LOCK_UNEMPLOYMENT_PPM - UNEMPLOYMENT_TOLERANCE_PPM \
-			or _unemployment_ppm > LOCK_UNEMPLOYMENT_PPM + UNEMPLOYMENT_TOLERANCE_PPM:
+	if _plan_locks and _unemployment_ppm < LOCK_UNEMPLOYMENT_PPM - UNEMPLOYMENT_TOLERANCE_PPM \
+			or _plan_locks and _unemployment_ppm > LOCK_UNEMPLOYMENT_PPM + UNEMPLOYMENT_TOLERANCE_PPM:
 		_fail(JWResult.Load.POP_UNEMP, w + "#unemployment", _unemployment_ppm,
 				LOCK_UNEMPLOYMENT_PPM)
 
@@ -1820,9 +1856,9 @@ func _validate_demography(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var birth: PackedInt64Array = _zeros(JWUnits.R)
 	var bm: Dictionary = _get_dict(d, "birth_ppm_per_q", dw, JWResult.Load.SCHEMA_HEADER)
 	for r: int in JWUnits.R:
-		birth[r] = _get_int(bm, "region." + REGION_NAMES[r], dw + "/birth_ppm_per_q",
+		birth[r] = _get_int(bm, "region." + _region_names[r], dw + "/birth_ppm_per_q",
 				JWResult.Load.SCHEMA_HEADER)
-		_ppm_range(birth[r], dw + "/birth_ppm_per_q/region." + REGION_NAMES[r])
+		_ppm_range(birth[r], dw + "/birth_ppm_per_q/region." + _region_names[r])
 
 	# 契约按年龄段给出死亡率，运行期数组按群组展开（长度 GROUP）。
 	var death_by_age: PackedInt64Array = _zeros(JWUnits.A)
@@ -2135,7 +2171,7 @@ func _validate_pubserv(st: JWSimState) -> void:
 
 	for r: int in JWUnits.PUBSERV:
 		if seen[r] == 0:
-			_fail(JWResult.Load.CELL_SET, w + "/units#missing-" + REGION_NAMES[r], r, 0)
+			_fail(JWResult.Load.CELL_SET, w + "/units#missing-" + _region_names[r], r, 0)
 
 	_set_arr(st.capital, 5, capacity, w + "#pub_capacity_active")
 	_set_arr(st.capital, 6, _zeros(JWUnits.PUBSERV), w + "#pub_capacity_pending")
@@ -2187,7 +2223,7 @@ func _validate_government(st: JWSimState) -> void:
 	_check_keys(gov, GOV_ALLOWED, gw)
 	var gov_cash: int = _get_int(gov, "cash_uu", gw, JWResult.Load.CASH_INIT)
 	# V-FIN-01 / INV-145：计划书 §05 的锁定值，容差 0。
-	if gov_cash != LOCK_GOV_CASH_UU:
+	if _plan_locks and gov_cash != LOCK_GOV_CASH_UU:
 		_fail(JWResult.Load.CASH_INIT, gw + "/cash_uu", gov_cash, LOCK_GOV_CASH_UU)
 	var arrears: int = _get_int(gov, "arrears_uu", gw, JWResult.Load.FIN_LINES)
 	var receivable: int = _get_int(gov, "tax_receivable_uu", gw, JWResult.Load.FIN_LINES)
@@ -2350,7 +2386,7 @@ func _validate_bonds(st: JWSimState, doc: Dictionary, w: String) -> void:
 			row_hold += outstanding[b]
 
 	# V-FIN-02 / INV-144：合计 50 U，容差 0。
-	if debt_total != LOCK_DEBT_TOTAL_UU:
+	if _plan_locks and debt_total != LOCK_DEBT_TOTAL_UU:
 		_fail(JWResult.Load.DEBT_TOTAL, w + "/bonds#total", debt_total, LOCK_DEBT_TOTAL_UU)
 
 	_set_arr(st.bonds, 0, issue_q, w + "/bonds#issue_q")
@@ -2455,13 +2491,13 @@ func _validate_annual_plan(doc: Dictionary, w: String) -> void:
 	if spend - receipts != _annual_deficit_uu:
 		_fail(JWResult.Load.FIN_YEARPLAN, aw + "/deficit_uu", spend - receipts,
 				_annual_deficit_uu)
-	if _annual_deficit_uu != LOCK_ANNUAL_DEFICIT_UU:
+	if _plan_locks and _annual_deficit_uu != LOCK_ANNUAL_DEFICIT_UU:
 		_fail(JWResult.Load.FIN_YEARPLAN, aw + "/deficit_uu#locked", _annual_deficit_uu,
 				LOCK_ANNUAL_DEFICIT_UU)
-	if receipts != LOCK_ANNUAL_RECEIPTS_UU:
+	if _plan_locks and receipts != LOCK_ANNUAL_RECEIPTS_UU:
 		_fail(JWResult.Load.FIN_YEARPLAN, aw + "/receipts_uu#locked", receipts,
 				LOCK_ANNUAL_RECEIPTS_UU)
-	if spend != LOCK_ANNUAL_EXPENDITURE_UU:
+	if _plan_locks and spend != LOCK_ANNUAL_EXPENDITURE_UU:
 		_fail(JWResult.Load.FIN_YEARPLAN, aw + "/expenditure_incl_interest_uu#locked", spend,
 				LOCK_ANNUAL_EXPENDITURE_UU)
 
@@ -3596,12 +3632,12 @@ func _resolve_cross_refs(st: JWSimState) -> void:
 	for r: int in JWUnits.R:
 		if _region_population_decl.size() == JWUnits.R \
 				and _region_population_decl[r] != by_region[r]:
-			_fail(JWResult.Load.POP_REGION, w + "/population/" + REGION_NAMES[r],
+			_fail(JWResult.Load.POP_REGION, w + "/population/" + _region_names[r],
 					_region_population_decl[r], by_region[r])
 		# V-POP-06：逐地区 Σ 占用 ≤ 住房存量。
 		var stock: int = st.capital.housing_stock_of(r)
 		if occupied[r] > stock:
-			_fail(JWResult.Load.HOUSE_OVER, w + "/housing/" + REGION_NAMES[r], occupied[r],
+			_fail(JWResult.Load.HOUSE_OVER, w + "/housing/" + _region_names[r], occupied[r],
 					stock)
 
 	# V-POP-08 / INV-151：群组侧就业按 (地区, 部门/pubserv, 技能) 汇总 == 单元侧在岗人数。
@@ -3617,7 +3653,7 @@ func _resolve_cross_refs(st: JWSimState) -> void:
 					var cside: int = _cell_employment[JWIds.idx_emp(JWIds.idx_cell(r, s), k)]
 					if gside != cside:
 						_fail(JWResult.Load.EMPLOY_MISMATCH,
-								w + "/employment/" + REGION_NAMES[r] + "." + SECTOR_NAMES[s]
+								w + "/employment/" + _region_names[r] + "." + SECTOR_NAMES[s]
 										+ "." + SKILL_NAMES[k], gside, cside)
 				var gpub: int = 0
 				for a2: int in JWUnits.A:
@@ -3626,7 +3662,7 @@ func _resolve_cross_refs(st: JWSimState) -> void:
 				var cpub: int = _pubserv_employment[JWIds.idx_pubserv_emp(r, k)]
 				if gpub != cpub:
 					_fail(JWResult.Load.EMPLOY_MISMATCH,
-							w + "/employment/pubserv." + REGION_NAMES[r] + "." + SKILL_NAMES[k],
+							w + "/employment/pubserv." + _region_names[r] + "." + SKILL_NAMES[k],
 							gpub, cpub)
 
 	# V-FIN-09 / INV-024：居民存款 == 投资池现金 + 投资池持有的债券本金。
@@ -3654,7 +3690,7 @@ func check_scenario_assertions(st: JWSimState) -> JWResult:
 	var w: String = _scenario_dir + "#assertions"
 
 	# INV-141：Σ 人口 == 24 000 000，四地区 9/7/5/3 百万。
-	if _group_population.size() == JWUnits.GROUP:
+	if _plan_locks and _group_population.size() == JWUnits.GROUP:
 		var total: int = JWMath.sum(_group_population)
 		if total != LOCK_POPULATION_PERSONS:
 			_fail(JWResult.Load.POP_TOTAL, w + "/total_population", total,
@@ -3664,7 +3700,7 @@ func check_scenario_assertions(st: JWSimState) -> JWResult:
 			by_region[JWIds.REGION_OF_GROUP[g]] += _group_population[g]
 		for r: int in JWUnits.R:
 			if by_region[r] != LOCK_REGION_POPULATION[r]:
-				_fail(JWResult.Load.POP_REGION, w + "/region_population/" + REGION_NAMES[r],
+				_fail(JWResult.Load.POP_REGION, w + "/region_population/" + _region_names[r],
 						by_region[r], LOCK_REGION_POPULATION[r])
 
 	# INV-142：群组集合齐全（36 条）——由 JWIds 的登记数兜底再看一次。

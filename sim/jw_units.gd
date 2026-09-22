@@ -34,9 +34,46 @@ const INT64_MAX: int = 9_223_372_036_854_775_807
 const SENTINEL: int = QTY_MAX
 
 # ── 维度常量（docs/17 §2.1，稠密下标布局，重排即破坏性变更） ────────────────
+#
+# R-SCENARIO-02：凡随地区数变化的维度都是 `static var`（下面逐个标注），由 `set_regions(n)` 在
+# 分配状态之前一次写定；其余维度仍是常量。取值只在载入剧本时改变，结算期间只读。
+# 同一进程里同一时刻只能有一种地区数：换剧本即重新分配全部状态（JWContentLoader.load_all 负责）。
+
+## 全部地区的位掩码（政策 region_mask 的值域上界；4 区时 15）。
+static var REGION_MASK_ALL: int = 15
+## 地区数的上下限（R-SCENARIO-02）。
+const R_MIN: int = 2
+const R_MAX: int = 12
+
+
+## 按地区数重算全部随 R 变化的维度。返回 false 表示 n 越界（此时不改任何值）。
+static func set_regions(n: int) -> bool:
+	if n < R_MIN or n > R_MAX:
+		return false
+	R = n
+	REGION_MASK_ALL = (1 << n) - 1
+	CELL = n * S
+	GROUP = n * A * K
+	PUBSERV = n
+	INV_N = CELL * S
+	EMP_N = CELL * K
+	OD_N = n * n
+	GROUP_EMP_N = GROUP * 5
+	GROUP_SVC_N = GROUP * SERVICE_KIND
+	GROUP_PROD_N = GROUP * S
+	EDU_N = GROUP * EDU_SLOT
+	PUBSERV_EMP_N = PUBSERV * K
+	PUBSERV_QUEUE_N = PUBSERV * SERVICE_KIND
+	OPEX_N = n * SERVICE_KIND
+	AFFIL_N = GROUP * BLOC_N
+	# gov + cells + pubserv + groups + invpool + row + opening
+	AGENT_N = 1 + CELL + PUBSERV + GROUP + 3
+	ACCOUNT_N = AGENT_N * ACCOUNT_CODE_N
+	return true
+
 
 ## region: 0 beiyuan 1 zhongzhou 2 haijia 3 xiling
-const R: int = 4
+static var R: int = 4
 ## sector: 0 agri 1 manu 2 energy 3 services
 const S: int = 4
 ## age: 0 minor 1 working 2 elder
@@ -44,33 +81,33 @@ const A: int = 3
 ## skill: 0 low 1 mid 2 high
 const K: int = 3
 ## R * S
-const CELL: int = 16
+static var CELL: int = 16
 ## R * A * K
-const GROUP: int = 36
+static var GROUP: int = 36
 ## 公共服务单元数，== R
-const PUBSERV: int = 4
+static var PUBSERV: int = 4
 ## S * S
 const IO_N: int = 16
 ## CELL * S
-const INV_N: int = 64
+static var INV_N: int = 64
 ## CELL * K
-const EMP_N: int = 48
+static var EMP_N: int = 48
 ## R * R
-const OD_N: int = 16
+static var OD_N: int = 16
 ## GROUP * 5（4 部门 + pubserv）
-const GROUP_EMP_N: int = 180
+static var GROUP_EMP_N: int = 180
 ## GROUP * SERVICE_KIND
-const GROUP_SVC_N: int = 108
+static var GROUP_SVC_N: int = 108
 ## GROUP * S
-const GROUP_PROD_N: int = 144
+static var GROUP_PROD_N: int = 144
 ## 结业队列槽位数
 const EDU_SLOT: int = 8
 ## GROUP * EDU_SLOT
-const EDU_N: int = 288
+static var EDU_N: int = 288
 ## PUBSERV * K
-const PUBSERV_EMP_N: int = 12
+static var PUBSERV_EMP_N: int = 12
 ## PUBSERV * SERVICE_KIND
-const PUBSERV_QUEUE_N: int = 12
+static var PUBSERV_QUEUE_N: int = 12
 ## 0 health 1 education 2 utility
 const SERVICE_KIND: int = 3
 const POLICY_N: int = 12
@@ -83,7 +120,7 @@ const BLOC_N: int = 3
 ## BLOC_N * POLICY_N
 const STANCE_N: int = 36
 ## GROUP * BLOC_N
-const AFFIL_N: int = 108
+static var AFFIL_N: int = 108
 const RNG_STREAM_N: int = 6
 ## 支付优先级 8 档
 const PAY_LINE_N: int = 8
@@ -92,12 +129,12 @@ const BUYER_CLASS_N: int = 6
 ## S * BUYER_CLASS_N
 const MARKET_N: int = 24
 ## R * SERVICE_KIND
-const OPEX_N: int = 12
+static var OPEX_N: int = 12
 const QUANTILE_N: int = 5
-const AGENT_N: int = 60
+static var AGENT_N: int = 60
 const ACCOUNT_CODE_N: int = 15
 ## AGENT_N * ACCOUNT_CODE_N
-const ACCOUNT_N: int = 900
+static var ACCOUNT_N: int = 900
 ## 债券 SoA 初始容量（param.bond_batch_cap 的编译期上限）
 const BOND_CAP0: int = 512
 ## 项目 SoA 初始容量

@@ -1,0 +1,262 @@
+{
+  "batch": "B04",
+  "date": "2026-09-22",
+  "status": "qa_in_progress",
+  "generator": "OpenAI built-in imagegen",
+  "integrated": false,
+  "assets": [
+    {
+      "id": "health_early",
+      "name": "地方诊所",
+      "family": "医疗设施",
+      "era": "早期",
+      "file": "assets/buildings/b04/health_early.png",
+      "prompt": "assets/prompts/b04/health_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-1797e10b-f0ce-4196-b4fd-6caa6c1f0dc9.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1049158,
+      "sha256": "10de140236275182b3bbc0384e58f8c9389afd664b7710cccd05991853af1b7d",
+      "alpha": {
+        "transparent_pixels": 1035769,
+        "partial_pixels": 535535,
+        "opaque_pixels": 1212,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          132,
+          205,
+          1130,
+          1100
+        ]
+      }
+    },
+    {
+      "id": "health_industrial",
+      "name": "公共医院",
+      "family": "医疗设施",
+      "era": "工业期",
+      "file": "assets/buildings/b04/health_industrial.png",
+      "prompt": "assets/prompts/b04/health_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-01d6eafb-cb5e-498f-875b-5d277b7db63b.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1477915,
+      "sha256": "7c376cec3a66378b8111e3f1445b9aa4ee584d1aa570d803465a1e927525008f",
+      "alpha": {
+        "transparent_pixels": 921834,
+        "partial_pixels": 649982,
+        "opaque_pixels": 700,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          99,
+          225,
+          1184,
+          1088
+        ]
+      }
+    },
+    {
+      "id": "health_modern",
+      "name": "区域医疗中心",
+      "family": "医疗设施",
+      "era": "现代期",
+      "file": "assets/buildings/b04/health_modern.png",
+      "prompt": "assets/prompts/b04/health_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-28402111-3683-4692-bde2-7c800a8335d1.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1144274,
+      "sha256": "fb241cef39cf221a10f77835dbe8b402bfa3584c5adbb7689e919d7f206d009a",
+      "alpha": {
+        "transparent_pixels": 984690,
+        "partial_pixels": 586992,
+        "opaque_pixels": 834,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          97,
+          175,
+          1155,
+          1100
+        ]
+      }
+    },
+    {
+      "id": "utility_early",
+      "name": "水井与排水",
+      "family": "城市公用",
+      "era": "早期",
+      "file": "assets/buildings/b04/utility_early_v2.png",
+      "prompt": "assets/prompts/b04/utility_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-b06c415e-a356-4d67-bfe3-6adda17e7787.png",
+      "style_reference": "irrigation_early",
+      "revision": 2,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 920147,
+      "sha256": "ac38fc207603dbe39ef46b2a72fdb8b0ac399d68f674736882efb04982dd909f",
+      "alpha": {
+        "transparent_pixels": 1107617,
+        "partial_pixels": 463562,
+        "opaque_pixels": 1337,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          216,
+          111,
+          1078,
+          1134
+        ]
+      },
+      "edit_prompt": "assets/prompts/b04/utility_early_edit.txt"
+    },
+    {
+      "id": "utility_industrial",
+      "name": "供水卫生设施",
+      "family": "城市公用",
+      "era": "工业期",
+      "file": "assets/buildings/b04/utility_industrial.png",
+      "prompt": "assets/prompts/b04/utility_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-b514b68e-a91e-4422-b700-8588bb09b5b5.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1015254,
+      "sha256": "b0dc847359778907aa8a3dd18ddc5e6eb7238d5a64163b0067de7c10c01396b9",
+      "alpha": {
+        "transparent_pixels": 1085901,
+        "partial_pixels": 485668,
+        "opaque_pixels": 947,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          251,
+          55,
+          1044,
+          1166
+        ]
+      }
+    },
+    {
+      "id": "utility_modern",
+      "name": "综合公用设施",
+      "family": "城市公用",
+      "era": "现代期",
+      "file": "assets/buildings/b04/utility_modern.png",
+      "prompt": "assets/prompts/b04/utility_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-aede4c4b-0fc2-48d3-9c8d-5a73c1ac1816.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1095389,
+      "sha256": "c627508a7682dfe4aba8c0be2c581d53eb2111621152027fda60ec434c503950",
+      "alpha": {
+        "transparent_pixels": 1029200,
+        "partial_pixels": 542680,
+        "opaque_pixels": 636,
+        "nontransparent_edge_pixels": 5,
+        "content_bounds_alpha16": [
+          108,
+          204,
+          1149,
+          1056
+        ]
+      }
+    },
+    {
+      "id": "administration_early",
+      "name": "地方登记所",
+      "family": "财政行政",
+      "era": "早期",
+      "file": "assets/buildings/b04/administration_early.png",
+      "prompt": "assets/prompts/b04/administration_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-416ac53a-c016-4c88-94be-b88d078bbc09.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1263322,
+      "sha256": "306a855215b997854dc30061e73afb1ecdebf538f3e7d5b6463b55c2ea35ba6d",
+      "alpha": {
+        "transparent_pixels": 892967,
+        "partial_pixels": 678201,
+        "opaque_pixels": 1348,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          178,
+          118,
+          1152,
+          1129
+        ]
+      }
+    },
+    {
+      "id": "administration_industrial",
+      "name": "税关核算所",
+      "family": "财政行政",
+      "era": "工业期",
+      "file": "assets/buildings/b04/administration_industrial.png",
+      "prompt": "assets/prompts/b04/administration_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-1a2f48b2-a60f-4f92-955a-fbc838215e49.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1339301,
+      "sha256": "482b0e32a8f01ca8bae62e89cda8265efde4263110ba729ad326aa693a519e6c",
+      "alpha": {
+        "transparent_pixels": 928820,
+        "partial_pixels": 642827,
+        "opaque_pixels": 869,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          70,
+          157,
+          1215,
+          1081
+        ]
+      }
+    },
+    {
+      "id": "administration_modern",
+      "name": "现代行政中心",
+      "family": "财政行政",
+      "era": "现代期",
+      "file": "assets/buildings/b04/administration_modern.png",
+      "prompt": "assets/prompts/b04/administration_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-5e45837f-2a1a-4ae2-b1f2-001564e16a31.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1147343,
+      "sha256": "dbf38242f3222e9e29736f3fefe3ad9a0d9a309a97181ff2c44f734961e1764a",
+      "alpha": {
+        "transparent_pixels": 982803,
+        "partial_pixels": 588920,
+        "opaque_pixels": 793,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          160,
+          192,
+          1207,
+          1058
+        ]
+      }
+    }
+  ]
+}

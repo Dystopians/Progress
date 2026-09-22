@@ -10,8 +10,6 @@ extends RefCounted
 ## 补助幂等台账容量（由 40/120 季规模上界推出，docs/17 §4.21）。
 const CLAIM_CAP: int = 2048
 
-## 全部四个地区的位掩码（region_mask 的值域上界，docs/10 §8.2 的 0..15）。
-const REGION_MASK_ALL: int = 15
 
 ## log.ledger.cause 的政策段基址：一笔由政策 p 引起的交易写 CAUSE_POLICY_BASE + p。
 ## docs/10 §2.5 只规定 cause 是「来源操作码（政策／项目／事件／冲击／规则）」，
@@ -262,7 +260,7 @@ func check_eligibility(p: int, defs: JWPolicyDef, politics: JWPolitics, treasury
 		return JWResult.Reject.PRECONDITION
 
 	# 4 queue slot：只有项目类政策占施工槽位（INV-094）
-	var mask: int = region_mask[p] & REGION_MASK_ALL
+	var mask: int = region_mask[p] & JWUnits.REGION_MASK_ALL
 	if defs.kind[p] == JWPolicyDef.POLICY_KIND_PROJECT:
 		if mask == 0:
 			# 项目类必须选定地区；掩码为空时无处落槽，按前置条件不满足处理，
@@ -519,7 +517,7 @@ func _sync_region_mask(p: int, defs: JWPolicyDef) -> void:
 	var ms: int = defs.mask_slot[p]
 	if ms < 0:
 		return
-	region_mask[p] = params_ppm[JWIds.idx_policy_param(p, ms)] & REGION_MASK_ALL
+	region_mask[p] = params_ppm[JWIds.idx_policy_param(p, ms)] & JWUnits.REGION_MASK_ALL
 
 
 ## R-PSLOT-01：加载期对全部政策按当前参数槽同步一次 region_mask。
@@ -634,9 +632,9 @@ func transfer_due_into(out_payee_agent: PackedInt64Array, out_due: PackedInt64Ar
 		var benefit: int = JWMath.mul_ppm(ref_wage, replacement_ppm)
 		if benefit <= 0:
 			continue
-		var mask: int = region_mask[p] & REGION_MASK_ALL
+		var mask: int = region_mask[p] & JWUnits.REGION_MASK_ALL
 		if mask == 0:
-			mask = REGION_MASK_ALL
+			mask = JWUnits.REGION_MASK_ALL
 		for g: int in JWUnits.GROUP:
 			if JWIds.age_of_group(g) != JWUnits.Age.WORKING:
 				continue
@@ -927,9 +925,9 @@ func _p11_gain(p: int, defs: JWPolicyDef, params: PackedInt64Array) -> int:
 	var staff_cap: int = JWMath.mul_ppm(params[JWUnits.Param.P11_STAFF_GAIN_FULL_PPM], staff)
 	var system_cap: int = JWMath.mul_ppm(params[JWUnits.Param.P11_SYSTEM_GAIN_FULL_PPM], system)
 	var full: int = mini(staff_cap, system_cap)
-	var mask: int = region_mask[p] & REGION_MASK_ALL
+	var mask: int = region_mask[p] & JWUnits.REGION_MASK_ALL
 	if mask == 0:
-		mask = REGION_MASK_ALL
+		mask = JWUnits.REGION_MASK_ALL
 	var coverage: int = 0
 	for r: int in JWUnits.R:
 		if ((mask >> r) & 1) == 1:
@@ -1144,9 +1142,9 @@ func _apply_one_effect(p: int, defs: JWPolicyDef, capital: JWCapital, treasury: 
 ## 不变量：INV-003（拆分精确）、INV-091
 ## 失败：拆分失败或 add_pending 拒绝 → 返回其错误码
 func _apply_region_effect(p: int, capital: JWCapital, target: int, magnitude: int) -> int:
-	var mask: int = region_mask[p] & REGION_MASK_ALL
+	var mask: int = region_mask[p] & JWUnits.REGION_MASK_ALL
 	if mask == 0:
-		mask = REGION_MASK_ALL
+		mask = JWUnits.REGION_MASK_ALL
 	if _r_weight.size() != JWUnits.R:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, _r_weight.size(),
 				JWUnits.R)
@@ -1190,9 +1188,9 @@ func _enroll_education(p: int, defs: JWPolicyDef, pop: JWPopulation, magnitude: 
 	if pop.population.size() != JWUnits.GROUP:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE,
 				pop.population.size(), JWUnits.GROUP)
-	var mask: int = region_mask[p] & REGION_MASK_ALL
+	var mask: int = region_mask[p] & JWUnits.REGION_MASK_ALL
 	if mask == 0:
-		mask = REGION_MASK_ALL
+		mask = JWUnits.REGION_MASK_ALL
 	var total_weight: int = 0
 	for g: int in JWUnits.GROUP:
 		_g_tiebreak[g] = g
@@ -1335,7 +1333,7 @@ func set_bloc_veto_view(v: PackedInt64Array) -> int:
 func set_region_mask(p: int, mask: int) -> int:
 	if not _valid_policy(p):
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, p, JWUnits.POLICY_N)
-	if mask < 0 or mask > REGION_MASK_ALL:
+	if mask < 0 or mask > JWUnits.REGION_MASK_ALL:
 		return JWResult.Reject.PARAM_RANGE
 	region_mask[p] = mask
 	return JWResult.OK

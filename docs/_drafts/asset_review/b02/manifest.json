@@ -1,0 +1,261 @@
+{
+    "batch":  "B02",
+    "date":  "2026-09-22",
+    "status":  "qa_in_progress",
+    "generator":  "OpenAI built-in imagegen",
+    "integrated":  false,
+    "assets":  [
+                   {
+                       "id":  "farm_early",
+                       "name":  "综合农庄",
+                       "family":  "农业生产",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b02/farm_early.png",
+                       "prompt":  "assets/prompts/b02/farm_early.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-907a999f-d52b-4ea3-bafe-28191fee468e.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1380261,
+                       "sha256":  "bef4db493887950c50c793eb335a31832ef834b9d822400c6ea9b8f5f41732ee",
+                       "alpha":  {
+                                     "transparent_pixels":  945155,
+                                     "partial_pixels":  626397,
+                                     "opaque_pixels":  964,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    75,
+                                                                    145,
+                                                                    1185,
+                                                                    1165
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "farm_industrial",
+                       "name":  "商品化农场",
+                       "family":  "农业生产",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b02/farm_industrial.png",
+                       "prompt":  "assets/prompts/b02/farm_industrial.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-34e9bda7-c1a8-449d-b89e-29a2d4839a48.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1386681,
+                       "sha256":  "611d45bb2ebd8535f910be9116be40fe84c9fcad182b9b80be7003b8b6a43e22",
+                       "alpha":  {
+                                     "transparent_pixels":  937488,
+                                     "partial_pixels":  634778,
+                                     "opaque_pixels":  250,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    137,
+                                                                    131,
+                                                                    1116,
+                                                                    1087
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "farm_modern",
+                       "name":  "机械化农场",
+                       "family":  "农业生产",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b02/farm_modern.png",
+                       "prompt":  "assets/prompts/b02/farm_modern.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-5752120f-4b5b-4b74-adaf-944d0ac36f58.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1340466,
+                       "sha256":  "25f543913b5778e88df8407345fa5ceb8dfca8ad2864e72ff0fe2f78cc0ba207",
+                       "alpha":  {
+                                     "transparent_pixels":  976154,
+                                     "partial_pixels":  595851,
+                                     "opaque_pixels":  511,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    212,
+                                                                    121,
+                                                                    1141,
+                                                                    1143
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "mine_early",
+                       "name":  "地表采掘场",
+                       "family":  "矿业资源",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b02/mine_early.png",
+                       "prompt":  "assets/prompts/b02/mine_early.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-824c87a7-d8d5-424b-b08c-d847e14cae49.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1395022,
+                       "sha256":  "a6737dd81a0910b5f92d1217e6699cd67fa762ef85d2677223ce2d51462690ae",
+                       "alpha":  {
+                                     "transparent_pixels":  898093,
+                                     "partial_pixels":  673778,
+                                     "opaque_pixels":  645,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    82,
+                                                                    158,
+                                                                    1179,
+                                                                    1127
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "mine_industrial",
+                       "name":  "深井矿场",
+                       "family":  "矿业资源",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b02/mine_industrial.png",
+                       "prompt":  "assets/prompts/b02/mine_industrial.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-1165c072-3a4c-41eb-84ae-a448a69906d4.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1118695,
+                       "sha256":  "aab10e98910c5cd7889ca0a0999a1d70591f7d9f951a1ff87a3f9435c87ce11f",
+                       "alpha":  {
+                                     "transparent_pixels":  1046859,
+                                     "partial_pixels":  524036,
+                                     "opaque_pixels":  1621,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    195,
+                                                                    85,
+                                                                    1080,
+                                                                    1176
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "mine_modern",
+                       "name":  "机械采掘场",
+                       "family":  "矿业资源",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b02/mine_modern.png",
+                       "prompt":  "assets/prompts/b02/mine_modern.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-423d3ec9-b4ae-4663-a77b-fa89fe25d161.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1375671,
+                       "sha256":  "6eae8be1ca94331c5ced3c2000fbf3d059a91501532646e6f9e002e98ed31ea6",
+                       "alpha":  {
+                                     "transparent_pixels":  948705,
+                                     "partial_pixels":  623307,
+                                     "opaque_pixels":  504,
+                                     "nontransparent_edge_pixels":  5,
+                                     "content_bounds_alpha16":  [
+                                                                    71,
+                                                                    197,
+                                                                    1227,
+                                                                    1071
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "power_early",
+                       "name":  "水力动力站",
+                       "family":  "动力设施",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b02/power_early.png",
+                       "prompt":  "assets/prompts/b02/power_early.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-b4b8d93b-d5b4-45e7-96d2-6d1621e1a13b.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1223756,
+                       "sha256":  "9a222e4ffd5769a551c5248ffae79dd0e7cc46be1e60e768ae87fe3d8dd6ef07",
+                       "alpha":  {
+                                     "transparent_pixels":  961220,
+                                     "partial_pixels":  610719,
+                                     "opaque_pixels":  577,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    159,
+                                                                    164,
+                                                                    1175,
+                                                                    1106
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "power_industrial",
+                       "name":  "热力动力站",
+                       "family":  "动力设施",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b02/power_industrial.png",
+                       "prompt":  "assets/prompts/b02/power_industrial.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-ee985b78-1dc7-4c76-a5c5-abacbc4844f9.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1318230,
+                       "sha256":  "b251a3427753c3e17454eae50069df2a8dc4e2552f8cce81f91e8ef06f495b79",
+                       "alpha":  {
+                                     "transparent_pixels":  886815,
+                                     "partial_pixels":  684811,
+                                     "opaque_pixels":  890,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    133,
+                                                                    97,
+                                                                    1156,
+                                                                    1155
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "power_modern",
+                       "name":  "电力变电站",
+                       "family":  "动力设施",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b02/power_modern.png",
+                       "prompt":  "assets/prompts/b02/power_modern.txt",
+                       "status":  "pending_user_review",
+                       "source_generation":  "exec-929da59b-6a5f-44ce-80f1-9d8234523175.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1274102,
+                       "sha256":  "e1e8f5e814a643a6dbe92a89b021325251b5ec30e0edd73299a8c2d1765d6a5d",
+                       "alpha":  {
+                                     "transparent_pixels":  983426,
+                                     "partial_pixels":  586353,
+                                     "opaque_pixels":  2737,
+                                     "nontransparent_edge_pixels":  8,
+                                     "content_bounds_alpha16":  [
+                                                                    93,
+                                                                    98,
+                                                                    1176,
+                                                                    1132
+                                                                ]
+                                 }
+                   }
+               ]
+}

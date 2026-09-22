@@ -618,6 +618,9 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 	var want: int = JWUnits.S
 	if i == 2 or i == 3:
 		want = JWUnits.K
+	elif i == 4:
+		# 租金按地区排列（R-SCENARIO-02 的 5 区测试查出：此前按部门数 S 校验，4 区时两者恰好相等）。
+		want = JWUnits.R
 	if i < 0 or i >= STATE_ARRAY_IDS.size():
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i,
 				STATE_ARRAY_IDS.size())

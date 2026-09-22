@@ -31,11 +31,13 @@ const STATE_ARRAY_IDS: PackedStringArray = [
 ]
 
 ## 与 STATE_ARRAY_IDS 等长的契约长度表（docs/17 §4.14 的成员表）。
-const STATE_ARRAY_LEN: PackedInt64Array = [
-	JWUnits.GROUP, JWUnits.GROUP, JWUnits.GROUP_EMP_N, JWUnits.EDU_N,
-	JWUnits.GROUP, JWUnits.GROUP_SVC_N, JWUnits.GROUP,
-	JWUnits.GROUP, JWUnits.GROUP,
-]
+## R-SCENARIO-02：随地区数变化，因此是函数而不是常量。
+static func state_array_len() -> PackedInt64Array:
+	return PackedInt64Array([
+		JWUnits.GROUP, JWUnits.GROUP, JWUnits.GROUP_EMP_N, JWUnits.EDU_N,
+		JWUnits.GROUP, JWUnits.GROUP_SVC_N, JWUnits.GROUP,
+		JWUnits.GROUP, JWUnits.GROUP,
+	])
 
 const STATE_SCALAR_IDS: PackedStringArray = []
 
@@ -52,11 +54,12 @@ const CONTENT_ARRAY_IDS: PackedStringArray = [
 	"content.cells_init.equity_share_ppm",
 ]
 
-## 与 CONTENT_ARRAY_IDS 等长的契约长度表。
-const CONTENT_ARRAY_LEN: PackedInt64Array = [
-	JWUnits.R, JWUnits.GROUP, JWUnits.A, JWUnits.GROUP,
-	JWUnits.GROUP, JWUnits.GROUP, JWUnits.GROUP_SVC_N, JWUnits.CELL * JWUnits.GROUP,
-]
+## 与 CONTENT_ARRAY_IDS 等长的契约长度表（同上，函数）。
+static func content_array_len() -> PackedInt64Array:
+	return PackedInt64Array([
+		JWUnits.R, JWUnits.GROUP, JWUnits.A, JWUnits.GROUP,
+		JWUnits.GROUP, JWUnits.GROUP, JWUnits.GROUP_SVC_N, JWUnits.CELL * JWUnits.GROUP,
+	])
 
 const FLOW_ARRAY_IDS: PackedStringArray = [
 	"flow.group.births_persons",
@@ -1364,7 +1367,7 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 	if i < 0 or i >= n_state + CONTENT_ARRAY_IDS.size():
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i,
 				n_state + CONTENT_ARRAY_IDS.size())
-	var want: int = STATE_ARRAY_LEN[i] if i < n_state else CONTENT_ARRAY_LEN[i - n_state]
+	var want: int = state_array_len()[i] if i < n_state else content_array_len()[i - n_state]
 	if v.size() != want:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, v.size(), want)
 	match i:

@@ -1,0 +1,262 @@
+{
+  "batch": "B03",
+  "date": "2026-09-22",
+  "status": "qa_in_progress",
+  "generator": "OpenAI built-in imagegen",
+  "integrated": false,
+  "assets": [
+    {
+      "id": "transport_early",
+      "name": "驿路节点",
+      "family": "交通枢纽",
+      "era": "早期",
+      "file": "assets/buildings/b03/transport_early.png",
+      "prompt": "assets/prompts/b03/transport_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-078dea12-b876-4813-8b29-49637ec8ca8c.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1201846,
+      "sha256": "96490e42f5b7499f8428e872fe01c0e28c4de84c6db024ca3ef84c07db21bbc7",
+      "alpha": {
+        "transparent_pixels": 1018728,
+        "partial_pixels": 553175,
+        "opaque_pixels": 613,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          108,
+          180,
+          1143,
+          1082
+        ]
+      }
+    },
+    {
+      "id": "transport_industrial",
+      "name": "铁路枢纽",
+      "family": "交通枢纽",
+      "era": "工业期",
+      "file": "assets/buildings/b03/transport_industrial.png",
+      "prompt": "assets/prompts/b03/transport_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-99dc4ab4-75be-4c96-a3f3-08b15941ec94.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1472005,
+      "sha256": "e9e8750087bb4cba660c806858c5be5784d805bf6876c15f7273c9cbfe5687ec",
+      "alpha": {
+        "transparent_pixels": 945640,
+        "partial_pixels": 626412,
+        "opaque_pixels": 464,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          57,
+          158,
+          1191,
+          1132
+        ]
+      }
+    },
+    {
+      "id": "transport_modern",
+      "name": "综合物流站",
+      "family": "交通枢纽",
+      "era": "现代期",
+      "file": "assets/buildings/b03/transport_modern_v2.png",
+      "prompt": "assets/prompts/b03/transport_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-22934089-64c5-4f10-ab32-5a6157286001.png",
+      "style_reference": "irrigation_early",
+      "revision": 2,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1142429,
+      "sha256": "72bdf46baf8a848a16d4ad2f7ef149eda9de4ade5161626d4706dab7f7d40821",
+      "alpha": {
+        "transparent_pixels": 1027685,
+        "partial_pixels": 544496,
+        "opaque_pixels": 335,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          93,
+          199,
+          1133,
+          1082
+        ]
+      },
+      "edit_prompt": "assets/prompts/b03/transport_modern_edit.txt"
+    },
+    {
+      "id": "port_early",
+      "name": "河港仓栈",
+      "family": "港口仓储",
+      "era": "早期",
+      "file": "assets/buildings/b03/port_early.png",
+      "prompt": "assets/prompts/b03/port_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-cce6f46a-a69d-45c4-b9de-61ebadcad88a.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1216906,
+      "sha256": "fd256627951c605e06a767d9944bef604724d596610ddb0b4c0149955109118f",
+      "alpha": {
+        "transparent_pixels": 997188,
+        "partial_pixels": 574697,
+        "opaque_pixels": 631,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          182,
+          143,
+          1131,
+          1099
+        ]
+      }
+    },
+    {
+      "id": "port_industrial",
+      "name": "商贸港区",
+      "family": "港口仓储",
+      "era": "工业期",
+      "file": "assets/buildings/b03/port_industrial.png",
+      "prompt": "assets/prompts/b03/port_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-ae3364e8-e19c-4f21-9b56-3334fe538ded.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1413714,
+      "sha256": "ca0420722e078efae7a7f1bafaaab04a4877aec49a40ac61e43cf72957e61037",
+      "alpha": {
+        "transparent_pixels": 910293,
+        "partial_pixels": 661565,
+        "opaque_pixels": 658,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          147,
+          118,
+          1165,
+          1129
+        ]
+      }
+    },
+    {
+      "id": "port_modern",
+      "name": "机械化港区",
+      "family": "港口仓储",
+      "era": "现代期",
+      "file": "assets/buildings/b03/port_modern.png",
+      "prompt": "assets/prompts/b03/port_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-5e07d15c-b980-4acb-ab03-8c01b0aebaa2.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1460007,
+      "sha256": "2ffb084d7d4bb3ea592349e2b341e0cd695f1557dfb759d642bc97e6e7c920b3",
+      "alpha": {
+        "transparent_pixels": 901841,
+        "partial_pixels": 669246,
+        "opaque_pixels": 1429,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          87,
+          120,
+          1171,
+          1152
+        ]
+      }
+    },
+    {
+      "id": "housing_early",
+      "name": "集镇住宅",
+      "family": "居住设施",
+      "era": "早期",
+      "file": "assets/buildings/b03/housing_early.png",
+      "prompt": "assets/prompts/b03/housing_early.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-8266e308-34bf-4d8d-a939-0abe46baf55f.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1252633,
+      "sha256": "8f7e6536c59d64a627e1fafcf4b60cb8177a0535d9b611587c02837855cdc661",
+      "alpha": {
+        "transparent_pixels": 943062,
+        "partial_pixels": 628325,
+        "opaque_pixels": 1129,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          123,
+          146,
+          1161,
+          1123
+        ]
+      }
+    },
+    {
+      "id": "housing_industrial",
+      "name": "工人住宅",
+      "family": "居住设施",
+      "era": "工业期",
+      "file": "assets/buildings/b03/housing_industrial.png",
+      "prompt": "assets/prompts/b03/housing_industrial.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-81b2bcb4-4a48-48d8-8305-d5124b2cbd7a.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1206986,
+      "sha256": "066e1aa17ee2d69fbc8014f1d95eb9192380b747ef9f28657d0cb9394fe470eb",
+      "alpha": {
+        "transparent_pixels": 979850,
+        "partial_pixels": 591881,
+        "opaque_pixels": 785,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          186,
+          129,
+          1165,
+          1113
+        ]
+      }
+    },
+    {
+      "id": "housing_modern",
+      "name": "配套社区",
+      "family": "居住设施",
+      "era": "现代期",
+      "file": "assets/buildings/b03/housing_modern.png",
+      "prompt": "assets/prompts/b03/housing_modern.txt",
+      "status": "pending_user_review",
+      "source_generation": "exec-3999b9d8-416c-471b-9caa-d9933137c7c5.png",
+      "style_reference": "irrigation_early",
+      "revision": 1,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1458675,
+      "sha256": "bce6ab85748edede2b8defee090ef90fd379688d29d6e9a5045f6d44a3aedd6d",
+      "alpha": {
+        "transparent_pixels": 877369,
+        "partial_pixels": 694441,
+        "opaque_pixels": 706,
+        "nontransparent_edge_pixels": 0,
+        "content_bounds_alpha16": [
+          101,
+          127,
+          1173,
+          1097
+        ]
+      }
+    }
+  ]
+}

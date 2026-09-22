@@ -31,21 +31,49 @@ const POLICY_PARAM_STRIDE: int = 4
 # 59            agent.opening
 
 const AGENT_GOV: int = 0
+
+## R-SCENARIO-02：主体布局随地区数变化（上面的编号表是 4 区时的取值）。
+## 调用顺序：JWUnits.set_regions(n) → JWIds.apply_dims()，两者都在分配状态之前。
+static func apply_dims() -> void:
+	AGENT_PUBSERV_BASE = AGENT_CELL_BASE + JWUnits.CELL
+	AGENT_GROUP_BASE = AGENT_PUBSERV_BASE + JWUnits.PUBSERV
+	AGENT_INVPOOL = AGENT_GROUP_BASE + JWUnits.GROUP
+	AGENT_ROW = AGENT_INVPOOL + 1
+	AGENT_OPENING = AGENT_ROW + 1
+	AGENT_CASH_ACCOUNTS = JWUnits.AGENT_N - JWUnits.PUBSERV
+	AGENT_CASH_ACTIVE = AGENT_CASH_ACCOUNTS - 1
+	# 反解表按嵌套循环重建（本类不许出现裸 `/`，见下方反解表的说明）。
+	REGION_OF_CELL = PackedInt64Array()
+	SECTOR_OF_CELL = PackedInt64Array()
+	for r: int in JWUnits.R:
+		for sec: int in JWUnits.S:
+			REGION_OF_CELL.append(r)
+			SECTOR_OF_CELL.append(sec)
+	REGION_OF_GROUP = PackedInt64Array()
+	AGE_OF_GROUP = PackedInt64Array()
+	SKILL_OF_GROUP = PackedInt64Array()
+	for r2: int in JWUnits.R:
+		for a: int in JWUnits.A:
+			for k: int in JWUnits.K:
+				REGION_OF_GROUP.append(r2)
+				AGE_OF_GROUP.append(a)
+				SKILL_OF_GROUP.append(k)
+
 const AGENT_CELL_BASE: int = 1
-const AGENT_PUBSERV_BASE: int = 17
-const AGENT_GROUP_BASE: int = 21
-const AGENT_INVPOOL: int = 57
-const AGENT_ROW: int = 58
-const AGENT_OPENING: int = 59
+static var AGENT_PUBSERV_BASE: int = 17
+static var AGENT_GROUP_BASE: int = 21
+static var AGENT_INVPOOL: int = 57
+static var AGENT_ROW: int = 58
+static var AGENT_OPENING: int = 59
 
 ## 现金主体口径（docs/10 §2.1 与 OQ-217 的合并）。
 ## 全部主体减去 4 个 pubserv（pubserv 无自有现金，其支付由 gov 执行）。
 ## INV-018（Σ cash == scenario.total_cash_uu）对这 56 个 cash 科目求和。
-const AGENT_CASH_ACCOUNTS: int = 56
+static var AGENT_CASH_ACCOUNTS: int = 56
 ## docs/10 §2.1 的「持有现金的主体共 55 个」口径：不含 agent.opening ——
 ## 其 cash 科目存在但开账后恒为 0（OQ-217）。agent.opening.cash 恒为 0 不影响 INV-018 求和，
 ## 但必须参与求和 —— 否则「恒为 0」这件事就没人检查了（T-U-OPENING-BALANCE）。
-const AGENT_CASH_ACTIVE: int = 55
+static var AGENT_CASH_ACTIVE: int = 55
 
 # ── 科目（account code）下标布局（docs/17 §2.4）—— 15 个 ───────────────────
 #
@@ -77,27 +105,27 @@ const ACC_NW: int = 14
 # 表是布局的机器化冗余：一旦有人改了 idx_cell / idx_group，T-U-IDS 的往返测试立刻红。
 
 ## cell → region，长度 JWUnits.CELL
-const REGION_OF_CELL: PackedInt64Array = [
+static var REGION_OF_CELL: PackedInt64Array = [
 	0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
 ]
 ## cell → sector，长度 JWUnits.CELL
-const SECTOR_OF_CELL: PackedInt64Array = [
+static var SECTOR_OF_CELL: PackedInt64Array = [
 	0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3,
 ]
 ## group → region，长度 JWUnits.GROUP
-const REGION_OF_GROUP: PackedInt64Array = [
+static var REGION_OF_GROUP: PackedInt64Array = [
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
 	2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 ]
 ## group → age，长度 JWUnits.GROUP
-const AGE_OF_GROUP: PackedInt64Array = [
+static var AGE_OF_GROUP: PackedInt64Array = [
 	0, 0, 0, 1, 1, 1, 2, 2, 2, 0, 0, 0,
 	1, 1, 1, 2, 2, 2, 0, 0, 0, 1, 1, 1,
 	2, 2, 2, 0, 0, 0, 1, 1, 1, 2, 2, 2,
 ]
 ## group → skill，长度 JWUnits.GROUP
-const SKILL_OF_GROUP: PackedInt64Array = [
+static var SKILL_OF_GROUP: PackedInt64Array = [
 	0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
 	0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,
 	0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2,

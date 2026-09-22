@@ -195,6 +195,8 @@ var q: int = 0
 var horizon_q: int = 40
 ## state.time.phase —— JWUnits.Phase。写入者：S01..S08
 var phase: int = JWUnits.Phase.IDLE
+## 分配各状态块时的地区数（不是状态，不进哈希与存档；R-SCENARIO-02）。
+var dims_r: int = 0
 ## state.meta.mode —— JWUnits.Mode（R-SCENARIO-01）。写入者：LOAD
 var mode: int = JWUnits.Mode.TERM
 ## state.time.start_year —— 第 0 季所在公历年，0 = 不显示年份（R-CLOCK-01）。写入者：LOAD
@@ -272,6 +274,8 @@ static var _sha_ctx: HashingContext = null
 ## 不变量：docs/10 §0.6（加载期一次性 resize）
 ## 失败：无
 func allocate_all() -> void:
+	# R-SCENARIO-02：记下分配时的地区数；载入另一种地区数的剧本时据此判断要不要重新分配。
+	dims_r = JWUnits.R
 	rng = JWRngStreams.new()
 	accounts = JWAccount.new()
 	# **必须把 accounts 注入账本**（docs/17 §4.10 成员表「构造注入」）：

@@ -32,10 +32,12 @@ const FLOW_SCALAR_IDS: PackedStringArray = []
 ## 各 state 数组的契约长度，下标与 STATE_ARRAY_IDS 对齐（docs/17 §2.1）。
 ## 长度本身是 schema 的一部分（INV-136）：allocate() 与 set_state_array() 都以它为唯一依据，
 ## 不在两处各写一份字面量，避免二者漂移后谁也发现不了。
-const STATE_ARRAY_LEN: PackedInt64Array = [
-	JWUnits.IO_N, JWUnits.EMP_N, JWUnits.CELL, JWUnits.S,
-	JWUnits.S, JWUnits.S, JWUnits.S, JWUnits.S,
-]
+## R-SCENARIO-02：含随地区数变化的维度，因此是函数而不是常量。
+static func state_array_len() -> PackedInt64Array:
+	return PackedInt64Array([
+		JWUnits.IO_N, JWUnits.EMP_N, JWUnits.CELL, JWUnits.S,
+		JWUnits.S, JWUnits.S, JWUnits.S, JWUnits.S,
+	])
 
 ## V-IO-05 的整数迭代轮数（docs/11 §5.5）。
 const LEONTIEF_ROUNDS: int = 30
@@ -194,7 +196,7 @@ func validate() -> JWResult:
 
 	# 长度先行：数组没按契约长度填满时，后面的逐项检查全是无意义的越界读。
 	for i: int in range(STATE_ARRAY_IDS.size()):
-		var want: int = STATE_ARRAY_LEN[i]
+		var want: int = state_array_len()[i]
 		var got: int = _array_size(i)
 		if got != want:
 			return JWResult.make_err(JWResult.Load.SCHEMA_HEADER, i, got)
@@ -366,7 +368,7 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 	# 下标不合法是调用方的编码缺陷，登记为故障；长度不符是内容包的数据缺陷，作为加载拒绝返回。
 	if i < 0 or i >= STATE_ARRAY_IDS.size():
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
-	if v.size() != STATE_ARRAY_LEN[i]:
+	if v.size() != state_array_len()[i]:
 		return JWResult.Load.SCHEMA_HEADER
 	# duplicate()：Godot 4 的 Packed*Array 传参是引用语义，直接赋值会让本块与调用方的
 	# 临时数组共用同一块内存，此后调用方改一位就等于偷改了内容包。

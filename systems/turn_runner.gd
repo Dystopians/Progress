@@ -177,6 +177,14 @@ var last_fault_dir: String = ""
 func _init(st: JWSimState, events: JWEventEngine) -> void:
 	_st = st
 	_events = events
+	# R-SCENARIO-02：按地区排列的拨款拆分缓冲随地区数定长。
+	_grant_w.resize(JWUnits.R)
+	_grant_w.fill(0)
+	_grant_out.resize(JWUnits.R)
+	_grant_out.fill(0)
+	_grant_tb = PackedInt64Array()
+	for r: int in JWUnits.R:
+		_grant_tb.append(r)
 
 	_step_hash.resize(JWUnits.Phase.S08)
 	var h: int = 0
@@ -1080,9 +1088,9 @@ func _pay_service_opex() -> int:
 			continue
 		_prog_amt[pp] = amt
 		prog_total += amt
-		var pmask: int = _st.policy.region_mask[pp] & JWPolicyEngine.REGION_MASK_ALL
+		var pmask: int = _st.policy.region_mask[pp] & JWUnits.REGION_MASK_ALL
 		if pmask == 0:
-			pmask = JWPolicyEngine.REGION_MASK_ALL
+			pmask = JWUnits.REGION_MASK_ALL
 		_sc_weights.fill(0)
 		for r5: int in JWUnits.R:
 			_sc_weights[r5] = 1 if ((pmask >> r5) & 1) == 1 else 0
@@ -1145,9 +1153,9 @@ func _pay_service_opex() -> int:
 		var short: int = _st.policy.grant_shortfall(pg, _st.policy_defs)
 		if short <= 0:
 			continue
-		var gmask: int = _st.policy.region_mask[pg] & JWPolicyEngine.REGION_MASK_ALL
+		var gmask: int = _st.policy.region_mask[pg] & JWUnits.REGION_MASK_ALL
 		if gmask == 0:
-			gmask = JWPolicyEngine.REGION_MASK_ALL
+			gmask = JWUnits.REGION_MASK_ALL
 		var wsum: int = 0
 		for rg: int in JWUnits.R:
 			_grant_w[rg] = _sc_weights[rg] if ((gmask >> rg) & 1) == 1 else 0
@@ -1303,9 +1311,9 @@ func _fill_education_requests() -> int:
 		var track: int = 2
 		if defs.track_slot[p] >= 0:
 			track = _st.policy.params_ppm[JWIds.idx_policy_param(p, defs.track_slot[p])]
-		var mask: int = _st.policy.region_mask[p] & JWPolicyEngine.REGION_MASK_ALL
+		var mask: int = _st.policy.region_mask[p] & JWUnits.REGION_MASK_ALL
 		if mask == 0:
-			mask = JWPolicyEngine.REGION_MASK_ALL
+			mask = JWUnits.REGION_MASK_ALL
 		var wsum: int = 0
 		for g: int in JWUnits.GROUP:
 			_edu_tb[g] = g
@@ -1385,9 +1393,9 @@ func _pay_subsidies() -> int:
 		var min_ratio: int = 0
 		if defs.min_ratio_slot[p] >= 0:
 			min_ratio = _st.policy.params_ppm[JWIds.idx_policy_param(p, defs.min_ratio_slot[p])]
-		var rmask: int = _st.policy.region_mask[p] & JWPolicyEngine.REGION_MASK_ALL
+		var rmask: int = _st.policy.region_mask[p] & JWUnits.REGION_MASK_ALL
 		if rmask == 0:
-			rmask = JWPolicyEngine.REGION_MASK_ALL
+			rmask = JWUnits.REGION_MASK_ALL
 		var smask: int = _st.params[JWUnits.Param.P09_ELIGIBLE_SECTOR_MASK]
 		var ceiling: int = defs.spend_line(p, 0)
 		if _sub_want.size() != JWUnits.CELL:
