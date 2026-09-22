@@ -113,6 +113,8 @@ var _sc_invest_prev: PackedInt64Array = PackedInt64Array()
 ## R-INVCREDIT-01：上季各单元的中间投入额（周转资金额度的基准）。
 var _sc_input_prev: PackedInt64Array = PackedInt64Array()
 ## R-FISCAL-LONG-01：上季基本支出（国库现金缓冲的基准）与返还的拆分缓冲。
+## R-INVCREDIT-01 第 12 条：上季各单元税前利润（偿债能力闸的基准）。
+var _sc_profit_prev: PackedInt64Array = PackedInt64Array()
 var _sc_primary_prev: int = 0
 var _sc_rebate_w: PackedInt64Array = PackedInt64Array()
 var _sc_rebate_tb: PackedInt64Array = PackedInt64Array()
@@ -235,6 +237,7 @@ func _init(st: JWSimState, events: JWEventEngine) -> void:
 	_alloc(_sc_unmet_prev, JWUnits.CELL)
 	_alloc(_sc_invest_prev, JWUnits.CELL)
 	_alloc(_sc_input_prev, JWUnits.CELL)
+	_alloc(_sc_profit_prev, JWUnits.CELL)
 	_alloc(_sc_rebate_w, JWUnits.GROUP)
 	_alloc(_sc_rebate_tb, JWUnits.GROUP)
 	_alloc(_sc_rebate_out, JWUnits.GROUP)
@@ -427,7 +430,11 @@ func _step_s01(cmds: JWCommands) -> int:
 				_sc_unmet_prev[cell] += _st.sectors.f_elec_unmet[JWIds.region_of_cell(cell)]
 		_sc_invest_prev[cell] = _st.capital.f_cell_investment[cell]
 		# R-INVCREDIT-01 第 10 条：周转资金的额度基准是上季的中间投入额。
-		_sc_input_prev[cell] = _st.sectors.f_intermediate[cell]
+		# 周转资金的额度基准是上季的「经营现金需要」＝中间投入 + 工资。工资也算在内的理由见
+		# R-INVCREDIT-01 第 11 条：发不出工资的企业不招人，失业 85% 的同时却有 7—13 个单元
+		# 卡在「劳动」——那不是缺人，是缺钱发薪。
+		_sc_input_prev[cell] = _st.sectors.f_intermediate[cell] + _st.labor.f_wage_bill[cell]
+		_sc_profit_prev[cell] = _st.sectors.f_profit_pretax[cell]
 		cell += 1
 
 	# ── 第 3 条：流量整表清零（全局唯一允许处）───────────────────────────
@@ -1165,7 +1172,8 @@ func _credit_draw() -> int:
 			break
 		var agent: int = JWIds.agent_of_cell(c)
 		var x: int = _st.credit.draw_for(c, _st.sectors.f_invest_intent[c],
-				_st.accounts.cash_of(agent), _st.capital.cell_capital_value[c], budget)
+				_st.accounts.cash_of(agent), _st.capital.cell_capital_value[c], budget,
+				_sc_profit_prev[c], _st.world.sovereign_rate_ppm)
 		if x > 0 and _post_loan_draw(agent, c, x) == JWResult.OK:
 			var rc: int = _st.credit.note_draw(c, x)
 			if rc != JWResult.OK:
@@ -1173,7 +1181,8 @@ func _credit_draw() -> int:
 			budget -= x
 		# 周转资金：买不起上季那么多中间投入时的短期垫款（第 10 条）。
 		var wc: int = _st.credit.wc_draw_for(c, _sc_input_prev[c],
-				_st.accounts.cash_of(agent), budget)
+				_st.accounts.cash_of(agent), budget, _sc_profit_prev[c],
+				_st.world.sovereign_rate_ppm)
 		if wc > 0 and _post_loan_draw(agent, c, wc) == JWResult.OK:
 			var rc2: int = _st.credit.note_wc_draw(c, wc)
 			if rc2 != JWResult.OK:

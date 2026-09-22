@@ -205,6 +205,7 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	sc["content.credit.min_draw_uu"] = 0
 	sc["content.credit.pool_reserve_ppm"] = 0
 	sc["content.credit.wc_cap_ppm"] = 0
+	sc["content.credit.max_debt_service_ppm"] = 0
 	# R-TRADE-PRICE-01：旧存档不传导相对价格，两个倍率取基准、弹性为 0。
 	sc["state.world.export_competitiveness_ppm"] = JWUnits.PPM
 	sc["state.world.import_attractiveness_ppm"] = JWUnits.PPM

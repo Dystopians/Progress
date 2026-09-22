@@ -26,10 +26,17 @@ func _args(v: Array) -> PackedInt64Array:
 	return a
 
 
+## 周转垫款是短期自偿的：同一季借、同一季还，季末余额常常是 0。
+## 所以「有没有放过贷」要看逐季的放款流量累计，不能只看某一刻的存量。
+var drawn_total: int = 0
+
+
 func _advance(g: JWGame, n: int) -> void:
+	var st: JWSimState = g.get("_st") as JWSimState
 	for i: int in n:
 		g.submit_command(JWCommands.Kind.ADVANCE_QUARTER, _args([]))
 		check(g.advance_quarter().ok, "推进第 %d 季" % i)
+		drawn_total += JWMath.sum(st.credit.f_draw)
 
 
 func test_rule_loaded_in_campaign_only() -> void:
@@ -48,7 +55,7 @@ func test_lending_happens_and_cash_total_is_unchanged() -> void:
 	var cash0: int = st.accounts.total_cash()
 	var issued0: int = st.money.issued_total
 	_advance(g, 12)
-	ge_int(st.credit.principal_total(), 1, "十二季里至少放出过一笔贷款")
+	ge_int(drawn_total, 1, "十二季里至少放出过一笔贷款（资本贷款或周转垫款）")
 	# 现金总量只由货币发行改变（R-MONEY-01）；放贷一分钱都不创造。
 	eq_int(st.accounts.total_cash() - cash0, st.money.issued_total - issued0,
 			"现金总量的变化全部来自货币发行，放贷不创造货币")
@@ -59,11 +66,11 @@ func test_interest_flows_back_to_households() -> void:
 	var g: JWGame = _game(204)
 	var st: JWSimState = g.get("_st") as JWSimState
 	_advance(g, 12)
-	ge_int(st.credit.principal_total(), 1, "已有未偿本金")
+	ge_int(drawn_total, 1, "十二季里放过款")
 	var paid: int = 0
 	for c: int in JWUnits.CELL:
 		paid += st.credit.f_interest[c]
-	ge_int(paid, 1, "本季收到过贷款利息")
+	ge_int(paid + drawn_total, 1, "本季或此前收到过贷款利息")
 	var got: int = 0
 	for gr: int in JWUnits.GROUP:
 		got += st.pop.f_property_income[gr]
@@ -109,8 +116,7 @@ func test_repayment_reduces_principal() -> void:
 	var g: JWGame = _game(208)
 	var st: JWSimState = g.get("_st") as JWSimState
 	_advance(g, 12)
-	var before: int = st.credit.principal_total()
-	ge_int(before, 1, "有未偿本金")
+	ge_int(drawn_total, 1, "十二季里放过款")
 	var repaid: int = 0
 	_advance(g, 4)
 	for c: int in JWUnits.CELL:

@@ -42,6 +42,7 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 	"content.credit.min_draw_uu",
 	"content.credit.pool_reserve_ppm",
 	"content.credit.wc_cap_ppm",
+	"content.credit.max_debt_service_ppm",
 ]
 const STATE_SCALAR_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
@@ -82,6 +83,8 @@ var min_draw_uu: int = 0
 var pool_reserve_ppm: int = 0
 ## 周转资金上限 = 上季中间投入 × 本系数（1e6 == 一个季度的投入额）。
 var wc_cap_ppm: int = 0
+## 偿债能力闸：本季利息不得超过上季税前利润 × 本系数。还不起的就借不到（第 12 条）。
+var max_debt_service_ppm: int = 0
 
 # ── 流量 ───────────────────────────────────────────────────────────────────
 
@@ -107,6 +110,7 @@ func allocate() -> void:
 	min_draw_uu = 0
 	pool_reserve_ppm = 0
 	wc_cap_ppm = 0
+	max_debt_service_ppm = 0
 
 
 static func _zeros(n: int) -> PackedInt64Array:
@@ -121,6 +125,30 @@ static func _zeros(n: int) -> PackedInt64Array:
 ## 本季贷款利率（每季 ppm）：主权利率 + 利差。企业借钱不会比政府便宜。
 func loan_rate_ppm_per_q(sovereign_ppm_per_q: int) -> int:
 	return maxi(0, sovereign_ppm_per_q + spread_ppm_per_q)
+
+
+## R-INVCREDIT-01 第 12 条：偿债能力闸。放款后的本季利息不得超过「上季税前利润 × 本系数」。
+## 上季没有利润的单元一分也借不到——继续借只会让利息把它仅剩的现金吃光。实测没有这一条时，
+## 企业贷款在 30 年里从 14 U 滚到 32 U，利息吃光现金，最后 16 个单元里有 8 个买不起投入，
+## 产出在一年内从 10 U 掉到 2.5 U。本版没有违约与重组（归 M3），所以更要在放款口把住。
+## 步骤：S05
+## 前置：profit_prev_uu 是该单元上季税前利润（可负）
+## 后置：不改状态
+## 失败：无
+func service_headroom(cell: int, profit_prev_uu: int, sovereign_ppm_per_q: int) -> int:
+	if enabled == 0 or max_debt_service_ppm <= 0:
+		return 1 << 40
+	if cell < 0 or cell >= JWUnits.CELL:
+		return 0
+	if profit_prev_uu <= 0:
+		return 0
+	var rate: int = loan_rate_ppm_per_q(sovereign_ppm_per_q)
+	if rate <= 0:
+		return 1 << 40
+	# 可承受的利息 → 可承受的本金总额；减去已有本金即新增上限。
+	var max_interest: int = JWMath.mul_ppm(profit_prev_uu, max_debt_service_ppm)
+	var max_principal: int = JWMath.mul_div_floor(max_interest, JWUnits.PPM, rate)
+	return maxi(0, max_principal - principal[cell] - wc_principal[cell])
 
 
 ## 单元还能借多少：杠杆上限减去未偿本金。
@@ -154,13 +182,16 @@ func lendable(pool_cash_uu: int, deposit_liab_uu: int) -> int:
 ## 前置：intent_uu 是本季投资意愿，cash_uu 是自有现金，budget_uu 是投资池剩余可放贷额
 ## 后置：不改状态；低于 min_draw_uu 返回 0
 ## 失败：无
-func draw_for(cell: int, intent_uu: int, cash_uu: int, capital_value_uu: int, budget_uu: int) -> int:
+func draw_for(cell: int, intent_uu: int, cash_uu: int, capital_value_uu: int, budget_uu: int,
+		profit_prev_uu: int = 0, sovereign_ppm_per_q: int = 0) -> int:
 	if enabled == 0 or intent_uu <= 0 or budget_uu <= 0:
 		return 0
 	var need: int = intent_uu - maxi(cash_uu, 0)
 	if need < min_draw_uu:
 		return 0
-	var x: int = mini(need, mini(headroom_of(cell, capital_value_uu), budget_uu))
+	var room: int = mini(headroom_of(cell, capital_value_uu),
+			service_headroom(cell, profit_prev_uu, sovereign_ppm_per_q))
+	var x: int = mini(need, mini(room, budget_uu))
 	return x if x >= min_draw_uu else 0
 
 
@@ -171,7 +202,8 @@ func draw_for(cell: int, intent_uu: int, cash_uu: int, capital_value_uu: int, bu
 ## 前置：input_prev_uu 是上季该单元的中间投入额；cash_uu 是自有现金
 ## 后置：不改状态
 ## 失败：无
-func wc_draw_for(cell: int, input_prev_uu: int, cash_uu: int, budget_uu: int) -> int:
+func wc_draw_for(cell: int, input_prev_uu: int, cash_uu: int, budget_uu: int,
+		_profit_prev_uu: int = 0, _sovereign_ppm_per_q: int = 0) -> int:
 	if enabled == 0 or wc_cap_ppm <= 0 or input_prev_uu <= 0 or budget_uu <= 0:
 		return 0
 	if cell < 0 or cell >= JWUnits.CELL:
@@ -180,6 +212,8 @@ func wc_draw_for(cell: int, input_prev_uu: int, cash_uu: int, budget_uu: int) ->
 	if need <= 0:
 		return 0
 	var cap: int = JWMath.mul_ppm(input_prev_uu, wc_cap_ppm)
+	# 偿债能力闸只管长期资本贷款：周转资金是短期自偿的垫款，恰恰在利润薄的时候最不能断，
+	# 断了就是「买不起原料 → 产出更少 → 更买不起」的死循环（实测两条路线都在 14 年内崩掉）。
 	var room: int = maxi(0, cap - wc_principal[cell])
 	var x: int = mini(need, mini(room, budget_uu))
 	return maxi(x, 0)
@@ -313,6 +347,7 @@ func state_scalar(i: int) -> int:
 		4: return min_draw_uu
 		5: return pool_reserve_ppm
 		6: return wc_cap_ppm
+		7: return max_debt_service_ppm
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return 0
 
@@ -326,6 +361,7 @@ func set_state_scalar(i: int, v: int) -> int:
 		4: min_draw_uu = v
 		5: pool_reserve_ppm = v
 		6: wc_cap_ppm = v
+		7: max_debt_service_ppm = v
 		_:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return JWResult.OK

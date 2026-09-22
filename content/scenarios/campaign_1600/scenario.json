@@ -237,6 +237,7 @@
     "max_leverage_ppm": 400000,
     "min_draw_uu": 1000000,
     "pool_reserve_ppm": 100000,
-    "wc_cap_ppm": 1000000
+    "wc_cap_ppm": 1000000,
+    "max_debt_service_ppm": 0
   }
 }
