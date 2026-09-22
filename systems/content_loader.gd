@@ -1130,8 +1130,9 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 const MONEY_RULE_KEYS: PackedStringArray = [
 	"base_real_gdp_q_uu", "target_inflation_ppm_per_year", "adjust_ppm", "issue_cap_ppm",
 	"band_floor_ppm", "band_ceil_ppm", "abs_floor_ppm", "abs_ceil_ppm", "wage_ceil_mult_ppm",
+	"row_cash_floor_ppm", "firm_excess_buffer_ppm", "firm_excess_payout_ppm",
 ]
-const MONEY_RULE_SLOTS: PackedInt64Array = [5, 6, 7, 8, 9, 10, 11, 12, 13]
+const MONEY_RULE_SLOTS: PackedInt64Array = [5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17]
 const MANDATE_GOAL_NAMES: PackedStringArray = ["industry", "livelihood", "fiscal"]
 const SEASON_KEYS: PackedStringArray = ["gov_receipts", "gov_primary", "agri_output"]
 const INCLUDE_KEYS: PackedStringArray = [
@@ -1281,6 +1282,9 @@ func _validate_money_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
 		_fail(JWResult.Load.SCHEMA_HEADER, mw + "/level_weight_ppm", wsum, JWUnits.PPM)
 	_set_arr(st.money, 1, wts, mw + "/level_weight_ppm")
 	_set_scalar(st.money, 4, _total_cash_uu, mw + "#base_money")
+	# R-CLOSURE-01：开局外部现金取自 world_init.cash_uu（本函数在 _validate_world 之后运行）。
+	var wi: Dictionary = doc.get("world_init", {})
+	_set_scalar(st.money, 14, int(wi.get("cash_uu", 0)), mw + "#base_row_cash")
 	_set_scalar(st.money, 3, 1, mw + "#enabled")
 
 
@@ -2590,7 +2594,32 @@ func _validate_annual_plan(doc: Dictionary, w: String) -> void:
 const POLITICS_ALLOWED: PackedStringArray = [
 	"schema_kind", "schema_version", "seats_total", "seats_gov", "next_election_q",
 	"next_budget_review_q", "admin_capacity_ppm", "legal_authority_mask", "blocs", "stance_ppm",
+	"crisis_rule",
 ]
+## R-REGIME-01 / R-CRISIS-01：politics_init.crisis_rule 的字段（只允许战役模式）；下标 == JWCrisis 内容标量槽位 3..7。
+const CRISIS_RULE_KEYS: PackedStringArray = [
+	"election_period_q", "final_window_q", "legit_warn_ppm", "legit_crisis_ppm", "legit_final_ppm",
+]
+func _validate_crisis_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
+	var cw: String = w + "/crisis_rule"
+	if st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, cw + "#term-mode", st.mode, JWUnits.Mode.CAMPAIGN)
+		return
+	var cr: Dictionary = _get_dict(doc, "crisis_rule", w, JWResult.Load.SCHEMA_HEADER)
+	_check_keys(cr, CRISIS_RULE_KEYS, cw)
+	var v: PackedInt64Array = PackedInt64Array()
+	for i: int in CRISIS_RULE_KEYS.size():
+		var x: int = _get_int(cr, CRISIS_RULE_KEYS[i], cw, JWResult.Load.SCHEMA_HEADER)
+		v.append(x)
+		_set_scalar(st.crisis, 3 + i, x, cw + "/" + CRISIS_RULE_KEYS[i])
+	if v[0] < 4 or v[1] < 1:
+		_fail(JWResult.Load.RANGE, cw + "/election_period_q", v[0], 4)
+	# 三档门槛须单调：最后窗口 < 危机 < 预警，且都在 [0, 1e6]。
+	if not (0 <= v[4] and v[4] < v[3] and v[3] < v[2] and v[2] <= JWUnits.PPM):
+		_fail(JWResult.Load.RANGE, cw + "/legit_*_ppm", v[4], v[2])
+	_set_scalar(st.crisis, 2, 1, cw + "#enabled")
+
+
 const BLOC_ALLOWED: PackedStringArray = [
 	"bloc_id", "label_zh", "org_power_ppm", "resource_uu", "veto_domains",
 ]
@@ -2613,8 +2642,14 @@ func _validate_politics(st: JWSimState) -> void:
 		_fail(JWResult.Load.SCHEMA_HEADER, w + "/seats_gov", seats_gov, seats_total)
 
 	var election: int = _get_int(doc, "next_election_q", w, JWResult.Load.SCHEMA_HEADER)
-	if election != 15 and election != 31:
+	# INV-127 的 {15, 31} 只约束单届剧本；战役剧本的选举日历由 crisis_rule 的周期决定（R-REGIME-01）。
+	if st.mode == JWUnits.Mode.CAMPAIGN:
+		if election < 0:
+			_fail(JWResult.Load.SCHEMA_HEADER, w + "/next_election_q", election, 0)
+	elif election != 15 and election != 31:
 		_fail(JWResult.Load.SCHEMA_HEADER, w + "/next_election_q", election, 15)
+	if doc.has("crisis_rule"):
+		_validate_crisis_rule(st, doc, w)
 	var review: int = _get_int(doc, "next_budget_review_q", w, JWResult.Load.SCHEMA_HEADER)
 	# V-POL-03 / INV-127：预算审查季恒为 q ≡ 3 (mod 4)。
 	if review - JWMath.mul(JWMath.floor_div(review, 4), 4) != 3:

@@ -143,6 +143,7 @@
     "termination.2": "选举失去留任资格",
     "termination.3": "失去信任（连续审查失败）",
     "termination.4": "财政重组失败",
+    "termination.5": "国家解体（合法性危机的最后补救窗口届满）",
 
     "ledger.alias.cash": "ldg.cash",
     "ledger.alias.debt": "ldg.debt",

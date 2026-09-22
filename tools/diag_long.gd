@@ -14,6 +14,9 @@ func _init() -> void:
 	var step: int = int(args[2]) if args.size() > 2 else 20
 	var seed_v: int = int(args[3]) if args.size() > 3 else 1
 	var force: bool = args.has("force")
+	# nofinal：把危机的最后补救窗口设为无穷长（只改本进程），用来测 1600 季的数值尺度与性能，不是经济结论。
+	var nofinal: bool = args.has("nofinal")
+	JWResult.trace_faults = args.has("trace")
 
 	var st: JWSimState = JWSimState.new()
 	st.allocate_all()
@@ -33,6 +36,8 @@ func _init() -> void:
 	loader.load_events_into(events, st)
 	JWResult.clear_pending()
 	var runner: JWTurnRunner = JWTurnRunner.new(st, events)
+	if nofinal:
+		st.crisis.final_window_q = 1 << 40
 	var a0: PackedInt64Array = PackedInt64Array()
 	a0.resize(JWCommands.ARG_SLOTS)
 
@@ -68,9 +73,37 @@ func _init() -> void:
 			var debt: int = 0
 			for b: int in st.bonds.principal_outstanding.size():
 				debt += st.bonds.principal_outstanding[b]
-			print(("%4d %s  %s  %9.2f %9.2f  %7.2f %5.1f  %8.2f %8.2f  %d" % [q + 1, pr, wg,
+			var line: String = "%4d %s  %s  %9.2f %9.2f  %7.2f %5.1f  %8.2f %8.2f  %d" % [q + 1, pr, wg,
 					st.diag.gdp_production / U, st.diag.gdp_real / U, pop / 1e6,
-					st.diag.unemployment_ppm / 1e4, cash / U, debt / U, bound_hits]) + "  %.3f %.2f" % [
-					st.money.price_level_ppm / 1e6, st.money.issued_total / U])
+					st.diag.unemployment_ppm / 1e4, cash / U, debt / U, bound_hits]
+			line += "  %.3f %.2f" % [st.money.price_level_ppm / 1e6, st.money.issued_total / U]
+			line += "  危机%s 更替%d 席%d" % [str(st.crisis.stage), st.crisis.gov_changes, st.politics.seats_gov]
+			print(line)
+			if args.has("cap"):
+				var cs: String = "     产能/产出/投资(按部门)："
+				for s3: int in JWUnits.S:
+					var capv: int = 0
+					var outv: int = 0
+					var inv: int = 0
+					for r3: int in JWUnits.R:
+						var c3: int = JWIds.idx_cell(r3, s3)
+						capv += st.capital.cell_capacity_active[c3]
+						outv += st.sectors.f_output_actual[c3]
+						inv += st.capital.f_cell_investment[c3]
+					cs += " [%.2f/%.2f/%.3f]" % [capv / 1e6, outv / 1e6, inv / U]
+				print(cs)
+				var cg: int = st.accounts.cash_of(JWIds.AGENT_GOV)
+				var cc: int = 0
+				for c4: int in JWUnits.CELL:
+					cc += st.accounts.cash_of(JWIds.agent_of_cell(c4))
+				var cgr: int = 0
+				for g4: int in JWUnits.GROUP:
+					cgr += st.accounts.cash_of(JWIds.agent_of_group(g4))
+				var dep: int = 0
+				for g5: int in JWUnits.GROUP:
+					dep += st.accounts.get_balance(JWIds.idx_account(JWIds.agent_of_group(g5), JWIds.ACC_DEPOSIT_CLAIM))
+				print("     现金：政府 %.2f 企业 %.2f 居民 %.2f 投资池 %.2f 外部 %.2f ｜ 居民存款 %.2f 欠付 %.2f" % [cg / U, cc / U, cgr / U,
+						st.accounts.cash_of(JWIds.AGENT_INVPOOL) / U, st.accounts.cash_of(JWIds.AGENT_ROW) / U, dep / U,
+						st.treasury.arrears / U])
 	print("耗时 %d ms（%d 季）" % [Time.get_ticks_msec() - t0, n_q])
 	quit()

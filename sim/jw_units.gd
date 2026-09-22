@@ -177,7 +177,9 @@ enum Holder { INVPOOL = 0, ROW = 1 }
 enum MandateGoal { INDUSTRY = 0, LIVELIHOOD = 1, FISCAL = 2 }
 enum MandateStatus { OK = 0, AT_RISK = 1, LOST = 2 }
 enum Termination { NONE = 0, HORIZON = 1, LOST_ELECTION = 2, LOST_CONFIDENCE = 3,
-		FISCAL_RESTRUCTURING_FAILED = 4 }
+		FISCAL_RESTRUCTURING_FAILED = 4,
+		# R-CRISIS-01（战役模式）：合法性轨的最后补救窗口届满，国家解体。
+		STATE_COLLAPSE = 5 }
 enum ExplainKind { ACCOUNTED = 0, INFERRED = 1, PROJECTED = 2 }
 enum Bloc { AGRI_COOP = 0, BUSINESS = 1, LABOR_PUBLIC = 2 }
 

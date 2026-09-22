@@ -28,12 +28,18 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 	"content.money.abs_floor_ppm",
 	"content.money.abs_ceil_ppm",
 	"content.money.wage_ceil_mult_ppm",
+	# R-CLOSURE-01：长期存量流量闭合（外部现金下限、企业超额现金分配）。
+	"content.money.base_row_cash_uu",
+	"content.money.row_cash_floor_ppm",
+	"content.money.firm_excess_buffer_ppm",
+	"content.money.firm_excess_payout_ppm",
 ]
 const STATE_SCALAR_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_PRICE, JWUnits.SUBSYS_GOV,
 	JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV,
 	JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV,
 	JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV,
+	JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV,
 ]
 const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.money.real_gdp_ring_uu",
@@ -73,6 +79,10 @@ var band_ceil_ppm: int = 0
 var abs_floor_ppm: int = 0
 var abs_ceil_ppm: int = 0
 var wage_ceil_mult_ppm: int = JWUnits.PPM
+var base_row_cash_uu: int = 0
+var row_cash_floor_ppm: int = 0
+var firm_excess_buffer_ppm: int = 0
+var firm_excess_payout_ppm: int = 0
 var level_weight_ppm: PackedInt64Array = PackedInt64Array()
 
 func allocate() -> void:
@@ -152,6 +162,16 @@ func compute_issue(money_now_uu: int) -> int:
 	return JWMath.clamp_i(issue, 0, cap)
 
 
+## R-CLOSURE-01：外部现金补足额。外部持有的本国现金低于「开局外部现金 × 下限」时补到下限：
+## 经济含义是本国以新发行的货币买入外汇储备（政府对外部的债权），出口因此不会因外国手里没有本国货币而停摆。
+## 补足额计入累计发行（INV-018），但不进政府现金（INV-027 不受影响）。
+func row_topup(row_cash_uu: int) -> int:
+	if enabled == 0 or row_cash_floor_ppm <= 0 or base_row_cash_uu <= 0:
+		return 0
+	var floor_uu: int = JWMath.mul_ppm(base_row_cash_uu, row_cash_floor_ppm)
+	return maxi(0, floor_uu - row_cash_uu)
+
+
 ## 过账成功之后登记累计额（本季流量由国库登记）。
 func note_issued(amount_uu: int) -> void:
 	issued_total += amount_uu
@@ -211,6 +231,10 @@ func state_scalar(i: int) -> int:
 		11: return abs_floor_ppm
 		12: return abs_ceil_ppm
 		13: return wage_ceil_mult_ppm
+		14: return base_row_cash_uu
+		15: return row_cash_floor_ppm
+		16: return firm_excess_buffer_ppm
+		17: return firm_excess_payout_ppm
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return 0
 
@@ -231,6 +255,10 @@ func set_state_scalar(i: int, v: int) -> int:
 		11: abs_floor_ppm = v
 		12: abs_ceil_ppm = v
 		13: wage_ceil_mult_ppm = v
+		14: base_row_cash_uu = v
+		15: row_cash_floor_ppm = v
+		16: firm_excess_buffer_ppm = v
+		17: firm_excess_payout_ppm = v
 		_:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return JWResult.OK

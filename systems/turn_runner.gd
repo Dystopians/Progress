@@ -936,7 +936,12 @@ func _step_s04() -> int:
 ## R-MONEY-01：本季货币发行（旧剧本 enabled == 0，发行额恒为 0，不过账）。
 ## 两腿：政府现金 +X（资产增 +）、政府净值 −X（净值是贷方，增加记 −），行和为 0。
 func _issue_money() -> int:
-	var x: int = _st.money.compute_issue(_st.accounts.total_cash())
+	# 发行规则看的是本国货币量：外部持有的本国现金不在国内流通，不计入（R-CLOSURE-01）。
+	var row_cash: int = _st.accounts.cash_of(JWIds.AGENT_ROW)
+	var rc0: int = _issue_row_reserves(row_cash)
+	if rc0 != JWResult.OK:
+		return rc0
+	var x: int = _st.money.compute_issue(_st.accounts.total_cash() - _st.accounts.cash_of(JWIds.AGENT_ROW))
 	if x <= 0:
 		return JWResult.OK
 	_money_legs_acc[0] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_CASH)
@@ -952,6 +957,29 @@ func _issue_money() -> int:
 	return JWResult.OK
 
 
+## R-CLOSURE-01：外部现金补足（外汇储备）。四腿：外部现金 +Y、外部应付 +Y、政府应收 +Y、政府净值 +Y。
+func _issue_row_reserves(row_cash: int) -> int:
+	var y: int = _st.money.row_topup(row_cash)
+	if y <= 0:
+		return JWResult.OK
+	_reserve_legs_acc[0] = JWIds.idx_account(JWIds.AGENT_ROW, JWIds.ACC_CASH)
+	_reserve_legs_acc[1] = JWIds.idx_account(JWIds.AGENT_ROW, JWIds.ACC_PAY)
+	_reserve_legs_acc[2] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_RECV)
+	_reserve_legs_acc[3] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_NW)
+	_reserve_legs_d[0] = y
+	_reserve_legs_d[1] = -y
+	_reserve_legs_d[2] = y
+	_reserve_legs_d[3] = -y
+	var rc: int = _st.ledger.post_multi(JWUnits.Kind.MONEY_ISSUE, _reserve_legs_acc, _reserve_legs_d,
+			0, -1, 0, 1)
+	if rc != JWResult.OK:
+		return rc
+	_st.money.note_issued(y)
+	return JWResult.OK
+
+
+var _reserve_legs_acc: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+var _reserve_legs_d: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
 var _money_legs_acc: PackedInt64Array = PackedInt64Array([0, 0])
 var _money_legs_d: PackedInt64Array = PackedInt64Array([0, 0])
 
@@ -1872,7 +1900,7 @@ func _step_s08() -> int:
 
 	# 第 6 条：任期审查与终局（选举只在 q ∈ {15, 31}；终局式中无任何 GDP 项）。
 	rc = _st.politics.review_and_terminate(_st.treasury, _st.pop, _st.q, _st.horizon_q,
-			_default_streak_q(), _st.params)
+			_default_streak_q(), _st.params, _st.crisis)
 	if rc != JWResult.OK:
 		return rc
 
@@ -2367,6 +2395,23 @@ func _retain_working_capital() -> void:
 				_sc_distributable[c] = room
 				_st.sectors.f_distributed[c] = room
 		c += 1
+	# R-CLOSURE-01（只在战役模式）：企业现金超过营运目标 × 缓冲倍数的部分，每季按比例追加分配给股东。
+	# 否则留存利润永远沉在企业账上，四百年里居民收入循环会被一点点抽干（空跑实测：60 季企业现金 27 → 45 U）。
+	var m: JWMoney = _st.money
+	if m.enabled == 0 or m.firm_excess_payout_ppm <= 0:
+		return
+	var c2: int = 0
+	while c2 < JWUnits.CELL:
+		var agent2: int = JWIds.agent_of_cell(c2)
+		var target2: int = JWMath.mul_div_floor(
+				_ledger_sum(JWUnits.Kind.WAGE_PAYMENT, agent2, false), JWUnits.PPM, share)
+		var buffer: int = JWMath.mul_ppm(target2, m.firm_excess_buffer_ppm)
+		var excess: int = _st.accounts.cash_of(agent2) - maxi(0, _sc_distributable[c2]) - buffer
+		if excess > 0:
+			var add: int = JWMath.mul_ppm(excess, m.firm_excess_payout_ppm)
+			_sc_distributable[c2] = maxi(0, _sc_distributable[c2]) + add
+			_st.sectors.f_distributed[c2] = _sc_distributable[c2]
+		c2 += 1
 
 
 ## R-FEE-01：公共服务收费。每组 fee = floor(Σ_k 本季交付量 × 基价 × fee_ppm / 1e6 / Q_SCALE)，

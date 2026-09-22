@@ -596,7 +596,7 @@ static func seat_rule(support_national_ppm: int, seats_total: int) -> int:
 ##          终止后任何 advance_quarter 返回 REJECT 且状态哈希不变）
 ## 失败：无（终止是正常结果，不是故障）
 func review_and_terminate(treasury: JWTreasury, pop: JWPopulation, q: int, horizon_q: int,
-		default_streak_q: int, params: PackedInt64Array) -> int:
+		default_streak_q: int, params: PackedInt64Array, crisis: JWCrisis = null) -> int:
 	if params.size() != JWUnits.PARAM_N:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE,
 				params.size(), JWUnits.PARAM_N)
@@ -655,6 +655,10 @@ func review_and_terminate(treasury: JWTreasury, pop: JWPopulation, q: int, horiz
 		_review_receipts_accum_uu = 0
 		_review_outlays_accum_uu = 0
 
+	# R-REGIME-01 / R-CRISIS-01：战役模式走国家延续规则，旧剧本走下面的原规则。
+	if crisis != null and crisis.enabled == 1:
+		return _campaign_tail(treasury, pop, q, horizon_q, default_streak_q, params, crisis)
+
 	# ── 选举（INV-127：只在第 16、32 季，q 从 0 起） ──
 	if q == ELECTION_Q_FIRST or q == ELECTION_Q_SECOND:
 		seats_gov = seat_rule(support_national_ppm(pop), seats_total)
@@ -699,6 +703,94 @@ func review_and_terminate(treasury: JWTreasury, pop: JWPopulation, q: int, horiz
 
 	# 以上四条判定式中没有出现任何 GDP、增加值或产出项：经济下滑本身不是失败（INV-128）。
 	return JWResult.OK
+
+
+## 战役模式的选举、不信任与危机（R-REGIME-01 / R-CRISIS-01）。
+## 选举按剧本周期；落选与连续不信任都只更替政府；财政与合法性两轨按危机状态机推进，
+## 只有最后补救窗口届满且条件仍在才终局。终局判定式里同样没有任何 GDP 项（INV-128）。
+func _campaign_tail(treasury: JWTreasury, pop: JWPopulation, q: int, horizon_q: int,
+		default_streak_q: int, params: PackedInt64Array, crisis: JWCrisis) -> int:
+	if crisis.election_period_q > 0 and q == next_election_q:
+		seats_gov = seat_rule(support_national_ppm(pop), seats_total)
+		term_index += 1
+		if JWMath.mul(seats_gov, 2) > seats_total:
+			_set_reform_authority()
+		else:
+			_change_government(q, crisis, false)
+		next_election_q = q + crisis.election_period_q
+
+	if mandate_status == JWUnits.MandateStatus.LOST:
+		_at_risk_streak_q += 1
+	else:
+		_at_risk_streak_q = 0
+	var no_confidence_q: int = params[JWUnits.Param.NO_CONFIDENCE_Q]
+	if no_confidence_q > 0 and _at_risk_streak_q >= no_confidence_q:
+		_change_government(q, crisis, true)
+
+	var grace_q: int = params[JWUnits.Param.DEFAULT_GRACE_Q]
+	var ft: int = JWCrisis.fiscal_target(_review_fail_streak, budget_review_fail_to_lost_count,
+			treasury.arrears, budget_review_arrears_limit_uu, default_streak_q, grace_q)
+	if crisis.step_track(JWCrisis.TRACK_FISCAL, ft, q):
+		run_terminated = true
+		termination_reason = JWUnits.Termination.FISCAL_RESTRUCTURING_FAILED
+	var lt: int = crisis.legitimacy_target(trust_national_ppm(pop))
+	if crisis.step_track(JWCrisis.TRACK_LEGITIMACY, lt, q) and not run_terminated:
+		run_terminated = true
+		termination_reason = JWUnits.Termination.STATE_COLLAPSE
+
+	if not run_terminated and q == horizon_q - 1:
+		run_terminated = true
+		termination_reason = JWUnits.Termination.HORIZON
+	return JWResult.OK
+
+
+## 政府更替（R-REGIME-01）：反对派组阁，至少取得过半席位；执政资格与审查计数重开；
+## 各组支持度回到基年水平；程序信任、预期、债务、承诺、项目、政策一概不动。
+func _change_government(q: int, crisis: JWCrisis, new_term: bool) -> void:
+	crisis.note_gov_change(q)
+	if new_term:
+		term_index += 1
+	var majority: int = JWMath.floor_div(seats_total, 2) + 1
+	seats_gov = maxi(seats_total - seats_gov, majority)
+	mandate_status = JWUnits.MandateStatus.OK
+	_review_fail_streak = 0
+	_review_pass_streak = 0
+	_at_risk_streak_q = 0
+	var g: int = 0
+	while g < JWUnits.GROUP:
+		support[g] = base_support[g]
+		g += 1
+	_set_reform_authority()
+
+
+## 超级多数门槛：达到即拿到重大改革授权，否则收回（与选举留任的规则相同）。
+func _set_reform_authority() -> void:
+	var held: int = JWMath.mul(seats_gov, JWUnits.PPM)
+	var need: int = JWMath.mul(supermajority_authority_min_seats_ppm, seats_total)
+	if held >= need:
+		legal_authority_mask = legal_authority_mask | (1 << AUTHORITY_BIT_STRUCTURAL_REFORM)
+	else:
+		legal_authority_mask = legal_authority_mask & ~(1 << AUTHORITY_BIT_STRUCTURAL_REFORM)
+
+
+## 全国程序信任（选民口径，与 support_national_ppm 同一加权）。R-CRISIS-01 合法性轨的输入。
+func trust_national_ppm(pop: JWPopulation) -> int:
+	var g: int = 0
+	while g < JWUnits.GROUP:
+		_tiebreak_buf[g] = g
+		if JWIds.age_of_group(g) == JWUnits.Age.MINOR:
+			_w_buf[g] = 0
+		else:
+			_w_buf[g] = pop.population[g]
+		g += 1
+	if JWMath.split_lr_into(JWUnits.PPM, _w_buf, _tiebreak_buf, _share_buf) != 0:
+		return 0
+	var num: int = 0
+	var g2: int = 0
+	while g2 < JWUnits.GROUP:
+		num += JWMath.mul(trust[g2], _share_buf[g2])
+		g2 += 1
+	return JWMath.clamp_i(JWMath.floor_div(num, JWUnits.PPM), 0, JWUnits.PPM)
 
 
 ## 事件效果落点（只允许白名单内的 ppm 增量）。

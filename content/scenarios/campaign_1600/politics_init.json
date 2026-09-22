@@ -4,6 +4,14 @@
   "_note_disclaimer_zh": "本文件定义的选举、席位、否决与联盟规则是游戏抽象。它不模拟真实选区、不代表任何现实国家的选举制度，也不是世界银行 WDR 2017 给出的模型——WDR 2017 只用于「权力分配、可信承诺、协调与合作会影响政策采纳与实施」这一机制方向。本文件中的组织划分、投票映射与全部阈值均为设计假设，尚未经任何数据校准。报告与界面引用本规则时必须原样附带这句声明（计划书 §08、§14）。",
   "_note_abstraction_scope_zh": "不建模：政党、选区、竞选活动、议员个体、游说支出、媒体。建模：全国居民支持度→席位的固定转换、三个利益集团的组织影响力与否决域、执政团队的行政执行能力，三者分开计算（INV-125）。",
   "_note_schema_deviation_zh": "本文件原有 18 个顶层扩展键（membership_rule、stance_rule、resident_support、authority_bits、reform_domains、veto_rule、separation_of_three、budget_review、election、termination_triggers、settlement_dimensions、validation_extensions、parameter_cards 及五条散文）。11 号文件 §5.10 的 politics_init schema 只声明十个键，§3 又规定 additionalProperties:false，故这些键一律按 §3 给的两条出路中的第二条处理：改名为 _note_<field> 注释键。这不是纯粹的排版动作，必须看清它的代价：注释键不进 SimCore 的加载器、不进 content_hash（§1.5、§6.4），所以这些规则从「内容包数据」降级成了「文档」。降级是可以接受的，因为它们的权威出处本来就在别处——成员规模、立场、支持度、集团反应在 12_simulation_contract.md §8.1–8.3；预算审查、选举、终局在 §8.5；席位转换在 OQ-221；结算五类展示在 20_ui_spec.md；阈值在 param.* 卡。真正只在本文件里有权威值的东西仍然留在已声明键内：seats_total / seats_gov / next_election_q / next_budget_review_q / admin_capacity_ppm / legal_authority_mask / blocs / stance_ppm。唯一没有被降级安置的是 authority_bits 与 reform_domains 这两张表——它们描述的是「哪一位授权对应哪一类政策」与「哪一域需要哪些集团」，而契约把这层信息切成了三处：政策侧 legal_authority.authority_bit（§5.12）、集团侧 veto_domains（§5.10）、政府侧 legal_authority_mask（本文件）。§5.12 的 PolicyDefinition 里并没有一个 domain 字段，而 12_simulation_contract.md §2.1 的否决判据写的是「policy_def[p] 的 domain ∈ bloc.veto_domains[b]」——这条判据目前没有数据可读。登记为 OQ-252，本文件不自行补字段。",
+  "crisis_rule": {
+    "election_period_q": 16,
+    "final_window_q": 8,
+    "legit_warn_ppm": 400000,
+    "legit_crisis_ppm": 300000,
+    "legit_final_ppm": 200000
+  },
+  "_note_crisis_rule": "R-REGIME-01 / R-CRISIS-01（docs/18）。M1 骨架取值：四年一选；最后补救窗口 8 季；合法性轨按全国程序信任的三档门槛（40% / 30% / 20%）。选举制度、门槛与窗口在 M2 按 1600 年的制度内容重定，这里只验证机制。",
   "seats_total": 101,
   "_note_seats_total": "奇数，使「过半」无歧义（V-POL-02）。101 是规模标记，不对应任何现实议会。",
   "seats_gov": 56,

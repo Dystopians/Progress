@@ -94,6 +94,11 @@ var _target: PackedInt64Array = PackedInt64Array()
 var _alloc: PackedInt64Array = PackedInt64Array()
 ## 4，闸一按 cell 下标升序的权重／决胜键／输出
 var _w_cell: PackedInt64Array = PackedInt64Array()
+## R-LABOR-SHRINK-01：劳动力缩减时的强制离职缓冲（长 S+1：四个 cell + pubserv）与逐 cell 档的离职额。
+var _w_force: PackedInt64Array = PackedInt64Array()
+var _tb_force: PackedInt64Array = PackedInt64Array()
+var _out_force: PackedInt64Array = PackedInt64Array()
+var _forced_cut: PackedInt64Array = PackedInt64Array()
 var _tb_cell: PackedInt64Array = PackedInt64Array()
 var _out_cell: PackedInt64Array = PackedInt64Array()
 ## 3，闸二按技能档的权重／决胜键／输出
@@ -202,10 +207,21 @@ func hire_and_fire(output_plan_uqs: PackedInt64Array, io: JWIoTable, pricing: JW
 	# 同地区的 4 个 cell 与 pubserv 竞争同一个池子。pubserv 的本季净增员额恒为 0
 	# （docs/12 §3 未给出 S03 改变公共部门编制的公式，见交付说明的 open_questions），
 	# 其存量已经在 pool 的被减数里，因此不参与拆分也不会被别人挤掉。
+	if _forced_cut.size() != JWUnits.EMP_N:
+		_forced_cut.resize(JWUnits.EMP_N)
+	_forced_cut.fill(0)
 	var r: int = 0
 	while r < JWUnits.R:
 		var k2: int = 0
 		while k2 < JWUnits.K:
+			# R-LABOR-SHRINK-01：劳动年龄人口因死亡、老龄化缩减到在岗人数以下时，超出的在岗者离职
+			# （按各 cell 与 pubserv 的现有人数最大余数法分摊，决胜键为 cell 下标、pubserv 最后）。
+			# 此前没有这一步，长局里会在 INV-076 终检处触发 EMPLOYMENT_OVERFLOW（1600 季空跑第 548 季实测）。
+			var over: int = _employed_region_skill(r, k2) - pop.labor_force_region_skill(r, k2)
+			if over > 0:
+				var rc_o: int = _separate_excess(r, k2, over)
+				if rc_o != JWResult.OK:
+					return rc_o
 			var pool: int = pop.labor_force_region_skill(r, k2) - _employed_region_skill(r, k2)
 			if pool < 0:
 				# 入口就已超编（剧本或上一季的缺陷）。这里不倒扣既有在岗人数，
@@ -311,7 +327,7 @@ func hire_and_fire(output_plan_uqs: PackedInt64Array, io: JWIoTable, pricing: JW
 				pricing.log_clamp(LOG_FIELD_HIRE_CASH, want_k, emp_k, affordable_k)
 			cell_employment[idx3] = emp_k
 			f_hires[idx3] = maxi(0, emp_k - prev2)
-			f_separations[idx3] = maxi(0, prev2 - emp_k)
+			f_separations[idx3] = maxi(0, prev2 - emp_k) + _forced_cut[idx3]
 			k4 += 1
 		cell2 += 1
 
@@ -344,6 +360,32 @@ func hire_and_fire(output_plan_uqs: PackedInt64Array, io: JWIoTable, pricing: JW
 						JWIds.idx_pubserv_emp(r3, k6), employed_rk - force_rk)
 			k6 += 1
 		r3 += 1
+	return JWResult.OK
+
+
+## R-LABOR-SHRINK-01：从 (r, k) 的在岗者中移出 over 人（cell 与 pubserv 按现有人数分摊）。
+func _separate_excess(r: int, k: int, over: int) -> int:
+	var n: int = JWUnits.S + 1
+	if _w_force.size() != n:
+		_w_force.resize(n)
+		_tb_force.resize(n)
+		_out_force.resize(n)
+	for s: int in JWUnits.S:
+		_w_force[s] = cell_employment[JWIds.idx_emp(JWIds.idx_cell(r, s), k)]
+		_tb_force[s] = s
+	var pi: int = JWIds.idx_pubserv_emp(r, k)
+	_w_force[JWUnits.S] = pub_employment[pi]
+	_tb_force[JWUnits.S] = JWUnits.S
+	JWMath.split_lr_into(over, _w_force, _tb_force, _out_force)
+	if JWMath._split_last_fault != 0:
+		return JWMath._split_last_fault
+	for s2: int in JWUnits.S:
+		var idx: int = JWIds.idx_emp(JWIds.idx_cell(r, s2), k)
+		var cut: int = mini(_out_force[s2], cell_employment[idx])
+		cell_employment[idx] -= cut
+		_prev_employment[idx] -= cut
+		_forced_cut[idx] += cut
+	pub_employment[pi] -= mini(_out_force[JWUnits.S], pub_employment[pi])
 	return JWResult.OK
 
 

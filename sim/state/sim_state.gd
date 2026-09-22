@@ -65,7 +65,9 @@ const BLK_DIAG: int = 21
 const BLK_MONEY: int = 22
 ## R-BUILDING-01：建筑堆（生产单元产能与资本的唯一来源）。
 const BLK_BUILDINGS: int = 23
-const BLOCK_N: int = 24
+## R-REGIME-01 / R-CRISIS-01：战役模式的政府更替与危机状态机。
+const BLK_CRISIS: int = 24
+const BLOCK_N: int = 25
 
 ## 各块缺省子系统归属，下标 == BLK_*。
 ##
@@ -79,6 +81,7 @@ const BLOCK_DEFAULT_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_POLICY,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_CELL,
+	JWUnits.SUBSYS_POLITICS,
 ]
 
 # ── 两个 SoA（docs/11 §6.4 的 soa 段只有这两个） ───────────────────────────
@@ -239,6 +242,7 @@ var blocs: JWInterestGroups = null
 var diag: JWDiagnostics = null
 var money: JWMoney = null
 var buildings: JWBuildings = null
+var crisis: JWCrisis = null
 
 ## 按上表顺序登记的状态块；顺序进哈希，不得重排（INV-136）。
 var _blocks: Array[RefCounted] = []
@@ -310,6 +314,7 @@ func allocate_all() -> void:
 	diag = JWDiagnostics.new()
 	money = JWMoney.new()
 	buildings = JWBuildings.new()
+	crisis = JWCrisis.new()
 	capital.buildings = buildings
 
 	_blocks.clear()
@@ -338,6 +343,7 @@ func allocate_all() -> void:
 	_blocks[BLK_DIAG] = diag
 	_blocks[BLK_MONEY] = money
 	_blocks[BLK_BUILDINGS] = buildings
+	_blocks[BLK_CRISIS] = crisis
 
 	for b: RefCounted in _blocks:
 		b.allocate()

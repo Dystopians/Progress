@@ -105,6 +105,10 @@ func test_v1_save_migrates_to_v2() -> void:
 	for bid: String in JWBuildings.STATE_ARRAY_IDS:
 		arrs.erase(bid)
 	sc.erase("state.building.count")
+	arrs.erase("state.crisis.stage")
+	arrs.erase("state.crisis.since_q")
+	sc.erase("state.politics.gov_changes")
+	sc.erase("state.politics.last_gov_change_q")
 	d[JWSimState.SAVE_KEY_SCHEMA] = 1
 	var sv: JWSaves = JWSaves.new()
 	var rm: JWResult = sv.migrate(d, 1)

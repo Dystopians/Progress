@@ -138,6 +138,11 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	for k3: int in cols.size():
 		ar[JWBuildings.STATE_ARRAY_IDS[k3]] = _mig_encode(cols[k3])
 	sc["state.building.count"] = n_cell
+	# R-CRISIS-01 / R-REGIME-01：旧剧本无危机状态机，各轨 0 级、从未进入（−1）；无政府更替。
+	ar["state.crisis.stage"] = _mig_encode(PackedInt64Array([0, 0, 0, 0]))
+	ar["state.crisis.since_q"] = _mig_encode(PackedInt64Array([-1, -1, -1, -1]))
+	sc["state.politics.gov_changes"] = 0
+	sc["state.politics.last_gov_change_q"] = -1
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 
