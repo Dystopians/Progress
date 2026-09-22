@@ -1,0 +1,1364 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P08",
+  "label_zh": "港口与物流升级",
+  "problem_statement_zh": "海岬的跨境实物流（项目与企业的进口设备到货、制造品出口成交）受 state.region.port_capacity_uqs_per_q 的通行能力上限约束。上限收紧时，出口需求存在也换不成成交量，进口设备到货被压慢，表现为 flow.market.unmet_demand_uqs 在买方类 4（出口）上堆积、state.project.delivery_progress_ppm 停滞，而 flow.cell.binding_code 仍指向计划（0）——即国内产能、劳动与材料都没有满，问题不在国内生产侧。首版模型里没有任何其它工具能放松这条上限：P04 放松电力、P07 放松灌溉、P09 补贴企业设备投资，都不改变通行能力。本政策填的是这一个缺口，且只填这一个。",
+  "kind": "project",
+  "legal_authority": {
+    "authority_bit": 2,
+    "requires_budget_review": false,
+    "requires_bloc_support": [
+      "bloc.business"
+    ],
+    "min_seats_ppm": 500000
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "type": "mask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "default": 4
+    },
+    {
+      "key": "scale_ppm",
+      "type": "ppm",
+      "valid_range": [
+        500000,
+        1500000
+      ],
+      "default": 1000000
+    },
+    {
+      "key": "funding_source",
+      "type": "enum",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 1,
+      "_note_value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    }
+  ],
+  "cost": {
+    "one_off_uu": 3300000000,
+    "per_quarter_uu": 825000000,
+    "planned_quarters": 4,
+    "spend_lines_uu_per_q": {
+      "import_equipment": 450000000,
+      "domestic_material": 135000000,
+      "construction_service": 240000000
+    },
+    "opex_per_q_uu": 16000000,
+    "required_construction_uqs": 960000,
+    "required_equipment_uqs": 1800000
+  },
+  "preconditions": [
+    {
+      "kind": "legal_authority",
+      "bit": 2
+    },
+    {
+      "kind": "mask_single_bit",
+      "param": "region_mask"
+    },
+    {
+      "kind": "metric",
+      "metric": "state.region.port_capacity_uqs_per_q",
+      "scope": "param:region_mask",
+      "op": "gt",
+      "value": 0
+    },
+    {
+      "kind": "metric",
+      "metric": "state.world.delivery_capacity_uqs",
+      "scope": "sector.manu",
+      "op": "gt",
+      "value": 0
+    },
+    {
+      "kind": "construction_slot",
+      "region_ref": "param:region_mask",
+      "slots": 1
+    },
+    {
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu"
+    },
+    {
+      "kind": "metric",
+      "metric": "state.policy.exit_pending_q",
+      "scope": "policy.P08",
+      "op": "eq",
+      "value": -1
+    }
+  ],
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 6,
+    "max_feedback_q": 10,
+    "commission_delay_q": 1
+  },
+  "effect": {
+    "kind": "capacity_delta",
+    "target": "state.region.port_capacity_pending_uqs_per_q",
+    "capacity_delta_uqs_per_q": 900000,
+    "capacity_unit_ref": "sector.manu",
+    "unit_note_zh": "通行能力以 μQ_manu/季 计量：首版港口只放松制造品的跨境实物流（进口设备到货与制造品出口）。10 号文件 §0.1 禁止跨部门相加 μQ_s，因此不把四个部门的跨境量加总成一个无量纲吞吐量。农产品出口在首版不受港口约束，登记为 OQ-246。"
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "remaining_contract_ppm",
+    "compensation_ppm": 350000
+  },
+  "political_reaction": {
+    "bloc.business": 300000,
+    "bloc.labor_public": 60000,
+    "bloc.agri_coop": -80000
+  },
+  "failure_paths": [
+    {
+      "code": "financing",
+      "test_id": "T-S-P04-FAIL-FINANCING",
+      "test_binding_basis_zh": "机制级真覆盖：该用例用 FX-P04 → FX-BROKE 断言 status == suspended 且 suspend_reason == financing、paid_uu 停在切断前的值、committed_memo 减少量 == 0。P08 与 P04 走同一条 mech.project_queue 付款链与同一组不变量，断言逐条适用；差别只在载具政策。P08 专属的 T-S-P08-FAIL-FINANCING 尚未进 30 号文件测试矩阵，见 OQ-255。",
+      "trigger_zh": "项目合同款排在支付优先级第 5 档（project_contracts）之后无可用现金，且发债受阻。",
+      "machine_condition": "state.project.status == suspended 且 state.project.suspension_reason == financing",
+      "observable_evidence": [
+        "state.gov.arrears_by_payee_uu",
+        "state.project.paid_uu",
+        "flow.gov.new_borrowing_uu",
+        "state.world.credit_limit_uu"
+      ],
+      "ui_key": "failure.financing"
+    },
+    {
+      "code": "delivery",
+      "test_id": "T-S-P04-FAIL-DELIVERY",
+      "test_binding_basis_zh": "机制级真覆盖：该用例的夹具 FX-NODEL 把 state.world.delivery_capacity_uqs[sector.manu] 置 0 —— 正是 P08 设备腿依赖的同一字段 —— 并断言 delivery_progress_ppm 逐季增量 == 0、construction_progress_ppm 可继续增长（两条进度独立，INV-089）。P08 专属用例尚未进矩阵，见 OQ-255。",
+      "trigger_zh": "外部设备交付能力被 shock.S02（进口价格）或剧本压到不足，本季到货量为 0；付款照付，交付进度不动。",
+      "machine_condition": "state.project.delivery_progress_ppm 本季增量 == 0 且 state.world.delivery_capacity_uqs[sector.manu] 的剩余额 == 0",
+      "observable_evidence": [
+        "state.world.delivery_capacity_uqs",
+        "state.world.import_price_ppm",
+        "flow.world.imports_uqs",
+        "state.project.delivery_progress_ppm"
+      ],
+      "ui_key": "failure.delivery"
+    },
+    {
+      "code": "congestion",
+      "test_id": "T-S-P04-FAIL-CONGESTION",
+      "test_binding_basis_zh": "机制级真覆盖：夹具 FX-CONG 把 region.haijia.construction_slots_total 置 1 并同季立 3 个项目，断言 Σ queue_slot_held == construction_slots_total、后到项目 suspend_reason == congestion 且 paid_uu == 0（INV-094）。海岬正是本政策的默认地区，槽位机制同一份。季中「施工能力不足按比例减速」的分支未被任何已登记用例断言，见 OQ-255。",
+      "trigger_zh": "同地区并发项目占满 state.region.construction_slots_total，或本季 flow.region.construction_capacity_uqs 不足以分到计划施工量。",
+      "machine_condition": "state.project.suspension_reason == congestion 或 本季 grant_uqs == 0 而 need_uqs > 0",
+      "observable_evidence": [
+        "state.region.construction_slots_total",
+        "derived.region.construction_slots_used",
+        "flow.region.construction_capacity_uqs",
+        "flow.region.construction_used_uqs"
+      ],
+      "ui_key": "failure.congestion"
+    },
+    {
+      "code": "no_demand",
+      "test_id": "T-S-P08-FAIL-NOORDER",
+      "test_binding_basis_zh": "精确覆盖：30 号文件 §4 给 P08 登记的失败链原文即「export_demand_ppm == 0 ⇒ 港口能力提升后出口成交量增量 == 0，不能自造订单」；31 号文件 ADV-I04 给出同一场景的断言集。",
+      "trigger_zh": "外部需求不足：state.world.export_demand_ppm[sector.manu] 被 shock.S01 压低，新增通行能力空置。政策不能自造订单。",
+      "machine_condition": "投运后 flow.world.exports_uqs[sector.manu] 相对投运前不增，且 flow.market.unmet_demand_uqs 在买方类 4 上恒为 0",
+      "observable_evidence": [
+        "state.world.export_demand_ppm",
+        "flow.world.exports_uqs",
+        "flow.market.unmet_demand_uqs",
+        "state.cell.inventory_output_uqs"
+      ],
+      "ui_key": "failure.no_demand"
+    },
+    {
+      "code": "not_binding",
+      "test_id": "T-S-P08-FAIL-NOORDER",
+      "test_binding_basis_zh": "同一断言的供给侧分支：T-S-P08-FAIL-NOORDER 断言的命题是「港口不是有效上限时，扩大通行能力不产生成交增量」。no_demand 是需求侧分支（买方类 4 需求本身不足），not_binding 是供给侧分支（制造 cell 的最紧约束是劳动/材料/产能）。两者共用一条断言与同一组证据字段，故共用一个已登记 ID；若要把两条分支分开计红，需补 T-S-P08-FAIL-NOTBINDING，见 OQ-255。",
+      "trigger_zh": "港口通行能力本来就不是有效上限：制造 cell 的最紧约束是劳动、材料或产能，出口需求根本没排到港口这一关。升级完成，成交量不变。",
+      "machine_condition": "投运前后 flow.cell.binding_code[cell.<region>.manu] 恒 != 0 且 买方类 4 的 flow.market.unmet_demand_uqs == 0",
+      "observable_evidence": [
+        "flow.cell.binding_code",
+        "log.constraint_diag",
+        "flow.market.unmet_demand_uqs",
+        "state.region.port_capacity_uqs_per_q"
+      ],
+      "ui_key": "failure.not_binding",
+      "code_not_in_suspension_enum": true
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P08-CHAIN",
+    "T-S-P08-GATE",
+    "T-S-P08-FAIL-NOORDER",
+    "T-U-C-00",
+    "T-U-C-01",
+    "T-U-C-02",
+    "T-S-D-07",
+    "T-S-D-09",
+    "T-U-D-08"
+  ],
+  "mechanism_ids": [
+    "mech.port_capacity",
+    "mech.project_queue",
+    "mech.external_trade"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 三项现已注册，原样保留（mech.external_trade 指 JWWorldMarket.record_export / record_import）。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "ui_text_keys": {
+    "blocked.authority": "policy.P08.blocked.authority",
+    "blocked.seats": "policy.P08.blocked.seats",
+    "blocked.bloc_veto": "policy.P08.blocked.bloc_veto",
+    "blocked.cooldown": "policy.P08.blocked.cooldown",
+    "blocked.precondition.mask_single_bit": "policy.P08.blocked.precondition.mask_single_bit",
+    "blocked.precondition.no_port": "policy.P08.blocked.precondition.no_port",
+    "blocked.precondition.no_delivery_capacity": "policy.P08.blocked.precondition.no_delivery_capacity",
+    "blocked.precondition.exited": "policy.P08.blocked.precondition.exited",
+    "blocked.queue": "policy.P08.blocked.queue",
+    "blocked.budget": "policy.P08.blocked.budget",
+    "blocked.funding": "policy.P08.blocked.funding",
+    "failure.financing": "policy.P08.failure.financing",
+    "failure.delivery": "policy.P08.failure.delivery",
+    "failure.congestion": "policy.P08.failure.congestion",
+    "failure.no_demand": "policy.P08.failure.no_demand",
+    "failure.not_binding": "policy.P08.failure.not_binding",
+    "info.commission_blocked": "policy.P08.info.commission_blocked",
+    "info.opex_arrears": "policy.P08.info.opex_arrears"
+  },
+  "_note_schema_extension": {
+    "statement_zh": "本文件顶层只保留 11_data_contract.md §5.12 定义的 20 个 PolicyDefinition 键，外加 effect_chain——后者已由 tools/validate_content.py 按文档优先级（计划书 §09 > §5.12）正式登记进 policy_definition schema，因此它是契约层的正式字段，不是未声明键。原先与之并列的 parameters 键已按 §5.15 与裁定 R-PARAM-01 处置：数值回到 cost / effect / exit_rule 等正式字段作唯一事实来源，卡的规格降级为 _note_params_core_migration，待 content/parameters/params_core.json 落地后整体迁走。其余计划书 §09/§10 要求、但现行 schema 未定义的扩展键，一律降级为 _note_<field> 注释键：内容一字未删，只是明示「载入器不读、不进 content_hash」。正解仍然是把 schema 升到 v2 并把这些键正式登记，届时逐个去掉 _note_ 前缀即可。登记为 OQ-247。",
+    "contract_keys": [
+      "schema_kind",
+      "schema_version",
+      "policy_id",
+      "label_zh",
+      "problem_statement_zh",
+      "kind",
+      "legal_authority",
+      "player_params",
+      "cost",
+      "preconditions",
+      "lag",
+      "effect",
+      "effect_chain",
+      "exit_rule",
+      "political_reaction",
+      "failure_paths",
+      "acceptance_tests",
+      "mechanism_ids",
+      "cooldown_q",
+      "toggle_cost_uu",
+      "ui_text_keys"
+    ],
+    "downgraded_to_note_keys": [
+      "_note_schema_extension",
+      "_note_code",
+      "_note_slug",
+      "_note_category",
+      "_note_governance_instrument",
+      "_note_governance_instrument_zh",
+      "_note_player_lever_meta",
+      "_note_cost_model",
+      "_note_funding_requirement",
+      "_note_lag_model",
+      "_note_targets",
+      "_note_operating_cost",
+      "_note_exit_settlement",
+      "_note_political_reaction_basis",
+      "_note_test_registry_gap",
+      "_note_params_core_migration",
+      "_note_acceptance_tests_spec",
+      "_note_ui_copy",
+      "_note_open_questions_refs",
+      "_note_new_open_questions_proposed"
+    ],
+    "extension_keys_added_inside_contract_objects": [
+      "failure_paths[].trigger_zh",
+      "failure_paths[].machine_condition",
+      "failure_paths[].observable_evidence",
+      "failure_paths[].ui_key",
+      "failure_paths[].code_not_in_suspension_enum",
+      "failure_paths[].test_binding_basis_zh"
+    ],
+    "identity_mapping_zh": "计划书要求的 id 即 policy_id，name_zh 即 label_zh。本文件不复写这两个值，避免同一事实有两个可漂移的副本。",
+    "cross_checks_for_loader_zh": [
+      "failure_paths[].test_id 与 acceptance_tests 的每个元素都必须出现在 docs/30_quality_gates.md + docs/31_adversarial_tests.md 的测试矩阵中（V-PD-06/07）。本文件只写已登记 ID；本政策真正需要、但矩阵尚未登记的用例写在 _note_acceptance_tests_spec[].proposed_test_id，并由 OQ-255 追踪。两个集合必须保持不相交，防止「提案 ID」被误当成已登记 ID。",
+      "_note_player_lever_meta 的键集合必须与 player_params[].key 的集合完全相等。",
+      "ui_text_keys 的键集合必须与 _note_ui_copy 的键集合完全相等，且覆盖全部 preconditions 与 failure_paths。",
+      "_note_params_core_migration.specs[].value_ref 必须逐条指向本文件中真实存在的 JSON 指针；params_core.json 落地后，每张卡的 value 必须与该指针所指字段的当前值相等（不等即 E_PARAM_STALE）。本文件内不得再出现同一数值的第二份副本。"
+    ],
+    "resolved_unknown_fields": {
+      "effect_chain": "已解决，且不再是未知键：校验器 SCHEMAS['policy_definition'] 已把 effect_chain 登记为必填 array，理由写在工具注释里——计划书 §09 要求「每项至少 1 条完整反馈链」，文档优先级高于 §5.12 的字段表，缺字段的一侧是 §5.12。契约侧待办：11 号文件 §5.12 的键集合应同步补入 effect_chain。",
+      "parameters": "已解决，键已删除：14 张卡的 value 与本文件正式字段是同一事实的第二份副本（双份事实来源，是缺陷不是冗余）。按 11 号文件 §5.15 与裁定 R-PARAM-01，param.* 卡只能集中在 content/parameters/params_core.json。数值删除后唯一来源是正式字段；卡的非数值规格保留在 _note_params_core_migration.specs，其中每条只有 id 与 value_ref、没有 value，因此既不是「藏在注释子树里的卡」，也不构成第二份数值事实。"
+    }
+  },
+  "_note_code": "P08",
+  "_note_slug": "port_and_logistics_upgrade",
+  "_note_category": "infrastructure_logistics",
+  "_note_governance_instrument": "capital_project",
+  "_note_governance_instrument_zh": "资本项目",
+  "_note_player_lever_meta": {
+    "region_mask": {
+      "label_zh": "项目地区",
+      "unit": "位掩码",
+      "step": 1,
+      "single_bit_required": true,
+      "desc_zh": "位序即 10 号文件 §0.5 的地区下标：0 北原 / 1 中州 / 2 海岬 / 3 西岭；默认 4 = 海岬。首版每次立项只能选一个地区（见 preconditions 的 mask_single_bit），因为多地区分摊规则未定义，宁可让玩家分两次提交，也不发明一个没人能验的分配规则。"
+    },
+    "scale_ppm": {
+      "label_zh": "项目规模",
+      "unit": "ppm",
+      "step": 250000,
+      "desc_zh": "对 cost.one_off_uu、cost.per_quarter_uu、cost.spend_lines_uu_per_q、cost.required_construction_uqs、cost.required_equipment_uqs、effect.capacity_delta_uqs_per_q 同比缩放（mul_ppm，floor）；cost.planned_quarters 不随规模变化。因此放大规模等于抬高单季施工与到货需求，拥堵与交付风险随之上升——规模是取舍，不是纯收益。可选档位 500000 / 750000 / 1000000 / 1250000 / 1500000，各档缩放后全部为整数。"
+    },
+    "funding_source": {
+      "label_zh": "资金来源",
+      "unit": "枚举",
+      "step": 0,
+      "desc_zh": "cash = 国库现金；bond = 发债（票息由 S02 02.6 的规则给出，玩家不能设利率）；reallocation = 从年度支出计划的其它行调度（需先提交 budget_reallocate 命令）。"
+    }
+  },
+  "_note_cost_model": {
+    "currency_unit": "μU",
+    "scale_reference_ppm": 1000000,
+    "budget_curve_uu_per_q": [
+      825000000,
+      825000000,
+      825000000,
+      825000000
+    ],
+    "budget_curve_total_uu": 3300000000,
+    "curve_shape_zh": "平直曲线。11_data_contract.md 的 V-PD-03 要求 per_quarter_uu × planned_quarters == one_off_uu，这在结构上只允许等额分摊；计划书 §09 要求的「预算曲线」在现行 schema 下无法表达非平直形态。登记为 OQ-248，不用别的字段偷偷绕过。",
+    "spend_landing_per_q": [
+      {
+        "q_offset": 0,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 450000000,
+            "payee": "agent.row",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment",
+            "note_zh": "同时增 flow.world.imports_uu 与 flow.world.imports_uqs[sector.manu]"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 135000000,
+            "payee": "agent.cell.<region>.manu",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 240000000,
+            "payee": "agent.cell.<region>.services",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "sum_uu": 825000000
+      },
+      {
+        "q_offset": 1,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 450000000,
+            "payee": "agent.row",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 135000000,
+            "payee": "agent.cell.<region>.manu",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 240000000,
+            "payee": "agent.cell.<region>.services",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "sum_uu": 825000000
+      },
+      {
+        "q_offset": 2,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 450000000,
+            "payee": "agent.row",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 135000000,
+            "payee": "agent.cell.<region>.manu",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 240000000,
+            "payee": "agent.cell.<region>.services",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "sum_uu": 825000000
+      },
+      {
+        "q_offset": 3,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 450000000,
+            "payee": "agent.row",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 135000000,
+            "payee": "agent.cell.<region>.manu",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 240000000,
+            "payee": "agent.cell.<region>.services",
+            "settlement_step": "S04 04.4",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "sum_uu": 825000000
+      }
+    ],
+    "physical_requirements": {
+      "required_equipment_uqs": 1800000,
+      "equipment_sector": "sector.manu",
+      "equipment_source": "import_only",
+      "required_construction_uqs": 960000,
+      "construction_sector": "sector.services",
+      "consistency_zh": "刻度口径（裁定 R-SCALE-01）：base_price == 1 000 000 000 μU/Q_s，Q_SCALE == 1 000 000，因此 1 μQ_s 对 1 000 μU——μU 数值不再等于 μQ 数值，旧文里「两者恒等」的说法已作废。设备腿：450 000 000 × 4 = 1 800 000 000 μU，mul_div_floor(1 800 000 000, 1 000 000, 1 000 000 000) = 1 800 000 μQ_manu，与 required_equipment_uqs 精确相等。施工腿：240 000 000 × 4 = 960 000 000 μU，按 param.uu_to_construction_uqs_ppm == 1 000（R-SCALE-01 连带要求第 2 条：分母带 μU 的系数 ÷1000）有 mul_ppm(960 000 000, 1 000) = 960 000 μQ_services，与 required_construction_uqs 精确相等。对照组：content/policies/policy_P04.json 的 construction_service 200 000 000 × 8 = 1 600 000 000 μU 对 required_construction_uqs 3 200 000 μQ_services，按同一换算应为 1 600 000 μQ，差 2 倍，与 uu_to_construction_uqs_ppm 不符，登记为 OQ-249（本文件不照抄这处不一致）。"
+    },
+    "money_to_equipment_conversion_zh": "12_simulation_contract.md §5.5 用「本季已订设备量」推交付进度，但未定义金额→设备量的换算，也未说 state.world.import_price_ppm 是否参与。本文件采用最保守的读法并登记为 OQ-250：ordered_uqs = mul_div_floor(本季 import_equipment 实付额, 1 000 000, mul_ppm(state.price.sector_uu_per_qs[sector.manu], state.world.import_price_ppm[sector.manu]))，即进口涨价直接买到更少设备、交付变慢。基线（价格 == base_price、import_price_ppm == 1 000 000）下有 mul_div_floor(450 000 000, 1 000 000, 1 000 000 000) = 450 000 μQ_manu/季，四季合计 1 800 000 μQ_manu，与 required_equipment_uqs 闭合。必须走 mul_div_floor 而不是先 mul 再 idiv_floor：R-SCALE-01 连带要求第 1 条已把它定为「先乘后除」的唯一合法入口，新刻度下 mul(AMOUNT_MAX, 1 000 000) = 4×10^21 真的溢出 int64。这正是计划书 §09 给 P08 写的「进口设备」约束，不能靠固定数量绕过。",
+    "commitment_zh": "立项当季 state.gov.committed_memo_uu 与 state.policy.budget_committed_uu 各增 total_cost_uu（表外备查，不进资产负债恒等式）；每季预留 state.gov.reserved_memo_uu += per_quarter_uu，季末归零（INV-033）。预留不移动任何现金（计划书 §07「预算不是资产」）。"
+  },
+  "_note_funding_requirement": {
+    "declared_at_enact": true,
+    "sources": [
+      {
+        "id": "cash",
+        "label_zh": "国库现金",
+        "gate": "cost.per_quarter_uu <= state.gov.cash_uu - state.gov.reserved_memo_uu",
+        "reject_code": "E_BUDGET_INSUFFICIENT"
+      },
+      {
+        "id": "bond",
+        "label_zh": "债券融资",
+        "gate": "issue_domestic <= min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm))；issue_external <= state.world.credit_limit_uu - state.world.credit_used_uu",
+        "reject_code": "E_CREDIT_LIMIT",
+        "note_zh": "票息由 S02 02.6 按 dsr_ppm 规则给出并写死在批次上，玩家不能设利率；发行必须有对手方（agent.invpool 或 agent.row），INV-034。"
+      },
+      {
+        "id": "reallocation",
+        "label_zh": "税收调度",
+        "gate": "先由 budget_reallocate 命令从 annual_plan.expenditure_lines_uu 的其它行调出，源额度不足即 REJECT",
+        "reject_code": "E_BUDGET_INSUFFICIENT",
+        "note_zh": "调出 project_contracts 之外的行会直接压低对应支出档，后果由那一档的推迟后果表（12 号文件 §2.2）承担，不是无成本腾挪。"
+      }
+    ],
+    "queues_occupied": [
+      {
+        "queue": "state.region.construction_slots_total",
+        "scope": "param:region_mask",
+        "slots": 1,
+        "release_on": [
+          "completed",
+          "cancelled"
+        ],
+        "invariant": "INV-094"
+      },
+      {
+        "queue": "state.gov.payment_priority",
+        "line": "project_contracts",
+        "rank_in_default_order": 5,
+        "note_zh": "默认优先级下排第 5 档：债务、公共工资、法定转移、服务运行费都排在它前面。现金紧张时本项目是先被推迟的一类。"
+      }
+    ],
+    "external_credit_note_zh": "INV-104 写「进口支出受买方现金与外部信用额度双重约束」，但 12_simulation_contract.md §4.4 的项目进口腿是纯现金付款给 agent.row，不触碰 state.world.credit_used_uu。两处口径不一致，登记为 OQ-251。本文件按 §4.4 执行（纯现金），因为它是可执行的那一份。"
+  },
+  "_note_lag_model": {
+    "enact_to_effect_q": 1,
+    "structural_minimum_q": 6,
+    "declared_window_q": [
+      6,
+      10
+    ],
+    "commission_delay_q": 1,
+    "decomposition": [
+      {
+        "segment": "受理到生效",
+        "quarters": 1,
+        "driver": "state.policy.effective_from_q = enacted_q + lag.enact_to_effect_q（S02 02.1），常数"
+      },
+      {
+        "segment": "施工",
+        "quarters_min": 4,
+        "driver": "flow.region.construction_capacity_uqs（= mul_ppm(cell.<r>.services 的实际产量, param.construction_share_cap_ppm)）与同区并发项目的最大余数法分摊。单季计划施工量 = idiv_floor(required_construction_uqs, planned_quarters) = 240000 μQ_services；能力不足即按比例减速，能力为 0 即 suspended(congestion)。这一段不是常数。"
+      },
+      {
+        "segment": "设备交付",
+        "quarters_min": 4,
+        "driver": "state.world.delivery_capacity_uqs[sector.manu] 的剩余额与 state.world.import_price_ppm[sector.manu]；两者都由 S01 的冲击写入。交付与施工并行推进，完工取两者的后完成者。"
+      },
+      {
+        "segment": "投运",
+        "quarters": 1,
+        "driver": "S07 只写 state.region.port_capacity_pending_uqs_per_q，下一季 S01 才转入 state.region.port_capacity_uqs_per_q（INV-054/091），常数 1 季"
+      }
+    ],
+    "worst_case_zh": "拥堵、断供或进口价格上行会把完工无限期推后；没有任何自动追赶机制，也没有「补进度」这类补丁。玩家看到的是逐季的进度增量与停滞原因码（state.project.suspension_reason）。",
+    "commissioning_conditions": {
+      "reference": "OQ-245",
+      "conditions": [
+        "state.project.delivery_progress_ppm == 1000000",
+        "state.project.construction_progress_ppm == 1000000",
+        "state.gov.service_opex_committed_uu 加上本项目 opex_per_q_uu 后仍可由下季预算承担（运行费已纳入承诺）",
+        "state.cell.employment_persons[cell.<region>.services] > 0（港口作业与集疏运的人员落点在服务部门；无人则停在 completed 不投运）"
+      ],
+      "blocked_behavior_zh": "任一条不满足则 status 停在 completed、不写 pending、不投运，并写 blocked_reason 与 ui_copy.info.commission_blocked。"
+    }
+  },
+  "effect_chain": [
+    {
+      "link": 1,
+      "step": "S02",
+      "from": [
+        "state.policy.enabled[policy.P08]",
+        "state.policy.params_ppm[policy.P08]",
+        "state.gov.cash_uu",
+        "state.region.construction_slots_total"
+      ],
+      "rule": "12_simulation_contract.md §2.1 的 02.1 资格链 + 02.2 预算预留 + 02.7 项目新建（占槽位、展开 spend_plan_uu、生成 project.P08_<q>_<nnn>）",
+      "to": [
+        "state.project.total_cost_uu",
+        "state.project.spend_plan_uu",
+        "state.project.required_equipment_uqs",
+        "state.project.required_construction_uqs",
+        "state.project.capacity_effect_uqs_per_q",
+        "state.project.queue_slot_held",
+        "state.gov.committed_memo_uu",
+        "state.gov.reserved_memo_uu"
+      ],
+      "note_zh": "任一资格不满足即 REJECT，状态哈希不变；不存在「部分生效」。"
+    },
+    {
+      "link": 2,
+      "step": "S04",
+      "from": [
+        "state.project.spend_plan_uu",
+        "state.gov.cash_uu",
+        "state.gov.payment_priority"
+      ],
+      "rule": "§4.1 的 04.2 优先级付款 + 04.4 项目付款；三条 spend_lines 用 split_largest_remainder 拆分，各有收款方；现金不足即 suspended(financing) 且已付不退",
+      "to": [
+        "state.project.paid_uu",
+        "flow.gov.pay_project_uu",
+        "flow.world.imports_uu",
+        "flow.world.imports_uqs[sector.manu]",
+        "state.cell.cash_uu[cell.<region>.manu]",
+        "state.cell.cash_uu[cell.<region>.services]",
+        "state.gov.wip_uu",
+        "state.gov.arrears_by_payee_uu"
+      ],
+      "note_zh": "本环只移动钱与货，不产生任何进度（INV-087）。"
+    },
+    {
+      "link": 3,
+      "step": "S05",
+      "from": [
+        "flow.world.imports_uqs[sector.manu]",
+        "state.world.delivery_capacity_uqs[sector.manu]",
+        "state.world.import_price_ppm[sector.manu]"
+      ],
+      "rule": "§5.5 交付进度：Δdelivery_ppm = mul_div_floor(delivered_uqs, 1 000 000, required_equipment_uqs)（R-SCALE-01 连带要求第 1 条：先乘后除只能走 mul_div_floor，裸 mul 在契约上界处溢出 int64），delivered_uqs 受外部交付能力剩余额约束（INV-089/104）",
+      "to": [
+        "state.project.delivery_progress_ppm"
+      ],
+      "note_zh": "这是计划书 §09 给 P08 写的第一条硬约束「进口设备」的落点。"
+    },
+    {
+      "link": 4,
+      "step": "S05",
+      "from": [
+        "flow.cell.output_actual_uqs[cell.<region>.services]",
+        "flow.region.construction_capacity_uqs",
+        "flow.region.construction_used_uqs"
+      ],
+      "rule": "§5.5 施工进度：能力由服务 cell 的实际产量按 param.construction_share_cap_ppm 折出，再按项目下标用最大余数法分摊；Δconstruction_ppm = mul_div_floor(grant_uqs, 1 000 000, required_construction_uqs)",
+      "to": [
+        "state.project.construction_progress_ppm",
+        "state.project.suspension_reason"
+      ],
+      "note_zh": "施工能力与国内服务生产同源：服务部门缺电、缺工、缺料都会直接拖慢本项目。"
+    },
+    {
+      "link": 5,
+      "step": "S07",
+      "from": [
+        "state.project.delivery_progress_ppm",
+        "state.project.construction_progress_ppm",
+        "state.gov.service_opex_committed_uu",
+        "state.cell.employment_persons[cell.<region>.services]"
+      ],
+      "rule": "§7.1 项目完工：两项进度均为 1 000 000 且配套条件满足（OQ-245）时 status = completed，只写 pending（INV-090/091）",
+      "to": [
+        "state.region.port_capacity_pending_uqs_per_q",
+        "state.gov.capital_uu",
+        "state.gov.wip_uu",
+        "state.gov.service_opex_committed_uu"
+      ],
+      "note_zh": "不满足则停在 completed 不投运，资产也不凭空出现。"
+    },
+    {
+      "link": 6,
+      "step": "S01",
+      "from": [
+        "state.region.port_capacity_pending_uqs_per_q"
+      ],
+      "rule": "§1.1 的 01.4 待投运资产转入（capacity_active 的唯一增量写入点，INV-054）",
+      "to": [
+        "state.region.port_capacity_uqs_per_q",
+        "state.project.status",
+        "state.project.commissioned_q"
+      ],
+      "note_zh": "完工季对当季生产毫无影响；下一季才看得见。"
+    },
+    {
+      "link": 7,
+      "step": "S05",
+      "from": [
+        "state.region.port_capacity_uqs_per_q",
+        "state.world.export_demand_ppm[sector.manu]",
+        "flow.market.demand_uqs[买方类 4][sector.manu]"
+      ],
+      "rule": "mech.port_capacity：跨境实物流的地区级上限。先扣进口到货占用，剩余额度作为该地区制造品出口成交上限；超出部分写 flow.market.unmet_demand_uqs（INV-059/064）。上限放松后，出口能否真的增加仍由 state.world.export_demand_ppm 与国内可售供给决定",
+      "to": [
+        "flow.market.traded_uqs[买方类 4][sector.manu]",
+        "flow.world.exports_uqs",
+        "flow.world.exports_uu",
+        "flow.market.unmet_demand_uqs"
+      ],
+      "note_zh": "需求不足时本环输出为零增量，且证据可见（unmet_demand 本来就是 0）。这就是「不能自造订单」。"
+    },
+    {
+      "link": 8,
+      "step": "S05 → S03 → S05 → S06",
+      "from": [
+        "flow.world.exports_uqs",
+        "flow.cell.sold_uqs[cell.<region>.manu]"
+      ],
+      "rule": "成交过账 → 卖方现金与库存变化 → 次季 §3.1 需求预期 state.cell.demand_expect_uqs 上升 → flow.cell.output_plan_uqs 上升 → §5.3 五项约束重新取 min → §6.2 增加值",
+      "to": [
+        "state.cell.cash_uu[cell.<region>.manu]",
+        "state.cell.inventory_output_uqs",
+        "state.cell.demand_expect_uqs",
+        "flow.cell.output_plan_uqs",
+        "flow.cell.value_added_uu",
+        "derived.gdp.production_uu"
+      ],
+      "note_zh": "GDP 是这条链的会计结果，不是政策的直接输出。若下一个最紧约束是劳动或材料，产量不会上升，flow.cell.binding_code 会明说是哪一项。"
+    }
+  ],
+  "_note_targets": {
+    "regions": {
+      "selection": "param:region_mask，且必须恰好一位（preconditions.mask_single_bit）",
+      "eligible_condition": "state.region.port_capacity_uqs_per_q[r] > 0",
+      "first_version_reality_zh": "按剧本设定只有 region.haijia 有港口（计划书 §05「港口与制造业区位」），其余三区的通行能力为 0，因此在内陆地区提交本政策会被 no_port 前置条件挡下并给出具体原因（OQ-218 的原型案例）。首版不提供「新建港口」路径：从 0 建起的投资规模、工期与配套都无据可依，写不出就不进可玩菜单。"
+    },
+    "sectors": {
+      "direct": [
+        "sector.manu"
+      ],
+      "indirect": [
+        "sector.services"
+      ],
+      "excluded": [
+        "sector.agri",
+        "sector.energy"
+      ],
+      "note_zh": "直接放松的是制造品跨境流；服务部门通过施工与港口作业用工间接受影响；农业出口与能源在首版不经港口上限（OQ-246）。"
+    },
+    "groups": {
+      "direct": [],
+      "path_zh": "本政策不写任何 state.group.* 字段。群组只经由 cell.<region>.services 与 cell.<region>.manu 的招工（S03）与工资（S04）→ flow.group.wage_income_uu → flow.group.consumption_uu → state.group.consumption_index_ppm → state.group.living_index_ppm → state.group.support_ppm（S08）受影响。政策不得直接加支持度（INV-121/123）。"
+    },
+    "allocation_rule_zh": "通行能力是地区级存量，不按 cell 分账、不预留份额。投运后谁先用到，由 S05 §5.6 的两级配给规则（公开优先级 + 档内比例，最大余数法）决定；出口排在买方类最后（OQ-238），因此国内短缺时新增能力会先服务于国内。若将来某个剧本给多个地区非零港口能力，跨地区的进口到货按地区下标升序、用最大余数法分摊，不引入新规则。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 16000000,
+    "starts_at": "commissioned_q",
+    "payment_line": "service_opex",
+    "payee": "agent.pubserv.<region>",
+    "settlement_step": "S04 04.2",
+    "composition_zh": "港口作业人员与设备维护。首版不细分人员费与材料费：细分后没有任何机制会分别使用这两个数字，分开只是制造一个无法被检验的数。",
+    "commitment_field": "state.gov.service_opex_committed_uu",
+    "starvation_effect": {
+      "writes": [
+        "state.pubserv.availability_ppm",
+        "state.gov.arrears_by_payee_uu",
+        "flow.pubserv.funding_ratio_ppm"
+      ],
+      "must_not_write": [
+        "state.region.port_capacity_uqs_per_q",
+        "state.gov.capital_uu"
+      ],
+      "rule": "§7.2：funding_ratio_ppm < 1 000 000 时 availability_ppm -= mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm)；恢复按 param.opex_recover_ppm，慢于下降",
+      "note_zh": "断供只降可用率、不删资产（计划书 §07，INV-102）。但 10 号文件里没有 state.region.port_availability_ppm 这样的字段，于是港口断供的后果只能落在所在地区的公共服务可用率上，无法表现为「港口本身变慢」。这是一个真实的表达缺口，登记为 OQ-252；在它被填上之前，本政策不假装存在港口专属可用率。"
+    }
+  },
+  "_note_exit_settlement": {
+    "triggers": [
+      "policy_repeal",
+      "project_cancel",
+      "contract_completed"
+    ],
+    "before_commissioning": {
+      "paid_costs": "state.project.paid_uu 不回退、现金不增加（INV-093）",
+      "committed": "state.gov.committed_memo_uu 与 state.policy.budget_committed_uu 减去剩余合同额",
+      "residual": "未完工工程按已形成的可回收部分写 state.project.residual_value_uu；state.gov.wip_uu 中超出残值的部分确认为政府净值损失，不挂账、不留给以后",
+      "compensation": "penalty = mul_ppm(剩余合同额, exit_rule.compensation_ppm)，以 kind = cancel_penalty 付给承包方（国内材料与施工承包方按其剩余合同额份额用最大余数法拆分；进口设备部分付给 agent.row）",
+      "queue": "释放 1 个 state.region.construction_slots_total 槽位",
+      "opex": "未投运则从未产生运行费义务，state.gov.service_opex_committed_uu 不变"
+    },
+    "after_commissioning": {
+      "assets": "已交付资产保留：state.region.port_capacity_uqs_per_q 不因政策撤回而回退（撤回一项政策不能让已经建成的码头消失）",
+      "opex": "运行费义务继续存在于 state.gov.service_opex_committed_uu；玩家想停运行费只能选择欠付，后果见 operating_cost.starvation_effect",
+      "depreciation": "通行能力照常按 S06 的折旧率衰减，与政策是否启用无关"
+    },
+    "cooldown": "state.policy.cooldown_until_q = q + cooldown_q；每次开关计一次 toggle_count 并付一次 toggle_cost_uu（INV-098），反复开关不产生任何额外能力"
+  },
+  "_note_political_reaction_basis": [
+    {
+      "bloc": "bloc.business",
+      "direction": "support",
+      "strength_ppm": 300000,
+      "interest_zh": "工商业联盟关心运输、利润与政策可预期性（计划书 §08）。港口通行能力是海岬制造 cell 出口成交与进口设备到货的物理上限，升级直接减少其 flow.market.unmet_demand_uqs 与设备等待。",
+      "evidence_fields": [
+        "flow.market.unmet_demand_uqs",
+        "flow.cell.profit_pretax_uu",
+        "state.project.delivery_progress_ppm"
+      ],
+      "reversal_condition_zh": "若资金来源是 reallocation 且调出的是 subsidies 档（P09），其支持会被同一批成员的另一项损失抵消。"
+    },
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "weak_support",
+      "strength_ppm": 60000,
+      "interest_zh": "施工与港口作业的用工落在 cell.<region>.services，招工使该地区服务部门 employment_persons 上升。支持是弱的：项目合同款排在 public_wages 与 service_opex 之前被推迟的情形下，同一集团会因欠薪与服务降级转为反对。",
+      "evidence_fields": [
+        "state.cell.employment_persons",
+        "state.gov.arrears_by_payee_uu",
+        "state.pubserv.availability_ppm"
+      ],
+      "reversal_condition_zh": "state.gov.arrears_by_payee_uu 在 public_wages 或 service_opex 档上出现非零值时立场翻转。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "oppose",
+      "strength_ppm": -80000,
+      "interest_zh": "农业合作联盟关心农户收入、灌溉与地区资源分配。本政策占用全国项目合同额度与海岬的施工槽位，而首版港口上限只放松 sector.manu 的跨境流，农产品出口不受益——反对的依据是资源被另一个地区、另一个部门拿走，不是对政策的观感。",
+      "evidence_fields": [
+        "state.gov.committed_memo_uu",
+        "derived.region.construction_slots_used",
+        "state.region.irrigation_index_ppm"
+      ],
+      "reversal_condition_zh": "若 OQ-246 被关闭（农产品出口也走港口上限），该集团的立场应重新评估，且必须先改本文件再改数据。"
+    }
+  ],
+  "_note_test_registry_gap": {
+    "statement_zh": "V-PD-06/07 要求 failure_paths[].test_id 与 acceptance_tests 的每个 ID 在测试注册表中真实存在；注册表当前以 docs/30_quality_gates.md + docs/31_adversarial_tests.md 的矩阵为准（tools/validate_content.py 的 OQ-V02）。该矩阵 §4 给 P08 只登记了三个 ID：T-S-P08-CHAIN（成功链）、T-S-P08-GATE（前置闸门）、T-S-P08-FAIL-NOORDER（失败链，列头写明「至少一条」）。同一份校验器又要求 failure_paths >= 4 条、acceptance_tests >= 5 条，每条都要绑已登记 ID。两条规则对 P08 不可同时满足——除非扩充矩阵。30 号文件 §4 的按语「不能改变下表的路径与测试 ID」禁止的是改写已登记 ID，不是禁止新增；但矩阵不归本文件管辖，故本文件不动它，改为：① 契约层只写已登记 ID；② 每条绑定在 failure_paths[].test_binding_basis_zh 里写明覆盖依据与缺口；③ 本政策真正需要的专属用例写在下面的 proposed_test_id，由 OQ-255 追踪。",
+    "registered_ids_used": {
+      "T-S-P08-CHAIN": "成功链：命令 → 项目（进口设备受 world.delivery_capacity 约束）→ region.port_capacity_pending → 出口成交上限。承接 THROUGHPUT-RELEASES-EXPORT 与 COMMISSION-LAG 的主干断言。",
+      "T-S-P08-GATE": "前置闸门：承接 NO-EFFECT-WITHOUT-PRECONDITION（no_port / mask_single_bit / 槽位 / 预算四类 REJECT）。",
+      "T-S-P08-FAIL-NOORDER": "失败链：承接 NO-DEMAND-NO-BONUS，并同时绑定 no_demand 与 not_binding 两条分支。",
+      "T-U-C-00": "test_u_policy_catalog_complete：对 12 个 PolicyDefinition 逐个校验必填字段、test_id 存在性与 mechanism_ids 注册性，本文件在其覆盖范围内。",
+      "T-U-C-01": "test_u_policy_cost_exact：per_quarter_uu × planned_quarters == one_off_uu 且 Σ spend_lines == per_quarter_uu。对本文件即 825 000 000 × 4 == 3 300 000 000、450 000 000 + 135 000 000 + 240 000 000 == 825 000 000（R-SCALE-01 新刻度）。",
+      "T-U-C-02": "test_u_effect_target_pending_only：effect.target 必须落在 *_pending_* 白名单上。本文件为 state.region.port_capacity_pending_uqs_per_q，承接 COMMISSION-LAG 的加载期防线（INV-091）。",
+      "T-S-D-07": "test_s_cancel_keeps_spent：取消项目后 paid_uu 精确不变、现金不回流（INV-093）。承接 CANCEL-NO-REFUND。",
+      "T-S-D-09": "test_s_reservation_zeroed：每季末 reserved_memo_uu == 0（INV-033）。承接本文件 _note_cost_model.commitment_zh 的预留口径。",
+      "T-U-D-08": "test_u_committed_memo_sources：签约 → 履约付款 → 取消三步后 committed_memo 的来源可复算。承接本文件 _note_exit_settlement.before_commissioning.committed 的口径。"
+    },
+    "still_uncovered_zh": "以下断言没有任何已登记用例覆盖，OQ-255 关闭前它们只是文档而不是门禁：① 施工能力为 0 时付款不制造进度（PAY-NO-PROGRESS 的 P08 版，P04 版用的是电网夹具）；② 运行费欠付只降 pubserv 可用率、不删港口资产（OPEX-ARREARS-NO-ASSET-DELETION）；③ 季中施工能力不足按比例减速（congestion 的第二分支）；④ not_binding 与 no_demand 分开计红。"
+  },
+  "_note_acceptance_tests_spec": [
+    {
+      "proposed_test_id": "T-S-P08-NO-EFFECT-WITHOUT-PRECONDITION",
+      "given_zh": "给定 region_mask 指向 state.region.port_capacity_uqs_per_q == 0 的内陆地区（或 legal_authority 位未获得、或施工槽位已满）",
+      "when_zh": "当玩家提交 policy_enact(policy.P08)",
+      "then_zh": "则命令被 REJECT 并带具体原因码，state_hash 逐位不变，不创建任何 project，state.region.port_capacity_pending_uqs_per_q 全程为 0，state.policy.budget_committed_uu[policy.P08] 不变",
+      "invariants": [
+        "INV-095",
+        "INV-100",
+        "INV-137"
+      ],
+      "covers": "「不满足前置条件时不得发放任何效果」"
+    },
+    {
+      "proposed_test_id": "T-S-P08-PAY-NO-PROGRESS",
+      "given_zh": "给定项目已立项、现金充足，但把 cell.<region>.services 的实际产量压到 0（施工能力为 0）",
+      "when_zh": "当 S04 照常支付本季 825 000 000 μU 的三条 spend_lines",
+      "then_zh": "则 state.project.paid_uu 增加而 state.project.construction_progress_ppm 的本季增量恰为 0，suspension_reason == congestion",
+      "invariants": [
+        "INV-087",
+        "INV-088"
+      ],
+      "static_check": "进度函数形参表中不含 paid_uu"
+    },
+    {
+      "proposed_test_id": "T-S-P08-NO-EARLY-COMMISSION",
+      "given_zh": "给定施工进度已达 1 000 000，但 state.world.delivery_capacity_uqs[sector.manu] 被置 0 使交付进度停在 1 000 000 以下",
+      "when_zh": "当推进到第 planned_quarters 季之后的任意季",
+      "then_zh": "则项目不得完工、不得写 pending，state.region.port_capacity_uqs_per_q 逐季不变（仅受折旧影响），blocked 原因可读",
+      "invariants": [
+        "INV-089",
+        "INV-090"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P08-COMMISSION-LAG",
+      "given_zh": "给定两项进度都在第 k 季达到 1 000 000 且配套条件满足",
+      "when_zh": "当第 k 季结算完成、第 k+1 季 S01 执行转入",
+      "then_zh": "则第 k 季 state.region.port_capacity_uqs_per_q 不变、pending == capacity_effect；第 k+1 季 port_capacity 增加同一数值、pending 归 0、commissioned_q == k+1",
+      "invariants": [
+        "INV-054",
+        "INV-091"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P08-NO-DEMAND-NO-BONUS",
+      "given_zh": "给定 state.world.export_demand_ppm[sector.manu] 被压到使买方类 4 的需求量低于升级前的通行能力",
+      "when_zh": "当港口升级投运",
+      "then_zh": "则 flow.world.exports_uqs 不增、derived.gdp.production_uu 不因投运本身上升、derived.politics.support_national_ppm 不因投运本身上升；仅出现运行费支出与折旧",
+      "invariants": [
+        "INV-128",
+        "INV-112",
+        "INV-123"
+      ],
+      "covers": "「没有需求时不得直接发 GDP 或支持率」"
+    },
+    {
+      "proposed_test_id": "T-S-P08-THROUGHPUT-RELEASES-EXPORT",
+      "given_zh": "给定升级前买方类 4 在 sector.manu 上的 flow.market.unmet_demand_uqs > 0 且成交量恰好等于扣除进口占用后的港口余额（港口是有效上限）",
+      "when_zh": "当港口升级投运，且国内可售供给与出口需求都不变",
+      "then_zh": "则 flow.market.traded_uqs[买方类 4][sector.manu] 的上限提高至多 capacity_delta_uqs_per_q，unmet_demand 相应下降；下一季 flow.cell.binding_code 或 unmet_demand 能指出新的限制因素（供给或需求），而不是仍指向港口",
+      "invariants": [
+        "INV-059",
+        "INV-060",
+        "INV-064"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P08-OPEX-ARREARS-NO-ASSET-DELETION",
+      "given_zh": "给定项目已投运、运行费义务已进入 state.gov.service_opex_committed_uu，随后把国库现金压到只够支付前三档",
+      "when_zh": "当 service_opex 档连续多季欠付",
+      "then_zh": "则 state.pubserv.availability_ppm 下降、state.gov.arrears_by_payee_uu 上升，而 state.region.port_capacity_uqs_per_q 与 state.gov.capital_uu 不被写（除折旧外不变）",
+      "invariants": [
+        "INV-055",
+        "INV-102"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P08-CANCEL-NO-REFUND",
+      "given_zh": "给定项目已支付两季款项、进度未满",
+      "when_zh": "当玩家提交 project_cancel",
+      "then_zh": "则 state.project.paid_uu 不回退、state.gov.cash_uu 不增加、committed_memo 只减未付部分、赔偿按 compensation_ppm 实付并入账、槽位释放、残值登记；全经济现金总量仍等于 scenario.total_cash_uu",
+      "invariants": [
+        "INV-018",
+        "INV-032",
+        "INV-093"
+      ]
+    }
+  ],
+  "_note_params_core_migration": {
+    "statement_zh": "本键是参数身份证的迁移清单，不是参数身份证本身：每条只有 id 与 value_ref、没有 value，因此它无法被当成一张卡使用——在 content/parameters/params_core.json 建成之前，这 14 张卡在契约意义上「不存在」，本文件不假装它们存在。原先写在顶层 parameters[] 的 14 张卡有两处硬缺陷：① parameters 不在 11_data_contract.md §5.12 的 PolicyDefinition 键集合内，additionalProperties:false 下必报 E_UNKNOWN_FIELD；② 更要紧的是，每张卡的 value 与 cost / effect / exit_rule / legal_authority / lag / political_reaction / cooldown_q / toggle_cost_uu 里的正式字段是同一个事实的第二份副本，两份可以各自漂移而没有任何检查能发现。按 11 号文件 §5.15 与裁定 R-PARAM-01（契约胜过任务书），param.* 卡集中在 params_core.json，政策文件只留引用。因此本次处置：正式字段是唯一事实来源；卡的数值整体删除、改为指向本文件内该字段的 JSON 指针（value_ref）；卡的非数值部分（单位、来源、定义、区间、置信度、校准说明、推导式）原样保留在此，供 params_core.json 落地时逐条转抄。",
+    "target_file": "content/parameters/params_core.json",
+    "target_card_field_mapping_zh": "转抄规则：spec.id → card.parameter_id；card.value 取本文件 spec.value_ref 所指字段的当前值（数组型 value_ref 按给出的顺序取多个字段组成整数数组；/cost/spend_lines_uu_per_q 与 /political_reaction 是对象，按 definition / source_ref 里写明的固定键序展平成整数数组）；其余字段同名照搬。转抄后必须加一条载入期校验：卡的 value 与 value_ref 所指字段逐一相等，不等即 E_PARAM_STALE。",
+    "card_count": 14,
+    "tracked_by": "OQ-247",
+    "specs": [
+      {
+        "id": "param.p08_cost_one_off_uu",
+        "value_ref": "/cost/one_off_uu",
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P08 行「设备与通行能力投资」；量级参照 content/policies/policy_P04.json 的 4 000 000 000 μU / 8 季",
+        "reference_year": 0,
+        "definition": "scale_ppm == 1 000 000 时一个港口升级项目的合同总额（不含投运后的运行费）。",
+        "valid_range": [
+          1000000000,
+          10000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "校准入口：基年 annual_plan.expenditure_lines_uu.project_contracts 是 1 800 000 000 μU/年，季度均额 450 000 000 μU；本项目单季 825 000 000 μU 已接近该均额的两倍，因此默认必须靠发债或调度——这是有意的取舍。若 G5 试玩显示 40 季内几乎无人能完成一次升级，先降本值，再考虑降 planned_quarters；不得靠抬高 invpool 初始现金兜底（OQ-201）。"
+      },
+      {
+        "id": "param.p08_planned_quarters",
+        "value_ref": "/cost/planned_quarters",
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P08 行「6—10 季」",
+        "reference_year": 0,
+        "definition": "合同名义工期，用于把总额与物理需求量等额分摊到各季，并决定单季计划施工量与设备订购量。",
+        "valid_range": [
+          2,
+          12
+        ],
+        "confidence": "low",
+        "calibration_note": "1（受理）+ 4（施工）+ 1（投运）= 6 季，正好是计划书给的窗口下界；上界 10 季由拥堵与交付延误自然产生，不写死。若实测完工中位数超过 10 季，先查 param.construction_share_cap_ppm 与剧本的服务部门产量，再动本值。"
+      },
+      {
+        "id": "param.p08_cost_per_quarter_uu",
+        "value_ref": "/cost/per_quarter_uu",
+        "unit": "μU",
+        "source_type": "derived",
+        "source_ref": "由 param.p08_cost_one_off_uu 与 param.p08_planned_quarters 复算",
+        "derivation_expr": "idiv_floor(param.p08_cost_one_off_uu, param.p08_planned_quarters)",
+        "reference_year": 0,
+        "definition": "单季合同支出额；V-PD-03 要求 per_quarter_uu × planned_quarters 精确等于 one_off_uu，3 300 000 000 = 825 000 000 × 4 无余数。",
+        "valid_range": [
+          100000000,
+          2500000000
+        ],
+        "confidence": "high",
+        "calibration_note": "改动 one_off 或 planned_quarters 后必须复算本值；若出现不整除，应调整 one_off 使其整除，而不是让加载器做归一化补偿。"
+      },
+      {
+        "id": "param.p08_spend_lines_uu_per_q",
+        "value_ref": "/cost/spend_lines_uu_per_q",
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §10「支出落点：各有收款方」；比例结构参照 policy_P04，但按 P08「进口设备为主要约束」上调进口腿占比",
+        "reference_year": 0,
+        "definition": "单季支出的三个落点，键序固定为 import_equipment（收款方 agent.row）/ domestic_material（agent.cell.<region>.manu）/ construction_service（agent.cell.<region>.services）；三项之和必须精确等于 param.p08_cost_per_quarter_uu。",
+        "valid_range": [
+          0,
+          2000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "进口腿占 54.5%（450 000 000 / 825 000 000），使 P08 对 shock.S02（进口价格）与外部交付能力明显敏感——这是计划书给它的定位。若敏感度过强导致项目几乎无法完工，先降进口腿占比并同步改 required_equipment_uqs，不得改成「进口不足时用国产替代」（那会让这条约束消失）。"
+      },
+      {
+        "id": "param.p08_required_equipment_uqs",
+        "value_ref": "/cost/required_equipment_uqs",
+        "unit": "μQ_manu",
+        "source_type": "derived",
+        "source_ref": "由进口设备腿四季合计按基年价折算：base_price == 1 000 000 000 μU/Q_s、Q_SCALE == 1 000 000，即 1 000 μU 对 1 μQ_s（10 号文件 §2.3；刻度见裁定 R-SCALE-01）",
+        "derivation_expr": "mul_div_floor(mul(param.p08_spend_lines_uu_per_q.import_equipment, param.p08_planned_quarters), 1_000_000, param.base_price_uu_per_qs)",
+        "reference_year": 0,
+        "definition": "项目需要到货的进口设备总量，决定 state.project.delivery_progress_ppm 的分母。",
+        "valid_range": [
+          100000,
+          10000000
+        ],
+        "confidence": "medium",
+        "calibration_note": "一致性可机器检验：mul_div_floor(required_equipment_uqs, param.base_price_uu_per_qs, 1 000 000) 必须精确等于进口腿四季合计 1 800 000 000 μU。若某次改参后两者不再相等，说明「买了多少钱的设备」与「到了多少台设备」脱钩，应立即修正而不是解释。注意 R-SCALE-01 之后 μU 数值不再等于 μQ 数值（差 1 000 倍），凡把两者直接相等的旧写法都是错的。"
+      },
+      {
+        "id": "param.p08_required_construction_uqs",
+        "value_ref": "/cost/required_construction_uqs",
+        "unit": "μQ_services",
+        "source_type": "derived",
+        "source_ref": "由施工服务腿四季合计与 param.uu_to_construction_uqs_ppm == 1 000 复算（R-SCALE-01 连带要求第 2 条：分母带 μU 的 ppm 系数 ÷1000，见 docs/11 §5.15）",
+        "derivation_expr": "mul_ppm(mul(param.p08_spend_lines_uu_per_q.construction_service, param.p08_planned_quarters), param.uu_to_construction_uqs_ppm)",
+        "reference_year": 0,
+        "definition": "项目需要消耗的施工服务总量，决定 state.project.construction_progress_ppm 的分母；单季计划施工量 = idiv_floor(960 000, 4) = 240 000 μQ_services。",
+        "valid_range": [
+          100000,
+          10000000
+        ],
+        "confidence": "medium",
+        "calibration_note": "单季 240 000 μQ_services 需要该地区服务 cell 的实际产量至少 800 000 μQ（按 param.construction_share_cap_ppm = 300 000）。剧本给海岬的服务产量若低于此，本项目在无冲击基线下也会拖期——这属于可解释的结果，不是缺陷。"
+      },
+      {
+        "id": "param.p08_capacity_delta_uqs_per_q",
+        "value_ref": "/effect/capacity_delta_uqs_per_q",
+        "unit": "μQ_manu/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §10「容量效果：单位必须与部门用电系数一致」的同构处理——此处单位与 sector.manu 的产品单位一致",
+        "reference_year": 0,
+        "definition": "scale_ppm == 1 000 000 时完工带来的港口通行能力增量，写入 state.region.port_capacity_pending_uqs_per_q。",
+        "valid_range": [
+          100000,
+          5000000
+        ],
+        "confidence": "low",
+        "calibration_note": "相对剧本基值（content/scenarios/chengwan/regions.json 中 region.haijia 的 port_capacity_uqs_per_q = 2 600 000 μQ_manu/季）为 +34.6%：一次升级不应永久解除外部约束，否则 P08 变成一次性通关键。若 T-S-P08 链路里港口从来不是有效上限，应下调剧本基值而不是上调本参数。"
+      },
+      {
+        "id": "param.p08_opex_per_q_uu",
+        "value_ref": "/cost/opex_per_q_uu",
+        "unit": "μU/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「学校、医院、电网和住房建成后需要人员与维护」；比例参照 policy_P04 的 20 000 000 μU/季 对 4 000 000 000 μU 合同额（0.5%/季），本政策取 0.485%/季",
+        "reference_year": 0,
+        "definition": "投运后每季的人员与维护支出，计入 state.gov.service_opex_committed_uu，经 S04 的 service_opex 档支付给 agent.pubserv.<region>。",
+        "valid_range": [
+          0,
+          200000000
+        ],
+        "confidence": "low",
+        "calibration_note": "检验方式：连续 40 季不撤回时，累计运行费 16 000 000 × 40 = 640 000 000 μU，约为合同额 3 300 000 000 μU 的 19.4%。若试玩显示玩家完全感觉不到运行费压力，先提高本值，而不是新增惩罚机制。"
+      },
+      {
+        "id": "param.p08_compensation_ppm",
+        "value_ref": "/exit_rule/compensation_ppm",
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §10「合同赔偿按剩余合同规则结算」",
+        "reference_year": 0,
+        "definition": "取消项目时按剩余合同额计算赔偿的比例。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "高于 policy_P04 的 300 000，理由是进口设备合同的违约条款通常更硬。若试玩显示玩家把立项当作零成本试探手段，先提高本值；若显示取消从来不被使用，再考虑下调。"
+      },
+      {
+        "id": "param.p08_min_seats_ppm",
+        "value_ref": "/legal_authority/min_seats_ppm",
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「重大改革还要满足法定权限与联盟条件」",
+        "reference_year": 0,
+        "definition": "通过本政策所需的执政席位占比下限，在 S02 的资格链第 1 步求值。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "与 P04 同值，使「资本项目类政策」在首版有统一的政治门槛。若将来要区分难度，必须同时给出区分依据，不能只挪数字。"
+      },
+      {
+        "id": "param.p08_cooldown_q",
+        "value_ref": "/cooldown_q",
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §17 恶意玩家测试「反复开关补助是否重复领钱」的同类防线；与预算审查周期（每 4 季）对齐",
+        "reference_year": 0,
+        "definition": "两次开关本政策之间的最小间隔季数，违反即 REJECT(E_POLICY_COOLDOWN)。",
+        "valid_range": [
+          1,
+          12
+        ],
+        "confidence": "low",
+        "calibration_note": "与 ADV-01 同类用例一起检验：连续 20 季交替开关时，累计新增通行能力必须等于实际完工项目带来的量，不多一分。"
+      },
+      {
+        "id": "param.p08_toggle_cost_uu",
+        "value_ref": "/toggle_cost_uu",
+        "unit": "μU",
+        "source_type": "derived",
+        "source_ref": "等于全局的 param.policy_toggle_cost_uu（docs/11 §5.15，R-SCALE-01 后为 10 000 000 μU）",
+        "derivation_expr": "param.policy_toggle_cost_uu",
+        "reference_year": 0,
+        "definition": "每次开关本政策产生的一次性行政成本，以 kind = policy_toggle_cost 过账。",
+        "valid_range": [
+          0,
+          100000000
+        ],
+        "confidence": "medium",
+        "calibration_note": "本政策不设专属值；若将来需要差异化，应先说明为什么港口政策的行政成本与其它政策不同，否则保持派生。"
+      },
+      {
+        "id": "param.p08_political_reaction_ppm",
+        "value_ref": "/political_reaction",
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08 三个集团各自关心的事项；建卡时按 10 号文件 §0.4 的集团 ID 序 [bloc.agri_coop, bloc.business, bloc.labor_public] 展平，取值一律从 /political_reaction 读，不在卡里另写一份",
+        "reference_year": 0,
+        "definition": "本政策通过时对三个集团 state.bloc.stance_ppm 的一次性冲量，方向依据是利益得失而不是好感度。",
+        "valid_range": [
+          -1000000,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "检验方式：把 P08 的资金来源改成 reallocation 并调出 subsidies 档，bloc.business 的净立场应当被抵消甚至转负；若模型里看不到这种抵消，说明立场更新只用了本冲量、没有用实际利益变化，需修 S08 的立场更新式。"
+      },
+      {
+        "id": "param.p08_feedback_window_q",
+        "value_ref": [
+          "/lag/min_feedback_q",
+          "/lag/max_feedback_q"
+        ],
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P08 行「6—10 季；进口设备与外部需求，不能自造订单」",
+        "reference_year": 0,
+        "definition": "本政策的声明反馈窗口：结构性下界 6 季（1 受理 + 4 施工 + 1 投运），上界 10 季为无重大中断时的预期上限；超出上界不是缺陷，但必须有可读的停滞原因。",
+        "valid_range": [
+          1,
+          40
+        ],
+        "confidence": "medium",
+        "calibration_note": "这是本政策唯一直接来自计划书的数字。若实现后的完工季分布与该窗口系统性不符，应先改 planned_quarters 或施工能力参数，再考虑修订本窗口，并同步修订计划书对照表。"
+      }
+    ]
+  },
+  "_note_ui_copy": {
+    "blocked.authority": {
+      "template_zh": "无法执行：本政策需要资本项目授权（授权位 {authority_bit}），当前执政团队尚未取得。可行的路径是等待下一个立法窗口，或先完成需要同一授权的其它议程。",
+      "placeholders": [
+        "authority_bit"
+      ],
+      "blocked_reason_code": "authority"
+    },
+    "blocked.seats": {
+      "template_zh": "无法执行：本政策要求执政席位占比不低于 {min_seats_ppm} ppm，当前为 {seats_gov} / {seats_total} 席。席位不足时，预算法案类项目无法通过。",
+      "placeholders": [
+        "min_seats_ppm",
+        "seats_gov",
+        "seats_total"
+      ],
+      "blocked_reason_code": "authority"
+    },
+    "blocked.bloc_veto": {
+      "template_zh": "无法执行：{bloc_id} 在其可否决领域内持反对立场（当前立场 {stance_ppm} ppm）。本政策占用该集团关心的预算或队列资源。",
+      "placeholders": [
+        "bloc_id",
+        "stance_ppm"
+      ],
+      "blocked_reason_code": "authority"
+    },
+    "blocked.cooldown": {
+      "template_zh": "无法执行：本政策处于冷却期，最早可在第 {cooldown_until_q} 季再次提交。上一次开关已产生 {toggle_cost_uu} μU 的行政成本。",
+      "placeholders": [
+        "cooldown_until_q",
+        "toggle_cost_uu"
+      ],
+      "blocked_reason_code": "cooldown"
+    },
+    "blocked.precondition.mask_single_bit": {
+      "template_zh": "无法执行：一次只能为一个地区立项。当前选择了 {region_count} 个地区。请分次提交，每次一个地区。",
+      "placeholders": [
+        "region_count"
+      ],
+      "blocked_reason_code": "precondition"
+    },
+    "blocked.precondition.no_port": {
+      "template_zh": "无法执行：{region_id} 的港口通行能力为 {port_capacity_uqs_per_q}，该地区没有可升级的港口。首版只能升级既有港口，不能新建。",
+      "placeholders": [
+        "region_id",
+        "port_capacity_uqs_per_q"
+      ],
+      "blocked_reason_code": "precondition"
+    },
+    "blocked.precondition.no_delivery_capacity": {
+      "template_zh": "无法执行：当前外部设备交付能力为 {delivery_capacity_uqs}，进口设备无法到货，立项后只会付钱而不会有进度。请先等待交付能力恢复。",
+      "placeholders": [
+        "delivery_capacity_uqs"
+      ],
+      "blocked_reason_code": "precondition"
+    },
+    "blocked.precondition.exited": {
+      "template_zh": "无法执行：本政策正在退出结算中（剩余 {exit_pending_q} 季），退出未完成前不能重新立项。",
+      "placeholders": [
+        "exit_pending_q"
+      ],
+      "blocked_reason_code": "exited"
+    },
+    "blocked.queue": {
+      "template_zh": "无法执行：{region_id} 的施工队列已满（{slots_used} / {slots_total}）。可以取消或延期该地区的其它项目，或改在其它地区立项。",
+      "placeholders": [
+        "region_id",
+        "slots_used",
+        "slots_total"
+      ],
+      "blocked_reason_code": "queue"
+    },
+    "blocked.budget": {
+      "template_zh": "无法执行：本季需预留 {need_uu} μU，当前可用（现金减已预留）为 {avail_uu} μU。可以改用债券融资、调度其它支出行，或降低项目规模。",
+      "placeholders": [
+        "need_uu",
+        "avail_uu"
+      ],
+      "blocked_reason_code": "budget"
+    },
+    "blocked.funding": {
+      "template_zh": "无法执行：债券融资额度不足。国内可认购额 {domestic_capacity_uu} μU、外部剩余额度 {external_capacity_uu} μU，合计低于本季所需 {need_uu} μU。居民投资池的钱来自居民储蓄，不能凭空增加。",
+      "placeholders": [
+        "domestic_capacity_uu",
+        "external_capacity_uu",
+        "need_uu"
+      ],
+      "blocked_reason_code": "budget"
+    },
+    "failure.financing": {
+      "template_zh": "项目已中断（资金）：本季应付 {due_uu} μU，实付 {paid_uu} μU，缺口 {gap_uu} μU 已登记为对 {payee_id} 的欠付。已支付的部分不退回，进度停在 {construction_progress_ppm} ppm。",
+      "placeholders": [
+        "due_uu",
+        "paid_uu",
+        "gap_uu",
+        "payee_id",
+        "construction_progress_ppm"
+      ],
+      "failure_code": "financing"
+    },
+    "failure.delivery": {
+      "template_zh": "项目已中断（设备交付）：本季进口设备到货 {delivered_uqs} μQ，外部交付能力剩余 {delivery_capacity_uqs} μQ，进口价格指数 {import_price_ppm} ppm。交付进度停在 {delivery_progress_ppm} ppm；即使施工完成，也不会投运。",
+      "placeholders": [
+        "delivered_uqs",
+        "delivery_capacity_uqs",
+        "import_price_ppm",
+        "delivery_progress_ppm"
+      ],
+      "failure_code": "delivery"
+    },
+    "failure.congestion": {
+      "template_zh": "项目已中断（施工拥堵）：{region_id} 本季施工能力 {construction_capacity_uqs} μQ，已被占用 {construction_used_uqs} μQ，本项目计划需要 {need_uqs} μQ。付款可以继续，但进度不会增加。",
+      "placeholders": [
+        "region_id",
+        "construction_capacity_uqs",
+        "construction_used_uqs",
+        "need_uqs"
+      ],
+      "failure_code": "congestion"
+    },
+    "failure.no_demand": {
+      "template_zh": "升级已投运，但没有产生成交：外部需求指数 {export_demand_ppm} ppm，本季出口未满足需求为 {unmet_demand_uqs} μQ。通行能力不是当前的限制因素——没有订单时，扩大通行能力不会带来产出或支持度。",
+      "placeholders": [
+        "export_demand_ppm",
+        "unmet_demand_uqs"
+      ],
+      "failure_code": "no_demand"
+    },
+    "failure.not_binding": {
+      "template_zh": "升级已投运，但成交量没有变化：{cell_id} 本季的限制因素是 {binding_code}（0 计划 / 1 产能 / 2 劳动 / 3 能源 / 4 材料），不是港口通行能力。要让这笔投资见效，需要先解除那一项约束。",
+      "placeholders": [
+        "cell_id",
+        "binding_code"
+      ],
+      "failure_code": "not_binding"
+    },
+    "info.commission_blocked": {
+      "template_zh": "两项进度均已完成，但尚未投运：运行费承诺 {service_opex_committed_uu} μU/季 尚未纳入下季预算，或 {region_id} 的服务部门在岗人员为 {services_employment_persons} 人。配套条件满足后才会投运。",
+      "placeholders": [
+        "service_opex_committed_uu",
+        "region_id",
+        "services_employment_persons"
+      ],
+      "failure_code": "commission_blocked"
+    },
+    "info.opex_arrears": {
+      "template_zh": "运行费欠付 {arrears_uu} μU：{region_id} 的公共服务可用率已降至 {availability_ppm} ppm。已建成的港口资产与通行能力不会被删除，但服务水平会持续下降，恢复慢于下降。",
+      "placeholders": [
+        "arrears_uu",
+        "region_id",
+        "availability_ppm"
+      ],
+      "failure_code": "opex_arrears"
+    }
+  },
+  "_note_open_questions_refs": [
+    "OQ-201",
+    "OQ-218",
+    "OQ-228",
+    "OQ-238",
+    "OQ-239",
+    "OQ-245",
+    "OQ-246",
+    "OQ-247",
+    "OQ-248",
+    "OQ-249",
+    "OQ-250",
+    "OQ-251",
+    "OQ-252",
+    "OQ-253",
+    "OQ-254",
+    "OQ-255",
+    "OQ-256"
+  ],
+  "_note_new_open_questions_proposed": [
+    {
+      "id": "OQ-246",
+      "title_zh": "港口通行能力的计量单位与覆盖的部门",
+      "summary_zh": "10 号文件把 state.region.port_capacity_uqs_per_q 的单位写成「μQ/季」，没有部门下标；但 §0.1 禁止跨部门相加 μQ_s。本文件取最保守读法：单位为 μQ_manu/季，只覆盖制造品跨境流，农产品出口与其它部门不受港口约束。若将来要覆盖多部门，必须先定义一个合法的聚合口径。"
+    },
+    {
+      "id": "OQ-247",
+      "title_zh": "PolicyDefinition schema 覆盖不到计划书 §09/§10 的全部必填内容",
+      "summary_zh": "现行 §5.12 只定义九项必填 + 少量辅助键，且 additionalProperties:false。计划书 §09/§10 还要求作用链、资金与权限、运行费、参数身份证与界面文案模板。其中 effect_chain 已由校验器按文档优先级正式登记（§5.12 键表待同步）；参数身份证按 §5.15 归 content/parameters/params_core.json，不进本文件；其余仍以 _note_* 给出，需要 schema 升到 v2 才能被载入器读取。"
+    },
+    {
+      "id": "OQ-248",
+      "title_zh": "预算曲线只能是平直的",
+      "summary_zh": "V-PD-03 强制 per_quarter_uu × planned_quarters == one_off_uu，无法表达前重后轻或分阶段的支出曲线。首版接受平直曲线并显式登记。"
+    },
+    {
+      "id": "OQ-249",
+      "title_zh": "P04 示例中施工金额与施工量的 2 倍不一致",
+      "summary_zh": "content/policies/policy_P04.json 的 construction_service 合计 1 600 000 000 μU 对 required_construction_uqs 3 200 000 μQ_services，按 R-SCALE-01 之后的 param.uu_to_construction_uqs_ppm == 1 000 应为 1 600 000 μQ，差 2 倍。本文件按 1 000 ppm 精确写（960 000 000 μU ↔ 960 000 μQ_services），P04 与 §5.12 的示例需修订。"
+    },
+    {
+      "id": "OQ-250",
+      "title_zh": "项目进口设备的金额→数量换算未定义",
+      "summary_zh": "§5.5 用「本季已订设备量」推交付进度但未给换算式，也未说 state.world.import_price_ppm 是否参与。本文件采用「实付额 × Q_SCALE ÷ 进口价格」的保守读法（走 mul_div_floor），使进口涨价直接拖慢交付。"
+    },
+    {
+      "id": "OQ-251",
+      "title_zh": "进口支出是否占用外部信用额度，两处口径不一致",
+      "summary_zh": "INV-104 说进口支出受现金与外部信用额度双重约束；§4.4 的项目进口腿是纯现金付款。本文件按 §4.4 执行。"
+    },
+    {
+      "id": "OQ-252",
+      "title_zh": "非公共服务类资产没有可用率字段",
+      "summary_zh": "计划书 §07 要求断供运行费降低服务可用率而不删除资产，但 10 号文件只给了 state.pubserv.availability_ppm。港口、电网、灌溉的断供后果无处落地，只能落到所在地区的公共服务可用率上。建议增设 state.region.port_availability_ppm 一类字段（属 schema 破坏性变更）。"
+    },
+    {
+      "id": "OQ-253",
+      "title_zh": "failure_paths[].code 的取值集合未定义",
+      "summary_zh": "P04 示例的五个 code 恰好等于 state.project.suspension_reason 枚举去掉 none。若该枚举是封闭集合，则「投运后效果无效」这类失败路径（本文件的 not_binding）无处安放，而计划书 §09 明确要求玩家能理解无效发生在哪里。"
+    },
+    {
+      "id": "OQ-254",
+      "title_zh": "枚举型 player_params 与 V-PD-09 冲突",
+      "summary_zh": "V-PD-09 要求每个 player_params 项都有 valid_range，但 §5.12 的 P04 示例里 funding_source 只有 values 没有 valid_range，而 valid_range 是 [min, max] 整数对，对枚举无意义。本文件照示例写（values + default），需要把 V-PD-09 改成「枚举用 values、数值用 valid_range」。另：player_params 没有 step 与 unit 两个键，计划书 §09 要求的步长与单位只能写在扩展键 player_lever_meta 里。"
+    },
+    {
+      "id": "OQ-255",
+      "title_zh": "测试矩阵登记的 P08 用例数少于 V-PD-06/07 的下限",
+      "summary_zh": "docs/30_quality_gates.md §4 给 P08 只登记 T-S-P08-CHAIN / T-S-P08-GATE / T-S-P08-FAIL-NOORDER 三个 ID（失败链列头写明「至少一条」），而校验器要求 failure_paths >= 4 条、acceptance_tests >= 5 条且每条绑已登记 ID。两条规则对 P08 不可同时满足。本文件按契约执行（只写已登记 ID，缺口写进 failure_paths[].test_binding_basis_zh 与 _note_test_registry_gap），不自行改矩阵。建议补入：T-S-P08-FAIL-FINANCING、T-S-P08-FAIL-DELIVERY、T-S-P08-FAIL-CONGESTION、T-S-P08-FAIL-NOTBINDING、T-S-P08-PAY-NO-PROGRESS、T-S-P08-OPEX-ARREARS，规格见 _note_acceptance_tests_spec。同一缺口对 P01/P02/P03/P05..P12 同样存在，应一次性裁定。"
+    },
+    {
+      "id": "OQ-256",
+      "title_zh": "30 号文件用 ADV-* 作失败链绑定，但注册表提取器只认 T-* 前缀",
+      "summary_zh": "docs/30_quality_gates.md §4 给 P05 绑 ADV-03、给 P09 绑 ADV-01 作失败链；31 号文件的攻击用例（如覆盖本政策的 ADV-I04「自造出口订单」）也一律是 ADV-* 前缀。但 tools/validate_content.py 的 load_doc_ids 只用正则 T-[A-Z]-… 提取注册表，因此任何 test_id 写成 ADV-* 都会被判 E_POLICY_TEST_MISSING。要么给 ADV-* 一个正式的 T-* 别名（如 ADV-I04 ≡ T-S-A-xx），要么把提取器扩到两种前缀。在裁定前，本文件的 not_binding / no_demand 两条分支只能共用 T-S-P08-FAIL-NOORDER，无法直接引用 ADV-I04。"
+    }
+  ]
+}

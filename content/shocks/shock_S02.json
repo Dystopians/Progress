@@ -1,0 +1,357 @@
+{
+  "schema_kind": "shock_definition",
+  "schema_version": 1,
+  "shock_id": "shock.S02",
+  "label_zh": "进口能源与设备价格变化",
+  "channel": "import_price",
+  "targets": ["sector.agri", "sector.manu", "sector.energy", "sector.services"],
+  "target_weights_ppm": [0, 1000000, 0, 0],
+  "arrival": {
+    "hazard_ppm_per_q": 100000,
+    "earliest_q": 4,
+    "min_gap_q": 4,
+    "max_active": 1
+  },
+  "magnitude_ppm": { "min": -200000, "max": 599999 },
+  "duration_q": { "min": 3, "max": 10 },
+  "onset_profile": "step",
+  "decay_profile": "none",
+  "rng_stream": "rng.shock",
+  "log_fields": [
+    "q",
+    "shock_id",
+    "rng_stream",
+    "draw_count_before",
+    "draw_index",
+    "raw_u64",
+    "mapped_value",
+    "magnitude_ppm",
+    "duration_q",
+    "tier_id",
+    "eff_ppm",
+    "applied_world_fields"
+  ],
+
+  "_note_spec_ext": {
+    "_note_why_this_key_zh": "原先这一组扩展说明块直接写在顶层，触发 11_data_contract.md §3 的 E_UNKNOWN_FIELD（additionalProperties: false）。§3 只给两条出路：改进契约后正式登记，或改名为 _note_<field> 注释键。本文件不自行改契约，因此取后者：把整组扩展说明原样收进 _note_spec_ext 这一个注释键——一字未删、任何数值一字未改，只改了嵌套位置；契约声明的 14 个字段全部留在顶层，加载器读到的内容与改动前逐字相同。代价必须诚实登记：tools/validate_content.py 的 V-SH-04 用 walk(skip_notes=True) 跳过 _note* 整棵子树，因此本块内出现的 state.* 字段名从此不再被机器核对「冲击可写白名单」，只剩人工评审；V-SH-TIER（概率档位合计 1e6）不受影响，它用的是不跳过注释的 deep_find。这一点连同「扩展块应升 content.schema_version 正式并入 §5.14，还是整体移到 docs/」一并登记为 OQ-255。",
+    "ext_rationale_zh": "以下字段不在 11_data_contract.md §5.14 的 ShockDefinition 示例键集合内，而 §3 规定 additionalProperties: false。理由与处理方式同 S01，统一登记为 OQ-255。加载器只读上面的契约字段；下列各块是同一事实的可审计说明，凡有数值处一律用 *_ref 指回契约字段或 world.json。",
+
+    "spec_ext_version": 1,
+    "code": "S02",
+    "slug": "import_price",
+    "name_zh": "进口能源与设备价格变化",
+    "_note_name_zh": "任务卡要求的 name_zh 与契约字段 label_zh 逐字相等；label_zh 是唯一事实来源。计划书 §07 的原话是「进口能源／设备价格变化」，本文件的中文名保持同一所指。",
+
+    "external_account_targets": {
+      "primary_field": "state.world.import_price_ppm",
+      "primary_field_shape": "int[4]，按 10 号文件 §0.5 稠密下标 agri/manu/energy/services",
+      "base_field": "scenario.json#world_init.import_price_ppm（基年全为 1 000 000）",
+      "clamp_range_ppm": [100000, 5000000],
+      "writes_no_other_field": 1,
+      "whitelist_ref": "11_data_contract.md §5.14「冲击可写白名单」；INV-108；V-SH-04",
+      "formula_ref": "12_simulation_contract.md §1.1 01.7",
+      "formula_zh": "state.world.import_price_ppm[s] = clamp(base_import_ppm[s] + mul_ppm(eff_ppm[S02], target_weights_ppm[S02][s]), 100000, 5000000)",
+      "weight_concentration_rationale_zh": "权重 100% 压在 sector.manu 上，不是因为设备比燃料重要，而是因为首版只有设备这一条进口线真的被某个结算步读到。world.json#import_supply.lines 已登记：world.import.equipment 是 active_in_v1；world.import.energy 与 world.import.agri 是 declared_no_sim_step_in_v1（额度已配置但 12 号 §5.6 的五类买方里没有任何一条通路让外部产品进入国内供给，OQ-251）；world.import.services 是 closed_in_v1（交付能力 0）。给能源或农产品分配权重，只会让那部分强度落在一个无人读取的 ppm 上，制造『抽到了冲击但什么也没发生』（world.json#shock_binding.rules_zh 第 4 条明确禁止）。",
+      "intended_weights_after_oq251": [50000, 550000, 400000, 0],
+      "_note_intended_weights_after_oq251": "这是 OQ-251（经常性进口供给缺少结算步）裁定通过、燃料与农产品通路补齐之后的建议权重，Σ 同样为 1 000 000。**它不是当前生效值**，加载器绝不读它；放在这里只是为了让『首版为什么把能源权重写成 0』这件事有据可查，避免将来有人误以为是漏填。",
+      "weakened_channel_honest_note_zh": "world.json 已明写：『在该通路缺失期间，shock.S02 只能通过项目设备进口的价格影响财政，对能源供给没有传导；这是首版进口能源价格冲击威力被削弱的已知原因，不要用调大冲击强度去掩盖。』本文件严格遵守：magnitude 区间按设备通道的实际后果标定，不为了补偿缺失的能源通道而放大强度。"
+    },
+
+    "magnitude_distribution": {
+      "authoritative_form_zh": "权威分布是契约 §5.14 规定的闭区间整数均匀分布：draw_range(rng.shock, q, -200000, 599999)，用 12 号 §0.4 的拒绝采样消除取模偏差。下面的档位表是对同一均匀分布的等价读数，不是第二个抽样机制。",
+      "interval_ppm": [-200000, 599999],
+      "interval_size": 800000,
+      "_note_interval_size": "闭区间整数个数 = 599999 - (-200000) + 1 = 800000，使每个档位概率 = 宽度 × 1.25 为精确整数。",
+      "probability_per_integer_ppm_x1000": 1250,
+      "downside_share_ppm": 250000,
+      "upside_share_ppm": 750000,
+      "_note_asymmetry": "与 S01 相反：涨价区间 [0, 599999] 占 75%，降价区间 [-200000, -1] 占 25%。设计假设是『进口价格冲击主要以涨价的形式成为约束』，因为降价对本剧本几乎无害（只会让项目设备更早买齐），而涨价会真正卡住项目交付。该不对称同样是待校准假设，不是对现实价格波动的估计。",
+      "tiers": [
+        {
+          "tier_id": "tier.s02.relief",
+          "label_zh": "进口价格回落",
+          "range_ppm": [-200000, -1],
+          "width": 200000,
+          "probability_ppm": 250000,
+          "edge_case_zh": "最有利端 m = -200000：import_price_ppm[manu] = 800000。同一笔 200 000 μU 的季度设备款可购得 idiv_floor(200000 × 1000000, 800000) = 250 000 μQ_manu，比基年多 25.0000%，项目设备提前买齐。"
+        },
+        {
+          "tier_id": "tier.s02.mild",
+          "label_zh": "轻微上涨",
+          "range_ppm": [0, 149999],
+          "width": 150000,
+          "probability_ppm": 187500,
+          "edge_case_zh": "最不利端 m = 149999：import_price_ppm[manu] = 1149999，同额购得 173 913 μQ_manu（-13.0435%）。"
+        },
+        {
+          "tier_id": "tier.s02.moderate",
+          "label_zh": "明显上涨",
+          "range_ppm": [150000, 299999],
+          "width": 150000,
+          "probability_ppm": 187500,
+          "edge_case_zh": "最不利端 m = 299999：import_price_ppm[manu] = 1299999，同额购得 153 846 μQ_manu（-23.0770%）。"
+        },
+        {
+          "tier_id": "tier.s02.major",
+          "label_zh": "大幅上涨",
+          "range_ppm": [300000, 449999],
+          "width": 150000,
+          "probability_ppm": 187500,
+          "edge_case_zh": "最不利端 m = 449999：import_price_ppm[manu] = 1449999，同额购得 137 931 μQ_manu（-31.0345%）。"
+        },
+        {
+          "tier_id": "tier.s02.severe",
+          "label_zh": "价格冲顶",
+          "range_ppm": [450000, 599999],
+          "width": 150000,
+          "probability_ppm": 187500,
+          "edge_case_zh": "最不利端 m = 599999：import_price_ppm[manu] = 1599999，同额购得 125 000 μQ_manu（-37.5000%）。P04 每季需 200 000 μQ 设备才能按 8 季交付齐全；此档下每季只到货 125 000 μQ（-37.5000%），交付进度按规则必然落后，项目不得投运（INV-090）。"
+        }
+      ],
+      "tier_width_sum": 800000,
+      "tier_probability_sum_ppm": 1000000,
+      "tier_is_readout_not_sampler_zh": "禁止实现成『先抽档位再在档内均匀抽』；档位只用于报告与规则卡的措辞。",
+      "clamp_headroom_zh": "区间两端映射后的 import_price_ppm[manu] ∈ [800000, 1599999]，距 12 号 §1.1 01.7 的 clamp 区间 [100 000, 5 000 000] 两侧都有大量裕度，正常运行不会触发夹逼。若将来上调 magnitude.max 至使 1 000 000 + m > 5 000 000（即 m > 4 000 000），冲击会被静默削平并写 log.clamp——那时必须先改 clamp 而不是接受削平。"
+    },
+
+    "duration_distribution": {
+      "authoritative_form_zh": "draw_range(rng.shock, q, 3, 10)，闭区间整数均匀，共 8 个取值。",
+      "interval_q": [3, 10],
+      "interval_size": 8,
+      "tiers": [
+        { "duration_q": 3, "probability_ppm": 125000 },
+        { "duration_q": 4, "probability_ppm": 125000 },
+        { "duration_q": 5, "probability_ppm": 125000 },
+        { "duration_q": 6, "probability_ppm": 125000 },
+        { "duration_q": 7, "probability_ppm": 125000 },
+        { "duration_q": 8, "probability_ppm": 125000 },
+        { "duration_q": 9, "probability_ppm": 125000 },
+        { "duration_q": 10, "probability_ppm": 125000 }
+      ],
+      "tier_probability_sum_ppm": 1000000,
+      "rationale_zh": "比 S01 更长（3—10 季，均值 6.5）。理由是它要能真正咬住一个 8 季工期的项目：若持续期普遍短于工期，玩家只要等一等就能照原计划完工，交付失败路径（T-S-P04-FAIL-DELIVERY）就永远测不到。下限 3 季保证至少覆盖三次项目付款。",
+      "expected_episodes_zh": "粗估：earliest_q = 4，到达率 100 000 ppm/季 ⇒ 期望等待约 10 季；周期 ≈ 10 + 6.5 + 4 = 20.5 季。40 季任期期望约 1.8 次，120 季压力测试期望约 5—6 次。"
+    },
+
+    "arrival_rule": {
+      "earliest_q": 4,
+      "earliest_q_rationale_zh": "同 S01：保护 q = 0..3 的教学窗口（计划书 §04『新手前四季』）。第 2 季的教学目标正是『看到支出先发生、收益尚未出现，理解建设时滞』；若此时叠加一次进口涨价，玩家会把规则性的时滞误读为随机惩罚。",
+      "min_gap_q": 4,
+      "min_gap_semantics_zh": "冷却从上一次本通道冲击结束的季度算起（12 号 §1.1 01.6：q - last_end_q[k] < min_gap_q[k] 则不抽样）。初值 last_end_q = -min_gap_q。",
+      "max_active": 1,
+      "max_active_forced_zh": "由 state.world.shock_* 三个定长数组的形状强制为 1，不是可调参数。",
+      "autocorrelation_zh": "onset_profile = step、decay_profile = none ⇒ 存续期内强度恒定（组内自相关 1），结束后归零（组间自相关 0）。进口价格不会逐季缓慢回落——这是首版的显式简化，必须在规则卡里写明，否则玩家会预期一个不存在的回落过程。",
+      "profile_choice_rationale_zh": "与 S01 同理：12 号 §1.1 01.7 的衰减判据混用了 onset_profile 与 decay_profile 的取值域，取 step + none 可使 decay_ppm 在两种读法下都等于 1 000 000，行为唯一确定。登记为 OQ-258。",
+      "no_player_influence_zh": "玩家不能影响进口价格。P08（港口与物流升级）只放宽 delivery_capacity 上限，绝不得下调 import_price_ppm；把『升级港口 ⇒ 进口变便宜』做进模型等于用基建收益顶替外部价格，是计划书 §09 P08『不能自造订单』同类的伪深度。"
+    },
+
+    "sampling_protocol": {
+      "stream": "rng.shock",
+      "stream_index": 0,
+      "separation_from_commands_zh": "与 S01 完全一致：命令流与冲击日志分开存储，抽样是计数器式纯函数，rng.event 的抽样次数不影响 rng.shock 的任何取值（INV-009，T-U-E-05）。",
+      "step": "S01",
+      "order_zh": "同一季内按 shock_id 升序处理，S02 在 S01 之后、S03 之前。顺序固定是重放一致性的前提（INV-008）；三个冲击文件的 draw_index 在同一季中按 S01 < S02 < S03 排列。",
+      "draw_sequence": [
+        { "phase": "A_reuse", "draws": 0, "zh": "先查 shock_log 是否已有 (q, shock.S02) 记录；命中即复用，计数器不推进（INV-109）。" },
+        { "phase": "B_persist", "draws": 0, "zh": "state.world.shock_remaining_q[1] > 0 时只做 remaining -= 1 与归零判定。" },
+        { "phase": "C_gate", "draws": 0, "zh": "earliest_q 与 min_gap_q 闸门，不消耗随机数。" },
+        { "phase": "D_arrival", "draws": 1, "zh": "draw_ppm(rng.shock, q) < 100000 则到达。" },
+        { "phase": "E_magnitude", "draws": 1, "zh": "draw_range(rng.shock, q, -200000, 599999)。" },
+        { "phase": "F_duration", "draws": 1, "zh": "draw_range(rng.shock, q, 3, 10)。" }
+      ],
+      "draws_per_quarter_zh": "未到达季 1 次，到达季 3 次（不含拒绝重抽）。顺序不可交换：先强度后持续期。",
+      "log_two_tier_zh": "log.rng 记录每一次抽样（含被拒的那一次），季末满足『log.rng 条数 == Σ Δdraw_count』（INV-011）；shock_log.jsonl 只记到达的冲击。字段见 shock_log_record。",
+      "shock_log_record": {
+        "q": "到达季度索引",
+        "shock_id": "shock.S02",
+        "rng_stream": "rng.shock",
+        "draw_count_before": "本季处理 S02 之前 state.rng.draw_count[0] 的值（抽样前状态）",
+        "draw_index": "强度抽样所用的 draw_index",
+        "raw_u64": "splitmix64 原始输出位型",
+        "mapped_value": "映射后的 magnitude_ppm",
+        "magnitude_ppm": "抽出的强度",
+        "duration_q": "抽出的持续季数",
+        "tier_id": "落入的档位 ID（反查，不参与抽样）",
+        "eff_ppm": "本季生效强度，step + none 下恒等于 magnitude_ppm",
+        "applied_world_fields": "本季写入后的 state.world.import_price_ppm[4] 实际值（生效参数）",
+        "shock_state_before": "抽样前的 {shock_active, shock_remaining_q, last_end_q}"
+      },
+      "reload_determinism_zh": "重载存档不得改变已确定的抽样结果：抽样是 f(root_seed, salt[0], q, draw_index) 的纯函数；manifest.draw_count[6] 与全量 shock_log.jsonl 一起入档；S01 步先查 shock_log 再抽样。验收见 ADV-06 / ADV-H01。",
+      "replay_zh": "commands_only 重放中 shock_log 是待比对的期望值而非输入；不符即说明内容包或参数包漂移，由 content_hash / param_set_version 比对先行拦截。"
+    },
+
+    "transmission": {
+      "principle_zh": "冲击只写 state.world.import_price_ppm，不碰任何国内账户。它不会直接让财政多花一分钱——它改变的是**同一笔已计划的 μU 能买到多少 μQ 设备**，进而改变项目的交付进度。这条链里每一步都是已有结算步的既有规则。",
+      "chain": [
+        { "step": "S01", "zh": "01.7 写入 state.world.import_price_ppm[manu]。国内状态零改动。" },
+        { "step": "S02", "zh": "无直接作用。项目的季度支出计划 spend_plan_uu 在立项时即按 policy 的 cost.spend_lines_uu_per_q 展开并固定（INV-092），不因进口涨价而自动变大——这正是『预算不是资产』与『签约即占用未来预算承诺』的体现。想买回原来的数量，玩家必须自己发起 budget_reallocate 或新的融资命令。" },
+        { "step": "S04", "zh": "04.4 项目付款：import_equipment 分项按原计划金额付给 agent.row，同时增 flow.world.imports_uu 与 flow.world.imports_uqs。外部到岸价 = mul_ppm(content.price.base_uu_per_qs[manu], state.world.import_price_ppm[manu])（world.json#import_supply.external_price_rule_zh）。价格上涨 ⇒ 同额 μU 对应的 μQ_manu 下降。" },
+        { "step": "S05", "zh": "5.5 交付进度：delivered_uqs = min(本季已订设备量, world.delivery_capacity_uqs[manu] 的剩余额)；Δdelivery_ppm = idiv_floor(delivered_uqs × 1 000 000, required_equipment_uqs)。到货量少 ⇒ 交付进度增速下降。**施工进度不受影响**（它只由 grant_uqs 决定，与付款、与进口价格都无数据依赖，INV-087），因此玩家能在项目台账里干净地分辨『交付瓶颈』与『施工瓶颈』。" },
+        { "step": "S05", "zh": "完工判据：交付与施工进度均须达到 1 000 000 才算完工（INV-090）。交付落后 ⇒ 第 8 季不得完工 ⇒ 不写 capacity_pending ⇒ S01 无可转入 ⇒ 新增电力容量推迟到某个更晚的季度。P04 的 delivery 失败路径（T-S-P04-FAIL-DELIVERY）由此被真实触发，而不是靠夹具硬设 delivery_capacity = 0。" },
+        { "step": "S05 / S06", "zh": "财政侧：flow.world.imports_uu 不变（付款额没变），flow.world.imports_uqs 下降。经常账户 state.world.current_account_uu 因出口未变而进口额未变，本季不动——这一点必须在报告里讲清楚，否则玩家会以为涨价一定表现为『花了更多钱』。真正的代价是**时间**与**被占用的施工槽位**，不是当季现金。" },
+        { "step": "S02（后续季）", "zh": "玩家的应对：延期（project_defer）、追加预算（budget_reallocate）、发债补足（issue_bond，受 S03 通道的额度与票息约束）、或取消（project_cancel，已付不退、按 exit_rule 付违约金）。四条路都有成本，没有免费选项——这正是计划书 §04『要取舍』的落点。" },
+        { "step": "全程", "zh": "能源与农产品进口线在首版没有买方通路（OQ-251），因此 import_price_ppm[energy] / [agri] 即使被写也无人读取。本文件把它们的权重设为 0，使『冲击生效但无后果』这种不可解释现象不会出现。燃料短缺在首版仍按 OQ-216 表现为能源 cell 的 bound_materials 收紧，与本冲击无关。" }
+      ],
+      "known_contract_gap_zh": "12 号 §4 04.4 说 import_equipment 分项付款『同时增 flow.world.imports_uu / imports_uqs』，但**没有给出 μU → μQ 的换算式**；§5.5 的 delivered_uqs 又依赖『本季已订设备量』这个未定义的量。S02 的整条传导链就压在这个缺口上。本文件按 world.json#import_supply.external_price_rule_zh 采用最保守的显式写法：imports_uqs[manu] += idiv_floor(imports_uu × 1 000 000, external_price_uu_per_qs[manu])　# rounding: floor, reason=不高估到货量。**这是本文件对契约缺口的填补建议，不是私自裁定**，登记为 OQ-261；在 12 号文件补齐之前，S02 的传导是有明确说明但未被权威结算步承认的。",
+      "forbidden_zh": [
+        "禁止让 S02 直接扣减 state.gov.cash_uu 或提高 project.spend_plan_uu；涨价必须经由『同额少货』表现，不是经由『同货多钱』。",
+        "禁止让 S02 直接下调 project.delivery_progress_ppm；进度只能由实际到货量决定（INV-089）。",
+        "禁止在涨价季给项目自动追加预算或自动延期；一切应对都必须是玩家的显式命令（计划书 §13 禁止后处理补丁）。",
+        "禁止让 P08 或任何政策下调 import_price_ppm。",
+        "禁止把能源／农产品进口线的缺失伪装成『冲击强度不够』并据此调大 magnitude 区间。"
+      ]
+    },
+
+    "leading_signals": {
+      "principle_zh": "先行信号必须是已经发生的量。冲击一旦落地，其档位、强度与剩余季数是当季已确定的状态，必须在 ldg.event 与世界页如实披露。",
+      "signals": [
+        { "order": 1, "where": "世界页 / 规则卡", "what_zh": "state.world.import_price_ppm[manu] 当季值与基年 1 000 000 的对比；档位标签、强度 ppm、剩余季数。", "class": "已经发生" },
+        { "order": 2, "where": "项目台账", "what_zh": "本季设备到货量（μQ_manu）与上季对比。这是最干净的先行信号：付款额不变而到货量下降，一眼可见『同额少货』。", "class": "已经发生" },
+        { "order": 3, "where": "项目台账", "what_zh": "delivery_progress_ppm 的本季增量下降，而 construction_progress_ppm 增量不变。两条进度条并列显示时，玩家不需要任何文字解释就能看出卡在哪一侧。", "class": "已经发生" },
+        { "order": 4, "where": "外部账户", "what_zh": "flow.world.imports_uu 持平而 flow.world.imports_uqs 下降；两者的比值即当季实际到岸价。", "class": "已经发生" },
+        { "order": 5, "where": "项目页 / 规则推断", "what_zh": "按当前到货速度推算的完工季（确定性规则，可在本季末直接算出），与合同计划完工季并列显示，差额即『推迟了几季』。", "class": "规则推断" },
+        { "order": 6, "where": "预算页", "what_zh": "补足设备缺口所需的追加预算额，标注为『情景预测』，且假设行写明『不含未来冲击（已隐藏）』。", "class": "情景预测" }
+      ],
+      "what_is_hidden_zh": "隐藏的只有尚未到达的冲击是否会到达、到达时会抽到什么。已到达冲击的全部参数一律公开；规则卡整张不得隐藏（20_ui_spec.md B-06）。"
+    },
+
+    "acceptance_tests": [
+      "T-S-SHOCK-S02-WHITELIST：断言 S02 冲击季内除 state.world.import_price_ppm 外的全部 state.world.* 与全部国内状态字段 WriteGuard 写入次数为 0（INV-108、V-SH-04）。",
+      "T-S-SHOCK-S02-NO-CASH-WRITE：断言 S02 步内 state.gov.cash_uu、state.project.spend_plan_uu、state.project.delivery_progress_ppm 的写入次数为 0；涨价不得表现为直接扣钱或直接改进度。",
+      "T-S-SHOCK-S02-SAME-UU-LESS-QTY：在 tier.s02.severe 最不利端，断言同一项目季度付款 flow.world.imports_uu 不变、flow.world.imports_uqs 精确等于 idiv_floor(imports_uu × 1 000 000, external_price)，且 delivery_progress 增量按比例下降。",
+      "T-S-SHOCK-S02-TIER-PARTITION：断言五个档位宽度之和 == 800 000、概率之和 == 1 000 000、无缝无叠。",
+      "T-S-SHOCK-S02-CONSTRUCTION-UNAFFECTED：断言同一季的 construction_progress_ppm 增量与无冲击对照组逐位相同（进口价格不得污染施工进度，INV-087）。",
+      "T-S-P04-FAIL-DELIVERY：P04 的交付失败路径（已在 11 号 §5.12 与 31_adversarial_tests.md 登记）。本冲击是它在真实对局中的自然触发源。",
+      "ADV-J06：价格反复触顶（已登记）。31_adversarial_tests.md 指名用 shock.S02 叠加国内减产制造极端短缺；本文件的 magnitude 区间是该用例的取值来源，clamp 超预算时必须调价格调整速度或本区间，不得调大 clamp 预算。",
+      "ADV-06 / ADV-H01：存档重载不得重抽已确定冲击。"
+    ],
+
+    "value_cards": [
+      {
+        "field_ref": "target_weights_ppm",
+        "value": [0, 1000000, 0, 0],
+        "unit": "ppm",
+        "source_type": "derived",
+        "derivation_expr": "对每个 s：weight[s] = (world.json#import_supply.lines[s].channel_status == \"active_in_v1\") ? 1000000 : 0；首版仅 sector.manu 满足",
+        "source_ref": "计划书 §07「进口能源／设备价格变化」；world.json#import_supply.lines；world.json#shock_binding.rules_zh 第 4 条",
+        "reference_year": 0,
+        "definition": "冲击强度在四部门之间的分配权重，Σ 必须精确等于 1 000 000。首版全部压在唯一有结算通路的设备进口线（sector.manu）上。",
+        "valid_range": [0, 1000000],
+        "confidence": "medium",
+        "calibration_note": "检验方式：静态检查『被赋予非零权重的部门，其 import_supply.lines 的 channel_status 必须是 active_in_v1』。OQ-251 裁定通过、燃料与农产品买方通路补齐后，改用 intended_weights_after_oq251 并同时重估 magnitude 区间——因为那时同一个强度会同时打在设备与燃料两条线上，总后果会变大。"
+      },
+      {
+        "field_ref": "magnitude_ppm.min",
+        "value": -200000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；11_data_contract.md §5.14「闭区间，整数均匀」",
+        "reference_year": 0,
+        "definition": "进口价格指数偏移量的下界（设备到岸价最低为基年价的 80%）。",
+        "valid_range": [-900000, 0],
+        "confidence": "low",
+        "calibration_note": "下界 -900 000 由 clamp 下限 100 000 ppm 反推并留裕度。检验方式：在最有利档跑一次 P04，断言项目仍不能早于合同工期完工（提前买齐设备只解除交付约束，施工进度仍受 construction_capacity 限制，INV-090）。若出现提前完工，说明完工判据被交付进度单边决定，回到 INV-090。"
+      },
+      {
+        "field_ref": "magnitude_ppm.max",
+        "value": 599999,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；§10「测试拆分：每季 0.2 U 进口设备」",
+        "reference_year": 0,
+        "definition": "进口价格指数偏移量的上界（设备到岸价最高为基年价的 159.9999%）。取 599 999 而非 600 000，使闭区间整数个数恰为 800 000，档位概率精确整除。",
+        "valid_range": [0, 4000000],
+        "confidence": "low",
+        "calibration_note": "标定依据：P04 每季 200 000 μU 设备款、8 季共需 1 600 000 μQ_manu 设备（每季 200 000 μQ）。上界处每季只到货 125 000 μQ（-37.5000%），按原计划工期必然交付不齐，交付失败路径被真实触发；再高则项目几乎永远完工不了，玩家除了取消无路可走，失去取舍空间。检验方式：跑 T-S-P04-FAIL-DELIVERY，确认失败可解释、且『延期 / 追加预算 / 发债 / 取消』四条应对路径都能走通。上界超过 4 000 000 会撞上 clamp 上限 5 000 000。"
+      },
+      {
+        "field_ref": "duration_q.min",
+        "value": 3,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P04「4—8 季」；§10「计划 8 季」",
+        "reference_year": 0,
+        "definition": "一次进口价格冲击的最短持续季数，至少覆盖三次项目季度付款，使交付缺口可累积成可见的进度落差。",
+        "valid_range": [1, 6],
+        "confidence": "low",
+        "calibration_note": "检验方式：断言在 duration == min 的情形下，P04 的完工季至少推迟 1 季。若一次冲击完全不改变完工季，说明持续期下限相对工期过短，应上调本值，而不是调大强度。"
+      },
+      {
+        "field_ref": "duration_q.max",
+        "value": 10,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §03「40 季度」；§10「计划 8 季」",
+        "reference_year": 0,
+        "definition": "一次进口价格冲击的最长持续季数，可完整覆盖一个 8 季工期并留出 2 季余量。与 min 共同构成 8 个等概率取值，使 1 000 000 / 8 精确整除。",
+        "valid_range": [3, 16],
+        "confidence": "low",
+        "calibration_note": "检验方式：120 季压力测试统计本通道存续季占比；超过 40% 即退化为常态背景，应先下调本值。修改时必须保持 (max - min + 1) 整除 1 000 000。"
+      },
+      {
+        "field_ref": "arrival.hazard_ppm_per_q",
+        "value": 100000,
+        "unit": "ppm/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；§14「最后加组合冲击」",
+        "reference_year": 0,
+        "definition": "闸门放行的季度中，本季到达一次进口价格冲击的概率（10%）。比 S01 略低，因为它的持续期更长、对在建项目的杀伤更集中。",
+        "valid_range": [0, 500000],
+        "confidence": "low",
+        "calibration_note": "检验方式：100 种子 × 40 季统计到达次数，以及『P04 在建期间遭遇 S02』的种子占比。若几乎每局都遭遇，交付失败会被玩家读成必然剧情而非风险；若几乎不遭遇，T-S-P04-FAIL-DELIVERY 就只能靠夹具硬造。目标是两者之间。"
+      },
+      {
+        "field_ref": "arrival.earliest_q",
+        "value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §04「新手前四季」；第 2 季的教学目标「理解建设时滞」",
+        "reference_year": 0,
+        "definition": "允许出现本冲击的最早季度索引，保护 q = 0..3 的教学窗口。",
+        "valid_range": [0, 12],
+        "confidence": "medium",
+        "calibration_note": "检验方式：22_onboarding.md 前四季验收。本冲击尤其不能早于第 2 季——那一季的教学目标是让玩家理解**规则性**的建设时滞，叠加随机延迟会把两种延迟混为一谈。"
+      },
+      {
+        "field_ref": "arrival.min_gap_q",
+        "value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；12_simulation_contract.md §1.1 01.6 的冷却闸门",
+        "reference_year": 0,
+        "definition": "上一次本通道冲击结束后到下一次可能到达之间的最短间隔季数。冷却期内不抽样、不消耗随机数。",
+        "valid_range": [0, 16],
+        "confidence": "low",
+        "calibration_note": "**本值目前无法执行**：12 号 §1.1 01.6 引用 last_end_q[k]，但状态字典里没有这个字段。在新增 state.world.shock_last_end_q[3] 之前冷却退化为 0。登记为 OQ-260。"
+      },
+      {
+        "field_ref": "arrival.max_active",
+        "value": 1,
+        "unit": "件",
+        "source_type": "derived",
+        "derivation_expr": "state.world.shock_active 每通道一个槽位 ⟹ max_active == 1",
+        "source_ref": "10_variable_dictionary.md §7",
+        "reference_year": 0,
+        "definition": "同一通道允许同时存续的冲击实例数，由状态形状强制为 1。",
+        "valid_range": [1, 1],
+        "confidence": "high",
+        "calibration_note": "加载期断言 max_active == 1；其它取值直接拒绝加载。支持叠加需改状态形状并升 save.schema_version（破坏性变更）。"
+      }
+    ],
+
+    "open_question_refs": [
+      "OQ-255 扩展字段的归属（同 S01）：文件名一侧已落实为 shocks/shock_S02.json，扩展块现整组收进 _note_spec_ext 注释键，副作用是 V-SH-04 不再核对块内的 state.* 字段名，待契约裁定。",
+      "OQ-257 强度分布只能是均匀分布（同 S01）。",
+      "OQ-258 12 号 §1.1 01.7 的衰减因子判据混用 onset_profile 与 decay_profile（同 S01）。",
+      "OQ-259 未到达的抽样不写 shock_log（同 S01）。",
+      "OQ-260 last_end_q 字段缺失，min_gap_q 不可执行（同 S01）。",
+      "OQ-261 12 号 §4 04.4 未给出 import_equipment 付款额 μU → 到货量 μQ 的换算式，§5.5 的『本季已订设备量』亦未定义；S02 的整条传导链依赖这个缺口被补齐。",
+      "OQ-250 进口交付时滞：首版 param.import_lead_time_q 全为 0，涨价的后果即时体现，不叠加时滞。",
+      "OQ-251 能源与农产品进口线额度已配置但无买方通路，本冲击对它们的权重只能写 0。",
+      "OQ-216 燃料短缺在首版表现为能源 cell 的 bound_materials 收紧，与本冲击无因果连接。",
+      "OQ-213 企业资本品购入中的进口部分是否计入 M_cap，直接决定 S02 除项目外还有没有第二个受体。"
+    ],
+
+    "notes_zh": "数值为测试起点，不是现实价格数据，也不是已经跑出的结果。强度与持续时间由剧本配置，全部属于待校准的设计假设（计划书 §07、§14）。本文件不含任何平衡修正项或后处理补丁（计划书 §13）。本冲击在首版的威力被『经常性进口缺少结算步』削弱是已知且已登记的事实（OQ-251），正确的应对是补通路，不是调大强度。"
+  }
+}

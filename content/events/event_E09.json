@@ -1,0 +1,703 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E09",
+  "_note_code": "E09",
+  "_note_slug": "service_opex_arrears_degradation",
+  "label_zh": "服务运行费欠拨导致降级",
+  "_note_name_zh": "服务运行费欠拨导致降级",
+  "_note_one_line_zh": "政府对中州公共服务的运行费连续拨付不足，已建成的校舍、医院与管网一栋不少，但实际可用率已经掉下来，排队变长、居民预期走低、劳动与公共服务联盟的组织力上升。",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的两处结构修复（对应校验器 E_CONTENT_LAYOUT 与 E_UNKNOWN_FIELD）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）；其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删、一字未改，只是明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) 曾登记的契约—校验器死锁已解开：tools/validate_content.py 的 check_event 原先只认顶层 consequences 键（缺失即 E_EVENT_EVIDENCE），而 11_data_contract.md §5.13 的键集合与 V-EV-01..08 都没有这个字段、additionalProperties: false 又禁止它出现，于是「写了必报 E_UNKNOWN_FIELD、不写必报 E_EVENT_EVIDENCE」。本轮按 §3 自己给出的出路裁剪：校验器改为 consequences 与 _note_consequences 两处都认，逐条断言（对手方／会计解释）一视同仁、强度不变（该工具文件头 OQ-V07）。本文件的后果说明因此留在 _note_consequences，并已按计划书 §13 补齐实体 ID、来源操作、金额表达式、时间与约束；等 §5.13 正式声明该字段后，本键改回 consequences、校验器只认正式键。(4) 修正一处 R-SCALE-01 漏迁：trigger.all_of[2].value 与 _note_parameters 里 param.e09_arrears_trigger_uu 的 value / valid_range 原为旧刻度（100000 μU＝旧 0.1 U），迁移器按「键名含 uu 词元」扫描子树，扫不到名为 value 的键，已手工 ×1000 改为 100000000 与 [0, 2000000000]。",
+  "_note_category": "public_service_degradation",
+  "_note_category_zh": "公共服务与运行费",
+  "_note_anchor": {
+    "region_id": "region.zhongzhou",
+    "pubserv_id": "pubserv.zhongzhou",
+    "anchor_reason_zh": "计划书 §05 把中州写成「住房容量紧张、公共服务承压」的地区，它是四区中公共服务负荷最高的一个，因此首版把本模板绑定在中州。绑定单一地区不是设计偏好，而是触发语言的限制：trigger 的 scope 只能指向一个已在加载期解析成下标的稳定 ID，没有「对任一地区成立即触发」这种选择器（见 open_question_refs 的 OQ-PENDING-EV-01）。",
+    "other_regions_note_zh": "其余三区出现同类欠拨时，首版不产生事件，但机制后果照常发生（可用率照样下降），玩家仍可在 ldg.opex 与 ldg.service 两张台账里看到全部四区的缺口。事件缺席不等于机制缺席。"
+  },
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "flow.pubserv.funding_ratio_ppm",
+        "scope": "pubserv.zhongzhou",
+        "op": "lt",
+        "value": 900000,
+        "_note_zh": "本季运行费实际拨付率低于 90%。该字段由 S04 的支付优先级结果写入（12 号文件 §4）。"
+      },
+      {
+        "metric": "state.pubserv.availability_ppm",
+        "scope": "pubserv.zhongzhou",
+        "op": "lt",
+        "value": 950000,
+        "_note_zh": "服务实际可用率已低于 95%。这一条是本模板表达「持续季数」的方式，见 trigger_semantics.persistence_zh。"
+      },
+      {
+        "metric": "state.gov.arrears_uu",
+        "op": "gt",
+        "value": 100000000,
+        "_note_zh": "全国口径的政府欠付余额超过 0.1 U，确认拨付不足是财政欠付而不是取整误差。按裁定 R-SCALE-01（1 U = 1e9 μU），0.1 U = 100 000 000 μU；本值在刻度迁移前写作 100000（旧刻度的 0.1 U），迁移器只改键名含 uu 的子树、改不到 trigger 的 value，已在本轮手工改正。"
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2,
+        "_note_zh": "最早第 3 季。第 1—2 季留给新手引导，不在玩家还没看懂运行费这件事时先给他一个降级事件（计划书 §04 新手前四季）。"
+      }
+    ],
+    "probability_ppm": 800000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 4,
+    "max_occurrences": 4
+  },
+  "_note_trigger_semantics": {
+    "evaluation_step": "S08",
+    "conjunction_zh": "schema 只有 all_of，四条是严格的逻辑与。任何一条不成立即 continue，且**不抽样**（12 号文件 §8.4 的顺序是先查冷却与次数、再查条件、最后才抽样）。因此「条件不满足时 rng.event 的计数器一动不动」是可断言的事实，而不是概率描述。",
+    "no_random_popup_zh": "本模板没有任何「每季有 X% 概率弹窗」的路径。probability_ppm 只在四条状态条件全部成立之后才被使用，作用是让同一状态下的曝光时点不完全可预测，而不是制造事件本身。",
+    "sampling_note_zh": "抽样走 rng.event（V-EV-04 禁止借用 rng.shock）。计数器式抽样保证：本事件多抽一次，rng.shock 的任何取值不变（INV-009）。每次抽样写一条 log.rng，含 stream / draw_index / raw_u64 / mapped_value（INV-011），玩家可在 ldg.event 台账里核对。",
+    "persistence_zh": "触发语言里没有「连续 N 季」这个算子（11 号文件 §5.13 的条件只有 metric / scope / op / value 四个字段）。本模板不发明算子，改用一个**存量**变量来承载持续性：flow.pubserv.funding_ratio_ppm 是当季流量，state.pubserv.availability_ppm 是跨季结转的存量，按 12 号文件 §7.2 每季衰减 mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm)。因此「可用率已跌破 95%」在结构上就意味着欠拨已经持续了不止一季——单季一次小幅欠拨不可能把存量打到这个位置。等价的持续季数取决于 param.opex_starve_decay_ppm，见 parameters 里该阈值卡的 calibration_note。",
+    "scope_rule_zh": "本模板遵守一条自律：触发条件里，凡是按地区索引的字段用 region./pubserv. 作用域，凡是全局标量不写 scope（与 11 号文件 §5.13 示例中 state.time.q 的写法一致）。**不**对按群组索引的数组使用地区作用域，因为那需要加载器自行决定聚合方式，属于未定义行为（OQ-PENDING-EV-02）。"
+  },
+  "evidence_refs": [
+    "flow.pubserv.funding_ratio_ppm",
+    "state.pubserv.availability_ppm",
+    "state.gov.arrears_uu",
+    "state.gov.arrears_by_payee_uu",
+    "state.gov.service_opex_committed_uu",
+    "flow.gov.pay_opex_uu",
+    "state.gov.payment_priority",
+    "state.pubserv.capacity_active_uqs_per_q",
+    "flow.pubserv.delivered_uqs",
+    "state.pubserv.queue_persons",
+    "state.cell.maintenance_backlog_ppm"
+  ],
+  "_note_evidence": [
+    {
+      "metric": "flow.gov.pay_opex_uu",
+      "scope": "pubserv.zhongzhou",
+      "ledger_alias": "ldg.opex",
+      "page": "page.region",
+      "label_zh": "本季实际拨付的运行费",
+      "check_zh": "与 state.gov.service_opex_committed_uu 里属于中州的那部分逐条相减，差额就是缺口。两个数字都可下钻到 ldg.transaction 的双边分录。"
+    },
+    {
+      "metric": "flow.pubserv.funding_ratio_ppm",
+      "scope": "pubserv.zhongzhou",
+      "ledger_alias": "ldg.opex",
+      "page": "page.region",
+      "label_zh": "拨付到位率",
+      "check_zh": "触发条件里的第一条就是这个数。台账里逐季一行，可以看出它是这一季才掉下来的，还是已经掉了几季。"
+    },
+    {
+      "metric": "state.gov.payment_priority",
+      "ledger_alias": "ldg.cash",
+      "page": "page.report",
+      "label_zh": "支付优先级序列",
+      "check_zh": "8 类支出的全排列（INV-039）。运行费排在第几档，决定了现金紧张时它是先被挤掉的还是最后被挤掉的。这一条是玩家可以直接改的。"
+    },
+    {
+      "metric": "state.gov.arrears_by_payee_uu",
+      "ledger_alias": "ldg.cash",
+      "page": "page.report",
+      "label_zh": "分收款方欠付",
+      "check_zh": "确认欠的是谁的钱。欠付不计息（与 debt 分开记，10 号文件 §2.2），但它进预算审查的 fail_conditions.arrears。"
+    },
+    {
+      "metric": "state.pubserv.availability_ppm",
+      "scope": "pubserv.zhongzhou",
+      "ledger_alias": "ldg.service",
+      "page": "page.region",
+      "label_zh": "服务实际可用率",
+      "check_zh": "与 state.pubserv.capacity_active_uqs_per_q 放在同一张表里对照：容量那一列不动，可用率那一列在动。这是「资产不消失」的直接证据。"
+    },
+    {
+      "metric": "state.pubserv.queue_persons",
+      "scope": "pubserv.zhongzhou",
+      "ledger_alias": "ldg.service",
+      "page": "page.society",
+      "label_zh": "排队人数",
+      "check_zh": "未获服务的人数（INV-103）。它不会凭空消失，也不会被算作已获服务。"
+    },
+    {
+      "metric": "state.group.service_access_ppm",
+      "scope": "region.zhongzhou",
+      "ledger_alias": "ldg.household",
+      "page": "page.society",
+      "label_zh": "逐组服务可及性",
+      "check_zh": "看清是哪些群组先失去可及性。全国平均值会掩盖这一点。"
+    },
+    {
+      "metric": "state.group.trust_ppm",
+      "scope": "region.zhongzhou",
+      "ledger_alias": "ldg.politics",
+      "page": "page.society",
+      "label_zh": "程序信任",
+      "check_zh": "本事件**不**直接改动它。它的变动来自 12 号文件 §8.1 的失信闭集合，其中「本组所在地区的公共服务运行费欠拨」本身就是一项。台账里这一行的来源应写作该闭集合，而不是 event.E09。"
+    }
+  ],
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -35000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "delta_ppm": 25000
+    }
+  ],
+  "_note_consequences": {
+    "_note_key_placement_zh": "本键原名 consequences。11 号文件 §5.13 的 EventTemplate 只声明 9 个顶层键、不含 consequences，§3 的 additionalProperties:false 又禁止未声明的顶层键，因此按 §3 自己给出的出路改名为 _note_ 注释键。tools/validate_content.py 的 check_event 已同步为「consequences 与 _note_consequences 两处都认、逐条断言一视同仁」（该工具文件头 OQ-V07）。等 §5.13 正式声明该字段后，本键应改回 consequences 且校验器只认正式键。",
+    "effect_timing_note_zh": "12 号文件 §8 的步内顺序是 §8.1 主观量 → §8.2 支持度 → §8.3 集团 → §8.4 事件 → §8.5 留任。因此事件写下的预期与组织力增量**不影响本季已经算完的支持度**，要到下一季 §8.2 重算时才进入支持度。这一季的时滞是结构性的，报告措辞不得暗示事件当季就改变了支持率。",
+    "ledger_counterparties": [
+      {
+        "leg_id": "leg.e09.opex_paid",
+        "payer": "gov.treasury",
+        "payee": "pubserv.zhongzhou",
+        "amount_expr_uu": "flow.gov.pay_opex_uu[pubserv.zhongzhou]",
+        "settlement_step": "S04",
+        "applied_at": "S04（工资与投入：支付工资、补助、项目款）",
+        "written_by": "mech.gov_payment_priority",
+        "ledger_alias": "ldg.opex",
+        "accounting_zh": "已实际付出的那一半运行费：国库现金 state.gov.cash_uu 减少该额，pubserv.zhongzhou 收到同额，双边分录逐笔进 ldg.transaction。本事件**不产生**这条分录，只引用它——它在 S04 就已经记完，事件在 S08 才运行。",
+        "constraint_zh": "受 S04 的可用现金硬约束：付款额不得超过当季可用现金，且按 state.gov.payment_priority 的 8 类全排列顺序出账（INV-039）。",
+        "duration_q": 0
+      },
+      {
+        "leg_id": "leg.e09.opex_arrears",
+        "payer": "gov.treasury",
+        "payee": "pubserv.zhongzhou",
+        "amount_expr_uu": "shortfall_uu = state.gov.service_opex_committed_uu[pubserv.zhongzhou] - flow.gov.pay_opex_uu[pubserv.zhongzhou]",
+        "settlement_step": "S04",
+        "applied_at": "S04（结算失败时登记欠付，而非静默改账）",
+        "written_by": "mech.gov_payment_priority",
+        "ledger_alias": "ldg.cash",
+        "accounting_zh": "没有付出的那一半：这笔钱**还在国库**（state.gov.cash_uu 不减），同额计入 state.gov.arrears_uu 与 state.gov.arrears_by_payee_uu[pubserv.zhongzhou]。这就是本事件全部后果的会计来源——服务降级不是资源蒸发，是一笔应付未付的钱留在了付款方账上。欠付不计息，与 debt 分开记（10 号文件 §2.2）。",
+        "constraint_zh": "本事件的触发条件之一要求 state.gov.arrears_uu > 100000000 μU（0.1 U，R-SCALE-01 刻度），即这条欠付腿必须真实存在且达到可报道的量级，事件才会出现。",
+        "duration_q": -1,
+        "duration_note_zh": "欠付余额持续到被补付为止；补付时反向做一笔 S04 分录冲销，arrears 相应减少。"
+      },
+      {
+        "leg_id": "leg.e09.funding_ratio_readout",
+        "payer": "none",
+        "payee": "none",
+        "counterparty": "none（派生读数，不是一笔钱）",
+        "amount_expr_uu": "flow.pubserv.funding_ratio_ppm[pubserv.zhongzhou] = mul_div_floor(flow.gov.pay_opex_uu[pubserv.zhongzhou], 1000000, state.gov.service_opex_committed_uu[pubserv.zhongzhou])",
+        "settlement_step": "S04",
+        "applied_at": "S04 末（由上面两条腿相除得到）",
+        "written_by": "mech.gov_payment_priority",
+        "ledger_alias": "ldg.opex",
+        "accounting_zh": "拨付到位率是上面两条腿的比值，不是独立事实。分子分母都是 μU，相除得 ppm，按 R-SCALE-01 的强制要求走 JWMath.mul_div_floor（新刻度下裸乘 committed × 1e6 真的会溢出 int64）。触发条件 all_of[0] 读的就是这个数。",
+        "constraint_zh": "分母为 0（本季无运行费义务）时该读数未定义，机制必须直接判为 1000000 而不是除零；此时本事件不触发。",
+        "duration_q": 0
+      }
+    ],
+    "event_effects": [
+      {
+        "target": "state.group.expectation_ppm",
+        "scope": "region.zhongzhou",
+        "entity_ids": [
+          "group.zhongzhou.working.low",
+          "group.zhongzhou.working.mid",
+          "group.zhongzhou.working.high",
+          "group.zhongzhou.elder.low",
+          "group.zhongzhou.elder.mid",
+          "group.zhongzhou.elder.high",
+          "group.zhongzhou.minor.low",
+          "group.zhongzhou.minor.mid",
+          "group.zhongzhou.minor.high"
+        ],
+        "counterparty": "none（主观量，无对手方；对手方在 ledger_counterparties 的 leg.e09.opex_arrears 上）",
+        "written_by": "event.E09",
+        "applied_at": "S08.4（12 号文件 §8.4 事件步）",
+        "settlement_step": "S08",
+        "change_expr": "for g in entity_ids: state.group.expectation_ppm[g] = clamp_i(state.group.expectation_ppm[g] + (-35000), 0, 2000000)",
+        "formula_zh": "expectation_ppm[g] = clamp(expectation_ppm[g] - 35000, 0, 2000000)，对中州 9 个群组逐组施加同一 delta（-35000 ppm = -3.5 个百分点）。9 组同 delta 而不是按人口加权，因为 delta 是 ppm 存量的增量，不是可分配的资源份额；加权会让小组感受不到已经发生在他们身上的事。",
+        "accounting_zh": "预期是主观存量，没有资源对手方，因此本条**不产生任何分录**：Σ 全部主体的 Δcash 在事件前后逐位不变（INV-018），log.ledger 中不存在 cause == event.E09 的行（INV-130）。它的「来源操作」是 leg.e09.opex_arrears 这笔应付未付，「金额」即该笔欠付，「时间」是本季 S08.4，「约束」是 clamp 到 [0, 2000000]。",
+        "duration_q": 0,
+        "duration_note_zh": "delta 是一次性的，但它落在一个有惯性的存量上：12 号文件 §8.1 的预期更新式每季把 expectation 向 living_index 拉回 (1 - param.expectation_inertia_ppm) 的比例。因此这一刀会在若干季里逐步淡出，而不是下一季即消失，也不会永久驻留。",
+        "reversible": true,
+        "reversibility_note_zh": "可逆，但不是靠事件回滚，而是靠 living_index 回升后由惯性式自然带回。没有任何「撤销事件」的命令。"
+      },
+      {
+        "target": "state.bloc.org_power_ppm",
+        "scope": "bloc.labor_public",
+        "entity_ids": [
+          "bloc.labor_public"
+        ],
+        "counterparty": "none（主观量，无对手方；组织力不是从别的集团手里拿走的）",
+        "written_by": "event.E09",
+        "applied_at": "S08.4（在 §8.3 的集团重算之后，故本季不再被重算覆盖）",
+        "settlement_step": "S08",
+        "change_expr": "state.bloc.org_power_ppm[bloc.labor_public] = clamp_i(state.bloc.org_power_ppm[bloc.labor_public] + 25000, 0, 1000000)",
+        "formula_zh": "org_power_ppm[labor_public] = clamp(org_power_ppm[labor_public] + 25000, 0, 1000000)。开局值 350000，单次触发后 375000。",
+        "accounting_zh": "组织力是 ppm 存量，不是守恒的资源，因此 agri_coop 与 business 的 org_power_ppm 不作对应减少——三者之和本来就不是常数（见 _note_political_reaction，两者的 delta 明写为 0）。本条的「来源操作」同样是 leg.e09.opex_arrears：politics.json 中 labor_public 的 care_metric_formula 显式含 Σ_r (availability_ppm[r] × population[r])，欠拨直接压低它的关心指标。无分录、无现金、无人口变动。",
+        "duration_q": 0,
+        "duration_note_zh": "同样落在有惯性的存量上：§8.3 的组织力式每季保留 param.bloc_org_inertia_ppm 的旧值，其余由成员规模与资源重算，因此这一笔增量按惯性逐季衰减。",
+        "reversible": true,
+        "reversibility_note_zh": "可逆。组织力不是永久勋章。"
+      }
+    ],
+    "no_ledger_effect_zh": "本事件没有任何账本效应：不动现金、不动库存、不动产能、不动人口（INV-130，schema 里根本不存在 ledger_effects 字段，V-EV-06）。服务降级的资源账早已在 S04 由 ledger_counterparties 里的两条腿记清楚：政府少付的钱还在国库（leg.e09.opex_paid 之外的余额），pubserv 少收的钱形成欠付（leg.e09.opex_arrears）。没有任何一方凭空少了或多了资源。",
+    "mechanism_consequences": [
+      {
+        "state_target": "state.pubserv.availability_ppm",
+        "entity_ids": [
+          "pubserv.zhongzhou"
+        ],
+        "produced_by": "mech.service_opex_funding",
+        "mechanism_ref": "mech.service_opex_funding",
+        "step": "S07",
+        "settlement_step": "S07",
+        "applied_at": "S07（跨期变化），即事件所在的 S08 之前一步",
+        "written_by": "mech.service_opex_funding（不是 event.E09）",
+        "counterparty": "none（可用率是配给系数，不是资源；资源腿是 leg.e09.opex_arrears）",
+        "change_expr": "shortfall_ppm = 1000000 - flow.pubserv.funding_ratio_ppm[pubserv.zhongzhou]; state.pubserv.availability_ppm[pubserv.zhongzhou] = max(0, state.pubserv.availability_ppm[pubserv.zhongzhou] - mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm))",
+        "formula_zh": "availability_ppm = max(0, availability_ppm - mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm))，其中 shortfall_ppm = 1000000 - funding_ratio_ppm（12 号文件 §7.2）。",
+        "accounting_zh": "这是「钱没到位 → 服务开不足」的唯一传导点，落在 S07，按上式改 availability_ppm 一个字段。事件读它、报道它，但不写它——事件的可写白名单里根本没有这个字段（V-EV-05）。这正是计划书 §13「禁止后处理补丁」的落点：降级由机制制造，不由叙事制造。",
+        "who_writes_it_zh": "S07，不是事件。事件在 S08 才运行，而且它的可写白名单里根本没有这个字段。",
+        "duration_q": -1,
+        "duration_note_zh": "持续到拨付恢复为止；恢复时按 param.opex_recover_ppm 每季回升，且回升速度慢于下降速度。",
+        "reversible": true
+      },
+      {
+        "state_target": "state.pubserv.capacity_active_uqs_per_q / state.pubserv.capital_value_uu / state.region.grid_capacity_uqs_per_q / state.region.housing_stock_units",
+        "entity_ids": [
+          "pubserv.zhongzhou",
+          "region.zhongzhou"
+        ],
+        "produced_by": "none",
+        "mechanism_ref": "none",
+        "step": "none",
+        "settlement_step": "none",
+        "applied_at": "从不（本事件路径上没有任何一步写这四个字段）",
+        "written_by": "没有人",
+        "counterparty": "none",
+        "change_expr": "Δ == 0（逐位相同，由 T-S-E09-ASSET-SURVIVES 钉死）",
+        "formula_zh": "不变。",
+        "accounting_zh": "断供路径上不做任何资本减记：log.ledger 中不存在对 capital 科目的减记行。资产的账面值与名义容量都是已经付过钱、已经建成的存量，欠付的是**运行费**，不是资产本身——把资产写掉等于让一笔没发生的损失凭空出现在账上。",
+        "who_writes_it_zh": "没有人。INV-102 明文禁止在断供路径上写这些字段，也禁止用「写 0」表达停运。计划书 §07 的原话是「停拨款会降低实际服务，而非删除建筑」。",
+        "duration_q": -1,
+        "reversible": true
+      },
+      {
+        "state_target": "flow.pubserv.delivered_uqs 与 state.pubserv.queue_persons",
+        "entity_ids": [
+          "pubserv.zhongzhou"
+        ],
+        "produced_by": "mech.service_capacity",
+        "mechanism_ref": "mech.service_capacity",
+        "step": "S05",
+        "settlement_step": "S05",
+        "applied_at": "S05（生产与交易），使用上一季 S07 结转的 availability_ppm",
+        "written_by": "mech.service_capacity",
+        "counterparty": "pubserv.zhongzhou（供方）↔ 中州 9 个群组（需方）",
+        "change_expr": "delivered_uqs <= mul_ppm(state.pubserv.capacity_active_uqs_per_q, state.pubserv.availability_ppm); queue_persons += 未获服务人数",
+        "formula_zh": "delivered <= mul_ppm(capacity_active, availability_ppm)；未获服务的人数进 queue_persons（INV-103）。",
+        "accounting_zh": "这是全事件唯一有实物对手方的后果：少交付的服务量不会被当作已交付，对应的人进 queue_persons，人数守恒（INV-103）。数量单位是 μQ_s，与 μU 无关，R-SCALE-01 不改变本式。",
+        "duration_q": -1,
+        "reversible": true
+      },
+      {
+        "state_target": "state.group.trust_ppm",
+        "entity_ids": [
+          "group.zhongzhou.working.low",
+          "group.zhongzhou.working.mid",
+          "group.zhongzhou.working.high",
+          "group.zhongzhou.elder.low",
+          "group.zhongzhou.elder.mid",
+          "group.zhongzhou.elder.high",
+          "group.zhongzhou.minor.low",
+          "group.zhongzhou.minor.mid",
+          "group.zhongzhou.minor.high"
+        ],
+        "produced_by": "mech.living_index",
+        "mechanism_ref": "mech.living_index",
+        "step": "S08",
+        "settlement_step": "S08",
+        "applied_at": "S08.1（主观量），早于 S08.4 的事件步",
+        "written_by": "mech.living_index（不是 event.E09）",
+        "counterparty": "none（主观量；来源操作仍是 leg.e09.opex_arrears）",
+        "change_expr": "breach_count += 1（权重 0.25）; trust_ppm[g] -= param.trust_drop_ppm × breach_weight",
+        "formula_zh": "§8.1 的失信闭集合逐季计数，「本组所在地区的公共服务运行费欠拨」记一次失信（0.25），trust 按 param.trust_drop_ppm 下降；恢复走 param.trust_recover_ppm，且恢复慢于下降（INV-122）。",
+        "accounting_zh": "同一笔欠付只许扣一次信任。本事件刻意不把 trust_ppm 写进 effects，因此 A/B 两路（开事件 / 关事件）的 trust_ppm 必须逐组逐季完全相同——由 T-S-E09-NO-TRUST-DOUBLE-COUNT 钉死。白名单是上限，不是清单。",
+        "who_writes_it_zh": "S08 的信任更新式，不是本事件。**本事件刻意不把 trust_ppm 写进 effects**，尽管它在白名单里：欠拨已经是闭集合中的一项，事件再扣一次就是同一件事罚两遍。这是本模板最重要的一处克制。",
+        "duration_q": -1,
+        "reversible": true
+      }
+    ],
+    "resource_conservation_note_zh": "全部后果要么是主观量的 ppm 变动（预期、组织力、信任），要么是「服务交付量减少 + 排队人数增加」这种有物理解释的配给结果。没有一处凭空增减资源；每一笔钱的去向都还在 ledger_counterparties 记下的 S04 两条腿里：已付的进了 pubserv，未付的以欠付形式留在国库账上。事件只是把它读出来并记下社会反应。"
+  },
+  "_note_player_options": [
+    {
+      "option_id": "option.e09.reprioritize_opex",
+      "label_zh": "调整支付优先级，把服务运行费往前挪",
+      "mechanism_zh": "改 state.gov.payment_priority（8 类支出的全排列，CMD 提交、S02 生效）。不新增任何机制。",
+      "command": "cmd.set_payment_priority",
+      "cost_zh": "不花新钱，代价是把别人挤到后面：被挤掉的那一档当季转为欠付或延期，进 state.gov.arrears_by_payee_uu，并可能触发那一档自己的失信通道。这是一次真实的排序取舍，不是免费修复。",
+      "preconditions_zh": "无额外权限要求；优先级必须仍是 8 类的一个全排列（INV-039），不能只把运行费往前挪而不说清谁往后退。",
+      "lag_q": 1,
+      "lag_note_zh": "下季 S04 生效。本季已经发生的欠付不会因为改了顺序而回滚。",
+      "failure_modes_zh": [
+        "现金总量本就不够覆盖第一档：改顺序只是换一个欠付对象，可用率照样下降（拨付率仍 < 100%）。",
+        "被挤掉的是项目履约款：项目进度停滞并写 suspension_reason = financing，未来产能延后。",
+        "被挤掉的是法定转移：对应群组的转移欠付进入失信闭集合，trust 在别处掉。"
+      ],
+      "political_reaction_zh": "labor_public 立场改善（它的关心指标里直接含 availability）；business 若被挤的是项目款则立场恶化；agri_coop 视被挤者而定。",
+      "reversible": true
+    },
+    {
+      "option_id": "option.e09.fund_opex_by_bond",
+      "label_zh": "发债补足运行费",
+      "mechanism_zh": "用债券融资形成本季可用现金，使 S04 能全额支付运行费。走既有的 S02 融资路径（mech.budget_reservation + 债券批次登记）。",
+      "command": "cmd.issue_bond",
+      "cost_zh": "新增一个债券批次：每季票息按 coupon_ppm_per_q 逐批次计提，到期本金进 derived.fiscal.next4q_debt_service_uu。借款不是收入（INV-029），它只把支付压力移到未来。",
+      "preconditions_zh": "受对手方能力硬约束（INV-034）：国内不得超过 min(credit_limit_domestic, invpool.cash)，外部不得超过 credit_limit_uu - credit_used_uu。新发批次的票息不得低于当季 market_rate_ppm，且该利率对偿债率单调不减（INV-038），不存在自动展期。",
+      "lag_q": 1,
+      "lag_note_zh": "S02 融资、S04 付款，同季内即可补上本季拨付；但可用率的回升要等 S07，按 param.opex_recover_ppm 逐季爬。",
+      "failure_modes_zh": [
+        "invpool 现金不足或额度用尽：命令 REJECT，状态完全不变，被拒命令仍入档（INV-137）。",
+        "偿债率已经很高：新批次的票息更贵，四季后的到期表更难看，可能把预算审查从「赤字超限」推到「欠付超限」。",
+        "借新还旧不是免费的：ADV-02 专门测这条路是否被做成了无成本的永动机。"
+      ],
+      "political_reaction_zh": "labor_public 支持；business 对债务扩张的立场按其关心指标（税前利润）间接反应，不直接反对；预算审查会把新增利息计入 outlays_4q_uu。",
+      "reversible": false,
+      "irreversibility_note_zh": "债券一经发行不可撤销。这是本事件里唯一一个产生长期承诺的选项，界面必须在确认前显示未来四季的到期本金与利息（计划书 §07）。"
+    },
+    {
+      "option_id": "option.e09.cancel_pending_service_project",
+      "label_zh": "取消尚未完工的同类服务项目，压掉未来运行费义务",
+      "mechanism_zh": "对一个 status ∈ {planned, in_progress, suspended} 的项目下取消命令（S02，mech.project_queue）。完工后的运行费义务就不会进 state.gov.service_opex_committed_uu。",
+      "command": "cmd.cancel_project",
+      "cost_zh": "已付的钱不退（INV-093：paid_uu 不回退、现金不增加），未完工工程登记 residual_value，合同赔偿 cancel_penalty 按剩余合同规则入账。committed_memo 只减未付部分。",
+      "preconditions_zh": "项目尚未 commissioned；取消不释放已实际花掉的钱（计划书 §17 的验收标准之一）。",
+      "lag_q": 0,
+      "lag_note_zh": "当季生效，但省下来的是**未来**的运行费，对本季的可用率毫无帮助。",
+      "failure_modes_zh": [
+        "玩家期待「取消能回血」：不会。现金一分不增，还要多付赔偿。",
+        "项目取消是 §8.1 失信闭集合中的一项：本地区全部群组的 trust 会在同季下降，可能比运行费缺口本身更贵。",
+        "腾出的施工槽位不会自动被更好的项目占用，队列拥堵与需求是两回事。"
+      ],
+      "political_reaction_zh": "business 立场恶化（承包方与设备供应商的预期收入消失）；labor_public 短期中性、长期负面（未来服务容量少了）；agri_coop 若取消的是本区项目则负面。",
+      "reversible": false,
+      "irreversibility_note_zh": "取消不可撤销，已付支出与赔偿都是沉没成本。"
+    },
+    {
+      "option_id": "option.e09.do_nothing",
+      "label_zh": "什么都不做",
+      "mechanism_zh": "不下任何命令。这是一个合法选项，界面必须把它和其它选项并列显示，并写明后果。",
+      "command": "none",
+      "cost_zh": "不花钱。",
+      "preconditions_zh": "无。",
+      "lag_q": 0,
+      "failure_modes_zh": [
+        "可用率按 §7.2 继续每季下滑，直到拨付恢复；下滑没有自动下限之外的止损点（下限是 0）。",
+        "每一季欠拨都在失信闭集合里记一次，trust 持续下降，而恢复速度结构性地慢于下降速度（INV-122）。",
+        "维护欠账 maintenance_backlog_ppm 同步累积；它只降当季可用率，不减资产（INV-055），但累积到上限后回升更慢。",
+        "本事件在冷却 4 季后可再次触发，至多 4 次；第 5 次起不再有事件提示，但机制后果照旧——**没有事件不等于没有问题**。"
+      ],
+      "political_reaction_zh": "labor_public 组织力持续上升（每次触发 +25000，按惯性衰减但在连续触发下净累积）；居民预期持续走低，经 §8.2 的合成式压低支持度；预算审查时欠付余额是一条硬性的 fail_condition。",
+      "reversible": true,
+      "reversibility_note_zh": "拨付恢复后可用率会回升，资产从未损失。「什么都不做」在本事件里不是不可挽回的，只是越拖恢复越慢。"
+    }
+  ],
+  "_note_political_reaction": {
+    "bloc.agri_coop": 0,
+    "bloc.business": 0,
+    "bloc.labor_public": 25000
+  },
+  "_note_political_reaction_note_zh": "本字段沿用 PolicyDefinition（11 号文件 §5.12）的形状：键是集团稳定 ID，值是本事件对该集团 org_power_ppm 的增量（ppm，0 表示本事件不对其写任何效果）。与政策的同名字段不同的是，事件的这个数**已经**逐条出现在 effects 里，此处只是按集团聚合的一个索引，不构成第二条写入路径。逐条理由见 political_reaction_basis。",
+  "_note_political_reaction_basis": [
+    {
+      "actor": "bloc.agri_coop",
+      "direction": "neutral",
+      "delta_org_power_ppm": 0,
+      "writes_effect": false,
+      "basis_zh": "关心指标是农业 cell 的实际增加值，成员分散在北原与西岭。中州的公共服务欠拨与其关心指标之间在首版没有任何机制通路，故为中性。硬编一个反应只会制造伪深度（计划书 §09）。"
+    },
+    {
+      "actor": "bloc.business",
+      "direction": "weakly_negative_to_government",
+      "delta_org_power_ppm": 0,
+      "writes_effect": false,
+      "basis_zh": "关心指标是 Σ flow.cell.profit_pretax_uu，公共服务可用率不在其中。间接影响存在（劳动力健康与通勤），但首版没有这条传导链，因此不给组织力增量——不给比编一条没有机制支撑的链子诚实。若玩家用调整支付优先级的方式挤掉项目款，business 才会通过项目停滞这条**已有**的链子反应。"
+    },
+    {
+      "actor": "bloc.labor_public",
+      "direction": "strongly_negative_to_government",
+      "delta_org_power_ppm": 25000,
+      "writes_effect": true,
+      "basis_zh": "politics.json 中该集团的 care_metric_formula 显式包含 Σ_r (state.pubserv.availability_ppm[r] × population[r])，运行费欠拨直接压低它的关心指标；其 cares_about_refs 也列了 state.group.service_access_ppm。这是三个集团里唯一被本事件直接命中的一个。"
+    }
+  ],
+  "_note_affected_groups_note_zh": "中州 9 个群组全部受影响，但不均匀：低技能与老年组对 service_access_ppm 的依赖更高，其 living_index 中的服务项权重相同而基数更低，因此下滑更明显。报告必须保留逐组分布，不得只给地区平均（INV-124 的同一精神）。",
+  "_note_copy": {
+    "headline_zh": "中州的公共服务运行费没有拨足",
+    "accounted_zh": "已经发生：本季政府对中州公共服务的运行费计划支付 {service_opex_committed_uu}，实际支付 {pay_opex_uu}，拨付到位率 {funding_ratio_ppm}。政府欠付余额 {arrears_uu}。以上四个数字均可下钻到 ldg.opex 与 ldg.transaction 的双边分录。",
+    "inferred_zh": "规则推断：模型中，公共服务的实际交付量受两项限制——名义容量 {capacity_active_uqs_per_q} 与实际可用率 {availability_ppm}。本季可用率是模型中的限制因素之一。已建成的资产账面值与容量在这条路径上不被改写。排队人数 {queue_persons}。",
+    "projected_zh": "情景预测：若拨付率维持本季水平不变，四季后可用率的粗略预览为 {projected_availability_ppm}。假设：不新增拨款、不取消项目、人口与价格按现行规则更新、无外生冲击。这是模型在给定假设下的推演，不是对真实世界的因果判断。",
+    "wording_rules_zh": "三段文案分别对应 log.explanations.kind 的 accounted / inferred / projected（INV-140，projected 条目禁止回写任何状态）。inferred 段不得出现「导致」「因为」等因果断言，只能写「模型中的限制因素」（12 号文件 §8.6）。插值只支持整数与 ID 两种类型，单位换算（μU→U、ppm→百分比）在 Presentation 的格式化函数中完成，该函数不得回写状态（OQ-235）。"
+  },
+  "report_template_id": "tpl.event.service_opex_degrade",
+  "_note_acceptance_tests": [
+    "T-S-E09-NO-TRIGGER-WHEN-FUNDED",
+    "T-S-E09-ASSET-SURVIVES",
+    "T-S-E09-SAVE-RELOAD-NO-RERANDOM",
+    "T-S-E09-NO-LEDGER-EFFECT",
+    "T-S-E09-COOLDOWN-AND-CAP",
+    "T-S-E09-NO-TRUST-DOUBLE-COUNT"
+  ],
+  "_note_acceptance_tests_spec": [
+    {
+      "test_id": "T-S-E09-NO-TRIGGER-WHEN-FUNDED",
+      "given_zh": "构造一局：运行费每季足额拨付（flow.pubserv.funding_ratio_ppm[zhongzhou] == 1000000），state.pubserv.availability_ppm[zhongzhou] == 1000000，state.gov.arrears_uu == 0。",
+      "when_zh": "无命令推进 40 季。",
+      "then_zh": "fire_count[event.E09] == 0；且 state.rng.draw_count[rng.event] 的增量中不含本模板的任何一次抽样（条件不成立时不抽样，12 号文件 §8.4）；log.rng 中不存在 purpose_code 指向 event.E09 的记录；全部群组的 expectation_ppm 与 bloc.labor_public 的 org_power_ppm 变化完全由 §8.1/§8.3 的常规更新式解释。",
+      "covers": [
+        "trigger.all_of",
+        "INV-009",
+        "INV-011"
+      ]
+    },
+    {
+      "test_id": "T-S-E09-ASSET-SURVIVES",
+      "given_zh": "构造持续欠拨：连续 8 季 flow.pubserv.funding_ratio_ppm[pubserv.zhongzhou] == 700000，且每季把未付部分登记为欠付，使 state.gov.arrears_uu > 100000000（0.1 U，R-SCALE-01 刻度）；state.time.q >= 2。",
+      "when_zh": "推进到本事件触发的那一季。",
+      "then_zh": "state.pubserv.availability_ppm[zhongzhou] 严格下降；而 state.pubserv.capacity_active_uqs_per_q[zhongzhou]、state.pubserv.capital_value_uu[zhongzhou]、state.region.grid_capacity_uqs_per_q[zhongzhou]、state.region.housing_stock_units[zhongzhou] 四项与欠拨开始前**逐位相同**；log.ledger 中不存在对 capital 科目的任何减记。",
+      "covers": [
+        "INV-102",
+        "INV-055",
+        "consequences.mechanism_consequences"
+      ]
+    },
+    {
+      "test_id": "T-S-E09-SAVE-RELOAD-NO-RERANDOM",
+      "given_zh": "在本事件触发的那一季 q* 结算完成后立即存档。",
+      "when_zh": "读档并继续推进 4 季；另一路不存档直接推进 4 季。",
+      "then_zh": "两路的每季 state_hash 逐位相同；fire_count[event.E09] 与 last_fire_q[event.E09] 相同；log.rng 完全一致；已确定的这次触发不被重新抽样（读档只恢复 root_seed 与 6 个计数器，抽样可由 (root_seed, stream, q, index) 重算，10 号文件 §10）。",
+      "covers": [
+        "INV-133",
+        "INV-131",
+        "ADV-06"
+      ]
+    },
+    {
+      "test_id": "T-S-E09-NO-LEDGER-EFFECT",
+      "given_zh": "构造触发条件成立的一季。",
+      "when_zh": "本事件触发。",
+      "then_zh": "log.ledger 中不存在 cause 指向 event.E09 的过账行；Σ 全部主体 Δcash 在事件前后不变；state.cell.inventory_output_uqs、state.group.population_persons、state.pubserv.capacity_active_uqs_per_q 全部不变；内容包里不存在 ledger_effects 字段（加载期 V-EV-06 已拦）。",
+      "covers": [
+        "INV-130",
+        "INV-018",
+        "V-EV-06"
+      ]
+    },
+    {
+      "test_id": "T-S-E09-COOLDOWN-AND-CAP",
+      "given_zh": "构造四条触发条件连续成立 24 季（funding_ratio_ppm[pubserv.zhongzhou] == 700000 < 900000；availability_ppm[pubserv.zhongzhou] 起于 940000 < 950000；state.gov.arrears_uu == 500000000 > 100000000；state.time.q >= 2）。",
+      "when_zh": "推进 24 季。",
+      "then_zh": "fire_count[event.E09] <= 4；任意相邻两次触发的季度差 >= 4；第 5 次及以后即使条件成立也不触发、不抽样；机制后果（可用率下降）在事件不再触发之后照常继续。",
+      "covers": [
+        "trigger.cooldown_q",
+        "trigger.max_occurrences"
+      ]
+    },
+    {
+      "test_id": "T-S-E09-NO-TRUST-DOUBLE-COUNT",
+      "given_zh": "两路对照：A 路本事件触发；B 路把本模板从 enabled_events 移除，其余状态与命令完全相同。",
+      "when_zh": "推进同样的季数。",
+      "then_zh": "两路的 state.group.trust_ppm 逐组逐季**完全相同**（本事件不写 trust，欠拨的信任后果只由 §8.1 的失信闭集合产生一次）；差异只出现在 expectation_ppm 与 bloc.labor_public 的 org_power_ppm 上。",
+      "covers": [
+        "INV-122",
+        "effects",
+        "consequences.mechanism_consequences"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e09_funding_ratio_trigger_ppm",
+      "value": 900000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「服务有运行费……停拨款会降低实际服务，而非删除建筑」；12 号文件 §7.2 的可用率更新式",
+      "reference_year": 0,
+      "definition": "触发本事件所要求的、当季运行费拨付到位率的上限（严格小于该值才算欠拨）。与 trigger.all_of[0].value 必须逐位相同。",
+      "valid_range": [
+        500000,
+        999999
+      ],
+      "confidence": "low",
+      "calibration_note": "取 90% 而不是 100%：整数拆分与支付优先级排序会让到位率天然在 100% 附近抖动，阈值贴着 100% 会把取整噪声当成欠拨。校准依据：T-S-E09-NO-TRIGGER-WHEN-FUNDED 必须在足额拨付时零触发。若压力测试中发现该值以下仍频繁误报，先查 S04 的拆分是否用了最大余数法，再动这个阈值。"
+    },
+    {
+      "value_id": "param.e09_availability_trigger_ppm",
+      "value": 950000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §7.2；本模板 trigger_semantics.persistence_zh",
+      "reference_year": 0,
+      "definition": "触发本事件所要求的服务实际可用率上限。它是本模板表达「欠拨已持续若干季」的替代物——因为触发语言没有持续季数算子。与 trigger.all_of[1].value 必须逐位相同。",
+      "valid_range": [
+        700000,
+        999999
+      ],
+      "confidence": "low",
+      "calibration_note": "等价持续季数 = 50000 / (param.opex_starve_decay_ppm × 平均 shortfall_ppm / 1e6)。param.opex_starve_decay_ppm 定下来之后必须回头核对这个阈值对应的季数落在 2—4 季，太快则事件像随机弹窗，太慢则玩家早已从台账看出问题、事件失去信息价值。校准前不要改本值，先定 opex_starve_decay_ppm。"
+    },
+    {
+      "value_id": "param.e09_arrears_trigger_uu",
+      "value": 100000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 基年支出 22 U；10 号文件 §3.1 state.gov.arrears_uu；裁定 R-SCALE-01（docs/18）",
+      "reference_year": 0,
+      "definition": "触发本事件所要求的全国政府欠付余额下限（严格大于该值），刻度为 μU，1 U = 1 000 000 000 μU。100 000 000 μU = 0.1 U。用于把取整级别的微小欠付排除在外。与 trigger.all_of[2].value 必须逐位相同。",
+      "valid_range": [
+        0,
+        2000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "0.1 U 约为基年季度支出（5.5 U = 5 500 000 000 μU）的 1.8%，即 100 000 000 / 5 500 000 000。上界 2 000 000 000 μU = 2 U。本值与上界在 R-SCALE-01 之前写作 100000 与 2000000（旧刻度 1 U = 1e6 μU），迁移器按「键名含 uu 词元」的规则扫描子树，而本记录的键名是 value / valid_range，因此漏改，本轮按 ×1000 手工补迁。同时核对了跨文件关系：param.budget_review_arrears_limit_uu = 1 000 000 000 μU（1 U），本阈值为其 1/10，保证本事件在预算审查真正判失败之前先预警（OQ-PENDING-EV-03 所指的那类断言）。校准依据：基线无命令 40 季运行中，若该条件频繁成立而拨付率正常，说明欠付来自别处，应当先查 S04 的支付优先级实现，而不是提高本阈值。"
+    },
+    {
+      "value_id": "param.e09_probability_ppm",
+      "value": 800000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.13 trigger.probability_ppm；计划书 §04「可以隐藏未来冲击，不隐藏当前规则」",
+      "reference_year": 0,
+      "definition": "四条状态条件全部成立之后，本季实际曝光的概率。它只决定「什么时候被报道」，不决定「有没有问题」。",
+      "valid_range": [
+        200000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取 0.8 而不是 1.0：条件已经相当严格，留一点不确定性使连续多季的欠拨不会变成机械的每 4 季一次弹窗。校准依据：试玩记录中若有测试者把事件缺席读成「问题已解决」，说明概率太低或台账入口不够显眼，优先改界面而不是提高概率。"
+    },
+    {
+      "value_id": "param.e09_cooldown_q",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.13 trigger.cooldown_q；politics.json budget_review.period_q = 4",
+      "reference_year": 0,
+      "definition": "两次触发之间必须间隔的最少季数。",
+      "valid_range": [
+        1,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "与预算审查周期对齐（4 季），使同一问题至多每个审查周期被提一次。校准依据：若玩家反馈同一问题反复刷屏，先加冷却，再考虑降低概率。"
+    },
+    {
+      "value_id": "param.e09_max_occurrences",
+      "value": 4,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.13 trigger.max_occurrences（V-EV-07 要求 >= 1）",
+      "reference_year": 0,
+      "definition": "整局中本模板最多触发的次数。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "40 季 / 冷却 4 季 = 至多 10 次，取 4 是为了让它在一局中保持「值得注意」的稀有度。上限用尽后机制后果继续，界面必须仍能从 ldg.opex 看到缺口——校准时要专门检查这一点，否则会造成「事件停了＝问题没了」的误读。"
+    },
+    {
+      "value_id": "param.e09_expectation_delta_ppm",
+      "value": -35000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §8.1 预期更新式；11 号文件 §5.13 事件可写白名单",
+      "reference_year": 0,
+      "definition": "触发时对中州全部群组 state.group.expectation_ppm 施加的一次性增量（负值）。与 effects[0].delta_ppm 必须逐位相同。",
+      "valid_range": [
+        -100000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "3.5% 的预期下调，量级上小于一次完整的 living_index 变动，因为事件是「把已经发生的事说出来」，不应该比事情本身更重。校准依据：若 40 季中 expectation 被事件推到 clamp 边界（0 或 2000000），说明事件增量相对惯性式过大，先减本值再考虑调 param.expectation_inertia_ppm。"
+    },
+    {
+      "value_id": "param.e09_org_power_delta_ppm",
+      "value": 25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §8.3 组织力更新式；politics.json bloc.labor_public 的 care_metric_formula",
+      "reference_year": 0,
+      "definition": "触发时对 bloc.labor_public 的 org_power_ppm 施加的一次性增量（正值）。与 effects[1].delta_ppm 必须逐位相同。",
+      "valid_range": [
+        0,
+        80000
+      ],
+      "confidence": "low",
+      "calibration_note": "labor_public 开局组织力 350000，本值约为其 7%。校准依据：连续触发 4 次的净累积（按 param.bloc_org_inertia_ppm = 700000 的惯性衰减）不得把组织力推过 1000000 的 clamp 上限，否则组织力会在上限处失去分辨力。"
+    }
+  ],
+  "_note_parameters_scope_note_zh": "按 11 号文件 §5.15 的覆盖边界，剧本初值属内容数据、行为系数属 param.*。事件阈值介于两者之间：它们不是剧情设定，而是「模型多敏感」的行为选择，需要校准，因此建卡。卡里的 value 与 trigger / effects 中的字面量必须逐位一致，由 T-U-EVENT-PARAM-SYNC 统一校验（该工具与 tools/check_policy_dup.gd 同级，尚未实现，登记为 OQ-PENDING-EV-03）。",
+  "_note_mechanism_refs": [
+    "mech.service_opex_funding",
+    "mech.service_capacity",
+    "mech.gov_payment_priority",
+    "mech.project_queue",
+    "mech.budget_reservation",
+    "mech.living_index"
+  ],
+  "_note_mechanism_refs_note_zh": "本字段是说明性的：事件不调用机制，机制也不知道事件存在。列出它们是为了让玩家与实现者能顺着同一条链子对账。V-EV 没有对事件做 mechanism 注册检查（那是 V-PD-08 对政策的要求），因此这里不产生加载期约束。",
+  "_note_open_question_refs": [
+    "OQ-243",
+    "OQ-235",
+    "OQ-245",
+    "OQ-PENDING-EV-01",
+    "OQ-PENDING-EV-02",
+    "OQ-PENDING-EV-03",
+    "OQ-PENDING-EV-10",
+    "OQ-PENDING-EV-11",
+    "OQ-PENDING-EV-12"
+  ],
+  "_note_open_question_refs_note_zh": "以 OQ-2xx 形式出现的编号是 docs/13_open_questions.md 中已登记的条目。以 OQ-PENDING-EV-xx 形式出现的是本批四个事件模板新发现、尚未在 13 号文件登记的问题：现有的 OQ-246 及以后的编号已被若干并行产出的内容文件各自占用且含义互相冲突，因此本文件不自行占号，改用不会碰撞的占位标识，等待 13 号文件的负责人统一编号。逐条内容见 open_questions_proposed。",
+  "_note_open_questions_proposed": [
+    {
+      "pending_id": "OQ-PENDING-EV-01",
+      "slug": "trigger_scope_no_selector",
+      "title_zh": "触发条件的 scope 没有「任一地区／任一集团」选择器",
+      "summary_zh": "11 号文件 §5.13 的条件只有 metric / scope / op / value 四个字段，scope 只能指向一个在加载期解析成下标的稳定 ID。于是一个本质上「哪个地区出问题都算」的事件必须被绑定到某一个地区（E09 绑中州、E10 绑北原→中州、E12 绑 bloc.business），其余地区的同类情形只有机制后果、没有事件。临时取法：显式绑定并在 anchor 字段写明理由，不发明选择器。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-02",
+      "slug": "scope_semantics_group_array",
+      "title_zh": "地区作用域套在群组索引数组上的语义未定义；没有全国作用域记号",
+      "summary_zh": "11 号文件 §5.13 的示例用 scope = region.haijia 对 state.group.trust_ppm 施加效果（广播到该地区全部群组），但没有规定同样的写法用在**触发条件**里该如何聚合（取平均？取最小？任一成立？）。另外 politics.json 用了 scope = national，而 11 号文件从未定义这个记号。临时取法：触发条件里群组量一律用精确的 group.<r>.<a>.<k> 作用域；效果需要全国广播时逐地区列四条。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-03",
+      "slug": "cross_file_threshold_assertions",
+      "title_zh": "事件阈值与其它内容文件的耦合缺少加载期断言",
+      "summary_zh": "至少三处：E10 的住房占用阈值必须小于 regions.json 中中州的 housing_stock_units；E12 的 cooldown_q 必须等于 politics.json 的 budget_review.period_q；E12 的欠付触发线必须小于 param.budget_review_arrears_limit_uu。三者失配都只会造成语义错位（事件永不触发或一开局就触发），不会造成语法错误。临时取法：写进 parameters_scope_note_zh，等待 assertions.json 或校验器支持。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-10",
+      "slug": "support_ppm_in_event_whitelist",
+      "title_zh": "事件可写白名单含 support_ppm，与 §8.2 的合成式冲突",
+      "summary_zh": "12 号文件 §8.2 每季由生活／预期／信任三项重算 support_ppm，而 §8.4 的事件在 §8.2 之后运行。事件直接写 support_ppm 会被下一季的重算抹掉，且与 expectation 通道重复计数。临时取法：本批四个模板一律**不写** support_ppm，只写其上游的 expectation_ppm 与 trust_ppm。建议把 support_ppm 从 11 号文件 §5.13 的事件可写白名单中删除。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-11",
+      "slug": "event_op_gte_vs_ge",
+      "title_zh": "V-EV-03 的算子集合与 §5.13 的示例自相矛盾",
+      "summary_zh": "V-EV-03 规定 op ∈ {lt, le, eq, ne, ge, gt}，而同一节的示例 JSON 写的是 \"op\": \"gte\"。本批四个模板按**规范条款**取 ge；内容包中已有的 E01—E04 取示例的 gte。两者不可能同时通过同一个校验器，需要统一（建议以 V-EV-03 为准，或同时接受并在加载期归一）。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-12",
+      "slug": "event_schema_extension_fields",
+      "title_zh": "EventTemplate 的 additionalProperties:false 与实际内容文件的扩展字段冲突",
+      "summary_zh": "11 号文件 §3 规定对象键必须是 schema 已声明的键，而 §5.13 的 EventTemplate 只声明了 10 个键，没有 player_options / copy / acceptance_tests / parameters / evidence 等。现有的 policy 文件已经大量扩展同类字段（P09 有 41 个顶层键）。临时取法：本批模板保持 §5.13 声明的字段严格合规（含 effects 白名单与无 ledger_effects），扩展字段一律加在其后并可被校验器忽略。建议 §5.13 明确列出扩展字段或声明一个扩展命名空间。"
+    }
+  ],
+  "_note_notes_zh": "本模板的设计要点有三个。其一，事件不制造降级，降级由 S07 的运行费机制制造；事件只负责让它被看见并记下社会反应，这是 INV-130 与计划书 §13「禁止后处理补丁」的直接落点。其二，明知 trust_ppm 在事件可写白名单里也不写它，因为运行费欠拨已经是 §8.1 失信闭集合中的一项，写了就是同一件事罚两遍——白名单是上限不是清单。其三，持续性用存量变量（可用率）而不是发明一个 sustained_q 算子来表达，宁可让触发晚一点、条件严一点，也不改协议。"
+}

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "t": {
+    "gloss.strip": "本页术语",
+    "gloss.new": "新",
+    "gloss.card.missing": "未收录的术语",
+    "gloss.card.instance": "本局实例",
+    "gloss.card.rule": "规则手册 · {section} ▸",
+    "gloss.slot.part": "{region} {used}/{total}",
+
+    "gloss.info_class.term": "实 · 算 · 预",
+    "gloss.info_class.def": "界面上的每个数都属于三类之一：「实」是已结算、能在台账找到出处的数；「算」是由已结算状态按公开规则确定性算出的数；「预」是依赖未来的情景预测，一律带区间与情景名。",
+    "gloss.info_class.inst": "国库现金 {cash} 是「实」：它能在台账里逐笔追到出处。",
+
+    "gloss.gov_cash.term": "国库现金",
+    "gloss.gov_cash.def": "政府账户上的现金。每笔付款先看现金，不足先按规则融资，仍不足的部分转为欠付，国库余额永远不为负。",
+    "gloss.gov_cash.inst": "当前国库现金 {cash}。",
+
+    "gloss.arrears.term": "欠付",
+    "gloss.arrears.def": "应付未付的款项，按收款方逐笔登记，一直挂在账上，直到清偿或经重组核销；它会压低相关群组的信任。",
+    "gloss.arrears.inst": "当前欠付 {arrears}。",
+
+    "gloss.commitment.term": "已签承诺",
+    "gloss.commitment.def": "已经签约、尚未付款的合同额（项目合同与政策项目期），代表未来必须支付的钱；延期不会让它减少。",
+    "gloss.commitment.inst": "当前已签承诺 {memo}。",
+
+    "gloss.tax_capacity.term": "征收能力",
+    "gloss.tax_capacity.def": "应征税额中实际收上来的比例。税务征管（P11）可以抬高它；运行费断供或撤回后会逐季回落，但不低于基年水平。",
+    "gloss.tax_capacity.inst": "当前征收能力 {cap}。",
+
+    "gloss.availability.term": "公共服务可用率",
+    "gloss.availability.def": "公共服务产能中实际能提供服务的比例。运行费欠拨时下降、足额拨付时缓慢恢复；欠拨只降可用率，不拆除设施。",
+    "gloss.availability.inst": "四地区平均可用率 {avail}。",
+
+    "gloss.budget_review.term": "预算审查",
+    "gloss.budget_review.def": "每年第 4 季审查前四季的赤字率与欠付；超过限额即审查失败，连续两次失败失去留任资格。",
+    "gloss.budget_review.inst": "下次审查在{q}；当前连续失败 {fails} 次。",
+
+    "gloss.termination.term": "执政结束",
+    "gloss.termination.def": "执政只会因三种原因提前结束：选举落败、连续失去留任资格、财政重组失败；经济下滑本身不会结束执政。",
+    "gloss.termination.inst": "下次选举在{q}；预算审查连续失败 {fails} 次。",
+
+    "gloss.bond_batch.term": "债券批次",
+    "gloss.bond_batch.def": "国债按批次记账：每一批有自己的面值、票息与到期季，旧债不因新利率重新定价；同季同条件的发行并入同一批。",
+    "gloss.bond_batch.inst": "当前在账 {n} 个批次，债务合计 {debt}。",
+
+    "gloss.sovereign_rate.term": "主权利率",
+    "gloss.sovereign_rate.def": "新发国债的季度票息基准，由规则给出、玩家不能设定；偿债率越高，新发票息越高。",
+    "gloss.sovereign_rate.inst": "当前主权利率每季 {rate}。",
+
+    "gloss.slot.term": "施工槽位",
+    "gloss.slot.def": "每个地区能同时在建的项目数上限。立项占用，完工或取消释放；项目延期期间照样占着。",
+    "gloss.slot.inst": "已占 / 总数：{slots}。",
+
+    "gloss.project_defer.term": "项目延期",
+    "gloss.project_defer.def": "合同允许的停工：延期期间不付款、不推进、施工槽位照占，当季按剩余合同额付延期赔偿；次数与累计季数有上限。",
+    "gloss.project_defer.inst": "每个项目至多延期 {count} 次、累计 {quarters}；赔偿为剩余合同额每季 {rate}。",
+
+    "gloss.lag.term": "时滞",
+    "gloss.lag.def": "政策从通过到生效、再到效果落地所需的季数。时滞内钱照付，效果还看不到。",
+    "gloss.lag.inst": "例如「{policy}」的时滞是 {lo} 到 {hi}。",
+
+    "gloss.veto.term": "集团否决",
+    "gloss.veto.def": "利益集团对某项改革的立场低于阈值时，可以否决落在其否决域里的政策；否决是制度约束，不是随机事件。",
+    "gloss.veto.inst": "否决阈值为立场 {veto}。",
+
+    "gloss.seats.term": "执政席位",
+    "gloss.seats.def": "按全国支持度与公开的席位规则换算的议会席位；部分政策与项目要求执政席位过半。",
+    "gloss.seats.inst": "当前执政席位 {seats} / {total}。",
+
+    "gloss.trust.term": "信任",
+    "gloss.trust.def": "群组对政府兑现承诺的信任。欠付、断供等失信会压低它，而且恢复慢于下降；单靠发钱修不好。",
+    "gloss.trust.inst": "全国平均信任 {trust}。",
+
+    "gloss.living.term": "生活指数",
+    "gloss.living.def": "住房、公共服务与收入三项加权的群组生活水平，进入支持度的计算；看分布，不只看平均。",
+    "gloss.living.inst": "全国平均生活指数 {living}。",
+
+    "gloss.unemployment.term": "失业率",
+    "gloss.unemployment.def": "劳动力中未就业人口的比例。工资调整以基年失业率为锚：低于它工资上涨，高于它工资回落。",
+    "gloss.unemployment.inst": "当前失业率 {rate}。",
+
+    "gloss.event.term": "事件",
+    "gloss.event.def": "按公开条件与概率触发的事件，只改变预期、信任、支持、集团立场与行政能力，不动任何账本；情景预测不含事件。",
+    "gloss.event.inst": "本局至今触发事件 {n} 次。",
+
+    "gloss.shock.term": "外生冲击",
+    "gloss.shock.def": "出口需求、进口价格、外部融资三类冲击，按种子抽样；规则手册公开机制与取值范围，本局是否发生不披露。",
+    "gloss.shock.inst": "本局种子 {seed}；冲击的抽样结果不披露。"
+  }
+}

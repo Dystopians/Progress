@@ -1,0 +1,116 @@
+{
+  "schema_kind": "government_init",
+  "schema_version": 1,
+  "gov": {
+    "cash_uu": 2000000000,
+    "_note_cash_uu": "2 U",
+    "arrears_uu": 0,
+    "tax_receivable_uu": 0,
+    "wip_uu": 0,
+    "capital_uu": 18000000000,
+    "housing_uu": 6000000000,
+    "tax_capacity_ppm": 760000,
+    "credit_limit_domestic_uu": 4000000000,
+    "service_opex_committed_uu": 0
+  },
+  "_note_gov": "cash_uu 2000000 与债务合计 50000000 是计划书 §05 的锁定值。wip_uu 与（派生的）committed_memo 为 0：开局没有在建的政府项目，annual_plan 的 project_contracts 一项是尚未分配的项目合同额度，玩家立项后才形成承诺与在建工程。service_opex_committed_uu 同理为 0，并与年度支出计划里的 service_opex 0 精确对应（两处是同一笔义务的季度口径与年度口径，不得各写各的）：按 12_simulation_contract.md §7.1，该字段只在项目投运的那一刻由 gov.service_opex_committed_uu += opex_per_q_uu 增加，开局既无在建项目也无已投运项目，义务额必然为 0。既有公共服务的运行成本不在这一档里，它已经整笔落在 pubserv 账户内（public_wages 9000000 + procurement 4200000 + 折旧 1000000 = 产出 14200000，见 io_table.json 的 pubserv_account_uu）；若在此之外再挂一笔 service_opex，那笔钱在 §6.3 的「工资 + 中间投入 + 折旧」三项里没有位置，基年生产法 GDP 会与 io_table 的 10000000 公共服务增加值对不上。tax_capacity_ppm 760000 表示开局约有四分之一的应计税收征不上来，为 P11（税务能力建设）留出可观察的改进空间；应收未收税从 0 起累积。credit_limit_domestic_uu 4000000 是每季国内发行上限，实际能发多少还要再受 min(额度, invpool 现金 × param.household_bond_appetite_ppm) 约束（INV-034）。",
+  "annual_plan": {
+    "receipts_uu": 20000000000,
+    "expenditure_incl_interest_uu": 22000000000,
+    "deficit_uu": 2000000000,
+    "receipt_lines_uu": {
+      "income_tax": 10400000000,
+      "profit_tax": 7200000000,
+      "other": 2400000000
+    },
+    "expenditure_lines_uu": {
+      "public_wages": 9000000000,
+      "statutory_transfers": 4000000000,
+      "procurement": 4200000000,
+      "project_contracts": 1800000000,
+      "service_opex": 0,
+      "subsidies": 400000000,
+      "discretionary": 566300000,
+      "interest": 2033700000
+    }
+  },
+  "_note_annual_plan": "全年收入 20000000 μU、支出 22000000 μU（含利息、不含偿还本金）、赤字 2000000 μU，三者是计划书 §05 的锁定值，本表的任何一行都不得为了自身好看而破坏这三个数。收入分项：个人所得税 10400000、企业利润税 7200000、非税收入 2400000（公共服务收费，首版不设产品税与产品补贴，OQ-204，因此没有间接税通道，两个直接税种必须承担全部税收）。支出分项每一行的出处（除可自由裁量外全部有外部对手方，不是凑数）：人员 9000000 = io_table.json 的 pubserv_account_uu.compensation_annual_uu，也就是公共服务增加值 10000000 减折旧 1000000，这一行一旦少给，基年生产法 GDP 就低于 100000000 而 assert.base_year_gdp 容差为 0；政府采购 4200000 = 同表的 intermediate_annual_uu，即公共服务的中间投入，12_simulation_contract.md §2.2 第 6 档明写 procurement 欠拨的后果就是「公共服务中间投入不足」，故这一行即是该笔中间投入的资金来源；法定转移支付 4000000 = 4 × param.p03_provision_uu_per_q（1000000/季），首版只有 P03 一项法定转移；已投运服务运行费 0，因为开局没有任何已投运的政府项目，该义务按 §7.1 只在项目投运时才产生（与 gov.service_opex_committed_uu 0 同源），既有公共服务的运行成本已整笔在 pubserv 账户的工资与中间投入里，不得在此重复挂账；企业补助 400000 是 P09 的年度额度，实际发放以「已发生的实际投资」为前置（INV-097）；项目合同额度 1800000 是尚未分配的立项额度，玩家立项后才转为承诺与在建工程；利息 2033700 不是写上去的，而是由 bonds 段六个批次在基年四季逐批次算出来的（INV-147 / V-FIN-05），因此它不是整数 U。可自由裁量 566300 是唯一的结余项，用来让分项之和精确等于锁定的 22000000；它没有预设收款方，是计划口径的机动余量而非已承诺支出。分季：收入与基本支出按 scenario.json 的季节系数用最大余数法拆四季，四季合计精确等于年计划（INV-042）。拆分基数分别是 20000000 与「22000000 − 2033700 = 19966300」，利息与还本按债券批次逐季直接计算、不受季节系数支配。据此四季收入为 4600000 / 4900000 / 5000000 / 5500000；四季基本支出为 4791912 / 4991575 / 5091407 / 5091406（第三季承接最大余数法的 1 μU 尾数）。注意本年现金缺口不是 2000000：还本 3600000 不在支出计划内，基年若要维持国库现金不下降，需要新增借款 5600000 μU，这正是计划书 §07「不是钱够不够，而是承诺能否维持」的开局形态。",
+  "payment_priority": [
+    "debt_service",
+    "public_wages",
+    "statutory_transfers",
+    "service_opex",
+    "project_contracts",
+    "procurement",
+    "subsidies",
+    "discretionary"
+  ],
+  "_note_payment_priority": "8 类支出的全排列（V-FIN-06 / INV-039），采用 12 号文件 §2.2 的默认序。玩家可用 set_payment_priority 命令改序，但必须仍是全排列。排在后面的档在现金不足时先转为欠付或延期，并各自有可观察后果：运行费欠拨只降可用率、不删除资产（INV-102）；项目合同款欠付使项目进入 suspended(financing)。",
+  "bonds": [
+    {
+      "bond_id": "bond.q-20_01",
+      "issue_q": -20,
+      "principal_initial_uu": 8000000000,
+      "principal_outstanding_uu": 8000000000,
+      "coupon_ppm_per_q": 8000,
+      "maturity_q": 26,
+      "amortization": "bullet",
+      "holder": "invpool"
+    },
+    {
+      "bond_id": "bond.q-16_01",
+      "issue_q": -16,
+      "principal_initial_uu": 7000000000,
+      "principal_outstanding_uu": 7000000000,
+      "coupon_ppm_per_q": 8500,
+      "maturity_q": 34,
+      "amortization": "bullet",
+      "holder": "invpool"
+    },
+    {
+      "bond_id": "bond.q-12_01",
+      "issue_q": -12,
+      "principal_initial_uu": 14400000000,
+      "principal_outstanding_uu": 10000000000,
+      "coupon_ppm_per_q": 9500,
+      "maturity_q": 24,
+      "amortization": "level_principal",
+      "holder": "invpool"
+    },
+    {
+      "bond_id": "bond.q-8_01",
+      "issue_q": -8,
+      "principal_initial_uu": 13500000000,
+      "principal_outstanding_uu": 10000000000,
+      "coupon_ppm_per_q": 12500,
+      "maturity_q": 19,
+      "amortization": "level_principal",
+      "holder": "row"
+    },
+    {
+      "bond_id": "bond.q-4_01",
+      "issue_q": -4,
+      "principal_initial_uu": 9000000000,
+      "principal_outstanding_uu": 9000000000,
+      "coupon_ppm_per_q": 11000,
+      "maturity_q": 12,
+      "amortization": "bullet",
+      "holder": "invpool"
+    },
+    {
+      "bond_id": "bond.q-2_01",
+      "issue_q": -2,
+      "principal_initial_uu": 6000000000,
+      "principal_outstanding_uu": 6000000000,
+      "coupon_ppm_per_q": 13500,
+      "maturity_q": 7,
+      "amortization": "bullet",
+      "holder": "row"
+    }
+  ],
+  "_note_bonds": "开局债务拆成 6 个批次，合计未偿本金 50000000 μU（V-FIN-02）。债权人：holder 的枚举值只有 invpool 与 row，其中 invpool 即计划书语境下的「居民投资池 / 国内债权人」，row 即「外部债权人」。国内 34000000 μU、外部 16000000 μU（占 32%）。期限分散在 q=7 / 12 / 19 / 24 / 26 / 34，单季最大到期本金为 q=12 的 9000000 μU，没有把尖峰堆在任何一季（OQ-202 的校验要求）。两笔等额本金批次的分期表由发行期数等权重预生成：bond.q-12_01 共 36 期、每期 400000 μU，已过 11 期，q>=0 的 25 期之和 10000000 精确等于未偿本金；bond.q-8_01 共 27 期、每期 500000 μU，已过 7 期，q>=0 的 20 期之和 10000000 精确等于未偿本金（INV-037）。票息 8000..13500 ppm/季（年化约 3.2%..5.4%），外债票息高于内债；全部未偿本金取 100000 μU 的整数倍、票息取 500 ppm 的整数倍，使「未偿本金 × 票息 ÷ 1000000」在基年四季均无余数，基年利息合计 2033700 μU 可手工复核，不依赖余数累加器（余数累加器在后续季度仍按 INV-004 运行）。基年四季逐批次票息：256000 + 238000 + 357200 + 462500 + 396000 + 324000 = 2033700，与 annual_plan.expenditure_lines_uu.interest 精确相等。基年四季应还本金合计 3600000（等额本金两笔各 1600000 与 2000000）。全部批次为 design_assumption：计划书 §05 只锁定合计 50 U 与「必须拆分期限与债权人」。",
+  "invpool": {
+    "cash_uu": 9000000000
+  },
+  "_note_invpool": "居民投资池开局现金 9000000 μU。V-FIN-08 要求不低于年赤字 2000000；本剧本取 9000000，一是因为基年真实的融资需求是 5600000（赤字 2000000 加还本 3600000），二是要让 param.household_bond_appetite_ppm 折算后的每季认购能力仍高于单季需求，避免开局第一季就进入不可融资分支。由此 V-FIN-09 给全部 36 个群组的存款合计定死了一个值：Σ group.deposit_uu 必须精确等于 invpool.cash_uu 9000000 加上 holder == invpool 的未偿本金 34000000，即 43000000 μU。"
+}

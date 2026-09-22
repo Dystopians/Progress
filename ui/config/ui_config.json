@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "_note": "界面暂定的配置量：剧本或参数登记尚未提供，由界面先行登记。每一项的 pending_owner 注明应由谁接管；接管后界面改读那里，本文件删除对应项。",
+  "region_themes": [
+    "农业与灌溉",
+    "住房与公共服务",
+    "制造业与供电",
+    "能源与环境"
+  ],
+  "region_themes_pending_owner": "content/scenarios/chengwan/regions.json 的 region.theme（docs/20 §7.1.4）",
+  "scenarios": {
+    "base": {
+      "shock_lo": [
+        -25000,
+        25000,
+        0
+      ],
+      "shock_hi": [
+        25000,
+        -25000,
+        0
+      ]
+    },
+    "adverse": {
+      "shock_lo": [
+        -150000,
+        200000,
+        100000
+      ],
+      "shock_hi": [
+        -100000,
+        150000,
+        0
+      ]
+    }
+  },
+  "scenarios_pending_owner": "剧本配置的 SC-base / SC-adverse 定义（docs/20 §18 待决 4）",
+  "preview_quarters": 4,
+  "cash_floor_uu": 0,
+  "cash_floor_pending_owner": "参数登记的最低现金底线（docs/20 §18 待决 3）",
+  "diag_thresholds": {
+    "unemployment_ppm": 100000,
+    "unemployment_rise_ppm": 5000,
+    "burden_ppm": 300000,
+    "service_avail_ppm": 900000,
+    "credit_left_ppm": 200000,
+    "output_drop_ppm": 10000,
+    "trust_drop_ppm": 5000,
+    "urgency_horizon_q": 4,
+    "pop_weight_floor_ppm": 100000,
+    "flat_band_ppm": 1000
+  },
+  "diag_thresholds_pending_owner": "docs/14 参数登记的 R-DIAG-* 阈值（docs/21 RT-OQ-05）",
+  "bond_default_tenor_q": 8,
+  "save_slots": [
+    "slot1",
+    "slot2",
+    "slot3"
+  ],
+  "alt_tools": {
+    "P01": 10,
+    "P02": 10,
+    "P03": 4,
+    "P04": 8,
+    "P05": 2,
+    "P06": 4,
+    "P07": 8,
+    "P08": 8,
+    "P09": 3,
+    "P10": 5,
+    "P11": 11,
+    "P12": 10
+  },
+  "alt_tools_note": "「改选其他工具」出口指向同一机制域的另一项政策（docs/21 §2.4 候选集），只给入口与代价，不是推荐。",
+  "region_polygons": {
+    "_note": "抽象轮廓（坐标空间 1000 × 700，不对应任何真实地理）。拓扑以剧本 regions.json 的 adjacency 为准：四区两两相邻——中州居中，北原、海岬、西岭环绕且两两接壤。",
+    "coord_space": [
+      1000,
+      700
+    ],
+    "polygons": {
+      "region.beiyuan": [
+        [
+          380,
+          250
+        ],
+        [
+          520,
+          210
+        ],
+        [
+          650,
+          260
+        ],
+        [
+          875,
+          160
+        ],
+        [
+          820,
+          90
+        ],
+        [
+          560,
+          30
+        ],
+        [
+          300,
+          40
+        ],
+        [
+          80,
+          120
+        ],
+        [
+          40,
+          300
+        ],
+        [
+          51,
+          360
+        ]
+      ],
+      "region.zhongzhou": [
+        [
+          380,
+          250
+        ],
+        [
+          520,
+          210
+        ],
+        [
+          650,
+          260
+        ],
+        [
+          680,
+          390
+        ],
+        [
+          600,
+          480
+        ],
+        [
+          460,
+          490
+        ],
+        [
+          360,
+          410
+        ]
+      ],
+      "region.haijia": [
+        [
+          650,
+          260
+        ],
+        [
+          875,
+          160
+        ],
+        [
+          930,
+          230
+        ],
+        [
+          960,
+          420
+        ],
+        [
+          992,
+          452
+        ],
+        [
+          978,
+          505
+        ],
+        [
+          900,
+          560
+        ],
+        [
+          760,
+          640
+        ],
+        [
+          560,
+          670
+        ],
+        [
+          480,
+          662
+        ],
+        [
+          460,
+          490
+        ],
+        [
+          600,
+          480
+        ],
+        [
+          680,
+          390
+        ]
+      ],
+      "region.xiling": [
+        [
+          380,
+          250
+        ],
+        [
+          360,
+          410
+        ],
+        [
+          460,
+          490
+        ],
+        [
+          480,
+          662
+        ],
+        [
+          360,
+          650
+        ],
+        [
+          180,
+          600
+        ],
+        [
+          70,
+          470
+        ],
+        [
+          51,
+          360
+        ]
+      ]
+    }
+  },
+  "region_polygons_pending_owner": "content/scenarios/chengwan/regions.json 的地区轮廓（docs/20 §7.2.5「多边形顶点来自剧本配置」）"
+}

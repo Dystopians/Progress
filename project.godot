@@ -1,0 +1,37 @@
+; 经纬 / 国家发展模拟游戏
+; 引擎版本锁定：Godot 4.7.2-stable（见 docs/ENGINE.md）
+
+config_version=5
+
+[application]
+
+config/name="经纬 Jingwei"
+config/description="国家发展模拟游戏 · 首版机制验证"
+config/version="0.1.0-dev"
+run/main_scene="res://ui/main.tscn"
+config/features=PackedStringArray("4.7", "GDScript")
+
+[debug]
+
+gdscript/warnings/untyped_declaration=2
+gdscript/warnings/inferred_declaration=0
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_cast=1
+gdscript/warnings/unsafe_call_argument=1
+gdscript/warnings/return_value_discarded=0
+gdscript/warnings/integer_division=1
+gdscript/warnings/narrowing_conversion=2
+gdscript/warnings/int_as_enum_without_cast=2
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=3
+window/stretch/mode="disabled"
+window/stretch/aspect="ignore"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"

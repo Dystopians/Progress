@@ -1,0 +1,681 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E01",
+  "label_zh": "海岬限电投诉集中出现",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "derived.region.electricity_availability_ppm",
+        "scope": "region.haijia",
+        "op": "lt",
+        "value": 850000
+      },
+      {
+        "metric": "flow.cell.binding_code",
+        "scope": "cell.haijia.manu",
+        "op": "eq",
+        "value": 3
+      },
+      {
+        "metric": "flow.cell.unmet_demand_uqs",
+        "scope": "cell.haijia.manu",
+        "op": "gt",
+        "value": 0
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2
+      }
+    ],
+    "probability_ppm": 600000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 6,
+    "max_occurrences": 3
+  },
+  "effects": [
+    {
+      "target": "state.group.trust_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -40000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -30000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 20000
+    }
+  ],
+  "evidence_refs": [
+    "derived.region.electricity_availability_ppm",
+    "flow.region.electricity_supply_uqs",
+    "flow.region.electricity_demand_uqs",
+    "flow.cell.energy_allocated_uqs",
+    "flow.cell.binding_code",
+    "flow.cell.unmet_demand_uqs",
+    "state.region.grid_capacity_uqs_per_q"
+  ],
+  "report_template_id": "tpl.event.e01_grid_complaint",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的两处结构修复（对应校验器 E_CONTENT_LAYOUT 与 E_UNKNOWN_FIELD）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）；其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删、一字未改，只是明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) 原先登记为「不可同时满足」的第三处冲突已解决：tools/validate_content.py 的 check_event 曾要求顶层存在 consequences 键（缺失即 E_EVENT_EVIDENCE），而 §5.13 的键集合与 V-EV-01..08 都没有这个字段、additionalProperties: false 又禁止它出现。本轮按「契约胜过校验器」的次序改正了校验器的查找位置（consequences 优先、其次 _note_consequences），检查强度未降反升；详见 _note_consequences_address_zh。后果说明因此正式定址在 _note_consequences，不再是等待裁定的临时安置。",
+  "_note_spec_ext": "以下字段不在 11_data_contract.md §5.13 的 EventTemplate 键集合内，而 §3 规定 additionalProperties: false。本文件按任务卡（触发、证据、后果、玩家选项、政治反应、文案、验收测试、参数身份证）写全，不私自修改契约；该冲突已登记为本轮返回值中的待决问题，由契约维护者决定是以 schema_version 升级的方式并入 §5.13，还是把这些块移到 docs/。在契约未扩展前，加载器应只读上面的契约字段（schema_kind 到 kind）；下列字段是同一事实的可审计说明，不引入任何新数值来源（凡有数值处一律用 *_ref 指回契约字段或参数卡）。",
+  "_note_spec_ext_version": 1,
+  "_note_code": "E01",
+  "_note_slug": "haijia_power_rationing_complaints",
+  "_note_category": "infrastructure_shortage",
+  "_note_one_line_zh": "海岬的供电缺口压住制造业生产并传导到交货，工商业联盟与当地居民把限电变成一次公开投诉。",
+  "_note_spec_field_map": {
+    "id": "event_id",
+    "name_zh": "label_zh",
+    "one_line_statement": "one_line_zh",
+    "trigger": "trigger + trigger_rationale",
+    "evidence": "evidence_refs + evidence",
+    "consequences": "effects + consequences",
+    "player_options": "player_options + options_rejected_in_v1",
+    "political_reaction": "political_reaction + residents_reaction",
+    "copy": "report_template_id + copy",
+    "acceptance_tests": "acceptance_criteria",
+    "parameters": "parameters"
+  },
+  "_note_scope_semantics_note_zh": "scope 的读法与 11_data_contract.md §5.13 的示例一致：对逐组字段（state.group.*）写 region.<r> 表示「该地区的 9 个群组各自施加同一 delta」，不是对地区做一次加总写入；对 state.bloc.* 写 bloc.<id> 表示该集团本身。",
+  "_note_values_without_parameter_card": [
+    {
+      "site": "trigger.all_of[1].value",
+      "literal": 3,
+      "why_no_card_zh": "这不是一个可校准的参数，而是 10 号文件 §4.2 定义的枚举码：flow.cell.binding_code 的取值域为 0 计划 / 1 产能 / 2 劳动 / 3 能源 / 4 材料。给枚举码建参数卡会制造一个可以被调成别的枚举值的旋钮，那是错误而不是校准。若该枚举的取值域发生变化，属于破坏性变更，须升 schema_version 并同步修改本文件。"
+    },
+    {
+      "site": "trigger.all_of[2].value",
+      "literal": 0,
+      "why_no_card_zh": "零下界，属 INV-152 的魔数白名单（0, 1, −1, 1000000）。条件的含义是未满足需求严格为正，不存在可调空间。"
+    }
+  ],
+  "_note_contract_op_note_zh": "比较运算符按 11_data_contract.md 的 V-EV-03 取值：op ∈ {lt, le, eq, ne, ge, gt}。注意 §5.13 的 EventTemplate 示例里写的是 \"op\": \"gte\"，不在该枚举内——示例与校验规则自相矛盾。本文件按规范性条款（V-EV-03 与错误码 E_EVENT_OP）执行，写 ge；不私自修改契约，该矛盾已登记为本轮返回值中的待决问题，须由契约维护者统一裁定后同步修订全部 12 个事件文件。",
+  "_note_trigger_rationale": {
+    "no_random_popup_zh": "本事件不是随机弹窗：四条条件全部是状态比较，只有在条件全部成立之后才做一次抽样，抽样走 rng.event（与 rng.shock 结构性独立，12 号文件 §8.4），每次抽样写 log.rng（INV-011）。条件不成立时不抽样、不推进计数器，因此多写一条新闻不会改变经济抽样。",
+    "conditions_zh": [
+      {
+        "cond": "derived.region.electricity_availability_ppm[region.haijia] < 850000",
+        "why_zh": "供电缺口的权威度量：该值 = Σ 实际配电 × 1e6 / Σ 电力需求（12 号文件 §5.2）。低于 85% 表示本季有超过一成的用电申请没有得到满足。"
+      },
+      {
+        "cond": "flow.cell.binding_code[cell.haijia.manu] == 3",
+        "why_zh": "3 = 能源约束为本季最紧约束（10 号文件 §4.2）。这一条把电不够与制造业因此减产绑在一起，避免电力宽裕期的口径噪声触发投诉。"
+      },
+      {
+        "cond": "flow.cell.unmet_demand_uqs[cell.haijia.manu] > 0",
+        "why_zh": "缺口必须真的传导到交不出货：只有出现未满足需求，投诉才有可核查的对象。"
+      },
+      {
+        "cond": "state.time.q >= 2",
+        "why_zh": "新手前两季用于理解简报与建设时滞（计划书 §04），不在开局第一季弹出集体投诉。"
+      }
+    ],
+    "cumulative_hours_gap_zh": "任务卡要求「累计限电小时」触发。首版没有小时维度：结算的最小时间单位是季，10 号文件里也不存在任何限电小时字段。本文件改用同一事实的可核查季度口径（可用率 + 最紧约束 + 未满足需求），不发明新单位。",
+    "persistence_gap_zh": "任务卡要求持续季数。契约的 trigger 只有 all_of 比较、cooldown_q 与 max_occurrences，没有连续成立 N 季的表达方式，而 10 号文件里也没有任何连续季计数器可供比较（V-EV-02 要求 metric 必须真实存在）。首版取最保守的做法：不伪造连续季条件，改用 (a) 更紧的瞬时阈值、(b) cooldown_q = 6 使同一轮缺口最多每 6 季说一次、(c) max_occurrences = 3 限制全局次数。所需的契约扩展已登记为待决问题（见 notes_zh）。",
+    "proposed_contract_extension_zh": "建议（不在本版生效）：在 state 中增加 state.event.condition_streak_q[12]，由 S08 在 §8.4 之前按本季 all_of 是否成立自增或清零，并在 trigger 中允许 {\"metric\": \"state.event.condition_streak_q\", \"scope\": \"event.E01\", \"op\": \"ge\", \"value\": N}。这样持续季数仍然只是一次比较，不引入表达式求值器。"
+  },
+  "_note_evidence": [
+    {
+      "ref": "derived.region.electricity_availability_ppm",
+      "scope": "region.haijia",
+      "label_zh": "本季电力可用率",
+      "page": "地区页面",
+      "ledger_zh": "电力配给台账：逐档需求、逐档配给量与最大余数法的分配明细（12 号文件 §5.2）",
+      "how_to_verify_zh": "点开后可见 Σ 配给 == min(可供, Σ 需求) 的逐项校验（INV-060）。"
+    },
+    {
+      "ref": "flow.region.electricity_supply_uqs",
+      "scope": "region.haijia",
+      "label_zh": "本季可供电力",
+      "page": "地区页面",
+      "ledger_zh": "= min(本地区各 energy cell 的净出电量之和, state.region.grid_capacity_uqs_per_q)",
+      "how_to_verify_zh": "若供给被电网容量截断，差额记 flow.cell.energy_unused_uqs（当季作废，不入库存，INV-051）。"
+    },
+    {
+      "ref": "flow.region.electricity_demand_uqs",
+      "scope": "region.haijia",
+      "label_zh": "本季电力需求",
+      "page": "地区页面",
+      "ledger_zh": "S03 形成的两档需求：档 1 生命线（公共服务与居民），档 2 生产用电",
+      "how_to_verify_zh": "两档需求分列，可下钻到各 cell 的用电需求。"
+    },
+    {
+      "ref": "flow.cell.energy_allocated_uqs",
+      "scope": "cell.haijia.manu",
+      "label_zh": "制造业实际获配电力",
+      "page": "地区页面",
+      "ledger_zh": "配给明细行（含同档内最大余数法的并列处理）",
+      "how_to_verify_zh": "与该 cell 的用电需求相减即本 cell 的缺口，可逐季对照。"
+    },
+    {
+      "ref": "flow.cell.binding_code",
+      "scope": "cell.haijia.manu",
+      "label_zh": "本季最紧约束",
+      "page": "季度报告",
+      "ledger_zh": "log.constraint_diag：五项约束值、argmin 与各项余量（INV-045）",
+      "how_to_verify_zh": "报告只报一个最紧约束（OQ-237），但台账里五项都在，可自行比较。"
+    },
+    {
+      "ref": "flow.cell.unmet_demand_uqs",
+      "scope": "cell.haijia.manu",
+      "label_zh": "未满足的制造品需求",
+      "page": "季度报告",
+      "ledger_zh": "市场对账：Σ 成交 + Σ 未满足 == Σ 需求（INV-059）",
+      "how_to_verify_zh": "未满足需求不会静默消失，也不会被当作已消费（INV-064）。"
+    },
+    {
+      "ref": "state.region.grid_capacity_uqs_per_q",
+      "scope": "region.haijia",
+      "label_zh": "电网输配容量",
+      "page": "地区页面",
+      "ledger_zh": "产能台账：capacity_active 的唯一增量来源是 S01 从 pending 转入（INV-054）",
+      "how_to_verify_zh": "可核对是否有 P04 项目已投运；未投运的项目不提供任何容量。"
+    },
+    {
+      "ref": "state.project.status",
+      "scope": "policy.P04",
+      "label_zh": "在建电网项目的状态与中断原因",
+      "page": "政策工作台",
+      "ledger_zh": "项目台账：delivery_progress_ppm / construction_progress_ppm / suspension_reason",
+      "how_to_verify_zh": "付款不制造进度（INV-087）：已付金额与施工进度在台账里是两列。"
+    }
+  ],
+  "_note_consequences_address_zh": "本键是本事件「逐条后果说明」的唯一住址。11_data_contract.md §5.13 的 EventTemplate 键集合里没有 consequences，而 §3 是 additionalProperties: false —— 顶层写 consequences 必报 E_UNKNOWN_FIELD，不写则校验器的后果检查必报 E_EVENT_EVIDENCE，两条规则不可能同时满足（实测：event_E06.json 保留顶层 consequences，得到的正是 E_UNKNOWN_FIELD，与本文件得到的 E_EVENT_EVIDENCE 是同一矛盾的两面）。§3 为这类补充说明规定的合法住址就是 _note_<field> 注释键，R-PARAM-01 对参数来源采取的也是同一处置。故本文件按契约把后果说明放在 _note_consequences。tools/validate_content.py 已在本轮同步改正（登记为 OQ-V07）：check_event 现在把 consequences 与 _note_consequences 都认作合法书写位置，两处都逐条走同一套「对手方或会计解释」断言，两处都没有才报错——放宽的只是「写在哪个键上」，不是「要不要写」；SCHEMAS 表另把 consequences 声明为可选键，使顶层写法不再自动构成 E_UNKNOWN_FIELD。契约侧待办仍在：11_data_contract.md §5.13 的 EventTemplate 键集合应正式补入 consequences，或明文指定 _note_consequences 为该说明的唯一住址。在契约表态前，本文件取注释键一侧，因为它是 §3 现行条文已经授权的形式。",
+  "_note_consequences": [
+    {
+      "consequence_id": "E01.CONS.1",
+      "effect_ref": "effects[0]",
+      "target": "state.group.trust_ppm",
+      "scope": "region.haijia",
+      "entity_ids": [
+        "group.haijia.working.low",
+        "group.haijia.working.mid",
+        "group.haijia.working.high",
+        "group.haijia.elder.low",
+        "group.haijia.elder.mid",
+        "group.haijia.elder.high",
+        "group.haijia.minor.low",
+        "group.haijia.minor.mid",
+        "group.haijia.minor.high"
+      ],
+      "amount_ppm": -40000,
+      "amount_ref": "param.e01_trust_delta_ppm（_note_parameters[5]），与 effects[0].delta_ppm 同源同值；本块不引入第二个数值来源",
+      "quantity_zh": "9 个实体各一次，合计 9 次写入；不是对地区做一次加总写入（见 _note_scope_semantics_note_zh）",
+      "source_operation": "S08 §8.4 事件效应写入：event.E01 在本季通过 all_of 四条比较且 rng.event 抽样命中后，按 11_data_contract.md §5.13 的事件可写白名单施加 ppm 增量。这是唯一的写入来源；没有第二条路径会改动同一字段的同一季取值。",
+      "applied_at": "S08 §8.4（触发当季）",
+      "change_expr": "for g in 海岬 9 组: trust_ppm[g] = clamp(trust_ppm[g] + (-40000), 0, 1000000)",
+      "constraint_zh": "clamp 下界 0、上界 1000000（12 号文件 §8.1）；触底被截断时写 log.clamp，不静默吞掉差额。事件不写 support_ppm（INV-123），也不写任何账本字段（INV-130）。",
+      "counterparty_zh": "无对手方，且这不是遗漏：trust_ppm 是群组的状态指标，不是资产负债表上的头寸，位移不构成任何实体的收入或支出，因此不需要、也不允许有对手方分录。需要对手方的是钱与实物；本事件按 INV-130 一分钱一单位货都不写（见 _note_consequence_boundary_zh）。会计口径上它对应的是「政府已投运服务的可用率下降」这一可核查事实的记录，而不是一笔转移。",
+      "duration_zh": "一次性水平位移。此后的回升只能来自 12 号文件 §8.1 的恢复项 mul_ppm(param.trust_recover_ppm=20000, keep_ppm)，其上界为 20000 ppm/季（keep_ppm 满仓时），故 −40000 最快需 2 个无失信季才被抵消。若该组的连续兑现计数 keep_streak 从 0 起算（param.trust_streak_cap_q=8，keep_ppm = floor(keep_streak × 1000000 / 8)），逐季恢复为 2500 / 5000 / 7500 / 10000 / 12500 / 15000 ppm，前 5 个无失信季累计仅 37500 < 40000，到第 6 个无失信季累计 52500 才首次抵消。恢复慢于下降由 INV-122 保证（20000 < param.trust_drop_ppm=80000），且期间任何一次失信再记 mul_ppm(80000, 250000) = 20000 ppm 的下降。",
+      "reversible": false,
+      "evidence_refs": [
+        "derived.region.electricity_availability_ppm",
+        "flow.cell.energy_allocated_uqs",
+        "state.group.trust_ppm"
+      ],
+      "explanation_zh": "限电属于政府已投运服务的可用率下降这一类可核查事实，落在程序信任而不是当期生活指数上。写在 living_index_ppm 上会与 §8.1 的三条真实通道重复计数。"
+    },
+    {
+      "consequence_id": "E01.CONS.2",
+      "effect_ref": "effects[1]",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "entity_ids": [
+        "group.haijia.working.low",
+        "group.haijia.working.mid",
+        "group.haijia.working.high",
+        "group.haijia.elder.low",
+        "group.haijia.elder.mid",
+        "group.haijia.elder.high",
+        "group.haijia.minor.low",
+        "group.haijia.minor.mid",
+        "group.haijia.minor.high"
+      ],
+      "amount_ppm": -30000,
+      "amount_ref": "param.e01_expectation_delta_ppm（_note_parameters[6]），与 effects[1].delta_ppm 同源同值",
+      "quantity_zh": "9 个实体各一次，合计 9 次写入",
+      "source_operation": "S08 §8.4 事件效应写入，与 CONS.1 同一次触发、同一步、同一笔判定；两者不会一个发生而另一个不发生。",
+      "applied_at": "S08 §8.4（触发当季）",
+      "change_expr": "for g in 海岬 9 组: expectation_ppm[g] = clamp(expectation_ppm[g] + (-30000), 0, 2000000)",
+      "constraint_zh": "clamp 下界 0、上界 2000000（12 号文件 §8.1 的 expectation 更新式同一区间）；触底写 log.clamp。",
+      "counterparty_zh": "无对手方：expectation_ppm 是对 living_index_ppm 的滞后平滑量，不是任何实体持有的资源。12 号文件 §8.1 在更新式旁明文写「可被事件修改」，这是契约授权的写入点，不是补丁。",
+      "duration_zh": "一次性位移，随后被既有惯性自行吸收：expectation_ppm 每季按 param.expectation_inertia_ppm=700000 保留、按 300000 向 living_index_ppm 收敛，故位移的残留为 30000 × 0.7^n —— 1 季后 21000，2 季后 14700（约衰减一半），4 季后 7203。不需要也不存在「效应持续季数」字段。",
+      "reversible": true,
+      "evidence_refs": [
+        "derived.region.electricity_availability_ppm",
+        "flow.cell.unmet_demand_uqs",
+        "state.group.expectation_ppm"
+      ],
+      "explanation_zh": "预期是对生活指数的滞后平滑量，可被事件修改（12 号文件 §8.1 明文）。供电恢复后它会自行回升，不需要一条反向事件去撤销。"
+    },
+    {
+      "consequence_id": "E01.CONS.3",
+      "effect_ref": "effects[2]",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "entity_ids": [
+        "bloc.business"
+      ],
+      "amount_ppm": 20000,
+      "amount_ref": "param.e01_business_org_power_delta_ppm（_note_parameters[7]），与 effects[2].delta_ppm 同源同值",
+      "quantity_zh": "1 个实体一次写入",
+      "source_operation": "S08 §8.4 事件效应写入。注意该集团的 stance_ppm 不由本事件写入，而由同一步 §8.3 按关心指标的季度变化率经 param.bloc_care_gain_ppm 更新——同一件事因此只被记一遍。",
+      "applied_at": "S08 §8.4（触发当季）",
+      "change_expr": "org_power_ppm[bloc.business] = clamp(org_power_ppm[bloc.business] + 20000, 0, 1000000)",
+      "constraint_zh": "clamp 区间 0..1000000（12 号文件 §8.3）。本事件不写 stance_ppm，也不写 support_ppm（INV-125：组织力不是选票）。",
+      "counterparty_zh": "无对手方：组织力是集团的动员能力指标，增加它不从任何其他集团处扣减，因此不存在配平项，也不应当伪造一个。若要表达「一方得势即另一方失势」，正确落点是 §8.3 里由规模与资源决定的稳态，不是在事件里手工对冲。",
+      "duration_zh": "一次性位移，随后被 §8.3 的惯性吸收：org_power_ppm 每季按 param.bloc_org_inertia_ppm=700000 保留，其余 300000 由 size_ppm 与 res_ppm 两项权重（param.bloc_w_size_ppm=200000、param.bloc_w_resource_ppm=100000，三项和 == 1000000）重新决定，故位移残留为 20000 × 0.7^n —— 2 季后 9800，4 季后 4802。",
+      "reversible": true,
+      "evidence_refs": [
+        "flow.cell.binding_code",
+        "state.bloc.org_power_ppm"
+      ],
+      "explanation_zh": "一次公开投诉降低了工商业联盟的动员成本，这是组织力，不是选票；它不进 support_ppm（INV-125）。"
+    }
+  ],
+  "_note_consequence_boundary_zh": "首版事件没有任何账本效应（INV-130 / V-EV-06）：本事件不写现金、库存、产能、人口、GDP。凡涉及花钱或改变物理能力的应对，一律只能由玩家通过 11_data_contract.md §6.1 表中的命令走政策或项目，由 S02 到 S07 按既有规则产生双边入账。此处不存在「凭空增减资源」的通路，也不需要任何平衡修正项（计划书 §13）。",
+  "_note_effect_timing_note_zh": "事件在 S08 §8.4 触发，而 support_ppm 已在同一步的 §8.2 由「生活／预期／信任」三项合成完毕。因此本事件写入的 trust/expectation 增量不改变本季支持度，而是经下一季的 §8.1 到 §8.2 进入支持度：这是一个显式的一季时滞，报告必须这样写，不得宣称「事件当季拉低了支持率」。事件不直接写 support_ppm，避免出现一处无来源分解的支持度变动（INV-123）。",
+  "_note_effect_decay_note_zh": "契约的 EventTemplate 没有「效应持续季数」字段，效应是一次性水平位移，之后由既有规则自行衰减：expectation 按 param.expectation_inertia_ppm=700000 的惯性平滑（残留 30000 × 0.7^n，2 季后 14700，约衰减一半），org_power 按 param.bloc_org_inertia_ppm=700000 的惯性回归其规模与资源决定的水平（残留 20000 × 0.7^n，12 号文件 §8.3）；trust 没有惯性项，只能按 §8.1 的恢复项 mul_ppm(param.trust_recover_ppm=20000, keep_ppm) 回升，上界 20000 ppm/季，且 INV-122 保证恢复慢于下降（20000 < param.trust_drop_ppm=80000）。所以「持续季数」在首版是衰减机制的结果，不是内容包里的一个数字；_note_consequences 各条的 duration_zh 描述的是这个机制并给出逐季整数，不是新增字段。",
+  "_note_player_options": [
+    {
+      "option_id": "E01.OPT.A",
+      "label_zh": "立项扩容：在海岬启动电网可靠性升级",
+      "command": "project_launch",
+      "args_zh": "policy.P04，region_id = region.haijia，scale_ppm 与 funding_source 由玩家选定",
+      "cost_zh": "合同总额按 scale_ppm 折算（P04 测试夹具为 4 U / 8 季，每季 0.5 U），并占用海岬 2 个施工槽位中的 1 个；投运后每季运行费 0.02 U 进入 gov.service_opex_committed_uu。",
+      "preconditions_zh": [
+        "权限位 2（建设与采购权）已持有",
+        "海岬有空闲施工槽位（INV-094）",
+        "资金来源已声明：现金、债券或预算重排（计划书 §07 融资必须有对手方）"
+      ],
+      "lag_q": 9,
+      "lag_note_zh": "最早 8 季完工 + 1 季投运时滞（INV-091）；本季不可能有任何供电改善。",
+      "failure_modes_zh": [
+        "financing：无法融资则项目 suspended，已付金额不退回",
+        "delivery：进口设备受 state.world.delivery_capacity_uqs 限制，交付进度停滞",
+        "congestion：槽位被占则 suspended(congestion)，不是静默排队",
+        "no_demand：新增供电没有对应需求时容量闲置，不产生任何 GDP 或支持率奖励"
+      ],
+      "political_reaction_zh": "bloc.business 立场上行（由 P04 的 political_reaction 在生效季给出），bloc.agri_coop 因地区资源分配这一条关心指标而转负。"
+    },
+    {
+      "option_id": "E01.OPT.B",
+      "label_zh": "改配给规则：把优先级配给切换为按比例配给",
+      "command": "set_standing_rule",
+      "args_zh": "rule = ration_mode，value = proportional（12 号文件 §5.6 两级规则的第二形态）",
+      "cost_zh": "无直接财政支出。代价是把缺口从生产端部分转移到生命线档（居民与公共服务用电），即改变谁承担短缺，而不是消除短缺。",
+      "preconditions_zh": [
+        "ration_mode 在 10 号文件的变量字典中尚无对应字段（见 notes_zh 的待决问题）；在该字段补齐前，本选项在可玩菜单中应显示为不可执行并给出原因（INV-100）"
+      ],
+      "lag_q": 1,
+      "lag_note_zh": "下一季 S05 的配给才按新规则执行；本季配给已经完成。",
+      "failure_modes_zh": [
+        "总供给不变时，生产端缓解多少，生命线档就少多少：报告必须同时显示两档的变化，不得只显示受益的一侧",
+        "命令在 ration_mode 字段补齐前一律 REJECT，并记 log.rejections"
+      ],
+      "political_reaction_zh": "bloc.business 短期缓和；bloc.labor_public 反向，因为居民与公共服务的用电被摊薄。"
+    },
+    {
+      "option_id": "E01.OPT.C",
+      "label_zh": "什么都不做：维持现有配给顺序与项目安排",
+      "command": "advance_quarter",
+      "args_zh": "本季不提交任何与供电相关的命令",
+      "cost_zh": "零现金支出。",
+      "preconditions_zh": [
+        "无"
+      ],
+      "lag_q": 0,
+      "lag_note_zh": "后果当季即在台账中可见。",
+      "consequences_of_inaction_zh": [
+        "供电缺口不会自行消失：electricity_availability_ppm 由能源产量与电网容量决定，不随时间恢复",
+        "条件继续成立时，本事件在 cooldown_q = 6 季后可再次触发，最多 3 次，每次都写一次 trust 下降",
+        "trust_ppm 的下降不可由补贴修复：trust 的更新式中结构上没有 transfer_income 通道（INV-122）",
+        "制造业持续受能源约束时，其未满足需求经 §7.3 的缺口信号推高制造品价格，进一步压低居民实际消费"
+      ],
+      "political_reaction_zh": "bloc.business 组织力继续累积；若同时出现财政欠付，预算审查可将 mandate_status 置 at_risk。"
+    }
+  ],
+  "_note_options_rejected_in_v1": [
+    {
+      "label_zh": "应急购电（向外部紧急采购电力）",
+      "why_unavailable_zh": "首版的电力供给在 12 号文件 §5.2 被定义为本地区各 energy cell 净出电量与电网容量的较小者，供给侧没有进口通道；电力又不可库存（INV-049/051）。因此应急购电在首版没有任何可执行的机制落点。把它写成一个可点击的选项，等于凭空增加一份资源（计划书 §13 禁止）。",
+      "what_it_would_require_zh": "需要先在 12 号文件 §5.2 增加一条外部电力交付通道（受 state.world.delivery_capacity_uqs[energy] 与外部信用额度约束，走 agent.row 的双边入账），并在 §5.6 明确它在配给两档中的次序。已登记为待决问题。"
+    }
+  ],
+  "_note_political_reaction": [
+    {
+      "bloc": "bloc.business",
+      "direction": "mobilize",
+      "effect_ref": "effects[2]",
+      "interest_zh": "工商业联盟关心能源、运输、利润与政策可预期性（计划书 §08）。",
+      "evidence_metrics": [
+        "derived.region.electricity_availability_ppm[region.haijia]",
+        "flow.cell.binding_code[cell.haijia.manu]",
+        "flow.cell.profit_pretax_uu（其关心指标，politics.json 给定）"
+      ],
+      "basis_zh": "本事件只改它的 org_power_ppm（动员能力）。它对各政策的 stance_ppm 不由事件写入，而是由 S08 §8.3 按关心指标的季度变化率经 param.bloc_care_gain_ppm 更新，这保证同一件事不会被记两遍。"
+    },
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "conditional_oppose",
+      "effect_ref": "none",
+      "interest_zh": "劳动与公共服务联盟关心就业保障、工资、教育医疗和居住（计划书 §08）。",
+      "evidence_metrics": [
+        "state.pubserv.availability_ppm[region.haijia]",
+        "flow.cell.separations_persons[cell.haijia.manu]"
+      ],
+      "basis_zh": "限电本身不直接动它的组织力；但若玩家选 OPT.B 把缺口推向生命线档，其关心指标（就业与公共服务可用率的人口加权）下行，stance 在下一季经 §8.3 转负。本事件不预写这个结果。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "neutral",
+      "effect_ref": "none",
+      "interest_zh": "农业合作联盟关心农户收入、灌溉与地区资源分配（计划书 §08）。",
+      "evidence_metrics": [
+        "flow.gov.pay_project_uu（按地区分布）"
+      ],
+      "basis_zh": "海岬限电与其关心指标无直接联系；只有当玩家选 OPT.A 把建设资源集中到海岬时，地区资源分配这一条才会经 §8.3 使其立场转负。"
+    }
+  ],
+  "_note_residents_reaction": {
+    "groups_scope": "region.haijia 的 9 个群组",
+    "channel_zh": "trust_ppm（服务可用率下降属可核查的失信事实）与 expectation_ppm（对未来的滞后平滑量）",
+    "not_channel_zh": "不写 living_index_ppm：当期生活由实际可支配收入、住房负担与服务可及性算出（12 号文件 §8.1），限电对生活的影响应当经这三条真实通道显现，不由事件直接补一刀，否则同一件事被记两遍。"
+  },
+  "_note_copy": {
+    "style_note_zh": "三类措辞严格分栏（计划书 §04、12 号文件 §8.6）：accounted 可精确加总；inferred 用「模型中的限制因素」，禁止出现导致、因为一类因果断言；projected 必须标注假设。占位符只支持整数与 ID（OQ-235）。",
+    "accounted": [
+      {
+        "key": "event.E01.accounted.supply_gap",
+        "template_zh": "第 {q_display} 季，海岬的电力需求为 {demand_qs} 单位，实际配给 {allocated_qs} 单位，可用率 {availability_pct}%。其中生命线档（居民与公共服务）获配 {lifeline_qs} 单位，生产档获配 {production_qs} 单位。",
+        "placeholders": [
+          "q_display",
+          "demand_qs",
+          "allocated_qs",
+          "availability_pct",
+          "lifeline_qs",
+          "production_qs"
+        ],
+        "evidence_refs": [
+          "flow.region.electricity_demand_uqs",
+          "flow.region.electricity_supply_uqs",
+          "derived.region.electricity_availability_ppm",
+          "flow.cell.energy_allocated_uqs"
+        ]
+      },
+      {
+        "key": "event.E01.accounted.unmet",
+        "template_zh": "海岬制造业本季未满足的订货为 {unmet_qs} 单位；本季电网输配容量为 {grid_qs} 单位，因超出输配容量而作废的电力为 {unused_qs} 单位。",
+        "placeholders": [
+          "unmet_qs",
+          "grid_qs",
+          "unused_qs"
+        ],
+        "evidence_refs": [
+          "flow.cell.unmet_demand_uqs",
+          "state.region.grid_capacity_uqs_per_q",
+          "flow.cell.energy_unused_uqs"
+        ]
+      }
+    ],
+    "inferred": [
+      {
+        "key": "event.E01.inferred.binding",
+        "template_zh": "模型中，海岬制造业本季的限制因素是能源约束：五项约束里能源一项最小。其余四项（计划、产能、劳动、材料）的取值与各自余量见约束台账。",
+        "placeholders": [],
+        "evidence_refs": [
+          "flow.cell.binding_code",
+          "flow.cell.bound_energy_uqs",
+          "flow.cell.bound_capacity_uqs",
+          "flow.cell.bound_labor_uqs",
+          "flow.cell.bound_materials_uqs",
+          "flow.cell.bound_plan_uqs"
+        ]
+      },
+      {
+        "key": "event.E01.inferred.complaint",
+        "template_zh": "工商业联盟与海岬居民就限电提出集中投诉。在模型中，这一记录对应两项状态变化：海岬各群组的程序信任下调 {trust_delta_display}，工商业联盟的组织力上调 {org_delta_display}。支持度不在本季变动；这两项要到下一季才经预期与信任进入支持度。",
+        "placeholders": [
+          "trust_delta_display",
+          "org_delta_display"
+        ],
+        "evidence_refs": [
+          "state.group.trust_ppm",
+          "state.bloc.org_power_ppm"
+        ]
+      }
+    ],
+    "projected": [
+      {
+        "key": "event.E01.projected.no_action",
+        "template_zh": "情景预测（假设：不提交新命令、外部条件不变、价格按既有有界调整规则演化）：未来四季海岬电力可用率维持在当前区间，制造业产量的限制因素仍为能源。本预测由同一套结算规则空跑四季得到，不是对现实世界因果的识别。",
+        "placeholders": [],
+        "evidence_refs": [
+          "derived.region.electricity_availability_ppm",
+          "flow.cell.binding_code"
+        ]
+      },
+      {
+        "key": "event.E01.projected.with_p04",
+        "template_zh": "情景预测（假设：本季立项 P04，按计划工期 {planned_quarters} 季履约，资金不中断，设备按期到货）：新增容量最早在第 {commission_q_display} 季投入使用；在此之前供电条件不变。若技能、材料或销路成为新的最紧约束，新增容量可能闲置。",
+        "placeholders": [
+          "planned_quarters",
+          "commission_q_display"
+        ],
+        "evidence_refs": [
+          "state.project.delivery_progress_ppm",
+          "state.project.construction_progress_ppm",
+          "state.project.commissioned_q"
+        ]
+      }
+    ]
+  },
+  "_note_acceptance_criteria": [
+    {
+      "test_id": "T-S-E01-NO-FIRE-WHEN-UNMET",
+      "given_zh": "构造海岬电力可用率 = 900000 ppm（高于阈值 850000），其余三条件全部成立",
+      "when_zh": "推进 20 个季度",
+      "then_zh": "event.E01 的 fire_count 恒为 0；且 log.rng 中 rng.event 在这 20 季内因本事件产生的抽样次数为 0（条件不成立时不抽样、不推进计数器）",
+      "invariants": [
+        "INV-009",
+        "INV-011"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-NO-FIRE-AT-BASELINE",
+      "given_zh": "无命令、无冲击的基线剧本（剧本初值直接载入）",
+      "when_zh": "推进基年四季（q = 0..3）",
+      "then_zh": "event.E01 的 fire_count == 0。本断言把阈值被后续剧本初值（cells_init、io_table）改到开局即触发这一风险转成红灯",
+      "invariants": [
+        "INV-118"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-FIRE-WHEN-CONDITIONS-MET",
+      "given_zh": "构造海岬可用率 = 800000、cell.haijia.manu 的 binding_code == 3 且 unmet_demand > 0、q >= 2，固定 root_seed",
+      "when_zh": "连续推进 8 个季度，四条条件全程成立",
+      "then_zh": "fire_count >= 1；任意两次触发的间隔 >= cooldown_q = 6；整局 fire_count <= max_occurrences = 3",
+      "invariants": [
+        "INV-130"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-NO-LEDGER-EFFECT",
+      "given_zh": "构造一次确定触发，并准备一个除事件外完全相同的对照组",
+      "when_zh": "触发当季结算完成",
+      "then_zh": "gov / bond / cell / region / project / world 六个子系统的 subsystem_hash 与对照组逐位相同；只有 group 与 politics 子系统的哈希不同",
+      "invariants": [
+        "INV-130",
+        "INV-108"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-NO-REDRAW-ON-RELOAD",
+      "given_zh": "在事件已确定触发的那一季之前存档",
+      "when_zh": "save 到 load 再 advance，与直接 advance 各跑一次",
+      "then_zh": "两者的 state_hash 逐位相同，log.rng 完全一致，fire_count 与 last_fire_q 一致；不得重抽已确定事件",
+      "invariants": [
+        "INV-131",
+        "INV-133",
+        "ADV-06"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-TRUST-RECOVERY-RATE",
+      "given_zh": "夹具令 event.E01 在 q = 4 恰好触发一次（cooldown_q = 6 使其在观察窗内不再触发）；对 group.haijia.working.mid 置 keep_streak = 0 于 q = 4，并令 q = 5..10 每季 breach_count == 0（无转移支付欠付、无公共服务运行费欠拨、无项目取消、无债券违约）；param.trust_streak_cap_q = 8、param.trust_recover_ppm = 20000、param.trust_drop_ppm = 80000",
+      "when_zh": "记 T4 = q = 4 的 §8.4 写入完成后的 state.group.trust_ppm[group.haijia.working.mid]，推进到 q = 10",
+      "then_zh": "q = 5..10 各季由 §8.1 写入的信任恢复增量依次恰为 2500、5000、7500、10000、12500、15000 ppm（即 mul_ppm(20000, floor(keep_streak × 1000000 / 8))）；trust_ppm(q=9) − T4 == 37500 且 37500 < 40000（尚未抵消 effects[0] 的 −40000）；trust_ppm(q=10) − T4 == 52500 且 52500 >= 40000（首次抵消）。同时断言 param.trust_recover_ppm < param.trust_drop_ppm",
+      "invariants": [
+        "INV-122"
+      ]
+    },
+    {
+      "test_id": "T-S-E01-SUPPORT-LAG",
+      "given_zh": "构造一次确定触发，且该季其它条件与对照组保持一致",
+      "when_zh": "比较触发当季与下一季的 derived.politics.support_national_ppm",
+      "then_zh": "触发当季的支持度与对照组相同（事件不写 support_ppm）；下一季出现差异，且 log.explanations 中该差异可分解到信任与预期两项",
+      "invariants": [
+        "INV-123",
+        "INV-125"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e01_availability_threshold_ppm",
+      "binds_to": "trigger.all_of[0].value",
+      "value": 850000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 的 EventTemplate 示例（同一主题的限电事件）采用 850000",
+      "reference_year": 0,
+      "definition": "触发所需的电力可用率上界：本季实际配电占电力需求的比例低于该值才算供电缺口。",
+      "valid_range": [
+        600000,
+        950000
+      ],
+      "confidence": "low",
+      "calibration_note": "先跑无冲击基线 40 季，记录 derived.region.electricity_availability_ppm[region.haijia] 的分布；若基线中位数已低于本阈值，说明剧本初值（grid_capacity 与 energy cell 产能）不自洽，应先改剧本初值而不是放宽阈值。T-S-E01-NO-FIRE-AT-BASELINE 会先红。"
+    },
+    {
+      "value_id": "param.e01_min_q",
+      "binds_to": "trigger.all_of[3].value",
+      "value": 2,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §04 新手前四季：第 1 到 2 季用于理解简报与建设时滞",
+      "reference_year": 0,
+      "definition": "本事件允许触发的最早季度索引（q 从 0 起，故为第 3 季）。",
+      "valid_range": [
+        0,
+        8
+      ],
+      "confidence": "low",
+      "calibration_note": "若试玩记录显示玩家在第 3 季还未看懂供电台账，后移至 3 或 4；这是教学节奏参数，不是经济参数。"
+    },
+    {
+      "value_id": "param.e01_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 600000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 示例值；条件满足后的抽样概率",
+      "reference_year": 0,
+      "definition": "四条条件全部成立后，本季真正形成一次公开投诉的概率。抽样走 rng.event，写 log.rng。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "这是条件满足后是否被组织起来的不确定性，不是事件本身的随机性。若试玩者反馈条件明明成立却什么都没发生、无法理解，提高到 800000 至 1000000；取 1000000 即退化为纯条件触发，是可接受的最保守形态。"
+    },
+    {
+      "value_id": "param.e01_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 6,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 示例值",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数，用于替代首版无法表达的连续成立 N 季条件。",
+      "valid_range": [
+        1,
+        20
+      ],
+      "confidence": "low",
+      "calibration_note": "与 persistence_gap_zh 绑定：若将来引入 condition_streak_q，本值应同时重新评估，避免同一缺口被重复计入信任下降。"
+    },
+    {
+      "value_id": "param.e01_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 3,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 示例值",
+      "reference_year": 0,
+      "definition": "整局中本事件最多触发次数。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "上限存在的理由是防止同一机制在 120 季压测中把 trust_ppm 单调打到 0；压测若观察到 trust 触底且 log.clamp 计数异常，先降本值。"
+    },
+    {
+      "value_id": "param.e01_trust_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -40000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 示例值（trust −40000）",
+      "reference_year": 0,
+      "definition": "触发时对海岬各群组程序信任的一次性下调（−4.0 个百分点）。",
+      "valid_range": [
+        -150000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "参照 12 号文件 §8.1：一次失信记 0.25 乘 param.trust_drop_ppm(80000) = 20000 ppm。本事件取其两倍，理由是限电是可核查且持续可见的服务失效。若压测显示信任下降主导了全部政治结果，先降本值再动 trust_drop_ppm。"
+    },
+    {
+      "value_id": "param.e01_expectation_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": -30000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：预期的一次性位移应小于信任的位移，因为预期有惯性会自行回升",
+      "reference_year": 0,
+      "definition": "触发时对海岬各群组未来预期的一次性下调（−3.0 个百分点）。",
+      "valid_range": [
+        -150000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "按 param.expectation_inertia_ppm = 700000，一次 −30000 的位移在 2 季后残留约 −14700。若报告中看不出这条通道的效果，说明惯性参数过大，应先调 expectation_inertia_ppm。"
+    },
+    {
+      "value_id": "param.e01_business_org_power_delta_ppm",
+      "binds_to": "effects[2].delta_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11_data_contract.md §5.13 示例值（org_power +20000）",
+      "reference_year": 0,
+      "definition": "触发时工商业联盟组织力的一次性上调（+2.0 个百分点）。",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "org_power 的稳态由规模与资源决定（12 号文件 §8.3），惯性 700000 使一次位移在数季内消散。校准检验：一次触发不应使该集团跨过任何否决域门槛；若跨过，说明门槛过低而不是本值过高。"
+    }
+  ],
+  "_note_notes_zh": "本文件的全部数值均为设计假设与测试夹具，不是工程估算（计划书 §14、§19）。三处与契约的不一致已在本轮返回值中登记为待决问题：(1) 11_data_contract.md §5.13 的示例把同一主题的限电事件编号为 event.E07，而本轮任务卡把它分配为 E01；(2) 契约的文件布局写 events/event_E01.json，而 content/policies/ 已在用 P04_grid_reliability_upgrade.json 的命名，本文件与政策文件保持一致；(3) 累计限电小时、持续季数、ration_mode、应急购电四项在首版契约中没有对应字段或机制，本文件不发明，只登记。"
+}

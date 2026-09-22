@@ -1,0 +1,780 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "_note_schema_extension": "本文件的键分三类：(1) 11_data_contract.md §5.13 已定义的键（schema_kind、schema_version、event_id、label_zh、trigger、effects、evidence_refs、report_template_id、kind），名称与语义逐字照搬；(2) consequences —— 计划书 §13「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」要求的逐条后果说明。计划书是第 1 优先级文档，§5.13 的键集合是第 4 优先级，冲突时上位者胜，因此本键写在顶层而不是降级为注释键；契约 §5.13 必须补登记这个键（已在 open_questions 上报）。(3) 本任务与计划书 §04/§07/§14 要求、而 §5.13 与计划书都没有强制的补充说明（code、slug、name_zh、one_line_zh、trigger_detail、evidence、player_options、political_reaction、copy、acceptance_tests、parameters、design_notes_zh、open_questions_local），一律按 §3「additionalProperties: false」改名为 _note_<原键名>，只作注释，不进逻辑、不进 content_hash。",
+  "_note_event_id_collision": "11_data_contract.md §5.13 的示例 JSON 把 event.E07 用作「海岬限电投诉集中出现」。本任务分配给 E07 的是「到期墙与融资成本上升」。示例不是规范条款（§5.13 的规范部分是 V-EV-01..08 校验表），因此本文件按任务分配占用 E07，因此本文件按任务分配占用 E07。该冲突在内容包层面已实际消解：content/events/E01_haijia_power_rationing_complaints.json 已把「海岬限电投诉集中出现」定为 event.E01，12 个编号无重复。仍建议契约方把 §5.13 的示例改号为 event.E01，以免后续读者据示例分配编号——ID 一经进入已发布存档即不得改名（§4 规则 1）。",
+  "event_id": "event.E07",
+  "_note_code": "E07",
+  "_note_slug": "maturity_wall_financing_cost",
+  "label_zh": "到期墙与融资成本上升",
+  "_note_name_zh": "name_zh 必须与 label_zh 逐字相同；校验器应断言二者相等，防止两处文案漂移。",
+  "_note_one_line_zh": "未来四季的还本付息义务已经是国库可用现金的两倍以上，而债务余额仍在高位——玩家第一次被迫在支出排序、借新还旧与重组之间选一个，并承担每一个选项自己的价格。",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的三处结构修复：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 除 §5.13 声明的九个键与 consequences 外，其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删、一字未改，只是明确标记为注释键；_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) consequences 的归属已裁定并执行：此前本文件把它降级为 _note_consequences，理由是 §5.13 的键集合没有它、而 additionalProperties: false 禁止它出现——这个理由不成立。计划书 §13 要求每条变化附带实体 ID、来源操作、金额／数量、时间和约束，而计划书在文档优先级里高于 11 号契约；两条规则冲突时下位文档让路。因此 consequences 现为顶层正式字段（七条，逐条给出对手方或会计解释），契约 §5.13 与校验器的 event_template schema 表须同步登记该键，否则会误报 E_UNKNOWN_FIELD。(4) 三条金额阈值按裁定 R-SCALE-01 从旧刻度（1 U = 1e6 μU）改到新刻度（1 U = 1e9 μU）：6 000 000 → 6 000 000 000、3 000 000 → 3 000 000 000、40 000 000 → 40 000 000 000。迁移器只改「键名含 uu 的子树」，而触发条件的键是 metric/op/value，金额只在字符串 metric 的语义里，机器改不到——旧值会让 c2（现金 ≤ 3 000 000 μU）在开局现金 2 000 000 000 μU 下永远不成立，整个事件被静默关死。相关参数卡的 value 与 valid_range 同步 ×1000；param.e07_service_to_cash_floor_ppm 是两个 μU 量的商，刻度被约掉，保持 2 000 000 ppm 不变。",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "derived.fiscal.next4q_debt_service_uu",
+        "op": "ge",
+        "value": 6000000000
+      },
+      {
+        "metric": "state.gov.cash_uu",
+        "op": "le",
+        "value": 3000000000
+      },
+      {
+        "metric": "derived.gov.debt_uu",
+        "op": "ge",
+        "value": 40000000000
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2
+      }
+    ],
+    "probability_ppm": 1000000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 4,
+    "max_occurrences": 6
+  },
+  "_note_op_vocabulary": "本文件一律使用 11_data_contract.md V-EV-03 的规范集合 op ∈ {lt, le, eq, ne, ge, gt}。§5.13 的示例 JSON 里写的是 \"gte\"，与 V-EV-03 不一致；规范条款优先于示例，冲突已上报。",
+  "_note_scope_semantics": "本事件的四个指标全部是全局标量（derived.fiscal.next4q_debt_service_uu、state.gov.cash_uu、derived.gov.debt_uu、state.time.q），因此四条条件都省略 scope，不需要任何 scope 求值约定。这是本批四个事件里唯一不依赖未定义 scope 语义的一个。",
+  "_note_trigger_detail": {
+    "ratio_encoding_zh": "任务要求的判据是「未来四季到期本金 / 可用现金 比越阈值」。触发器只有 metric-op-常量 比较，没有除法，模型里也没有这个比值的派生量。本文件用两边界写法给出可证明的下界：若 next4q_debt_service_uu ≥ 6 000 000 000（6 U）且 gov.cash_uu ≤ 3 000 000 000（3 U），则比值 ≥ 6 000 000 000 / 3 000 000 000 = 2.0。这不是近似，是下界证明；只要两条同时成立，比值必然不低于 2 倍。两处口径差异必须写明：(a) derived.fiscal.next4q_debt_service_uu 是「未来四季到期本金＋利息」（10 号 §9.3），比任务措辞里的「本金」口径更宽，方向上更保守——它更早报警；(b) 「可用现金」在首版取国库现金 state.gov.cash_uu，不含未动用的融资额度，因为额度不是现金、也不保证能用（INV-034 要求对手方有钱）。",
+    "conditions": [
+      {
+        "ref": "c1",
+        "metric": "derived.fiscal.next4q_debt_service_uu",
+        "op": "ge",
+        "value": 6000000000,
+        "param_ref": "param.e07_next4q_service_threshold_uu",
+        "why_zh": "计划书 §07 明写「财政页面必须展示：当前现金、未来四季到期本金、利息……」。这个量本来就要在界面上，用它做触发条件意味着玩家看到的数字和事件的判据是同一个，不存在隐藏规则（计划书 §04「可以隐藏未来冲击，不隐藏当前规则」）。"
+      },
+      {
+        "ref": "c2",
+        "metric": "state.gov.cash_uu",
+        "op": "le",
+        "value": 3000000000,
+        "param_ref": "param.e07_cash_threshold_uu",
+        "why_zh": "比值的分母。开局国库现金为 2 000 000 000 μU（2 U，INV-145），阈值取 3 000 000 000 μU（3 U）：现金攒到 3 U 以上时不再把这件事当成墙。现金恒 ≥ 0（INV-016），不存在负余额，所以分母不会出现符号问题。"
+      },
+      {
+        "ref": "c3",
+        "metric": "derived.gov.debt_uu",
+        "op": "ge",
+        "value": 40000000000,
+        "param_ref": "param.e07_debt_floor_uu",
+        "why_zh": "开局债务 50 U（INV-144）。这一条排除「债务已经基本还清、只是某季现金临时偏低」的误报：那种情况是流动性问题，不是到期墙。debt_uu == Σ active 批次的未偿本金（INV-035），与债券台账逐批次对得上。"
+      },
+      {
+        "ref": "c4",
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2,
+        "why_zh": "开局两季不谈到期墙。基年的四季财政计划由季节系数拆分，q=0、q=1 的现金低点属于计划内波动；此时报警会把「基年本来就这样」说成危机。"
+      }
+    ],
+    "randomness_zh": "probability_ppm = 1 000 000，即条件成立必然触发，不做抽样。理由：到期墙是一张已经签好的合同表，不是运气。债券批次的 maturity_q、amortization、coupon 在发行时就固定（INV-036 明令 coupon 发行后被写入即 FAULT），未来四季要还多少钱是可以逐批次算出来的确定量。让它以某个概率出现，等于告诉玩家「合同到期这件事有时候不发生」，那是对模型的谎报。抽样仍走 rng.event 通道以保持结构一致（V-EV-04），但概率为 1 时 mapped_value 与触发结果无关，log.rng 仍照写以便核对。",
+    "cooldown_and_cap_zh": "cooldown_q = 4、max_occurrences = 6。上限给到 6 是因为到期墙可能在 40 季里出现多次高峰（剧本的六笔存量债分别在 q=7、12、19、24、26、34 到期），每一次都是一次真实的、需要决策的时点；把它压成 3 次会让后半程的墙无声无息。四季冷却对应一次预算审查周期（q ≡ 3 mod 4）。"
+  },
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -25000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -25000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -25000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.xiling",
+      "delta_ppm": -25000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 20000
+    },
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.business.policy.P11",
+      "delta_ppm": -80000
+    },
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.labor_public.policy.P11",
+      "delta_ppm": 80000
+    }
+  ],
+  "_note_effects_no_trust": "本事件刻意不写 state.group.trust_ppm。到期墙本身还不是失信——政府一分钱都没有拖欠。信任只应在真的推迟支付（arrears）或真的减记（recognized_writeoffs）时下降，那两件事由 S02 的支付排序与重组路径产生，并各自有自己的记录。把「压力」和「违约」写成同一个信任扣分，会让玩家学不会区分它们。四个地区分别写预期，是因为 scope 没有全国量词，逐地区列出反而更诚实：分布仍然逐组保留（INV-124）。",
+  "evidence_refs": [
+    "derived.fiscal.next4q_debt_service_uu",
+    "state.gov.cash_uu",
+    "derived.gov.debt_uu",
+    "state.bond.principal_outstanding_uu",
+    "state.bond.maturity_q",
+    "state.bond.coupon_ppm_per_q",
+    "state.bond.holder",
+    "flow.bond.principal_due_uu",
+    "flow.bond.interest_due_uu",
+    "state.gov.committed_memo_uu",
+    "state.gov.service_opex_committed_uu",
+    "state.gov.arrears_uu",
+    "state.gov.arrears_by_payee_uu",
+    "state.gov.payment_priority",
+    "state.world.sovereign_rate_ppm_per_q",
+    "derived.fiscal.debt_service_ratio_ppm",
+    "state.gov.credit_limit_domestic_memo_uu",
+    "state.world.credit_limit_uu",
+    "state.invpool.cash_uu"
+  ],
+  "_note_evidence": [
+    {
+      "label_zh": "未来四季到期表",
+      "metric": "derived.fiscal.next4q_debt_service_uu",
+      "stable_id": "derived.fiscal.next4q_debt_service_uu",
+      "page": "财政页 → 债务与承诺 → 未来四季",
+      "read_zh": "逐季列出到期本金与应付利息，并可展开到每一个债券批次。",
+      "check_zh": "Σ_{q'≥q} scheduled_principal(b, q') == outstanding（INV-037）；等额本金批次的分期表由最大余数法预生成，各期之和精确等于面值。"
+    },
+    {
+      "label_zh": "债券批次台账",
+      "metric": "state.bond.principal_outstanding_uu",
+      "stable_id": "state.bond.principal_outstanding_uu",
+      "page": "财政页 → 债务与承诺 → 批次",
+      "read_zh": "每批次的发行季、未偿本金、季度票息率、到期季、摊还方式、债权人（invpool 或 row）、状态。",
+      "check_zh": "derived.gov.debt_uu == Σ active 批次未偿本金（INV-035）；Σ(invpool.bondhold + row.bondhold) == debt（INV-025）。固定利率旧债不因新发利率变化而重定价（INV-036）。"
+    },
+    {
+      "label_zh": "国库现金与本季支付排序",
+      "metric": "state.gov.payment_priority",
+      "stable_id": "state.gov.payment_priority",
+      "page": "财政页 → 现金与支付 / 季度报告 → 已经发生",
+      "read_zh": "8 档支出的当前优先级顺序，以及本季各档是否被推迟、推迟了多少。",
+      "check_zh": "payment_priority 是 8 类的一个全排列，实际支付顺序与之一致（INV-039）；无法融资时进入支出排序，不允许无提示的负国库余额（计划书 §07）。"
+    },
+    {
+      "label_zh": "已发生的欠付",
+      "metric": "state.gov.arrears_by_payee_uu",
+      "stable_id": "state.gov.arrears_by_payee_uu",
+      "page": "财政页 → 欠付台账",
+      "read_zh": "分收款方的欠付余额与本季新增、清偿。",
+      "check_zh": "arrears_end == arrears_start + 新增 − 清偿，且 arrears == Σ arrears_by_payee ≥ 0（INV-030）。欠付不计息，且与计息借款 debt 严格分开（10 号 §2.2）。"
+    },
+    {
+      "label_zh": "已签项目承诺与服务运行费",
+      "metric": "state.gov.committed_memo_uu",
+      "stable_id": "state.gov.committed_memo_uu",
+      "page": "财政页 → 未来承诺",
+      "read_zh": "已签合同未来应付额，以及已投运服务的每季运行费义务。两者都是表外备查量，不进资产负债恒等式。",
+      "check_zh": "committed_memo 只由新签合同、履约付款、取消三种事件变动；取消不退还已实际支付的钱（INV-032/093）。计划书 §07：预算不是资产，签约即占用未来预算。"
+    },
+    {
+      "label_zh": "融资价格与对手方能力",
+      "metric": "state.world.sovereign_rate_ppm_per_q",
+      "stable_id": "state.world.sovereign_rate_ppm_per_q",
+      "page": "财政页 → 融资条件",
+      "read_zh": "当季主权融资利率、偿债率、国内额度、外部额度与已用额度、居民投资池的可用现金。",
+      "check_zh": "新发批次票息 ≥ market_rate_ppm(q)，且 market_rate 对偿债率单调不减（INV-038）；国内融资 ≤ min(credit_limit_domestic, invpool.cash)，外部融资 ≤ credit_limit − credit_used（INV-034）。融资必须有对手方。"
+    }
+  ],
+  "_note_consequences": [
+    {
+      "consequence_id": "E07.K1",
+      "written_by": "event",
+      "source_op": "event.E07.effects[0..3]（四条 delta_ppm 写入，每个地区一条）",
+      "entity_ids": [
+        "event.E07",
+        "state.group.expectation_ppm",
+        "region.beiyuan",
+        "region.zhongzhou",
+        "region.haijia",
+        "region.xiling"
+      ],
+      "target": "state.group.expectation_ppm",
+      "scope": "四个地区的全部 36 个群组（每地区 9 组，逐地区各一条 effect）",
+      "amount_ppm": -25000,
+      "amount_uu": 0,
+      "formula": "expectation_ppm[g] = clamp_i(expectation_ppm[g] + (-25000), 0, 2000000)，对 36 个 g 各算一次",
+      "param_ref": "param.e07_expectation_delta_ppm",
+      "applied_at": "触发当季 q 的 S08 §8.4（12 号 §8.4 的事件循环），在 §8.1..8.3 的支持度合成之后；因此本次写入最早影响的是 q+1 季的 support_ppm，不回改本季已公布的支持度",
+      "duration_note_zh": "一次性写入存量，不随季衰减；此后由 S08 的预期更新式自行回归",
+      "counterparty": "无对手方。这是一次主观量的存量修正，没有任何资源易手；「没有对手方」在这里是结论而不是遗漏——它正是本事件零账本效应的表现",
+      "accounting_zh": "不产生任何 log.ledger 分录。expectation_ppm 是 S 类主观量（10 号 §6），不在资产负债恒等式里，也不进 GDP；全经济现金总量不因本条改变（INV-018）。可追溯性由 log.event 提供：记录 q、事件 ID、四条 effect 的 delta_ppm 与写入前后值",
+      "constraints": [
+        "INV-121（expectation_ppm ∈ 0..2 000 000，越界即 clamp 并登记）",
+        "INV-124（分布逐组保留，不得用全国均值覆盖 36 组）",
+        "INV-130（事件只能写白名单 ppm 量）"
+      ],
+      "reversible": true,
+      "reversal_zh": "偿债压力缓解、生活指数改善后预期由 S08 自然回升；最多 6 次触发累计 −150 000 ppm，在 40 季里被回归项部分抵消"
+    },
+    {
+      "consequence_id": "E07.K2",
+      "written_by": "event",
+      "source_op": "event.E07.effects[4]（delta_ppm 写入）",
+      "entity_ids": [
+        "event.E07",
+        "state.bloc.org_power_ppm",
+        "bloc.business"
+      ],
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "amount_ppm": 20000,
+      "amount_uu": 0,
+      "formula": "org_power_ppm[bloc.business] = clamp_i(org_power_ppm[bloc.business] + 20000, 0, 1000000)",
+      "param_ref": "param.e07_org_power_delta_ppm",
+      "applied_at": "触发当季 q 的 S08 §8.4，在集团反应更新之后写入；下一季的惯性项开始把它拉回",
+      "duration_note_zh": "一次性写入存量；受 param.bloc_org_inertia_ppm 的惯性项在 3—4 季内拉回",
+      "counterparty": "无对手方。组织力不是资源，不从任何一方转移到另一方；工商业联盟此刻在经济上的地位（纳税方、经 invpool 间接的债权方）由 S02/S06 的真实账目体现，本条只登记它的动员能力上升",
+      "accounting_zh": "不产生 log.ledger 分录。org_power_ppm 是政治状态量，既不进资产负债恒等式，也不直接进 support（12 号 §8.3 要求保留来源分解）。log.event 记录写入前后值与 param_ref",
+      "constraints": [
+        "INV-125（org_power_ppm ∈ 0..1 000 000）",
+        "INV-129（组织力变动必须留下来源，不得匿名叠加）",
+        "INV-130"
+      ],
+      "reversible": true,
+      "basis_zh": "计划书 §08：工商业联盟关心政策可预期性。财政紧张期它的议价能力上升——它是纳税方，也通过居民投资池间接是债权方。"
+    },
+    {
+      "consequence_id": "E07.K3",
+      "written_by": "event",
+      "source_op": "event.E07.effects[5] 与 effects[6]（两条独立 delta_ppm，不是一个净额）",
+      "entity_ids": [
+        "event.E07",
+        "state.bloc.stance_ppm",
+        "bloc.business",
+        "bloc.labor_public",
+        "policy.P11"
+      ],
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.business.policy.P11 与 bloc.labor_public.policy.P11",
+      "amount_ppm": 80000,
+      "amount_uu": 0,
+      "formula": "stance_ppm[bloc.business][policy.P11] = clamp_i(stance + (-80000), -1000000, 1000000)；stance_ppm[bloc.labor_public][policy.P11] = clamp_i(stance + 80000, -1000000, 1000000)",
+      "param_ref": "param.e07_stance_delta_ppm",
+      "applied_at": "触发当季 q 的 S08 §8.4；对 P11 的表决影响出现在下一次该政策被提交或被审查时",
+      "counterparty": "无资源对手方，但有明确的政治对手方：本条的两侧是同一道分歧线的两端——bloc.business 反对加强征收（−80000），bloc.labor_public 支持（+80000）。两侧取同一绝对值，使分歧在数据上对称，而不是偷偷偏向某一方",
+      "accounting_zh": "不产生 log.ledger 分录。stance 不直接进 support（12 号 §8.3），只经由 legal_authority.requires_bloc_support 与 content.bloc.veto_domains 影响 P11 能否通过；log.event 逐条记录两个 (bloc, policy) 坐标的写入前后值",
+      "duration_note_zh": "一次性写入存量",
+      "constraints": [
+        "INV-125（stance_ppm ∈ −1 000 000..1 000 000）",
+        "INV-130"
+      ],
+      "reversible": true,
+      "note_zh": "这是本事件在政治上的实际内容：钱不够时，「加强征收」还是「压缩支出」成为一道现实的分歧线。分歧写成两条对称的 stance，而不是一个合成的「争议指数」——后者会把可解释性弄丢。"
+    },
+    {
+      "consequence_id": "E07.K4",
+      "written_by": "mechanism",
+      "event_writes": false,
+      "mechanism_step": "S02",
+      "source_op": "S02 的现金支付循环：按 state.gov.payment_priority 逐档支付，未付部分登记 arrears（不是事件写的，事件只是让玩家看见它要来）",
+      "entity_ids": [
+        "state.gov.cash_uu",
+        "state.gov.arrears_uu",
+        "state.gov.arrears_by_payee_uu",
+        "state.gov.payment_priority",
+        "state.project.suspension_reason"
+      ],
+      "target": "state.gov.arrears_uu / state.gov.arrears_by_payee_uu / state.project.suspension_reason",
+      "scope": "国库与各收款方（agent.group[]、agent.firm[]、项目承包方）",
+      "formula": "对第 k 档：paid_k = min(due_k, cash_available)；arrears_by_payee[p] += (due_k − paid_k)；arrears_end == arrears_start + 新增 − 清偿；第 5 档（项目合同款）被推迟时该项目 suspension_reason = financing",
+      "amount_note_zh": "运行期决定：等于 due_k − paid_k 的逐档加总，不是常量，事件不预设金额",
+      "applied_at": "触发当季及其后每一季的 S02（财政与资金预留），先于 S06 的收入结算",
+      "counterparty": "有对手方，且必须成对：付款方恒为 agent.gov，收款方是被推迟的那一档所对应的实体——第 2 档 public_wages → agent.group[]（公共部门就业者），第 3 档 statutory_transfers → agent.group[]（法定受益组），第 4 档 service_opex → pubserv.*，第 5 档 project_contracts → 项目承包 agent.firm[]。欠付是一笔记名的应付，不是消失的钱",
+      "accounting_zh": "欠付不计息，且与计息借款 debt 严格分开（10 号 §2.2）：登记 arrears 不改变 debt_uu，也不改变任何债券批次的 principal_outstanding_uu。现金侧只减少实付的部分，全经济现金总量恒定（INV-018）；结算失败产生欠付／延期／取消状态，而非静默改账（计划书 §07）",
+      "duration_note_zh": "持续到现金恢复并清偿",
+      "constraints": [
+        "INV-030（arrears == Σ arrears_by_payee ≥ 0）",
+        "INV-039（实际支付顺序与 payment_priority 逐档一致，8 档必须是全排列）",
+        "INV-016（gov.cash_uu ≥ 0，不允许无提示的负国库余额）",
+        "INV-130（事件不写现金、不写欠付、不写债券状态）"
+      ],
+      "reversible": true,
+      "note_zh": "「进入支出排序、延期与重组选择」这句话的真实落点在 S02，不在事件里。"
+    },
+    {
+      "consequence_id": "E07.K5",
+      "written_by": "mechanism",
+      "event_writes": false,
+      "mechanism_step": "S02",
+      "source_op": "S02 的融资定价：先算 derived.fiscal.debt_service_ratio_ppm，再定当季 market_rate；玩家的 issue_bond 命令按该利率起步（命令表第 8 条：玩家不能自定利率）",
+      "entity_ids": [
+        "state.world.sovereign_rate_ppm_per_q",
+        "state.bond.coupon_ppm_per_q",
+        "derived.fiscal.debt_service_ratio_ppm",
+        "state.gov.credit_limit_domestic_memo_uu",
+        "state.world.credit_limit_uu",
+        "state.invpool.cash_uu"
+      ],
+      "target": "state.world.sovereign_rate_ppm_per_q / 新发批次的 state.bond.coupon_ppm_per_q",
+      "scope": "全国（主权融资条件）与新发债券批次",
+      "formula": "market_rate_ppm = param.market_rate_base_ppm + f(derived.fiscal.debt_service_ratio_ppm)，f 对偿债率单调不减；新发批次 coupon_ppm_per_q ≥ market_rate_ppm(q)",
+      "amount_note_zh": "运行期决定：增量等于 f 在新旧偿债率上的差，不是常量",
+      "applied_at": "每一季的 S02；新票息在批次发行的那一季被写死，此后永不重定价",
+      "counterparty": "有对手方：新发批次的买方是 agent.invpool（国内，其资金来自居民存款）或 agent.row（外部）。利息逐季从 agent.gov 流向该批次的 holder，逐批次计提，余数进累加器不丢失",
+      "accounting_zh": "利率本身不产生分录，它只改变后续利息分录的金额。国内发行 ≤ min(gov.credit_limit_domestic_memo_uu, invpool 可动用现金)，外部发行 ≤ world.credit_limit_uu − credit_used_uu（增量额度，裁定 R-CREDIT-01：存量外债不占额度）。_memo_uu 后缀是表外备查量，不进任何资产负债恒等式",
+      "duration_note_zh": "持续；旧批次的票息不随之变化",
+      "constraints": [
+        "INV-038（market_rate 对偿债率单调不减；新发票息 ≥ market_rate）",
+        "INV-036（固定利率旧债发行后再写入票息即 FAULT）",
+        "INV-034（融资必须有对手方，且对手方真的有钱）",
+        "INV-004/041（利息余数进累加器，不丢失）"
+      ],
+      "reversible": true,
+      "note_zh": "「融资成本上升」是机制的结果，不是事件的效果。这条保证 ADV-02（借新还旧永远没有成本）不成立：滚一次债，偿债率上升，下一次的票息更高，而旧债的票息不会跟着涨（INV-036），债务结构单向变差。"
+    },
+    {
+      "consequence_id": "E07.K6",
+      "written_by": "mechanism",
+      "event_writes": false,
+      "mechanism_step": "S02 / S08",
+      "source_op": "S02 记录第 1 档（debt_service）是否付清；S08 §8.5 的终局判定读这个计数",
+      "entity_ids": [
+        "state.meta.termination_reason",
+        "state.meta.run_terminated",
+        "state.gov.payment_priority",
+        "param.default_grace_q"
+      ],
+      "target": "state.meta.termination_reason",
+      "scope": "整局",
+      "formula": "连续 param.default_grace_q 季无法支付第 1 档 ⇒ run_terminated = true 且 termination_reason = fiscal_restructuring_failed",
+      "amount_uu": 0,
+      "applied_at": "S08 §8.5（留任、选举与终局），在事件触发 §8.4 之后的同一季",
+      "counterparty": "对手方是第 1 档的收款方——各债券批次的 holder（agent.invpool 与 agent.row）。终局的触发条件正是「欠这两方的本息付不出来」，不是任何合成指标恶化",
+      "accounting_zh": "终局判定本身不写账，它只读 S02 已经记下的欠付事实。终局条件式里没有任何 GDP 项（INV-128，静态检查）：经济下滑本身不是失败，付不出第一档才是",
+      "duration_note_zh": "终局",
+      "constraints": [
+        "INV-040（终局条件与 default_grace_q 的定义）",
+        "INV-128（终局判定式中不得出现 GDP 项）"
+      ],
+      "reversible": false,
+      "note_zh": "这是本事件指向的最坏结局。"
+    },
+    {
+      "consequence_id": "E07.K7",
+      "written_by": "none",
+      "event_writes": false,
+      "source_op": "无。本条是一条否定性断言，登记「本事件不做什么」，由 T-S-E07-NO-LEDGER-EFFECT 逐位验证",
+      "entity_ids": [
+        "log.ledger",
+        "state.gov.cash_uu",
+        "derived.gov.debt_uu",
+        "state.bond.principal_outstanding_uu",
+        "state.bond.coupon_ppm_per_q",
+        "state.bond.maturity_q"
+      ],
+      "target": "任何账本科目",
+      "scope": "全局",
+      "formula": "无：不存在任何 cause == event.E07 的 log.ledger 行",
+      "amount_uu": 0,
+      "applied_at": "—（不发生）",
+      "counterparty": "无，且必须无：首版事件没有任何账本效应（INV-130），因此它不可能有付款方与收款方。一旦出现对手方，就说明有人把事件当成了后处理补丁",
+      "accounting_zh": "本事件不改变一分钱的归属，也不改变任何一个债券批次的本金、票息、到期季或状态。验收口径：关闭本事件（max_occurrences = 0）与开启本事件跑同一命令流，log.ledger 行数与内容逐行相同，state.gov.cash_uu 与 state.bond.* 逐季相同",
+      "duration_note_zh": "—",
+      "constraints": [
+        "INV-130（事件不得直接写现金、库存、产能、人口、GDP）",
+        "INV-018（全经济现金总量恒定）",
+        "计划书 §13「禁止后处理补丁」"
+      ],
+      "reversible": false
+    }
+  ],
+  "_note_player_options": [
+    {
+      "option_id": "E07.O0",
+      "label_zh": "什么都不做",
+      "implemented_as": "不发任何命令",
+      "cost_zh": "直接成本 0。",
+      "preconditions_zh": "无。这个选项永远可用。",
+      "lag_q": 0,
+      "failure_modes_zh": "没有失败路径，只有后果：S02 按现行 payment_priority 逐档付款，付不出的部分按档登记欠付。默认顺序下第 1 档是债务本息，因此最先被牺牲的是排在后面的档——公共部门工资、法定转移、服务运行费、项目合同款。每一档推迟都有自己的后果（12 号 §2.2）：服务可用率下降、群组生活指数下降、项目 suspended(financing)。若连续 param.default_grace_q 季连第 1 档都付不出，本局以 fiscal_restructuring_failed 终止。",
+      "political_reaction_zh": "被推迟档次对应的集团立场下降、信任下降（信任由欠付这件事本身产生，不由本事件产生）。",
+      "consequence_zh": "不作为等于默认接受现行排序。这不是逃避决策——排序本身就是一个决策，只是玩家在上一次设定它的时候可能没想到会用在这里。"
+    },
+    {
+      "option_id": "E07.O1",
+      "label_zh": "重排支付优先级",
+      "implemented_as": "set_payment_priority { order[] }",
+      "cost_zh": "无现金成本。这是本事件里唯一免费的选项，它交易的是后果的形状，不是后果的总量。",
+      "preconditions_zh": "order 必须是 8 档的一个全排列，缺项或重复即 REJECT(E_PRIORITY_INCOMPLETE)（INV-039）。",
+      "lag_q": 1,
+      "lag_note_zh": "命令只写命令缓冲与 pending，生效在下一次 S02（INV-138）。本季已经发生的支付不会被追溯改写。",
+      "failure_modes_zh": "(a) 把 debt_service 挪出第 1 档，短期能保住工资与服务，但违约会收紧 credit_limit、推高 sovereign_rate，并可能触发重组——违约不是省钱，是把钱换成更贵的钱；(b) 把 service_opex 推迟只降低 availability_ppm，不删除已建资产（INV-102），但欠拨会让已投运项目的服务能力持续低于设计值；(c) 把 statutory_transfers 推迟会直接打到最低收入群组的生活指数上。",
+      "political_reaction_zh": "被下调档次对应的集团立场下降：public_wages 与 service_opex 下调命中劳动与公共服务联盟；project_contracts 与 subsidies 下调命中工商业联盟；statutory_transfers 下调命中全部低收入群组的生活与信任。",
+      "consequence_zh": "这是本事件最想教会玩家的一件事：钱不够的时候，问题不是「怎么变出钱」，而是「谁先拿到钱」。这个选择会被记录、会被看见，也会被政治反应。"
+    },
+    {
+      "option_id": "E07.O2",
+      "label_zh": "借新还旧",
+      "implemented_as": "issue_bond { amount_uu, tenor_q, holder }",
+      "cost_zh": "新批次的票息按 market_rate_ppm(q) 起步，玩家不能设利率（命令表第 8 条）。利息逐季逐批次计提，余数进累加器不丢失（INV-004/036/041）。",
+      "preconditions_zh": "融资必须有对手方：国内发行 ≤ min(gov.credit_limit_domestic_memo_uu, invpool.cash_uu × param.household_bond_appetite_ppm 的可动用部分)，外部发行 ≤ world.credit_limit_uu − credit_used_uu（INV-034）。批次数不得超过 param.bond_batch_cap，触界时报警并拒绝新发行，不自动合并批次。",
+      "lag_q": 0,
+      "failure_modes_zh": "(a) 对手方没钱：首版不模拟商业银行与货币创造，全经济现金总量恒定（INV-018），居民投资池的现金是有限的，发不出去就是发不出去；(b) 越滚越贵：market_rate 对偿债率单调不减（INV-038），每滚一次，偿债率上升、下一次更贵，而旧债票息不动，债务结构单向恶化；(c) 不允许自动展期——到期就是到期，没有默认续作；(d) 批次上限触界后这条路直接关闭。",
+      "political_reaction_zh": "短期内没有集团受损，因此政治反应最弱——这正是它危险的地方。工商业联盟对债务水平的关注会在偿债率越过其关心阈值后经 param.bloc_care_gain_ppm 传导为立场下降。",
+      "consequence_zh": "借新还旧在首版是可行的，但不是免费的。恶意玩家测试 ADV-02 专门检验这一点：如果 40 季滚下来没有任何成本上升，说明利率机制写错了，要修机制，不是修数值。"
+    },
+    {
+      "option_id": "E07.O3",
+      "label_zh": "债务重组",
+      "implemented_as": "debt_restructure { bond_id, mode }",
+      "cost_zh": "必须登记债权人损失：flow.gov.recognized_writeoffs_uu 与 state.bond.writeoff_uu 同时入账，debt_end == debt_start + 新增借款 − 还本 − 确认减记（INV-028）。减记不是省钱，是把钱从债权人身上拿走并如实记账。",
+      "preconditions_zh": "批次存在且状态为 active；重组模式合法。",
+      "lag_q": 0,
+      "failure_modes_zh": "(a) 国内债权人是 agent.invpool，而投资池的负债端是居民存款（INV-024：Σ group.deposit == invpool.deposit_liab == invpool.cash + invpool.bondhold）。减记国内债，损失会精确地落到居民存款债权上——这不是「赖掉外国人的钱」，是拿走本国居民的储蓄；(b) 减记后 credit_limit 收紧，后续融资更难更贵；(c) 重组失败或继续付不出第 1 档，本局以 fiscal_restructuring_failed 终止（INV-040）。",
+      "political_reaction_zh": "全部群组的信任下降（由减记这件事本身产生，不由本事件产生）；持债最多的中高收入群组生活指数与财产收入同步下降；工商业联盟组织力上升、立场显著下降。",
+      "consequence_zh": "这是唯一能真正减少债务存量的选项，代价也最不可逆。它存在的意义是让「融资必须有对手方」这条规则长出牙齿：债不会凭空消失，只会换一个人承担。"
+    }
+  ],
+  "_note_political_reaction": {
+    "blocs": [
+      {
+        "bloc_id": "bloc.business",
+        "label_zh": "工商业联盟",
+        "direction": "组织力上升、对 P11（税务能力建设）的立场明显下降",
+        "magnitude_ppm": {
+          "org_power": 20000,
+          "stance_on_p11": -80000
+        },
+        "basis_zh": "计划书 §08：该联盟关心利润与政策可预期性，并「影响投资意愿与改革阻力」。财政紧张时，它预判政府会从征收端找钱，因此提前收紧对征收能力建设的立场。它同时通过居民投资池间接持有国债，是重组的实际受损方之一。",
+        "evidence_used_zh": "derived.fiscal.next4q_debt_service_uu 与 state.gov.cash_uu 的对照；state.world.sovereign_rate_ppm_per_q 的走势。"
+      },
+      {
+        "bloc_id": "bloc.labor_public",
+        "label_zh": "劳动与公共服务联盟",
+        "direction": "对 P11 的立场明显上升；组织力本事件不改变",
+        "magnitude_ppm": {
+          "org_power": 0,
+          "stance_on_p11": 80000
+        },
+        "basis_zh": "计划书 §08：该联盟关心就业保障、工资、教育医疗和居住——也就是支付优先级里第 2、3、4 档。到期墙意味着这三档可能被推迟，因此它宁可支持加强征收，也不接受压缩支出。组织力不写增量，是因为此刻它还没有可动员的既成事实；一旦真的发生欠付，组织力会由欠付路径自己上升。",
+        "evidence_used_zh": "state.gov.payment_priority 的当前顺序；state.gov.arrears_by_payee_uu 的历史。"
+      },
+      {
+        "bloc_id": "bloc.agri_coop",
+        "label_zh": "农业合作联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "计划书 §08：该联盟关心农户收入、灌溉与地区资源分配。到期墙本身不改变其中任何一项；只有当玩家的排序选择真的推迟了灌溉项目的合同款（第 5 档）之后，反应才会由那条路径产生。为一个尚未发生的分配结果预先给它一个立场变动，是无依据的。",
+        "evidence_used_zh": "无。"
+      }
+    ],
+    "groups": [
+      {
+        "scope": "全部 36 个群组",
+        "direction": "未来预期下降（逐地区各一条 effect，四条合计覆盖全国）",
+        "basis_zh": "偿债压力是全国性的，四个地区都会在财政页看到同一张到期表。首版对四地区写同一 delta，不做差异化——地区差异要由后续真实发生的支出排序结果产生，而不是由事件预设。"
+      },
+      {
+        "scope": "持债份额较高的群组（经 invpool 的 deposit_uu 份额间接持有）",
+        "direction": "本事件不额外写入；其财产收入与存款债权的变化由 S06 与重组路径产生",
+        "basis_zh": "INV-024 保证居民存款、投资池负债与持债三者逐季精确相等。谁承担减记，由这条恒等式决定，不由事件指定。"
+      }
+    ],
+    "no_trust_no_support_write_zh": "本事件既不写 trust 也不写 support。信任留给真正的失信（欠付、减记）；支持度由 S08 按三项加权合成，保留来源分解（INV-123）。"
+  },
+  "_note_copy": {
+    "headline_zh": "未来四季要还的钱，是国库现金的两倍以上",
+    "accounted_zh": "本季末国库现金 {cash_uu}。未来四季到期本金与应付利息合计 {next4q_debt_service_uu}，其中逐季分布与逐批次明细可展开。计息债务余额 {debt_uu}，分为 {bond_batch_count} 个批次，债权人分别为居民投资池与外部债权人。已签合同未来应付 {committed_memo_uu}，已投运服务的每季运行费义务 {service_opex_committed_uu}。当前欠付余额 {arrears_uu}。以上均为已发生与已签约的精确加总，逐笔可追溯。",
+    "inferred_zh": "模型中的限制因素：在当前现金水平下，未来四季的还本付息义务不低于可用现金的 {ratio_floor_note} 倍。按现行支付优先级，资金不足时将按顺序逐档支付，未付部分登记为欠付并在报告中列为支出排序结果；新发债券的票息不低于当季主权融资利率，而该利率对偿债率单调不减。此处分别列出到期表、支付优先级与融资条件三项，不把它们合成一个财政健康分数。债务/GDP 单独展示，它不能替代偿付能力分析。",
+    "projected_zh": "情景预测（假设：不追加任何命令、不新发债券、外部条件与税收按本季水平延续）：给出未来四季的现金余额基线预览，以及一条不利条件预览（外部融资额度收紧、主权利率上行）。两条预览均由同一套结算规则跑四季只读副本得出，标注了上述假设，不宣称识别真实世界的因果关系。若玩家提交新的方案，确认前会重新给出四季现金预测与新增的长期承诺。",
+    "wording_rules_zh": "第一段只报已发生与已签约的量；第二段只用「模型中的限制因素」「在当前水平下」「将按顺序」，禁止「导致」「因为」「即将崩溃」；第三段必须先列假设。全文禁止出现「财政健康度」「国力分数」这类合成指标，也禁止把债务/GDP 说成偿付能力结论。",
+    "placeholders": [
+      {
+        "key": "cash_uu",
+        "source": "state.gov.cash_uu",
+        "type": "int"
+      },
+      {
+        "key": "next4q_debt_service_uu",
+        "source": "derived.fiscal.next4q_debt_service_uu",
+        "type": "int"
+      },
+      {
+        "key": "debt_uu",
+        "source": "derived.gov.debt_uu",
+        "type": "int"
+      },
+      {
+        "key": "bond_batch_count",
+        "source": "state.bond.principal_outstanding_uu",
+        "type": "int"
+      },
+      {
+        "key": "committed_memo_uu",
+        "source": "state.gov.committed_memo_uu",
+        "type": "int"
+      },
+      {
+        "key": "service_opex_committed_uu",
+        "source": "state.gov.service_opex_committed_uu",
+        "type": "int"
+      },
+      {
+        "key": "arrears_uu",
+        "source": "state.gov.arrears_uu",
+        "type": "int"
+      },
+      {
+        "key": "ratio_floor_note",
+        "source": "param.e07_service_to_cash_floor_ppm",
+        "type": "int"
+      }
+    ],
+    "_note_placeholders": "模板只支持整数与 ID 两种插值（OQ-235）。ratio_floor_note 插的是参数卡里的下界常量 2 000 000 ppm（2.0 倍），而不是运行期算出的实际比值——该比值在首版没有派生量。若将来新增 derived.fiscal.service_to_cash_ppm，这里应改插实测值。"
+  },
+  "_note_acceptance_tests": [
+    {
+      "test_id": "T-S-E07-NO-FIRE-WHEN-COND-FALSE",
+      "kind": "scenario",
+      "purpose_zh": "条件不满足时绝不触发。",
+      "given_zh": "构造四个夹具，每个只让一条条件不成立：(1) next4q_debt_service_uu = 5 999 999 999（差 1 μU 不到 6 U）；(2) gov.cash_uu = 3 000 000 001（超 3 U 整 1 μU）；(3) debt_uu = 39 999 999 999（差 1 μU 不到 40 U）；(4) q = 1。",
+      "when_zh": "各跑 12 季（本事件 probability_ppm 本来就是 1 000 000，无需临时改）。",
+      "then_zh": "四个夹具中 fire_count[E07] 恒为 0；expectation_ppm、org_power_ppm、stance_ppm 相对空跑基线逐位不变。夹具 (2) 特别重要：它证明玩家把现金攒到 3 U（3 000 000 000 μU）以上确实能让这条警报停下来，而不是永远响。"
+    },
+    {
+      "test_id": "T-S-E07-NO-FIRE-IN-BASE-QUARTERS",
+      "kind": "scenario",
+      "purpose_zh": "基年不得误报（阈值校准的硬约束）。",
+      "given_zh": "无命令基线，剧本 government_init.json 的六笔存量债（q=7/12/19/24/26/34 到期）。",
+      "when_zh": "跑 q = 0..3。",
+      "then_zh": "fire_count[E07] 在 q = 0、1、2 均为 0；同时断言这三季的 derived.fiscal.next4q_debt_service_uu < 6 000 000 000（基线实算约 5.7 U，余量约 0.3 U）。若在这三季触发，说明 param.e07_next4q_service_threshold_uu 设得过低或剧本的到期结构在基年就形成尖峰，必须先查剧本（OQ-202 要求确认到期结构不会在某一季形成不可承受的尖峰），不得直接上调阈值了事。"
+    },
+    {
+      "test_id": "T-S-E07-RELOAD-NO-REDRAW",
+      "kind": "scenario",
+      "purpose_zh": "重载存档不得重抽已确定事件。",
+      "given_zh": "固定命令流跑到某季 q*，该季 E07 条件全部成立。",
+      "when_zh": "路径 A：直接 advance 到 q*+3；路径 B：q* 前存档、读档，再 advance 到 q*+3。",
+      "then_zh": "两条路径逐季 state_hash 逐位相同；log.rng 中 rng.event 流的记录完全一致；fire_count[E07]、last_fire_q[E07] 相同（INV-133、ADV-06）。由于本事件概率为 1 000 000，该测试同时验证「确定性事件不会因读档而少触发一次」。"
+    },
+    {
+      "test_id": "T-S-E07-NO-LEDGER-EFFECT",
+      "kind": "scenario",
+      "purpose_zh": "事件不得凭空增减资源，尤其不得动债券台账。",
+      "given_zh": "同一命令流两次运行：一次允许 E07 触发，一次把 max_occurrences 置 0（等价于关闭）。",
+      "when_zh": "跑满 40 季。",
+      "then_zh": "两次运行的 log.ledger 行数与内容完全相同；state.gov.cash_uu、derived.gov.debt_uu、state.bond.* 全部字段逐季相同；全经济现金总量恒等于 scenario.total_cash_uu（INV-018）；不存在任何 cause == event.E07 的账本行。"
+    },
+    {
+      "test_id": "T-S-E07-ROLLOVER-NOT-FREE",
+      "kind": "scenario",
+      "purpose_zh": "借新还旧不是免费的（恶意玩家用例 ADV-02 的事件侧对应）。",
+      "given_zh": "触发后选择 E07.O2，连续 12 季只滚动不偿还。",
+      "when_zh": "跑满 40 季。",
+      "then_zh": "state.world.sovereign_rate_ppm_per_q 相对基线单调不减；新发批次的 coupon_ppm_per_q 逐次不低于当季 market_rate；旧批次的 coupon_ppm_per_q 逐位不变（INV-036，任何写入即 FAULT）；derived.fiscal.debt_service_ratio_ppm 相对基线上升。若 40 季后三项都没有变差，判为机制缺陷，修机制不修数值。"
+    },
+    {
+      "test_id": "T-S-E07-PRIORITY-ORDER-HONORED",
+      "kind": "scenario",
+      "purpose_zh": "支出排序是真的排序，不是文案。",
+      "given_zh": "触发后选择 E07.O1，把 statutory_transfers 从第 3 档调到第 8 档，现金不足以覆盖全部支出。",
+      "when_zh": "结算一季。",
+      "then_zh": "实际支付顺序与 payment_priority 逐档一致（INV-039）；被推迟的转移支付全额登记进 arrears_by_payee，Σ arrears_by_payee == arrears（INV-030）；对应群组的 flow.group.transfer_income_uu 相应减少且其生活指数下降；国库现金全程 ≥ 0（INV-016），不出现先扣成负数再补救的路径。"
+    },
+    {
+      "test_id": "T-U-E07-METRIC-IDS-EXIST",
+      "kind": "unit",
+      "purpose_zh": "触发与证据引用的 ID 真实存在，效果落在白名单内。",
+      "given_zh": "加载内容包。",
+      "when_zh": "运行内容校验器。",
+      "then_zh": "trigger.all_of[*].metric 与 evidence_refs[*] 全部可解析（V-EV-02）；evidence_refs 非空（V-EV-08）；effects[*].target 全部在事件可写白名单内且只用 delta_ppm（V-EV-05）；不存在 ledger_effects 字段（V-EV-06）；rng_stream == rng.event（V-EV-04）；max_occurrences ≥ 1、cooldown_q ≥ 0、probability_ppm ∈ [0, 1 000 000]（V-EV-07）。"
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e07_next4q_service_threshold_uu",
+      "value": 6000000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「财政页面必须展示：当前现金、未来四季到期本金、利息」；剧本 government_init.json 的六笔存量债与年度计划利息项 2 033 700 000 μU（2.0337 U）",
+      "reference_year": 0,
+      "definition": "触发所需的未来四季还本付息合计下限（6 U = 6 000 000 000 μU）。与现金阈值一起构成「偿债/现金 ≥ 2 倍」的下界证明。",
+      "valid_range": [
+        1000000000,
+        50000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须用 T-S-E07-NO-FIRE-IN-BASE-QUARTERS 校准。按 government_init.json 的六笔存量债实算：基年每季利息 Σ principal_outstanding_uu × coupon_ppm_per_q = 8e9×8000 + 7e9×8500 + 10e9×9500 + 10e9×12500 + 9e9×11000 + 6e9×13500 = 523 500 000 μU（0.5235 U），四季约 2.09 U；两笔 level_principal 批次每季摊还合计约 0.9 U，四季约 3.6 U；q=0..3 的窗口内没有 bullet 到期（最早一笔在 q=7），故 next4q ≈ 5.7 U，严格低于本值 6 U。q=4 起窗口吃进 q=7 的 6 U bullet，next4q 跳到约 11.6 U，事件才第一次响。余量只有约 0.3 U，属于紧配合：剧本的到期结构若改动（OQ-202 尚未定稿），本值必须重新校准。校准顺序是先跑基线看序列，再定值；不要为了让事件早点出现而下调。"
+    },
+    {
+      "value_id": "param.e07_cash_threshold_uu",
+      "value": 3000000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05「国库现金 2 U」；INV-145",
+      "reference_year": 0,
+      "definition": "触发所需的国库现金上限（3 U = 3 000 000 000 μU）。现金高于此值时不再把到期表当成墙。",
+      "valid_range": [
+        1000,
+        20000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取开局现金 2 U（2 000 000 000 μU，government_init.json /gov/cash_uu）的 1.5 倍：给玩家一个明确的、可以攒到的解除条件。若 40 季基线里国库现金长期在 3 U 以上，说明基年赤字与季节系数的组合太宽松，应先查剧本的 season_factor_ppm，再考虑下调本值。「可用现金」首版只取 gov.cash_uu，不含未动用额度——额度不是现金，且 INV-034 要求对手方真的有钱。"
+    },
+    {
+      "value_id": "param.e07_service_to_cash_floor_ppm",
+      "value": 2000000,
+      "unit": "ppm",
+      "source_type": "derived",
+      "derivation_expr": "idiv_floor(param.e07_next4q_service_threshold_uu * 1000000, param.e07_cash_threshold_uu) = idiv_floor(6000000000 * 1000000, 3000000000) = 2000000",
+      "source_ref": "本文件 trigger_detail.ratio_encoding_zh 的下界证明",
+      "reference_year": 0,
+      "definition": "两条阈值条件所蕴含的「未来四季还本付息 / 国库现金」比值下界（2.0 倍，以 ppm 表示）。只用于报告文案的插值，不参与任何判定。",
+      "valid_range": [
+        1000000,
+        20000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值是派生量，必须与另外两张卡保持上述除法关系，由 V-PC-05 复算验证。改了任一阈值而不改本值，报告会对玩家报出一个不成立的倍数——这正是 V-PC-05 要拦住的事。若将来新增 derived.fiscal.service_to_cash_ppm，本卡应废弃并改插实测值。 本卡的单位是 ppm，是两个 μU 量的商，货币刻度在分子分母同时变化后被约掉——R-SCALE-01 对它不适用，值仍为 2 000 000 ppm，不得连带 ×1000。"
+    },
+    {
+      "value_id": "param.e07_debt_floor_uu",
+      "value": 40000000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05「政府债务 50 U」；INV-144",
+      "reference_year": 0,
+      "definition": "触发所需的计息债务余额下限（40 U = 40 000 000 000 μU）。用于排除「债务已基本还清、只是某季现金临时偏低」的流动性误报。",
+      "valid_range": [
+        0,
+        200000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取开局 50 U（六笔存量债未偿本金合计 50 000 000 000 μU）的 80%。若玩家走「财政修复」路线把债务降到 40 U 以下，本事件自动停止——这是刻意的正反馈：还债这件事应该有可见的回报。若压力测试中债务从未降到 40 U 以下，说明还本路径太弱或赤字结构性过大，应查财政参数，不要下调本值来制造「解除感」。"
+    },
+    {
+      "value_id": "param.e07_expectation_delta_ppm",
+      "value": -25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「至少区分当期生活、未来预期与程序信任」；§07「短缺先显露」",
+      "reference_year": 0,
+      "definition": "触发时写入每个地区各群组 state.group.expectation_ppm 的一次性增量（−2.5 个百分点）。四个地区各一条 effect，同值。",
+      "valid_range": [
+        -200000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "小于 E05 与 E06：到期墙此刻还没有让任何人少拿到一分钱，它只是预告。若最多触发 6 次全部命中，累计预期影响约 −150 000 ppm，在 40 季里由 S08 的回归项部分抵消。若敏感性测试显示财政路线的政治结果完全由本事件决定而非由实际的支出排序决定，先下调本值。"
+    },
+    {
+      "value_id": "param.e07_org_power_delta_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「工商业联盟影响投资意愿与改革阻力」；世界银行 WDR 2017 关于可信承诺的讨论 [4]",
+      "reference_year": 0,
+      "definition": "触发时写入 bloc.business 的 state.bloc.org_power_ppm 一次性增量。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "居于 E05（18 000）与 E06（25 000）之间。S08 的惯性项会在 3—4 季内拉回。若六次触发把组织力推到饱和，先查 param.bloc_org_inertia_ppm 与 param.bloc_w_resource_ppm 的配平，再考虑下调本值。"
+    },
+    {
+      "value_id": "param.e07_stance_delta_ppm",
+      "value": 80000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P11「税务能力建设：先增加成本，再改变征收覆盖」；§08「反对某政策不会自动等同于反对政府的一切」",
+      "reference_year": 0,
+      "definition": "触发时写入 state.bloc.stance_ppm 的一次性增量绝对值：bloc.business 对 policy.P11 取 −80000，bloc.labor_public 对 policy.P11 取 +80000。",
+      "valid_range": [
+        0,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "两侧取同一绝对值，使「分歧」这件事在数据上是对称的，而不是偷偷偏向某一方。这不是「利弊对称」的强行设计（计划书 §09 反对那种做法），而是因为两个集团在这道分歧线上确实是对立的两端。若这导致 P11 在任何情况下都无法通过或无法阻止，先查 legal_authority.requires_bloc_support 与 content.bloc.veto_domains 的设置。"
+    },
+    {
+      "value_id": "param.e07_probability_ppm",
+      "value": 1000000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §12「事件由状态条件触发」；§07「利息逐债券批次计算」；INV-036",
+      "reference_year": 0,
+      "definition": "四条触发条件全部成立后本季实际触发的概率。本事件取 1 000 000，即确定性触发。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "这是本批四个事件里唯一给 medium 置信度的参数，理由是它不是一个可调的强度旋钮，而是一个语义判断：债券到期表是已签合同的确定量，让它以概率出现就是对模型撒谎。除非有人给出「合同到期有时不发生」的机制依据，否则不得下调。"
+    },
+    {
+      "value_id": "param.e07_cooldown_q",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「预算每 4 季审查」；INV-127（预算审查在 q ≡ 3 mod 4）",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        0,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "对齐预算审查周期：每个审查周期最多提醒一次，使「到期墙」与「预算审查」在玩家的节奏里成为同一件事的两面。若玩家在冷却期内已经做出应对（发债、重排、重组）却仍被再次提醒，应把「本季已有应对命令」加进触发条件，而不是拉长冷却。"
+    },
+    {
+      "value_id": "param.e07_max_occurrences",
+      "value": 6,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 government_init.json：六笔存量债分别在 q = 7/12/19/24/26/34 到期；计划书 §05「债务必须拆分期限与债权人」",
+      "reference_year": 0,
+      "definition": "整局中本事件的最大触发次数。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "取值直接对应剧本的六笔存量债到期次数：每一笔都是一个真实的决策时点，压成 3 次会让 40 季后半程的墙无声无息。玩家新发的债会增加到期点，但上限不随之增加——次数用尽后财政页的到期表仍然逐季可查，可解释性不依赖弹窗。若 OQ-202 改动了到期结构，本值应同步改。"
+    }
+  ],
+  "report_template_id": "tpl.event.e07_maturity_wall_financing_cost",
+  "_note_design_notes_zh": "这张卡有三处刻意的取舍。第一，概率取 1：债券到期表是已签合同，不是运气；把它做成抽样会让玩家学到一个错误的世界模型。第二，不写 trust：到期墙此刻还没有让任何人少拿一分钱，信任只应在真的欠付或真的减记时下降——这两件事各自由 S02 的路径产生并各自留痕。把「压力」和「违约」合并成一个信任扣分，玩家就永远学不会区分它们，而区分它们正是这条反馈链的全部价值。第三，四个选项的价格各不相同且都不为零：重排优先级免费但改变谁受损，借新还旧不改变谁受损但让债务结构单向恶化，重组真的减少债务但把损失精确地记到居民存款上，什么都不做则把决定权交给上一次设定的排序。没有一个选项是「正确答案」，这正是计划书 §07「不是钱够不够，而是承诺能否维持」那句话想要的形状。",
+  "_note_open_questions_local": [
+    {
+      "ref": "OQ-LOCAL-E07-01",
+      "question_zh": "event.E07 的编号与 11_data_contract.md §5.13 示例中的「海岬限电投诉集中出现」表面冲突。内容包中该事件实际由 event.E01 承担，12 个编号无重复；但契约示例仍写着 E07，会误导后续读者据示例分配编号。",
+      "conservative_take_zh": "按任务分配占用 E07 并在文件头显式登记；建议契约方把 §5.13 的示例改号为 event.E01。若契约方反而裁定示例即分配，本文件整体改号、内容不变。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E07-02",
+      "question_zh": "缺少 derived.fiscal.service_to_cash_ppm。「到期本金/可用现金比」在只有 metric-op-常量比较的触发器里无法直接表达，只能用两边界做下界证明。另外 derived.fiscal.next4q_debt_service_uu 是「本金＋利息」口径，比任务措辞的「本金」更宽。",
+      "conservative_take_zh": "使用可证明的下界写法，口径差异在 trigger_detail 与参数卡里写明；更宽的口径方向上更保守（更早报警），故采用。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E07-03",
+      "question_zh": "「可用现金」是否应包含未动用的国内与外部融资额度。首版只取 state.gov.cash_uu。",
+      "conservative_take_zh": "不含额度：额度是表外备查量（_memo_uu 后缀，禁止进入任何资产负债恒等式），且 INV-034 要求对手方真的有钱，把额度当现金会让警报在真正危险时反而不响。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E07-04",
+      "question_zh": "本事件的触发阈值依赖剧本的债券到期结构，而该结构本身是 OQ-202 登记的临时取法（三笔占位已在实现中扩为六笔）。两者必须一起校准。",
+      "conservative_take_zh": "把 T-S-E07-NO-FIRE-IN-BASE-QUARTERS 作为阈值的硬约束测试；剧本到期结构变动时，阈值必须重新校准而不是反过来要求剧本迁就阈值。",
+      "escalated": true
+    }
+  ]
+}

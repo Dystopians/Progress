@@ -1,0 +1,795 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "_note_schema_extension": "顶层键的处置规则：11_data_contract.md §3 规定 additionalProperties: false，§5.13 只声明九个键（schema_kind、schema_version、event_id、label_zh、trigger、effects、evidence_refs、report_template_id、kind），§3 允许的扩展机制是 _note_<field> 注释键（「schema 允许该键但不参与任何逻辑」）。本文件原有 14 个未声明顶层键，处置如下：12 个原样改名为 _note_<原键名>，内容一个字也没有删；name_zh 直接删除，因为它是 label_zh 的逐字副本，同一句中文存两份迟早漂移，展示层与报告模板一律读 label_zh；consequences 恢复为正式顶层键——这是唯一的例外，理由见 _note_consequences_contract_gap 与 OQ-LOCAL-E05-05，简言之：计划书 §13（优先级高于 11 号）要求逐条后果说明，把它埋进注释键等于让载入器读不到它。为什么其余各项选「降级为注释键」而不是「保留原键名等契约修订」：E_UNKNOWN_FIELD 落在 §1.4 校验分层的 schema 层，该层失败即拒绝加载——留着原键名等于这份内容根本进不了载入器，比暂时失去机器约束更糟。代价必须写明：降级的那 12 项现在不参与任何校验与结算，只供人阅读与 Presentation 参考；要让它们重新获得机器约束，必须修订 §5.13 正式登记事件规格字段（evidence、player_options、political_reaction、copy、acceptance_tests、trigger_detail 等）及其子 schema，然后把这里的 _note_* 改回正式键名。本文件不私自改契约，已上报 OQ-LOCAL-E05-05。",
+  "event_id": "event.E05",
+  "_note_code": "E05",
+  "_note_slug": "training_cohort_mismatch",
+  "label_zh": "培训结业队列与岗位错配",
+  "_note_name_zh": "原 name_zh 字段与 label_zh 逐字相同，已删除：§5.13 只声明 label_zh，同一句文案存两份必然漂移。展示层与报告模板一律读 label_zh。",
+  "_note_one_line_zh": "北原的职业培训队列按期结业、技能档如实升高，但同期制造业的最紧约束不是劳动，也几乎没有招聘——于是「升了档」与「有了工作」被分开，玩家第一次看见培训不直接增加就业。",
+  "kind": "inferred",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "state.policy.enabled",
+        "scope": "policy.P05",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 5
+      },
+      {
+        "metric": "flow.group.skill_in_persons",
+        "scope": "region.beiyuan",
+        "op": "ge",
+        "value": 6000
+      },
+      {
+        "metric": "flow.cell.binding_code",
+        "scope": "cell.beiyuan.manu",
+        "op": "ne",
+        "value": 2
+      },
+      {
+        "metric": "flow.cell.hires_persons",
+        "scope": "cell.beiyuan.manu",
+        "op": "le",
+        "value": 2000
+      },
+      {
+        "metric": "derived.labor.unemployment_ppm",
+        "op": "ge",
+        "value": 70000
+      }
+    ],
+    "probability_ppm": 700000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 6,
+    "max_occurrences": 3
+  },
+  "_note_op_vocabulary": "本文件一律使用 11_data_contract.md V-EV-03 的规范集合 op ∈ {lt, le, eq, ne, ge, gt}。§5.13 的示例 JSON 里写的是 \"gte\"，与 V-EV-03 不一致；规范条款优先于示例，冲突已上报。",
+  "_note_scope_semantics": "契约只在 §5.13 的示例里出现过 scope，没有给出求值语义。本文件按下述最保守读法使用，并把它登记为待决问题：(a) 标量指标（state.time.q、derived.labor.unemployment_ppm）省略 scope；(b) scope 为单个稳定 ID 时，取该实体在对应稠密数组中的唯一下标值（policy.P05、cell.beiyuan.manu）；(c) scope 为 region.<r> 且指标按群组索引时，取该地区 9 个群组的求和（flow.group.skill_in_persons）；(d) 本文件不使用任何需要「跨地区存在量词」的条件，因为 trigger 只有 all_of，没有 any_of。",
+  "_note_trigger_detail": {
+    "plain_zh": "触发条件是「P05 已生效 且 已过最早结业季 且 本季北原确有人结业升档 且 北原制造业的最紧约束不是劳动 且 北原制造业本季基本没招人 且 全国失业率没有降下来」。六条全部成立才触发；任一条不成立绝不触发（T-S-E05-NO-FIRE-WHEN-COND-FALSE）。",
+    "conditions": [
+      {
+        "ref": "c1",
+        "metric": "state.policy.enabled",
+        "scope": "policy.P05",
+        "op": "eq",
+        "value": 1,
+        "why_zh": "本事件只解释 P05 这条通路。P05 未生效时结业队列恒为 0（12 号 §7.6），条件本来也不会成立；显式写出是为了让「事件归属哪条政策」在数据里可查，而不是靠文案声称。"
+      },
+      {
+        "ref": "c2",
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 5,
+        "why_zh": "结构性下限：P05 最早在 enacted_q + lag.enact_to_effect_q 生效，入队后还要滞后 param.training_lag_q = 4 季才到期（INV-081/082）。即使玩家在 q=0 提交，最早的 skill_in 也在 q≥5。把它写成硬条件，使「拨款当季就结业」这类实现缺陷会直接表现为事件在不该出现的季度出现。"
+      },
+      {
+        "ref": "c3",
+        "metric": "flow.group.skill_in_persons",
+        "scope": "region.beiyuan",
+        "op": "ge",
+        "value": 6000,
+        "param_ref": "param.e05_skill_in_threshold_persons",
+        "why_zh": "「结业队列到期」这件事在模型里的唯一可观测形态就是本季 skill_in 为正（INV-082 要求 skill_in 与 skill_out 等量配对）。阈值取 6000 人：既排除人口抖动造成的零星升档，又低于 P05 默认招生规模在单一地区的落点，使玩家只要认真办培训就会看见这件事。"
+      },
+      {
+        "ref": "c4",
+        "metric": "flow.cell.binding_code",
+        "scope": "cell.beiyuan.manu",
+        "op": "ne",
+        "value": 2,
+        "why_zh": "这是本事件的核心判据，也是「培训不直接增加就业」这句话在模型里的精确写法。binding_code 的取值域是 0 计划 / 1 产能 / 2 劳动 / 3 能源 / 4 材料（10 号 §4.2）。只要最紧约束不是劳动，多出来的技能劳动力在 S05 的 min() 里就不会改变 output_actual —— 培训解决的不是当前正在卡住产量的那一项。反过来，binding_code == 2 时本事件绝不触发，因为那时培训确实有用。"
+      },
+      {
+        "ref": "c5",
+        "metric": "flow.cell.hires_persons",
+        "scope": "cell.beiyuan.manu",
+        "op": "le",
+        "value": 2000,
+        "param_ref": "param.e05_hires_ceiling_persons",
+        "why_zh": "岗位空缺在模型里没有独立字段；S03 的招工由 output_plan 反算 need_k，再过摩擦闸、劳动力闸与工资资金闸（12 号 §3.2）。因此「无空缺」的可观测代理量是本季该 cell 三个技能档的招聘合计极低。用 cell 级合计而不是单一技能档，是因为 scope 语法没有技能维度（见 _note_scope_semantics）。"
+      },
+      {
+        "ref": "c6",
+        "metric": "derived.labor.unemployment_ppm",
+        "op": "ge",
+        "value": 70000,
+        "param_ref": "param.e05_unemployment_floor_ppm",
+        "why_zh": "开局失业率为 8%（80 000 ppm，由初始就业分配反算，INV-143）。阈值取 7%：只要失业率还没有实质性下降，「培训了但没就业」这句话才立得住。若失业率已降到 7% 以下，说明岗位确实在增加，本事件不该再出现。"
+      }
+    ],
+    "randomness_zh": "条件全部成立后才做一次抽样，抽样用 rng.event（V-EV-04 要求；不得借用 rng.shock），并写一条 log.rng。这不是「随机弹窗」：抽样只能让一个条件已经成立的事件不发生，永远不能让条件不成立的事件发生。抽样值由 draw(rng.event, q, index) = splitmix64(root_seed XOR SALT[event] XOR (q<<32) XOR index) 决定（10 号 §10），与 q 绑定且可从任意季重算，因此读档不可能重抽出不同结果。",
+    "cooldown_and_cap_zh": "cooldown_q = 6、max_occurrences = 3。错配是一个会连续多季成立的结构性状态；不设冷却会导致同一件事每季刷屏，玩家会学会忽略它（计划书 §17 的「被忽视的警告」）。三次上限的含义是：这件事最多讲三遍，之后玩家仍能在社会页与季度报告里查到同样的台账，只是不再弹出。"
+  },
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -35000
+    },
+    {
+      "target": "state.group.trust_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -12000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "delta_ppm": 18000
+    },
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.labor_public.policy.P05",
+      "delta_ppm": -60000
+    }
+  ],
+  "evidence_refs": [
+    "state.group.education_cohort_persons",
+    "flow.group.skill_in_persons",
+    "flow.cell.binding_code",
+    "flow.cell.hires_persons",
+    "flow.cell.bound_plan_uqs",
+    "flow.cell.bound_capacity_uqs",
+    "flow.cell.bound_labor_uqs",
+    "flow.cell.bound_energy_uqs",
+    "flow.cell.bound_materials_uqs",
+    "derived.group.unemployed_persons",
+    "derived.labor.unemployment_ppm",
+    "state.pubserv.teachers_persons",
+    "state.policy.budget_spent_uu"
+  ],
+  "_note_evidence_refs": "V-EV-02 要求 evidence_refs 中每个 ID 都能在 10 号文件中解析成下标；载入器 _is_metric_ref 只认 state. / flow. / derived. / content. / scenario. 五个命名空间，即「能读出一个值的稳定变量 ID」。两轮校正都记在这里。第一轮：原列表中的 flow.group.skill_out_persons 解析不出来（10 号文件把技能档转入转出写成同一行 flow.group.skill_in_persons[] / skill_out_persons[]，转出侧只有省略前缀的简写），按契约现状删掉该条引用，而不是替它伪造一个 ID，也不是放宽 V-EV-02；结业队列的等量配对改由 state.group.education_cohort_persons 承担核对。10 号文件是否应把 skill_out 单独列成一行，已上报（OQ-LOCAL-E05-04）。第二轮：当时补入的 log.constraint_diag 同样不是合法的 evidence_ref —— 它在 10 号文件 §12 是一条**日志通道**（逐 cell 五项约束值、最紧项与 slack 的列式表），不是能读出单一取值的变量，载入期换来一条 E_EVENT_EVIDENCE（/evidence_refs/3）。本轮不放宽命名空间，而是把它替换成它真正想引用的那五个候选值里尚未列出的三个正式变量 ID：flow.cell.bound_plan_uqs、flow.cell.bound_capacity_uqs、flow.cell.bound_energy_uqs（bound_labor 与 bound_materials 原本就在表内）。于是 INV-045「binding_code 等于取到最小值的那一项」在证据层可以逐项复核，证据强度只增不减；log.constraint_diag 作为报告可展开的日志通道，仍写在下面 _note_evidence 的 check_zh 说明里，那是散文，不是机器引用。",
+  "_note_evidence": [
+    {
+      "label_zh": "结业队列台账",
+      "metric": "state.group.education_cohort_persons",
+      "stable_id": "state.group.education_cohort_persons",
+      "page": "社会页面 → 群组 → 教育与技能",
+      "read_zh": "36 组 × 8 个季槽的在读与到期人数。玩家可以看到本季到期的是哪一批、什么时候入的队。",
+      "check_zh": "本季到期格清零，对应 skill_out 与 skill_in 等量（INV-082）。"
+    },
+    {
+      "label_zh": "本季技能升档",
+      "metric": "flow.group.skill_in_persons",
+      "stable_id": "flow.group.skill_in_persons",
+      "page": "社会页面 → 群组 → 本季人口流动",
+      "read_zh": "低档转出人数与高档转入人数逐组列出。",
+      "check_zh": "Σ skill_in == Σ skill_out，且两者都只来自结业队列，没有第二个来源（INV-082）。转出侧目前没有可解析的稳定 ID（见 OQ-LOCAL-E05-04），因此这条核对在首版由结业队列台账 state.group.education_cohort_persons 的本季到期格清零来执行，而不是引用一个悬空 ID。"
+    },
+    {
+      "label_zh": "北原制造业的最紧约束",
+      "metric": "flow.cell.binding_code",
+      "stable_id": "flow.cell.binding_code",
+      "page": "地区页面 → 北原 → 生产单元 cell.beiyuan.manu",
+      "read_zh": "本季五项约束候选值（计划／产能／劳动／能源／材料）与被判定为最紧的那一项。",
+      "check_zh": "log.constraint_diag 保留五项候选值与三个技能档的完整向量；报告可以展开全部达到最小值的约束，而不是只报一个（OQ-237）。"
+    },
+    {
+      "label_zh": "本季招聘与离岗",
+      "metric": "flow.cell.hires_persons",
+      "stable_id": "flow.cell.hires_persons",
+      "page": "地区页面 → 北原 → 就业",
+      "read_zh": "逐 cell 逐技能档的招聘、离岗与在岗人数。",
+      "check_zh": "招聘量受三道闸限制：摩擦上限、地区同技能可用劳动力、工资资金（12 号 §3.2）。报告必须写出被哪一道闸夹住。"
+    },
+    {
+      "label_zh": "失业人数与失业率",
+      "metric": "derived.labor.unemployment_ppm",
+      "stable_id": "derived.labor.unemployment_ppm",
+      "page": "国家总览 → 就业与生活",
+      "read_zh": "分母是劳动力，不是总人口；逐地区逐技能档可下钻。",
+      "check_zh": "失业率由初始就业分配反算得出，剧本里不存在失业率输入字段（INV-143）。"
+    },
+    {
+      "label_zh": "在岗教师与席位上限",
+      "metric": "state.pubserv.teachers_persons",
+      "stable_id": "state.pubserv.teachers_persons",
+      "page": "政策工作台 → P05 → 执行条件",
+      "read_zh": "max_seats = teachers_persons × param.student_teacher_ratio；教师为 0 时新增席位恒为 0。",
+      "check_zh": "ADV-03 的防线：没有教师照样培训是不成立的，拨款照付但形成可解释的无效支出。"
+    },
+    {
+      "label_zh": "P05 累计支出",
+      "metric": "state.policy.budget_spent_uu",
+      "stable_id": "state.policy.budget_spent_uu",
+      "page": "季度报告 → 已经发生 → 本季支出构成",
+      "read_zh": "P05 至今花掉的钱，可下钻到每一笔 txn。",
+      "check_zh": "budget_spent ≤ budget_committed（INV-096）；这笔钱确实发生了，事件不会把它退回来。"
+    }
+  ],
+  "_note_consequences": [
+    {
+      "consequence_id": "E05.C1",
+      "label_zh": "北原各群组的未来预期一次性下调",
+      "written_by": "event",
+      "applied_at": "S08.4 事件触发（12 号 §8.4：应用 effects → 只能是白名单内的 ppm 增量）",
+      "settlement_step": "S08",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "entity_ids_zh": "group.beiyuan.minor.low / mid / high、group.beiyuan.working.low / mid / high、group.beiyuan.elder.low / mid / high（共 9 组）",
+      "delta_ppm": -35000,
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "counterparty": "无对手方。expectation_ppm 是群组的主观量，不是任何主体持有的资源，写入它不构成一笔转移，因此既没有 payer 也没有 payee；「对手方」这个概念只适用于账本科目（现金、库存、产能、人口）。",
+      "formula": "expectation_ppm[g] = clamp_i(expectation_ppm[g] + (-35000), 0, 2000000)  # 对 region.beiyuan 的 9 组各写一次",
+      "param_ref": "param.e05_expectation_delta_ppm（本文件 _note_parameters 中的 value_id，尚未迁入 params_core.json）",
+      "accounting_zh": "本条不进任何账本：事件对 log.ledger 的写入行数为 0，Σ 各主体 Δcash == 0（INV-017）在事件结算前后逐位不变。它进的是 log.explanations，一行一组，字段按 10 号 §12 的 {entity, cause, amount, qty, q, constraint, kind} 填写。",
+      "timing_zh": "写在触发季 q 的 S08.4。关键时点约束：支持度在同一季更早的 S08.2 已经算完，所以本条增量对 state.group.support_ppm 的影响最早出现在 q+1 季，本季报告里 expectation 已经变了而 support 还没有变，这不是缺陷。",
+      "duration_note_zh": "一次性写入存量，不是逐季加成项；此后由 S08.1 的预期更新式自行演化，没有任何由事件维持的持续项。",
+      "constraint_zh": "区间 0..2 000 000（10 号 §7 与 INV-121）；越界一律 clamp 并写 log.clamp。S08 的可写子集包含 state.group.expectation_ppm（12 号 §8 表），事件白名单也包含它（V-EV-05 / INV-130），两处都允许才写。",
+      "magnitude_check_zh": "若 param.support_weight_ppm 的预期分量取 OQ-222 暂定的 250 000 ppm，则 q+1 季每个受影响群组的支持度来源分解中，预期项贡献 idiv_floor(250000 × (−35000), 1000000) = −8750 ppm（整除，无取整残差）；按非未成年人口加权到全国为 −8750 × 6 660 000 ÷ 18 360 000 ≈ −3174 ppm（最大余数法下 ±1 ppm）。北原非未成年人口 6 660 000 / 全国 18 360 000 见 population_init.json。",
+      "evidence_ref": "log.explanations",
+      "reversible": true,
+      "reversal_zh": "生活指数改善后预期按 S08.1 的更新式自然回升；不存在也不需要「撤销事件」的操作。"
+    },
+    {
+      "consequence_id": "E05.C2",
+      "label_zh": "北原各群组的程序信任一次性下调",
+      "written_by": "event",
+      "applied_at": "S08.4 事件触发",
+      "settlement_step": "S08",
+      "target": "state.group.trust_ppm",
+      "scope": "region.beiyuan",
+      "entity_ids_zh": "group.beiyuan.minor.low / mid / high、group.beiyuan.working.low / mid / high、group.beiyuan.elder.low / mid / high（共 9 组）",
+      "delta_ppm": -12000,
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "counterparty": "无对手方，同 E05.C1：主观量不是资源，写入不构成转移。",
+      "formula": "trust_ppm[g] = clamp_i(trust_ppm[g] + (-12000), 0, 1000000)",
+      "param_ref": "param.e05_trust_delta_ppm",
+      "accounting_zh": "不进账本；进 log.explanations，kind = inferred，cause = event.E05。信任的下降不得被解释成「钱少了」——本季 P05 的支出一分没减（见 E05.C7）。",
+      "timing_zh": "与 C1 同一写入点（S08.4），同样在 S08.2 的支持度计算之后，因此对 support 的传导同样落在 q+1 季。",
+      "duration_note_zh": "一次性写入存量。回升速度受 param.trust_recover_ppm 约束，且必须严格慢于下降速度（INV-122：trust_recover_ppm < trust_drop_ppm），40 季内不可能靠时间完全抹平。",
+      "constraint_zh": "区间 0..1 000 000（10 号 §7，INV-121/122）。**前置条件**：12 号 §8.1 规定 trust_ppm 只受一个「失信事件闭集合」驱动并逐季计数，本条成立的前提是 event.E05 已被登记进该闭集合（语义：培训承诺没有兑现为就业）。若实现时未登记，正解是删除 effects[1] 这条 effect 与本条 consequence，而不是让两处规则各写各的（OQ-LOCAL-E05-03）。",
+      "magnitude_check_zh": "跌幅刻意小于预期跌幅（12 000 < 35 000）：培训没带来就业是「效果未达」，比欠付工资、拖欠转移支付这类「明示承诺被撕毁」轻一档。",
+      "evidence_ref": "log.explanations",
+      "reversible": true,
+      "reversal_zh": "只能靠后续承诺被兑现慢慢回升，恢复比下降慢，这是刻意的不对称。"
+    },
+    {
+      "consequence_id": "E05.C3",
+      "label_zh": "劳动与公共服务联盟的组织力上升",
+      "written_by": "event",
+      "applied_at": "S08.4 事件触发（写在 S08.3 集团反应之后）",
+      "settlement_step": "S08",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "entity_ids_zh": "bloc.labor_public（3 个集团中的第 3 个，另两个 bloc.agri_coop、bloc.business 本事件不写）",
+      "delta_ppm": 18000,
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "counterparty": "无对手方，且**不是零和**：另外两个集团的 org_power_ppm 不因本条而减少，三者之和不是守恒量（10 号 §9 没有给出 Σ org_power 的恒等式，不得臆造一条）。",
+      "formula": "org_power_ppm[bloc.labor_public] = clamp_i(org_power_ppm[bloc.labor_public] + 18000, 0, 1000000)",
+      "param_ref": "param.e05_org_power_delta_ppm",
+      "accounting_zh": "不进账本；进 log.explanations，entity = bloc.labor_public。组织力不是资源也不是席位：它只改变议程与改革可行性，不直接进 support_ppm，更不换算成任何 μU 金额。",
+      "timing_zh": "写在触发季 q；S08.3 的集团反应在同季更早执行，因此本增量最早在 q+1 季参与集团反应的惯性更新。",
+      "duration_note_zh": "一次性写入存量，不是永久加成。S08.3 的组织力更新含惯性项 param.bloc_org_inertia_ppm，会逐季把它拉回由成员规模与资源决定的水平；议题消失后自然衰减。",
+      "constraint_zh": "区间 0..1 000 000（10 号 §9，INV-125/129）；clamp 越界并写 log.clamp。",
+      "magnitude_check_zh": "若 param.bloc_org_inertia_ppm 取 700 000，则 18 000 的一次性增量在约 3—4 季内被拉回基线的七成以上，不会把该集团推到长期饱和。",
+      "evidence_ref": "log.explanations",
+      "reversible": true,
+      "reversal_zh": "不再有可动员的议题时按惯性项衰减；没有「撤销」操作。"
+    },
+    {
+      "consequence_id": "E05.C4",
+      "label_zh": "该联盟对 P05 的立场下降",
+      "written_by": "event",
+      "applied_at": "S08.4 事件触发",
+      "settlement_step": "S08",
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.labor_public.policy.P05",
+      "entity_ids_zh": "state.bloc.stance_ppm 是 3×12 的二维量；本条只写 [bloc.labor_public][policy.P05] 一格，其余 35 格不动。",
+      "delta_ppm": -60000,
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "counterparty": "无对手方：立场是该集团对某条政策的态度读数，不从任何人那里转来。",
+      "formula": "stance_ppm[bloc.labor_public][policy.P05] = clamp_i(stance_ppm[bloc.labor_public][policy.P05] + (-60000), -1000000, 1000000)",
+      "param_ref": "param.e05_stance_delta_ppm",
+      "accounting_zh": "不进账本；进 log.explanations。立场只影响改革可行性与议程，不直接进 support（12 号 §8.3），因此它的跌幅可以比预期与信任大一个量级而不会让政治结果失真。",
+      "timing_zh": "写在触发季 q 的 S08.4；下一季 S08.3 的集团反应据新值重算议程。",
+      "duration_note_zh": "一次性写入存量。此后随该集团关心的指标按 param.bloc_care_gain_ppm 传导回来，培训真的带来就业时会回升。",
+      "constraint_zh": "区间 −1 000 000..1 000 000（10 号 §9，INV-125）。**待决**：契约没有给出二维 scope 的写法，本文件用点号拼接 bloc.labor_public.policy.P05（符合 id_pattern 正则）；若契约拒绝二维 scope，正解是删掉这条 effect 与本条 consequence，而不是改写成别的字段（OQ-LOCAL-E05-02）。",
+      "magnitude_check_zh": "三次触发累计 −180 000 ppm。若这足以让 P05 完全无法续期，先查 content.bloc.veto_domains 是否把 P05 划进了否决域，再动本值。",
+      "evidence_ref": "log.explanations",
+      "reversible": true,
+      "reversal_zh": "立场随该集团关心的指标变化回升；含义不是「反对培训」，而是「不再接受用培训回答就业问题」。"
+    },
+    {
+      "consequence_id": "E05.C5",
+      "label_zh": "北原制造业的实际产量不变（事件不写，S05 已经算出）",
+      "written_by": "mechanism",
+      "event_writes": false,
+      "applied_at": "S05 生产与交易（12 号 §5：output_actual = min(激活的候选约束)）",
+      "settlement_step": "S05",
+      "target": "flow.cell.output_actual_uqs",
+      "scope": "cell.beiyuan.manu",
+      "entity_ids_zh": "cell.beiyuan.manu；候选约束向量见 log.constraint_diag 的同一季同一行",
+      "delta_ppm": 0,
+      "amount_uu": 0,
+      "qty_uqs": 0,
+      "counterparty": "无对手方：本条是「一件没有发生的事」——没有新增产出，因此没有买方、没有交货、没有对应的应收或库存变动。",
+      "formula": "output_actual = min(bound_plan, bound_capacity, bound_labor, bound_energy, bound_materials)；新增的中／高技能劳动力只抬高 bound_labor，而 binding_code != 2 时 bound_labor 不是最小值，故 min() 的取值不变，Δoutput_actual_uqs == 0",
+      "accounting_zh": "既然产量不变，S05 的交易额、S06 的营业结果与所得税也都不因培训而变；事件对这三者的写入同样是 0 μU。玩家在「已经发生」栏看到的支出构成里，P05 的支出仍在，而对应的产出增量不存在——这正是本事件要让人看见的那一格。",
+      "timing_zh": "与触发同季，且在 S08.4 之前就已经算完：事件读到的是既成事实，不是它造成的。",
+      "duration_note_zh": "持续到最紧约束换人为止（binding_code 变成 2 劳动的那一季）。",
+      "constraint_zh": "INV-045：binding_code 必须等于取到最小值的那一项；多个候选同时达到最小值时报告展开全部，不做相加展示（OQ-237）。",
+      "evidence_ref": "log.constraint_diag",
+      "reversible": true,
+      "reversal_zh": "解开真正卡住产量的那一项之后（见 player_options E05.O2），bound_labor 才可能成为最小值，那批结业生才开始改变产量。"
+    },
+    {
+      "consequence_id": "E05.C6",
+      "label_zh": "失业人数不减少（事件不写，S03/S07 已经算出）",
+      "written_by": "mechanism",
+      "event_writes": false,
+      "applied_at": "S03 计划与就业（招工）与 S07 跨期变化（技能队列到期）",
+      "settlement_step": "S03 / S07",
+      "target": "derived.group.unemployed_persons",
+      "scope": "region.beiyuan",
+      "entity_ids_zh": "group.beiyuan.working.low（转出）与 group.beiyuan.working.mid（转入）",
+      "delta_ppm": 0,
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "counterparty": "人口流动的「对手方」是另一个群组：S07 把 skill_out 人数从低档群组移出，等量的 skill_in 移入高一档群组，两侧成对出现（INV-082），所以这是一次内部调拨而不是一次创造。",
+      "formula": "unemployed = labor_force - employed；skill_in == skill_out ⇒ Σ population_persons 不变、labor_force 合计不变；招工由 S03 从 output_plan 反算 need_k，产量不变则 need_k 不变 ⇒ employed 不变 ⇒ Δunemployed == 0",
+      "accounting_zh": "人口守恒是硬约束（INV-071/072），不是近似：升档只改变群组的技能维下标，总人数与劳动力合计逐位不变。因此「培训了 N 人」与「少了 N 个失业者」之间没有任何一条结算路径——这句话在模型里可被证伪，不是文案口号。",
+      "timing_zh": "skill_in 发生在入队季 + param.training_lag_q 季的 S07；招工在同季更早的 S03。两者在同一季内不构成因果链。",
+      "duration_note_zh": "持续：只要最紧约束不是劳动，后续每一批结业都会重复同样的结果。",
+      "constraint_zh": "INV-071/072 人口守恒；INV-082 skill_in 与 skill_out 等量配对；INV-081 拨款当季不得产生任何 skill_in。",
+      "evidence_ref": "derived.group.unemployed_persons",
+      "reversible": true,
+      "reversal_zh": "只有新增岗位才减少失业；升档本身在任何情形下都不减少失业。"
+    },
+    {
+      "consequence_id": "E05.C7",
+      "label_zh": "P05 的拨款照付（事件不写，但必须一并报出，否则「无效支出」无从核对）",
+      "written_by": "policy",
+      "event_writes": false,
+      "applied_at": "S04 工资与投入（付款双边入账）；累计额在 S06 结转到 state.policy.budget_spent_uu",
+      "settlement_step": "S04 / S06",
+      "target": "state.policy.budget_spent_uu",
+      "scope": "policy.P05",
+      "entity_ids_zh": "payer = gov（政府现金账）；payee = 公共培训供给方（public_training_delivery）、国内材料供给方（domestic_material）、学员（student_stipend）",
+      "payer": "gov",
+      "payee": "public_training_delivery / domestic_material / student_stipend 三条支出线的对手方",
+      "amount_uu": 280000000,
+      "amount_breakdown_uu": {
+        "public_training_delivery": 160000000,
+        "domestic_material": 40000000,
+        "student_stipend": 80000000
+      },
+      "opex_per_q_uu": 20000000,
+      "qty_persons": 0,
+      "counterparty": "有对手方，而且是本事件唯一一条有对手方的后果：政府每季从现金账付出 280 000 000 μU，三条支出线的收款方各自入账，双边记账（12 号 §4）。这笔钱由 policy.P05 写，事件一分不写。",
+      "formula": "Σ spend_lines_uu_per_q = 160000000 + 40000000 + 80000000 = 280000000 == policy_P05.cost.per_quarter_uu ✓；policy_P05.cost.one_off_uu = 2240000000 == 8 × 280000000 == planned_quarters × per_quarter_uu ✓",
+      "accounting_zh": "按 R-SCALE-01（1 U = 1 000 000 000 μU），每季 280 000 000 μU = 0.28 U；基年全年名义 GDP = 100 000 000 000 μU = 100 U，故 P05 每季基本支出约占基年全年名义 GDP 的 0.28%。另有 opex_per_q_uu = 20 000 000 μU（0.02 U）单列，不含在 per_quarter_uu 内。这些数字是 policy_P05.json 的既有事实，本事件既不改写也不退还：事件没有账本效应（INV-130），退款必须走一条政策命令。",
+      "timing_zh": "每季 S04 发生一次，与本事件是否触发无关；玩家「什么都不做」时它继续发生。",
+      "duration_note_zh": "按 policy_P05.cost.planned_quarters = 8 季计划支出；policy_repeal 只停未来的新入队与新拨款，已付款不退（INV-093）。",
+      "constraint_zh": "INV-096：budget_spent_uu ≤ budget_committed_uu，且单调不减；ADV-03：teachers_persons == 0 时 new_seats == 0、skill_in 全程为 0，但拨款照付——那时这笔钱是可解释的无效支出，本事件的 c3 条件（skill_in ≥ 6000）反而不成立，讲的是另一件事。",
+      "evidence_ref": "state.policy.budget_spent_uu",
+      "reversible": false,
+      "reversal_zh": "已经发生的支出不可逆。能省下的只有未来席位的成本，省不下已经付出去的钱。"
+    },
+    {
+      "consequence_id": "E05.C8",
+      "label_zh": "事件本身的账本效应：零（这是一条可被机器证伪的断言）",
+      "written_by": "none",
+      "event_writes": false,
+      "applied_at": "不适用：事件在 S08.4 只写白名单内的 ppm 增量，没有任何账本写入点",
+      "settlement_step": "S08",
+      "target": "log.ledger",
+      "scope": "event.E05 的全部效应",
+      "entity_ids_zh": "无任何实体被借贷记账",
+      "amount_uu": 0,
+      "qty_persons": 0,
+      "qty_uqs": 0,
+      "counterparty": "无：没有 payer、没有 payee、没有一行分录。",
+      "formula": "Σ(cause == event.E05 的账本行金额) == 0 μU；全经济现金总量恒等于 scenario.total_cash_uu（INV-018）；Σ 各主体 Δcash == 0（INV-017）",
+      "accounting_zh": "首版事件没有任何账本效应（INV-130、V-EV-06）：schema 里根本不存在 ledger_effects 字段，所以「凭空增减资源」在结构上就表达不出来，不是靠自觉不写。本事件不产生现金、库存、产能、人口的任何变动；要花钱必须走一条政策或项目。",
+      "timing_zh": "对整局 40 季恒成立，不只在触发季。",
+      "duration_note_zh": "永久：这是结构性质，不是本季的巧合。",
+      "constraint_zh": "由 T-S-E05-NO-LEDGER-EFFECT 钉死：触发与不触发两次运行的 log.ledger 行数与内容完全相同，且 state.cell.capacity_active、inventory_*、group.population_persons 逐项相同。",
+      "evidence_ref": "log.explanations",
+      "reversible": true,
+      "reversal_zh": "不适用：没有发生的事不需要撤销。"
+    }
+  ],
+  "_note_consequences_contract_gap": "为什么 consequences 是正式顶层键，而不是 _note_consequences：11 号 §5.13 的示例没有声明这个键，但计划书 §13（文档优先级第 1 位，高于 11 号）明确要求「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」，而 tools/validate_content.py 的 check_event 执行的正是这一条（缺失即 E_EVENT_EVIDENCE，每条后果还必须带对手方或会计解释）。两条规则在旧写法下不可能同时满足：写成 _note_consequences 必然触发 E_EVENT_EVIDENCE，写成 consequences 必然触发 additionalProperties:false 的 E_UNKNOWN_FIELD。按文档优先级，计划书 §13 胜，故本轮的处置是：(1) 逐条后果说明放回正式键 consequences，字段对齐 log.explanations 的{entity, cause, amount, qty, q, constraint, kind} 六要素；(2) 校验器的 event_template schema 表补登记 consequences（可选、array），使 additionalProperties:false 不再与它自己的 check_event 自相矛盾。补登记的是「这个键合法」，不是放宽任何检查：check_event 对每条后果的对手方／会计解释要求一字未动，缺失仍然是 ERROR；也没有把它设成必填，以免其它事件文件平白多出一条 E_SCHEMA_HEADER。11 号 §5.13 正文仍需补写 consequences 的子 schema（OQ-LOCAL-E05-05）；在那之前，本文件的字段集是事实标准而不是契约。原 _note_consequences 已删除：同一份事实不留两份，避免日后两处漂移。",
+  "_note_player_options": [
+    {
+      "option_id": "E05.O0",
+      "label_zh": "什么都不做",
+      "implemented_as": "不发任何命令",
+      "cost_zh": "直接成本 0。但 P05 的每季拨款照付（已签的席位合同不因不作为而停止），钱继续花在一条当前不通的路上。",
+      "preconditions_zh": "无。这个选项永远可用。",
+      "lag_q": 0,
+      "failure_modes_zh": "没有失败路径，只有后果：在读队列会在 param.training_lag_q 季后继续到期，下一批 skill_in 仍然撞上同一个非劳动约束，本事件在冷却结束后可能再次触发（最多 3 次）。",
+      "political_reaction_zh": "劳动与公共服务联盟的组织力继续上升；北原群组的未来预期继续下滑，并经 param.support_weight_ppm 的预期权重（25%）传导到支持度。",
+      "consequence_zh": "这不是「什么都没发生」。不作为的代价是可计量的：P05 的 budget_spent 继续增加，expectation 继续下降，而 unemployed 一个人也没少。"
+    },
+    {
+      "option_id": "E05.O1",
+      "label_zh": "改招生方向：换地区或换技能档",
+      "implemented_as": "policy_set_params { policy_id: policy.P05, params: { region_mask, track } }",
+      "cost_zh": "命令本身无一次性支出；但 P05 的 toggle_cost_uu 与冷却按政策定义计（改参数若被实现为一次开关，则按 INV-098 产生一次性行政成本并推进 toggle_count）。",
+      "preconditions_zh": "新参数落在 P05 的 valid_range 内；目标地区有在岗教师（max_seats = teachers × param.student_teacher_ratio，教师为 0 时新增席位恒为 0，ADV-03）。",
+      "lag_q": 5,
+      "lag_note_zh": "改招生只影响「以后入队的人」。已在读队列不会被改向，也不会被取消。最快要 1 季生效 + 4 季培训周期，才看得到第一批按新方向结业的人。",
+      "failure_modes_zh": "(a) 新地区的制造业最紧约束同样不是劳动，错配原样搬家；(b) 目标技能档的上一档没人可招（skill_out 来源不足）；(c) 目标地区教师不足，new_seats 被 max_seats 压成 0，拨款照付但无人入队。",
+      "political_reaction_zh": "被减招的地区群组预期下降；被加招地区的劳动与公共服务联盟立场回升。",
+      "consequence_zh": "这是对「错配」本身的回应，不是对「失业」的回应。它能让下一批人升到有空缺的档位，但改变不了本批已经结业的人的处境。"
+    },
+    {
+      "option_id": "E05.O2",
+      "label_zh": "先解开真正卡住产量的那一项",
+      "implemented_as": "project_launch { policy_id: policy.P04 | policy.P07 | policy.P08, region_id, scale_ppm, funding_source }（按 binding_code 指向的约束选政策）",
+      "cost_zh": "按所选政策的 cost.one_off_uu 与 per_quarter_uu 计；签约当季即占用 gov.committed_memo_uu，取消不退已付款（INV-093）。",
+      "preconditions_zh": "该地区有空闲施工槽位（region.construction_slots_total，北原为 2）；资金来源已声明（现金／债券／预算调剂）；法定权限位已获得。",
+      "lag_q": 9,
+      "lag_note_zh": "项目工期 4—8 季，完工后写 capacity_pending，下一季 S01 才转入 capacity_active（INV-091）。支出先发生，能力后出现。",
+      "failure_modes_zh": "融资中断（suspended(financing)）、设备交付延迟（见 event.E06）、施工队列拥堵（INV-094）、燃料不足、以及新增供给没有需求——最后一条会把 binding_code 推向 0（计划），那时培训依然无用，但原因变了。",
+      "political_reaction_zh": "工商业联盟立场上升；若资金来源是削减转移支付，劳动与公共服务联盟立场下降且信任受损。",
+      "consequence_zh": "这是唯一可能让 binding_code 变成 2（劳动）的路径。只有当劳动成为最紧约束之后，之前那批结业生才开始值钱——这正是计划书 §10 路线 B「先培训再建设」的代价与回报。"
+    },
+    {
+      "option_id": "E05.O3",
+      "label_zh": "暂停 P05，把钱挪走",
+      "implemented_as": "policy_repeal { policy_id: policy.P05 } 或 budget_reallocate { from_line, to_line, amount_uu }",
+      "cost_zh": "toggle_cost_uu（一次性行政成本，kind = policy_toggle_cost）；冷却 cooldown_q 内不得再开（INV-098）。",
+      "preconditions_zh": "退出规则可执行；q ≥ state.policy.cooldown_until_q[P05]。",
+      "lag_q": 1,
+      "failure_modes_zh": "最容易被误解的一条：暂停只停「新入队」，不停「已入队」。state.group.education_cohort_persons 里已经排好的人仍会按期到期并产生 skill_in（INV-082 的等量配对不因政策关停而失效）。所以本事件在暂停后仍可能再触发一次。关停再开启也不补发历史季（INV-097）。",
+      "political_reaction_zh": "劳动与公共服务联盟立场显著下降、组织力上升；教师岗位若同时被削减，公共服务可用率下降并波及服务可及性。",
+      "consequence_zh": "省下的是未来的席位成本，省不下已经发生的支出。若真实问题是产能或材料，这一步能腾出预算；若真实问题是技能结构，这一步会在四季后变成新的缺口。"
+    }
+  ],
+  "_note_political_reaction": {
+    "blocs": [
+      {
+        "bloc_id": "bloc.labor_public",
+        "label_zh": "劳动与公共服务联盟",
+        "direction": "组织力上升、对 P05 的立场下降",
+        "magnitude_ppm": {
+          "org_power": 18000,
+          "stance_on_p05": -60000
+        },
+        "basis_zh": "计划书 §08：该联盟关心就业保障、工资、教育医疗和居住。培训扩容原本落在它的关心域内，但结业后没有岗位，兑现失败正好发生在它最能组织动员的议题上。它的反应不是反对培训，而是把议程从「培训」推向「岗位」。",
+        "evidence_used_zh": "flow.group.skill_in_persons 与 flow.cell.hires_persons 的同期对照；derived.group.unemployed_persons 未下降。"
+      },
+      {
+        "bloc_id": "bloc.business",
+        "label_zh": "工商业联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "计划书 §08：该联盟关心能源、运输、利润与政策可预期性。培训队列与它的关心域不相交——它抱怨的是最紧约束（产能／能源／材料），而这件事恰恰证明了它的抱怨。写 0 是一个立场：不给每个集团都编一个反应，避免「伪深度」（计划书 §09）。",
+        "evidence_used_zh": "flow.cell.binding_code != 2。"
+      },
+      {
+        "bloc_id": "bloc.agri_coop",
+        "label_zh": "农业合作联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "北原是农业与粮食供给区，但本事件的判据落在 cell.beiyuan.manu。农合联盟关心农户收入、灌溉与地区资源分配；若玩家的回应是把预算从灌溉挪去培训（或反之），反应会经 P07 的立场通道产生，而不是由本事件直接产生。",
+        "evidence_used_zh": "无。"
+      }
+    ],
+    "groups": [
+      {
+        "scope": "group.beiyuan.working.low 与 group.beiyuan.working.mid",
+        "direction": "预期下降、信任下降",
+        "basis_zh": "直接受影响者：刚从 low 升到 mid 的人发现工资档位没变、岗位没有；仍在 low 档的人看到升档并不带来改善，入学意愿与预期同步下滑。分布必须保留，不能只报全国平均（INV-124）。"
+      },
+      {
+        "scope": "group.beiyuan.minor.*",
+        "direction": "预期下降（幅度同上，按同一 delta 写入）",
+        "basis_zh": "minor 档的 skill 表示教育准备程度（计划书 §08）。家庭对教育回报的预期下滑会进入后续的入学与迁移决策。首版按地区统一写入，不做分档差异——差异化需要证据，现在没有。"
+      }
+    ],
+    "no_support_write_zh": "本事件不直接写 state.group.support_ppm。支持度由 S08 按生活／预期／信任三项加权合成（OQ-222），事件改预期与信任，让支持度的变化有来源分解可查（INV-123）。直接写 support 会把来源分解弄丢。"
+  },
+  "_note_copy": {
+    "headline_zh": "北原：这一批人毕业了，岗位没有到",
+    "accounted_zh": "本季北原有 {skill_in_persons} 人完成职业培训并转入中技能档；按 INV-082，技能升档只来自结业队列且转出与转入等量配对，转出侧可在结业队列台账 state.group.education_cohort_persons 上逐组逐季槽核对。北原制造业本季招聘 {hires_persons} 人。全国失业率 {unemployment_ppm}。P05 至今累计支出 {budget_spent_uu}。以上为本季账目与人口流动的精确加总，每一项都可下钻到分录与逐组流水。",
+    "inferred_zh": "模型中的限制因素：北原制造业本季的最紧约束是「{binding_label}」，不是劳动。在这一约束下，增加可用的中技能劳动力不会改变该单元的实际产量，因此也不会形成新的招聘需求。培训改变的是技能档的人数分布，不是岗位数量；岗位数量由各生产单元的计划产量与资金能力决定。此处列出本季五项约束的全部候选值，其中达到最小值的可能不止一项。",
+    "projected_zh": "情景预测（假设：不追加任何命令、外部条件维持本季水平、价格与工资按现行有界平滑规则演化）：在读队列中还有 {cohort_pending_persons} 人将在未来四季陆续结业。若最紧约束不变，这些人同样不会转化为就业。本预测由同一套结算规则跑四季只读副本得出，不宣称识别真实世界的因果关系。",
+    "wording_rules_zh": "三段措辞严格分栏：第一段只用「本季」「合计」「已支出」，可以精确加总；第二段只用「模型中的限制因素」「在这一约束下」，禁止出现「导致」「因为」「造成」；第三段必须先写出假设再写结论，且禁止回写任何状态字段（INV-140）。多个瓶颈不做相加展示（OQ-237）。",
+    "placeholders": [
+      {
+        "key": "skill_in_persons",
+        "source": "flow.group.skill_in_persons",
+        "type": "int"
+      },
+      {
+        "key": "hires_persons",
+        "source": "flow.cell.hires_persons",
+        "type": "int"
+      },
+      {
+        "key": "unemployment_ppm",
+        "source": "derived.labor.unemployment_ppm",
+        "type": "int"
+      },
+      {
+        "key": "budget_spent_uu",
+        "source": "state.policy.budget_spent_uu",
+        "type": "int"
+      },
+      {
+        "key": "binding_label",
+        "source": "flow.cell.binding_code",
+        "type": "id"
+      },
+      {
+        "key": "cohort_pending_persons",
+        "source": "state.group.education_cohort_persons",
+        "type": "int"
+      }
+    ],
+    "_note_placeholders": "模板只支持整数与 ID 两种插值，不支持表达式（OQ-235）。ppm → 百分比、μU → U 的格式化在 Presentation 的格式化函数中完成，该函数不得回写状态。每个占位符都能在 evidence_refs 中找到来源（T-U-TEMPLATE-PLACEHOLDER）。 原先的 {skill_out_persons} 占位符已删除：它指向 flow.group.skill_out_persons，而 10 号文件把这一 ID 与 skill_in 写在同一行并简写成 `skill_out_persons[]`，机器无法解析出完整稳定 ID（V-EV-02 因此判定悬空，见 OQ-LOCAL-E05-04）。等量关系不靠占位符声称，改由 INV-082 与结业队列台账承担，宁可少一个插值，也不留一个永远解析不出的来源。"
+  },
+  "_note_acceptance_tests": [
+    {
+      "test_id": "T-S-E05-NO-FIRE-WHEN-COND-FALSE",
+      "kind": "scenario",
+      "purpose_zh": "条件不满足时绝不触发（本事件最重要的一条）。",
+      "given_zh": "构造六个夹具，每个夹具只让 trigger.all_of 中的一条不成立，其余五条全部成立：(1) P05 未生效；(2) q = 4；(3) 北原本季 skill_in = 5999；(4) cell.beiyuan.manu 的 binding_code = 2；(5) 该 cell 本季 hires = 2001；(6) 失业率 = 69999 ppm。",
+      "when_zh": "各跑 12 季，probability_ppm 临时置为 1 000 000（排除抽样干扰）。",
+      "then_zh": "六个夹具中 fire_count[E05] 恒为 0；state.group.expectation_ppm、trust_ppm、bloc.org_power_ppm、bloc.stance_ppm 相对空跑基线逐位不变；不存在任何 cause 指向 event.E05 的 log.explanations 条目。"
+    },
+    {
+      "test_id": "T-S-E05-RELOAD-NO-REDRAW",
+      "kind": "scenario",
+      "purpose_zh": "重载存档不得重抽已确定事件（计划书 §17 恶意玩家测试）。",
+      "given_zh": "一条固定命令流跑到某季 q*，该季 E05 的条件全部成立。",
+      "when_zh": "路径 A：直接 advance 到 q*+3。路径 B：在 q* 前存档、读档，再 advance 到 q*+3。",
+      "then_zh": "两条路径在 q*、q*+1、q*+2、q*+3 的 state_hash 逐位相同；log.rng 中 rng.event 流的 {draw_index, raw_u64, mapped_value} 完全一致；fire_count[E05] 与 last_fire_q[E05] 相同（INV-133、ADV-06）。反例夹具：把抽样改成读取引擎 RNG 的内部状态，断言该测试会红。"
+    },
+    {
+      "test_id": "T-S-E05-NO-LEDGER-EFFECT",
+      "kind": "scenario",
+      "purpose_zh": "事件不得凭空增减资源。",
+      "given_zh": "同一命令流的两次运行：一次允许 E05 触发，一次把 probability_ppm 置为 0。",
+      "when_zh": "跑满 40 季。",
+      "then_zh": "两次运行的全经济现金总量恒等于 scenario.total_cash_uu（INV-018）；Σ 各主体 Δcash == 0（INV-017）；两次运行的 log.ledger 行数与内容完全相同；不存在任何 cause == event.E05 的账本行；state.cell.capacity_active、inventory_*、group.population_persons 逐项相同。"
+    },
+    {
+      "test_id": "T-S-E05-TRAINING-NO-JOB",
+      "kind": "scenario",
+      "purpose_zh": "证明「培训不直接增加就业」这句话在模型里成立，而不只是文案。",
+      "given_zh": "固定 cell.beiyuan.manu 的最紧约束为材料（binding_code = 4），其余条件不变。",
+      "when_zh": "注入一批 skill_in（低→中）人数 N > 0。",
+      "then_zh": "flow.cell.output_actual_uqs 相对无培训基线逐季不变；Σ employed_persons 不变；derived.group.unemployed_persons 合计不变（升档只在技能维移动，人口守恒 INV-071/072）；bound_labor_uqs 上升但 binding_code 仍为 4（INV-045）。"
+    },
+    {
+      "test_id": "T-S-E05-COOLDOWN-AND-CAP",
+      "kind": "scenario",
+      "purpose_zh": "冷却与次数上限生效，事件不刷屏。",
+      "given_zh": "构造一个 24 季内条件持续成立的夹具，probability_ppm 置 1 000 000。",
+      "when_zh": "跑满 24 季。",
+      "then_zh": "fire_count[E05] == 3；任意两次触发的季度间隔 ≥ 6；第 3 次之后不再触发；即使不再触发，evidence_refs 中的全部指标在社会页与季度报告中仍可查（可解释性不依赖弹窗）。"
+    },
+    {
+      "test_id": "T-U-E05-METRIC-IDS-EXIST",
+      "kind": "unit",
+      "purpose_zh": "触发条件与证据引用的每个 ID 都真实存在（V-EV-02、V-EV-08）。",
+      "given_zh": "加载内容包。",
+      "when_zh": "运行内容校验器。",
+      "then_zh": "trigger.all_of[*].metric 与 evidence_refs[*] 全部能在 10 号文件的稳定 ID 表中解析成下标；evidence_refs 非空；effects[*].target 全部落在事件可写白名单内且只用 delta_ppm（V-EV-05）；文件中不存在 ledger_effects 字段（V-EV-06）。"
+    }
+  ],
+  "_note_parameters": [
+    {
+      "value_id": "param.e05_skill_in_threshold_persons",
+      "binds_to": "trigger.all_of[2].value",
+      "value": 6000,
+      "unit": "persons",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09「P05 职业培训扩容：教师与结业队列，不直接增加就业」；12 号 §7.6 教育队列",
+      "reference_year": 0,
+      "definition": "单季单地区触发本事件所需的最小技能升档人数（flow.group.skill_in_persons 在该地区 9 个群组上的求和）。",
+      "valid_range": [
+        1000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "该值必须低于 P05 默认招生规模落到单一地区的结业量，否则事件永不触发；也必须高于人口自然抖动，否则会误报。population_init.json 与 P05 的 seats_per_q_units 定稿后，用 T-S-E05-TRAINING-NO-JOB 的夹具反查一次实际结业量再定值。先调本值，不要调 param.training_lag_q。"
+    },
+    {
+      "value_id": "param.e05_hires_ceiling_persons",
+      "binds_to": "trigger.all_of[4].value",
+      "value": 2000,
+      "unit": "persons",
+      "source_type": "design_assumption",
+      "source_ref": "12 号 §3.2 招工的两道硬闸与摩擦上限",
+      "reference_year": 0,
+      "definition": "判定「该生产单元本季基本没有空缺」的招聘上限：cell.beiyuan.manu 三个技能档 hires_persons 之和不超过此值。",
+      "valid_range": [
+        0,
+        50000
+      ],
+      "confidence": "low",
+      "calibration_note": "模型里没有「空缺数」字段，本值是空缺的代理量，因此它依赖 cells_init.json 定稿后的北原制造业在岗规模。校准顺序：先确定该 cell 的 employment_persons 基数，把本值定在基数的 1% 以内；若事件在正常扩张季也触发，说明本值过高。"
+    },
+    {
+      "value_id": "param.e05_unemployment_floor_ppm",
+      "binds_to": "trigger.all_of[5].value",
+      "value": 70000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05「失业率 8%，分母是劳动力，由初始就业分配反算」；INV-143",
+      "reference_year": 0,
+      "definition": "本事件成立所需的全国失业率下限（7.0%）。失业率降到此值以下时，不再把「培训没带来就业」作为可讲的判断。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "以基年 80 000 ppm 为锚，留 1 个百分点的改善空间。若 G2 的无冲击基线里失业率本来就长期低于 7%，说明就业侧参数（param.hiring_friction_ppm、labor_coeff）与剧本初值不相容，应先查那里，不要直接下调本值。"
+    },
+    {
+      "value_id": "param.e05_expectation_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -35000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「至少区分当期生活、未来预期与程序信任」；OQ-222 支持度三项权重",
+      "reference_year": 0,
+      "definition": "触发时写入该地区各群组 state.group.expectation_ppm 的一次性增量（−3.5 个百分点）。",
+      "valid_range": [
+        -200000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "预期在支持度中的权重暂定 250 000 ppm（OQ-222）。逐组一次性影响 = idiv_floor(250000 × (−35000), 1000000) = −8750 ppm（整除，无取整残差）；derived.politics.support_national_ppm 按**非未成年人口**加权（12 号 §8.2），北原 6 660 000 / 全国 18 360 000，故全国一次性影响 ≈ −8750 × 6 660 000 ÷ 18 360 000 ≈ −3174 ppm（最大余数法下 ±1 ppm）。此前本卡写的 −3281 ppm 用的是总人口占比 0.375，口径错了：全国支持度不把未成年人计入权重。另注意时点：事件在 S08.4 写入，而支持度在同季更早的 S08.2 已算完，故该影响出现在 q+1 季。若敏感性测试显示政治结果只由事件驱动而非由生活指数驱动，先下调本值，再动权重。"
+    },
+    {
+      "value_id": "param.e05_trust_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": -12000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号 §8「程序信任只受承诺兑现与否驱动」；INV-122 恢复速度必须慢于下降速度",
+      "reference_year": 0,
+      "definition": "触发时写入该地区各群组 state.group.trust_ppm 的一次性增量（−1.2 个百分点）。",
+      "valid_range": [
+        -100000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "刻意小于预期跌幅：培训没带来就业是「效果未达」，不是「明示承诺被撕毁」，比欠付工资、拖欠转移支付轻一档。前置条件是 E05 被登记进 12 号 §8 的失信事件闭集合；若未登记，删除对应 effect 而不是保留参数。恢复受 param.trust_recover_ppm 限制，40 季内不可能靠时间完全抹平。"
+    },
+    {
+      "value_id": "param.e05_org_power_delta_ppm",
+      "binds_to": "effects[2].delta_ppm",
+      "value": 18000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「劳动与公共服务联盟通过组织影响议程」；世界银行 WDR 2017 关于权力分配与协调的讨论 [4]",
+      "reference_year": 0,
+      "definition": "触发时写入 bloc.labor_public 的 state.bloc.org_power_ppm 一次性增量。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "S08 的组织力更新含惯性项 param.bloc_org_inertia_ppm = 700000，故该增量会在约 3—4 季内被拉回基线的七成以上。若压力测试中某集团组织力被事件推到长期饱和（接近 1 000 000），说明惯性项或本值失衡，先查惯性项。"
+    },
+    {
+      "value_id": "param.e05_stance_delta_ppm",
+      "binds_to": "effects[3].delta_ppm",
+      "value": -60000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09「政策可以在某些条件下明显无效；玩家应能理解无效发生在哪里」",
+      "reference_year": 0,
+      "definition": "触发时写入 state.bloc.stance_ppm[bloc.labor_public][policy.P05] 的一次性增量。",
+      "valid_range": [
+        -500000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "stance 只影响改革可行性与议程，不直接进 support（12 号 §8.3），因此本值可以比预期与信任的跌幅大一个量级而不至于让政治结果失真。若 P05 在三次触发后就完全无法续期，说明本值过大或 content.bloc.veto_domains 把 P05 划进了否决域，先查否决域。"
+    },
+    {
+      "value_id": "param.e05_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 700000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §12「事件由状态条件触发」；11 号 §5.13 V-EV-07",
+      "reference_year": 0,
+      "definition": "六条触发条件全部成立后，本季实际触发的概率（70%）。抽样用 rng.event 并写 log.rng。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "抽样只能让条件已成立的事件不发生，不能让条件不成立的事件发生——这是本值可以小于 1 000 000 的唯一理由。若试玩记录显示玩家反复错过这条解释，直接置为 1 000 000；不要用降低触发条件门槛的办法提高出现率。"
+    },
+    {
+      "value_id": "param.e05_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 6,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §17「被忽视的警告」；11 号 §5.13 V-EV-07",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        0,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "取值略长于 param.training_lag_q = 4，使「下一批结业」与「上一次提醒」不会挤在同一季。若玩家在两次提醒之间已经改了招生方向却仍被再次提醒，说明冷却不够长或触发条件没有排除已响应的情形。"
+    },
+    {
+      "value_id": "param.e05_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 3,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §04「每季推荐处理 2—3 件重要事项」；§17 试玩记录中的重复点击与被忽视的警告",
+      "reference_year": 0,
+      "definition": "整局中本事件的最大触发次数。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "三次的含义是「讲三遍就够了」：第一次是新知识，第二次是提醒，第三次是最后通牒。触发次数用尽后台账仍然可查，可解释性不依赖弹窗。若试玩显示玩家在第三次之后仍未理解，问题在报告分栏与证据下钻，不在次数上限。"
+    }
+  ],
+  "_note_parameters_zh": "原顶层 parameters 已降级为 _note_parameters，并把每条记录的 parameter_id 如实改名为 value_id。改名不是为了绕开检测：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间、且全部集中在 content/parameters/params_core.json；写在事件文件里的条目不是那个意义上的参数卡，顶着 parameter_id 会让人以为这个 param.* 已经在参数集里登记过了（它没有）。九个身份证字段 value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note 一项未删，另加 binds_to 指明每个值在本文件中真正生效的字面量位置，使「记录」与「被记录的那个数」不可能对不上。这 10 个值目前的事实来源就是本文件的字面量；它们是否应当升格为 SimCore 可加载的 param.* 并迁入 params_core.json，见 OQ-LOCAL-E05-06。在迁移完成前，不得认为这 10 个数值已经通过 V-PC-01..07 的九字段校验——它们没有。_note_trigger_detail 与 _note_consequences 中的 param_ref 指的就是这里的 value_id，迁移后可原名转为真正的 param.*，无需改写引用。",
+  "report_template_id": "tpl.event.e05_training_cohort_mismatch",
+  "_note_design_notes_zh": "本事件的设计要害是：它必须在「培训有用」的情形下保持沉默。条件 c4（binding_code != 2）承担了这个职责——当劳动确实是最紧约束时，培训会真的抬高产量与就业，那时讲这句话就是错的。因此 c4 不是一个调味的附加条件，而是本事件的正确性前提，任何简化触发器的改动都不得删掉它。第二个要害是：事件本身什么也没有改变。玩家看到的三件事（人升了档、产量没变、失业没降）全部由 S03/S05/S07 已经算出来了，事件只做两件被允许的事——给它起个名字，并让政治与预期对这个已发生的事实作出反应。这就是 INV-130「首版事件没有任何账本效应」在内容层的实际体验：事件是观察者，不是行动者。",
+  "_note_open_questions_local": [
+    {
+      "ref": "OQ-LOCAL-E05-01",
+      "question_zh": "trigger 的 scope 求值语义在三份契约中均未定义（只在 §5.13 的示例里出现过三种写法）。本文件按 _note_scope_semantics 的四条读法使用，但「region.<r> 作用于群组索引指标 = 该地区 9 组求和」这一条是本文件自行约定的。",
+      "conservative_take_zh": "只使用可由单一下标或一次确定性求和解析的 scope；不使用任何需要跨地区存在量词的条件。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E05-02",
+      "question_zh": "state.bloc.stance_ppm 是 3×12 的二维量，scope 需要同时指定集团与政策，契约未给写法。本文件用点号拼接 bloc.labor_public.policy.P05（符合 id_pattern 正则）。",
+      "conservative_take_zh": "若契约拒绝二维 scope，则删除该条 effect，只保留 org_power 与群组主观量，而不是改用别的字段替代。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E05-03",
+      "question_zh": "12 号 §8 规定 trust_ppm 只受一个「失信事件闭集合」驱动并逐季计数，但 §5.13 的事件可写白名单又包含 trust_ppm。两者的关系未定义。",
+      "conservative_take_zh": "本文件假定事件写 trust 的前提是该事件已被登记进那个闭集合，并在 consequences 中写明；若实现时未登记，删除该 effect。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E05-04",
+      "question_zh": "10_variable_dictionary.md 把技能档转入转出写在同一表行、转出侧简写为 `skill_out_persons[]`，没有以完整形式出现过 flow.group.skill_out_persons，因此 V-EV-02 判定它悬空。但 INV-082 的等量配对恰恰是对这一变量的约束，它在语义上必然存在。",
+      "conservative_take_zh": "按契约现状执行：evidence_refs 不引用解析不出的 ID。请在 10 号文件中把 flow.group.skill_out_persons 单独列成一行（或统一为可解析的写法），之后再把它加回 evidence_refs。在此之前不得靠放宽 V-EV-02 或改写校验器正则来通过。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E05-05",
+      "question_zh": "契约缺口：11 号 §3 规定 additionalProperties: false，§5.13 只声明九个顶层键，因此 consequences 不是已声明的合法顶层键；而计划书 §13（优先级更高）要求「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」，tools/validate_content.py 的 check_event 也据此要求 d[\"consequences\"] 存在且逐条带对手方或会计解释（缺失即 E_EVENT_EVIDENCE）。这与校验器自己登记的 OQ-V03（政策 effect_chain）是同一类缺口。",
+      "conservative_take_zh": "本轮按文档优先级裁定：计划书 §13 > 11 号 §5.13，故 consequences 保留为正式键，并在校验器的 event_template schema 表中补登记为可选 array（只承认键合法，不放宽任何检查）。请在 11 号 §5.13 中正式登记 consequences 及其子 schema（建议字段：consequence_id、written_by、settlement_step / applied_at、target、scope、delta_ppm / amount_uu / qty_persons、counterparty 或 payer/payee、formula、constraint_zh、evidence_ref），并顺带登记 evidence、player_options、political_reaction、copy、acceptance_tests 等事件规格字段，之后把本文件其余 _note_* 改回正式键名。仍然不得靠删掉校验器里的检查来消错。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E05-06",
+      "question_zh": "事件文件内嵌参数身份证与 §5.15「全部 param.* 卡集中在 params_core.json」冲突；降级为 _note_parameters 后，这 10 张卡不再被九字段校验覆盖。",
+      "conservative_take_zh": "卡片内容一字未删，等待迁入 content/parameters/params_core.json 后由 V-PC-01..07 正式接管；迁移前不得认为这 10 个数值已经过校验。",
+      "escalated": true
+    }
+  ]
+}

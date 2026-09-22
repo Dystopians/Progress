@@ -1,0 +1,719 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E03",
+  "label_zh": "中州住房挤压与租金抗议",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "derived.region.housing_occupied_units",
+        "scope": "region.zhongzhou",
+        "op": "ge",
+        "value": 2230000
+      },
+      {
+        "metric": "derived.group.housing_burden_ppm",
+        "scope": "group.zhongzhou.working.low",
+        "op": "ge",
+        "value": 300000
+      },
+      {
+        "metric": "derived.group.housing_burden_ppm",
+        "scope": "group.zhongzhou.working.mid",
+        "op": "ge",
+        "value": 240000
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 4
+      }
+    ],
+    "probability_ppm": 650000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 6,
+    "max_occurrences": 3
+  },
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -40000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "delta_ppm": 25000
+    }
+  ],
+  "evidence_refs": [
+    "derived.region.housing_occupied_units",
+    "state.region.housing_stock_units",
+    "state.region.housing_capacity_units",
+    "derived.group.housing_burden_ppm",
+    "flow.group.housing_cost_uu",
+    "state.price.housing_rent_uu_per_unit_q",
+    "flow.group.migrate_rejected_persons",
+    "state.group.service_access_ppm"
+  ],
+  "report_template_id": "tpl.event.e03_housing_squeeze",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的两处结构修复（对应校验器 E_CONTENT_LAYOUT 与 E_UNKNOWN_FIELD）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）；其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删、一字未改，只是明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。此前登记的「契约与校验器不可能同时满足」的冲突已解决：tools/validate_content.py 的 check_event 原先只认顶层 consequences 键（缺失即 E_EVENT_EVIDENCE），而 11_data_contract.md §5.13 的键集合与 V-EV-01..08 都没有这个字段、§3 的 additionalProperties: false 又禁止它出现——两条规则不可能同时满足（event_E06.json 选择写顶层 consequences，代价是 E_UNKNOWN_FIELD；其余 11 个事件文件选择 _note_consequences，代价是 E_EVENT_EVIDENCE，两边都不可能清零）。已按契约优先的原则修正校验器：check_event 现在同时读取 consequences 与 _note_consequences 两处的后果条目，逐条的「对手方或会计解释」要求一字未放宽（explain_keys 未增删），只是承认了契约允许的那个键名。后果说明仍留在 _note_consequences，并按计划书 §13 补全了实体 ID、来源操作、金额／数量、时间与约束四项。",
+  "_note_spec_ext": "以下字段不在 11_data_contract.md §5.13 的 EventTemplate 键集合内，而 §3 规定 additionalProperties: false。本文件按任务卡（触发、证据、后果、玩家选项、政治反应、文案、验收测试、参数身份证）写全，不私自修改契约；该冲突已登记为本轮返回值中的待决问题，由契约维护者决定是以 schema_version 升级的方式并入 §5.13，还是把这些块移到 docs/。在契约未扩展前，加载器应只读上面的契约字段（schema_kind 到 kind）；下列字段是同一事实的可审计说明，不引入任何新数值来源（凡有数值处一律用 *_ref 指回契约字段或参数卡）。",
+  "_note_spec_ext_version": 1,
+  "_note_code": "E03",
+  "_note_slug": "zhongzhou_housing_squeeze_rent_protest",
+  "_note_category": "housing_and_services",
+  "_note_one_line_zh": "中州住房占用逼近容量上限，低技能与中技能劳动年龄群组的住房负担率同时越线，租金问题被公开提出。",
+  "_note_spec_field_map": {
+    "id": "event_id",
+    "name_zh": "label_zh",
+    "one_line_statement": "one_line_zh",
+    "trigger": "trigger + trigger_rationale",
+    "evidence": "evidence_refs + evidence",
+    "consequences": "effects + consequences + consequences_through_existing_mechanisms",
+    "player_options": "player_options + options_rejected_in_v1",
+    "political_reaction": "political_reaction + residents_reaction",
+    "copy": "report_template_id + copy",
+    "acceptance_tests": "acceptance_criteria",
+    "parameters": "parameters"
+  },
+  "_note_scope_semantics_note_zh": "scope 的读法与 11_data_contract.md §5.13 的示例一致：对逐组字段（state.group.*）写 region.<r> 表示「该地区的 9 个群组各自施加同一 delta」，不是对地区做一次加总写入；对 state.bloc.* 写 bloc.<id> 表示该集团本身。 在 trigger 中对逐组字段一律写明确的 group.<r>.<age>.<skill>，不写 region.<r>：作为比较条件时「地区内所有群组」的聚合口径（全部成立还是任一成立）在契约中未定义，写单组则语义唯一。",
+  "_note_contract_op_note_zh": "比较运算符按 11_data_contract.md 的 V-EV-03 取值：op ∈ {lt, le, eq, ne, ge, gt}。注意 §5.13 的 EventTemplate 示例里写的是 \"op\": \"gte\"，不在该枚举内——示例与校验规则自相矛盾。本文件按规范性条款（V-EV-03 与错误码 E_EVENT_OP）执行，写 ge；不私自修改契约，该矛盾已登记为本轮返回值中的待决问题，须由契约维护者统一裁定后同步修订全部 12 个事件文件。",
+  "_note_trigger_rationale": {
+    "no_random_popup_zh": "四条条件全部是状态比较，条件成立后才抽一次样（rng.event）。住房挤压在首版是一个结构性状态：中州开局住房存量 2 240 000 套、容量 2 300 000 套、人口 7 000 000，按 param.persons_per_housing_unit = 3 计算，住房需求约 2 333 334 套，已经超过存量。事件不制造这个紧张，只在它同时表现为占用逼近上限与负担率越线时把它记成一次公开抗议。",
+    "conditions_zh": [
+      {
+        "cond": "derived.region.housing_occupied_units[region.zhongzhou] >= 2230000",
+        "why_zh": "任务卡的第一个阈值：住房容量占用率。契约的 trigger 只能比较常数，10 号文件中也不存在 derived.region.housing_occupancy_ppm 这样的比率字段，故用绝对套数作占用率的代理：2 230 000 套相当于中州容量 2 300 000 套的 96.9%。若将来引入占用率比率字段，本条应改写为比率比较，并同步修改本参数卡。"
+      },
+      {
+        "cond": "derived.group.housing_burden_ppm[group.zhongzhou.working.low] >= 300000",
+        "why_zh": "任务卡的第二个阈值：住房负担率。低技能劳动年龄群组的住房支出占可支配收入 30% 以上。住房负担率是 10 号文件中已有的派生量，且直接进入 §8.1 的生活指数，可解释性最好。"
+      },
+      {
+        "cond": "derived.group.housing_burden_ppm[group.zhongzhou.working.mid] >= 240000",
+        "why_zh": "广度条件：挤压已经蔓延到中技能群组（24%）。只有低技能一组越线时，问题更接近收入分配而不是住房容量；两档同时越线才构成一次以住房为名的集体行动。这一条使事件不至于在任何一次低收入波动时都触发。"
+      },
+      {
+        "cond": "state.time.q >= 4",
+        "why_zh": "第 5 季起。计划书 §04 的新手前四季用于理解简报、时滞、分配后果与首次年度审查；住房抗议安排在第一次年度审查之后。"
+      }
+    ],
+    "persistence_gap_zh": "与 E01 相同，契约无法表达连续成立 N 季。本事件用三条同时成立的结构性条件（占用逼近上限 + 两档负担率越线）替代持续性：这三项都是慢变量，不会因单季噪声同时越线。cooldown_q = 6 与 max_occurrences = 3 限制重复。",
+    "rent_is_fixed_note_zh": "首版租金固定（OQ-244：housing_rent_uu_per_unit_q 由剧本给出，S07 不更新）。因此负担率的上升只能来自可支配收入下降或住房支出结构变化，不来自租金上涨。报告文案必须写清这一点，否则玩家会把事件读成租金上涨，而模型里租金根本没动。事件名称中的租金抗议指的是住房负担，不是价格变动。"
+  },
+  "_note_evidence": [
+    {
+      "ref": "derived.region.housing_occupied_units",
+      "scope": "region.zhongzhou",
+      "label_zh": "已占用住房套数",
+      "page": "地区页面",
+      "ledger_zh": "住房台账：Σ_g housing_units_occupied ≤ housing_stock ≤ housing_capacity（INV-083）",
+      "how_to_verify_zh": "三个数并列显示；容量不会自动增长（INV-084），只有 P06 能增加存量（OQ-244）。"
+    },
+    {
+      "ref": "state.region.housing_stock_units",
+      "scope": "region.zhongzhou",
+      "label_zh": "住房存量",
+      "page": "地区页面",
+      "ledger_zh": "P06 项目台账：housing_pending_units 在完工季写入，S01 转入存量（INV-091）",
+      "how_to_verify_zh": "开局 2 240 000 套；在建套数与预计交付季可在政策工作台查看。"
+    },
+    {
+      "ref": "derived.group.housing_burden_ppm",
+      "scope": "group.zhongzhou.working.low",
+      "label_zh": "低技能劳动年龄群组的住房负担率",
+      "page": "社会页面",
+      "ledger_zh": "= flow.group.housing_cost_uu / derived.group.disposable_income_uu",
+      "how_to_verify_zh": "分子分母分列可查；可支配收入的口径见 INV-086（工资 + 财产 + 转移 + 赡养净额 − 个税）。"
+    },
+    {
+      "ref": "flow.group.housing_cost_uu",
+      "scope": "group.zhongzhou.working.low",
+      "label_zh": "住房支出",
+      "page": "社会页面",
+      "ledger_zh": "= 占用套数 × state.price.housing_rent_uu_per_unit_q[region.zhongzhou]",
+      "how_to_verify_zh": "租金在首版固定，逐季不变；支出变化只可能来自占用套数变化。"
+    },
+    {
+      "ref": "flow.group.migrate_rejected_persons",
+      "scope": "national",
+      "label_zh": "被住房或迁移成本挡回的人数",
+      "page": "社会页面",
+      "ledger_zh": "迁移台账：intent、三道硬闸（岗位、住房、成本）各自的上限与最终成行人数",
+      "how_to_verify_zh": "该字段按迁出方群组登记（12 号文件 §7.5），因此想迁入中州而被挡回的人计在其原居住地区的群组下，不计在中州；查看时需按目的地筛选迁移流台账。"
+    },
+    {
+      "ref": "state.group.service_access_ppm",
+      "scope": "region.zhongzhou",
+      "label_zh": "公共服务可及性（医疗／教育／公用）",
+      "page": "社会页面",
+      "ledger_zh": "pubserv 交付台账：delivered ≤ capacity_active × availability_ppm（INV-103），未获服务者入 queue_persons",
+      "how_to_verify_zh": "计划书 §05 把中州的开局约束写成住房容量紧张与公共服务承压，两者应同时可查。"
+    },
+    {
+      "ref": "state.project.status",
+      "scope": "policy.P06",
+      "label_zh": "在建公共住房项目",
+      "page": "政策工作台",
+      "ledger_zh": "施工进度与交付进度分列；中州施工槽位总数为 3（INV-094）",
+      "how_to_verify_zh": "付款不制造进度（INV-087）；槽位占满时新项目 suspended(congestion)，不是静默排队。"
+    }
+  ],
+  "_note_consequences_readme_zh": "本键是本事件后果的逐条说明，键名按 11_data_contract.md §3 取 _note_ 前缀（§5.13 的 EventTemplate 键集合里没有 consequences，additionalProperties: false 禁止它作为正式顶层键出现）。每条记录按计划书 §13 的四项要求写全：实体 ID（entity_ids）、来源操作（settlement_step + change_expr）、金额／数量（quantity_zh，数值本身不复制，只指回 effects[] 这唯一事实来源）、时间与约束（timing_zh / constraints_zh）。对手方一栏必须显式作答：首版事件没有账本效应，ppm 主观量与组织力都不是可转移的资源，因此答案是「结构上没有对手方」并给出会计解释，而不是留空。",
+  "_note_consequences": [
+    {
+      "consequence_id": "E03.CONS.1",
+      "effect_ref": "effects[0]",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "entity_ids": [
+        "group.zhongzhou.minor.low",
+        "group.zhongzhou.minor.mid",
+        "group.zhongzhou.minor.high",
+        "group.zhongzhou.working.low",
+        "group.zhongzhou.working.mid",
+        "group.zhongzhou.working.high",
+        "group.zhongzhou.elder.low",
+        "group.zhongzhou.elder.mid",
+        "group.zhongzhou.elder.high"
+      ],
+      "quantity_zh": "每个群组一次 −40 000 ppm（−4.0 个百分点），共 9 个群组。数值的唯一事实来源是 effects[0].delta_ppm；本条不另存副本，绑定关系见 _note_parameters 中 value_id = param.e03_expectation_delta_ppm 的 binds_to = effects[0].delta_ppm。",
+      "counterparty": "none_by_construction",
+      "counterparty_zh": "结构上没有对手方。expectation_ppm 是逐组的主观量，不是可转移的资源：它没有守恒式，一组的预期下降不对应任何一方的预期上升，也没有任何科目在另一侧被贷记。首版事件禁止一切账本效应（INV-130 / V-EV-06），所以「谁付给谁」在本条不成立，必须以会计解释代替，见 accounting_zh。",
+      "accounting_zh": "写入点唯一：state.group.expectation_ppm 这一个数组的 9 个下标。本条不产生任何 flow.*，不触碰 gov / group / cell / world 的 cash_uu、arrears_uu、库存、产能、人口与 GDP，因此四类主体的借贷合计在触发前后各自仍恒为 0，不存在需要补平的差额，也不需要任何平衡修正项（对照见 _note_ledger_balance_check_zh 与验收测试 T-S-E03-NO-HOUSING-CREATION）。本条也不写 state.group.support_ppm：支持度在同季 §8.2 已由「生活／预期／信任」三项相对基年的变化量合成完毕，事件若再直接写一次，§8.2 的来源分解就会多出一项无来源的余项（INV-123）。",
+      "settlement_step": "S08 §8.4",
+      "applied_at": "S08 §8.4（同季 §8.1 已完成 expectation 的惯性更新、§8.2 已合成 support，故本增量当季不改支持度）",
+      "change_expr": "for g in groups(region.zhongzhou): state.group.expectation_ppm[g] = clamp(state.group.expectation_ppm[g] + effects[0].delta_ppm, 0, 2000000)",
+      "timing_zh": "触发当季一次性写入。最早 q = 4（trigger.all_of[3].value）；两次触发间隔 ≥ 6 季（trigger.cooldown_q）；整局至多 3 次（trigger.max_occurrences）。对支持度的影响有一季显式时滞：经下一季 §8.1 → §8.2 才进入 support_ppm。",
+      "duration_note_zh": "EventTemplate 没有「效应持续季数」字段，持续性是既有衰减机制的结果。下一季 §8.1 重算 expectation_ppm = mul_ppm(prev, 700000) + mul_ppm(living_index_ppm, 300000)，实验组与对照组之差按 ×0.7 逐季收敛：−40000 → −28000 → −19600 → −13720 → −9604。mul_ppm 走 mul_div_floor（向下取整），这五个数全部整除，无舍入残差，可逐位断言（见 T-S-E03-EFFECT-DECAY-EXACT）。约 2 季衰减一半（0.7² = 0.49）。",
+      "reversible": true,
+      "constraints_zh": [
+        "值域 0..2 000 000（10 号文件 §6.2 expectation_ppm），clamp 在 change_expr 内显式执行。",
+        "不会触底：中州 9 组的基年预期最低为 group.zhongzhou.elder.low 的 900 000 ppm，三次触发累计 −120 000 ppm 后仍为 780 000 ppm，clamp 下界在首版剧本下不可能被本事件单独触发；若压测中触底，说明生活指数已另行崩塌，应查 §8.1 而不是本事件。",
+        "落点在事件可写白名单内（V-EV-05）：state.group.expectation_ppm。",
+        "delta 为 ppm 整数增量，不得写成绝对值或比例（V-EV-05 只允许 delta_ppm）。"
+      ],
+      "explanation_zh": "住房是长期承诺类问题，一次公开抗议改变的是居民对未来的判断，不是当期账面收入。当期收入与住房支出的影响已经由 §8.1 的 living_index_ppm 经 housing_burden_ppm 表达过一次；本条只登记「问题被公开提出」这件事本身的额外预期位移。",
+      "invariants": [
+        "INV-130",
+        "INV-123",
+        "INV-121"
+      ]
+    },
+    {
+      "consequence_id": "E03.CONS.2",
+      "effect_ref": "effects[1]",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "entity_ids": [
+        "bloc.labor_public"
+      ],
+      "quantity_zh": "一次 +25 000 ppm（+2.5 个百分点）。数值的唯一事实来源是 effects[1].delta_ppm；绑定关系见 _note_parameters 中 value_id = param.e03_labor_org_power_delta_ppm 的 binds_to = effects[1].delta_ppm。",
+      "counterparty": "none_by_construction",
+      "counterparty_zh": "结构上没有对手方。org_power_ppm 是逐集团的相对动员能力，不是在三个集团之间分配的固定总量：12 号文件 §8.3 的更新式对每个集团独立求值，三者之和不受任何约束，因此本条不从 bloc.business 或 bloc.agri_coop 手里「转走」组织力，它们的值逐位不变（可由 T-S-E03-ORG-POWER-ISOLATION 断言）。",
+      "accounting_zh": "写入点唯一：state.bloc.org_power_ppm 的 labor_public 一个下标。不产生 flow.*，不改 state.bloc.resource_uu（那是账本量，只能由既有资金流改变），不改 state.bloc.stance_ppm，也不改 state.politics.admin_capacity_ppm —— 票、组织影响力、行政能力由三个互不引用的函数计算（INV-125），本条只动其中一个。同理，本条不改任何否决判定：12 号文件 §2.1 的否决闸门只读 stance_ppm 与 param.bloc_veto_stance_threshold_ppm，org_power 不在该式中（politics_init._note_veto_rule.org_power_gate_note_zh / OQ-250）。",
+      "settlement_step": "S08 §8.4",
+      "applied_at": "S08 §8.4（同季 §8.3 已按规模与资源重算过 org_power，故本增量是叠在重算结果之上的一次位移）",
+      "change_expr": "state.bloc.org_power_ppm[bloc.labor_public] = clamp(state.bloc.org_power_ppm[bloc.labor_public] + effects[1].delta_ppm, 0, 1000000)",
+      "timing_zh": "与 CONS.1 同季同步写入，受同一组 cooldown_q = 6 与 max_occurrences = 3 约束。",
+      "duration_note_zh": "下一季 §8.3 重算 org_power_ppm = mul_ppm(prev, 700000) + mul_ppm(size_ppm, 200000) + mul_ppm(res_ppm, 100000)。规模项与资源项不受本事件影响，故实验组与对照组之差同样按 ×0.7 收敛：+25000 → +17500 → +12250 → +8575 → +6002（第五步 8575×0.7 = 6002.5，mul_div_floor 向下取整得 6002，这是本事件唯一一处舍入，已在 T-S-E03-EFFECT-DECAY-EXACT 中按整数钉死）。",
+      "reversible": true,
+      "constraints_zh": [
+        "值域 0..1 000 000（10 号文件 §6.5 org_power_ppm），clamp 在 change_expr 内显式执行。",
+        "不会触顶：bloc.labor_public 的基年组织力为 350 000 ppm（politics_init.blocs），三次触发累计 +75 000 ppm 后为 425 000 ppm，远低于上界。",
+        "落点在事件可写白名单内（V-EV-05）：state.bloc.org_power_ppm。",
+        "不得顺带写 stance_ppm：立场由 §8.3 按关心指标的变化率更新，事件预写会让同一变化被记两遍。"
+      ],
+      "explanation_zh": "住房与居住条件正在劳动与公共服务联盟的关心范围内（计划书 §08）。一次公开抗议降低它的动员成本，表现为组织力上行。这是组织影响力，不是选票，也不是行政能力（INV-125）。",
+      "invariants": [
+        "INV-130",
+        "INV-125",
+        "INV-129"
+      ]
+    }
+  ],
+  "_note_ledger_balance_check_zh": "本事件的账本配平核对（计划书 §13 要求每条变化可追溯到账）：事件写入集合 = {state.group.expectation_ppm[中州 9 组], state.bloc.org_power_ppm[labor_public]}，二者都是 ppm 主观量／动员量，都不在任何会计恒等式中。据此逐类核对：现金 Σ(gov + group + cell + world + invpool) 不变；应收应付不变；库存与在建不变；产能 capacity_active / capacity_pending 不变；人口 Σ_g population_persons 不变；住房 occupied ≤ stock ≤ capacity 三者逐位不变（INV-083 / INV-084）；名义与实际 GDP 不变。因此「资产 = 负债 + 净资产」在触发前后两侧各自逐位相同，差额恒为 0，无需也不得引入任何平衡修正项。这条核对由 T-S-E03-NO-HOUSING-CREATION 以「事件组 vs 除事件外完全相同的对照组，子系统哈希逐位相等」的方式自动执行。",
+  "_note_consequences_through_existing_mechanisms_readme_zh": "本键登记的**不是本事件的后果**，而是住房挤压这一结构性状态经既有结算通道产生的后果。它与 _note_consequences 分栏存放，正是为了防止两者被混为一谈：把它们并进 _note_consequences 等于宣称事件造成了这些变化，而这些变化在事件求值之前（S07 与 §8.1）就已经发生并入账，重复登记会在支持度的来源分解里制造双计（INV-123）。每条同样给出会计解释（落在哪个结算步、按哪条公式改哪个字段）。",
+  "_note_consequences_through_existing_mechanisms": [
+    {
+      "channel_zh": "迁移",
+      "mechanism_ref": "mech.housing",
+      "settlement_step": "S07（迁移结算，12 号文件 §7.5），早于 S08 §8.4 的事件求值",
+      "path_zh": "住房紧张经两条既有通路影响迁移：(a) 推力项 housing_stress_ppm = occupied / capacity 按 param.migration_w_house_ppm = 700000 的权重压低净拉力；(b) 硬闸 cap_housing = max(0, state.region.housing_stock_units × param.persons_per_housing_unit − 地区人口)，为零时任何人都迁不进来，差额写 flow.group.migrate_rejected_persons（INV-084）。",
+      "accounting_zh": "首版剧本下中州的硬闸已经关死，可逐位复核：housing_stock_units = 2 240 000 套 × param.persons_per_housing_unit = 3 人/套 = 6 720 000 人，减去 population_persons = 7 000 000 人得 −280 000，经 max(0, ·) 后 cap_housing = 0。即中州在 q = 0 就已经一个人也迁不进来，全部迁入意愿写入迁出方群组的 flow.group.migrate_rejected_persons。这是 S07 的账，不是事件的账。",
+      "why_not_event_effect_zh": "事件不写人口、不写住房存量（INV-130）。迁移被挡回是 S07 的结算结果，它在事件求值之前就已经发生并入账；事件只负责把它记成一次可解释的公开事实。"
+    },
+    {
+      "channel_zh": "当期生活指数",
+      "mechanism_ref": "mech.housing",
+      "settlement_step": "S08 §8.1，早于同步内的 §8.4",
+      "path_zh": "derived.group.housing_burden_ppm 以 param.living_weight_house_ppm = 250000 的权重经 (1 000 000 − housing_burden_ppm) 一项进入 §8.1 的 living_index_ppm，再经 §8.2 的相对基年映射（裁定 R-SUPPORT-01）进入 support_ppm。",
+      "accounting_zh": "§8.1 的三项权重为 w_income_ppm = 1 000 000 − 250 000 − 250 000 = 500 000、住房 250 000、服务 250 000，合计恰为 1 000 000，不需要补项。住房负担率每上升 10 000 ppm，living_index_ppm 下降 mul_ppm(10000, 250000) = 2 500 ppm，这是可逐位复核的整数关系。",
+      "why_not_event_effect_zh": "这条链条已经完整。事件若再写一次生活指数或支持度，同一件事被记两遍，且支持度的来源分解（INV-123）会出现无法归因的一项。"
+    },
+    {
+      "channel_zh": "公共服务承压",
+      "mechanism_ref": "mech.service",
+      "settlement_step": "S06（公共服务交付）→ S08 §8.1",
+      "path_zh": "人口集中提高中州 pubserv 的需求；交付上限为 state.pubserv.capacity_active_uqs_per_q × state.pubserv.availability_ppm（INV-103），未获服务者进入 state.pubserv.queue_persons，压低 state.group.service_access_ppm，再以 param.living_weight_service_ppm = 250000 的权重压低生活指数。",
+      "accounting_zh": "交付量受上限截断的部分不会凭空消失，而是记为排队人数：delivered + 未交付需求 ≡ 需求，两侧逐位相等；service_access_ppm 是「相对自身基准的可及率」（裁定 R-ACCESS-01），各组可以不同，不受任何加权恒等式约束。",
+      "why_not_event_effect_zh": "同上，属既有结算通道，且落点（capacity、queue、service_access）全部在事件可写白名单之外（V-EV-05）。"
+    }
+  ],
+  "_note_consequence_boundary_zh": "首版事件没有任何账本效应（INV-130 / V-EV-06）：本事件不写现金、库存、产能、人口、GDP。凡涉及花钱或改变物理能力的应对，一律只能由玩家通过 11_data_contract.md §6.1 表中的命令走政策或项目，由 S02 到 S07 按既有规则产生双边入账。此处不存在「凭空增减资源」的通路，也不需要任何平衡修正项（计划书 §13）。",
+  "_note_effect_timing_note_zh": "事件在 S08 §8.4 触发，而 support_ppm 已在同一步的 §8.2 由「生活／预期／信任」三项相对基年的变化量合成完毕（裁定 R-SUPPORT-01）。因此本事件写入的 expectation 增量不改变本季支持度，而是经下一季的 §8.1 到 §8.2 进入支持度：这是一个显式的一季时滞，报告必须这样写，不得宣称「事件当季拉低了支持率」。本事件不写 trust_ppm（理由见 _note_trust_not_written_note_zh），也不直接写 support_ppm，避免出现一处无来源分解的支持度变动（INV-123）。org_power 一侧同理：§8.3 在同步内先于 §8.4 求值，事件的 +25000 ppm 叠在本季重算结果之上，从下一季起才参与 §8.3 的惯性递推。",
+  "_note_effect_decay_note_zh": "契约的 EventTemplate 没有「效应持续季数」字段，效应是一次性水平位移，之后由既有规则自行衰减：expectation 按 param.expectation_inertia_ppm=700000 的惯性平滑（约 2 季衰减一半），trust 只能按 param.trust_recover_ppm=20000 的速度恢复且恢复慢于下降（INV-122），org_power 按 param.bloc_org_inertia_ppm=700000 的惯性回归其规模与资源决定的水平（12 号文件 §8.3）。所以「持续季数」在首版是衰减机制的结果，不是内容包里的一个数字；下表的 duration_zh 描述的是这个机制，不是新增字段。",
+  "_note_trust_not_written_note_zh": "本事件不写 trust_ppm：12 号文件 §8.1 的失信是闭集合（转移支付欠付、运行费欠拨、项目取消、债券违约），住房紧张不在其中。若玩家取消了一个在建的公共住房项目，trust 会经那条既有通道下降，并且那一次下降有独立的账本证据（residual_value 与 cancel_penalty），比事件代写更可核查。",
+  "_note_player_options": [
+    {
+      "option_id": "E03.OPT.A",
+      "label_zh": "立项：在中州建设公共住房",
+      "command": "project_launch",
+      "args_zh": "policy.P06，region_id = region.zhongzhou，数量与分配规则等 player_params 由玩家选定",
+      "cost_zh": "按 P06 的合同总额与分季支出计划占用预算承诺；占用中州 3 个施工槽位之一；投运后每季运行费进入 gov.service_opex_committed_uu。具体金额以 content/policies/P06_public_housing_construction.json 为准。",
+      "preconditions_zh": [
+        "权限位 2（建设与采购权）已持有",
+        "中州有空闲施工槽位（INV-094）",
+        "资金来源已声明",
+        "配套条件：运行费已纳入下季预算承诺（OQ-245）"
+      ],
+      "lag_q": 7,
+      "lag_note_zh": "计划书 §09：P06 最早反馈 6 到 12 季，再加 1 季投运时滞（INV-091）。这是首版时滞最长的一项政策，选择它意味着本任期内可能只看到支出。",
+      "failure_modes_zh": [
+        "financing：资金中断则 suspended，已付不退回",
+        "congestion：中州槽位被其它项目占满时无法开工",
+        "施工能力：进度增量由本地区服务部门实际产量折出的施工能力决定，付款不制造进度（INV-087）；服务部门自身若受约束，工期会延长",
+        "配套设施与运行费：完工后若运行费无法承担，停在 completed 不投运（OQ-245）",
+        "迁入抵消：新增住房提高 cap_housing，可能吸引更多迁入，占用率回到高位而负担率未降"
+      ],
+      "political_reaction_zh": "bloc.labor_public 立场上行；bloc.business 因建设资源与预算被占用而中性偏负；bloc.agri_coop 因地区资源分配向中州倾斜而转负。"
+    },
+    {
+      "option_id": "E03.OPT.B",
+      "label_zh": "调参：把公共住房的分配规则改为优先中州低技能群组",
+      "command": "policy_set_params",
+      "args_zh": "policy.P06，调整分配规则与 region_mask（取值须在 P06 的 valid_range 内）",
+      "cost_zh": "一次性行政成本 param.policy_toggle_cost_uu；不新增建设支出。",
+      "preconditions_zh": [
+        "P06 已生效（state.policy.enabled == 1）且不在冷却期（INV-098）",
+        "存在可分配的住房存量；若无，本选项在菜单中可见但会给出 blocked_reason（INV-100）"
+      ],
+      "lag_q": 1,
+      "lag_note_zh": "下一季 S07 的住房分配才按新规则执行。",
+      "failure_modes_zh": [
+        "分配规则不创造住房：在没有新增存量时，改规则只改变谁受益、谁受损，总占用率完全不变，这是一条玩家应当能看懂的无效路径",
+        "被调低优先级的群组其住房负担率上升，可能把问题转移而不是解决",
+        "频繁开关会累积 toggle_count 与行政成本（INV-098）"
+      ],
+      "political_reaction_zh": "受益群组的预期改善、受损群组的预期恶化，两者都逐组记录并可在社会页面看到分布（计划书 §08：保留受益和受损的分布）。"
+    },
+    {
+      "option_id": "E03.OPT.C",
+      "label_zh": "什么都不做：维持现有住房存量与分配规则",
+      "command": "advance_quarter",
+      "args_zh": "本季不提交与住房相关的命令",
+      "cost_zh": "零现金支出。",
+      "preconditions_zh": [
+        "无"
+      ],
+      "lag_q": 0,
+      "lag_note_zh": "后果当季在台账中可见。",
+      "consequences_of_inaction_zh": [
+        "住房容量不会自动增长（INV-084）：占用率只会随人口变化，不随时间缓解",
+        "cap_housing 持续为零或负时，想迁入中州的人被全部挡回，写入 migrate_rejected_persons；劳动力无法流向岗位更多的地区，就业改善被住房卡住",
+        "住房负担率以 25% 的权重持续压低生活指数，再经预期与支持度累积",
+        "条件继续成立时本事件每 6 季可再触发一次，最多 3 次"
+      ],
+      "political_reaction_zh": "bloc.labor_public 组织力逐次累积；若同期公共服务可用率也在下降，其 stance 会经 §8.3 显著转负。"
+    }
+  ],
+  "_note_options_rejected_in_v1": [
+    {
+      "label_zh": "租金管制（直接压低住房租金）",
+      "why_unavailable_zh": "首版租金由剧本给定且 S07 不更新（OQ-244）；命令不得携带任何直接状态值（INV-138），12 项政策的效果落点白名单（11_data_contract.md §5.12）中也没有 housing_rent 这一项。因此不存在合法通路。",
+      "what_it_would_require_zh": "需要先给住房定一个供求决定的租金规则，并把它纳入与价格同一套有界平滑纪律（INV-065/066/067），再新增一项政策把租金上限作为 player_param。已登记为待决问题。"
+    },
+    {
+      "label_zh": "行政限制迁入",
+      "why_unavailable_zh": "迁移的三道闸（岗位、住房、迁移成本）是物理与预算约束，不是政策工具；命令表中没有任何一条可以直接限制人口流动，事件也不得写人口（INV-130）。"
+    }
+  ],
+  "_note_political_reaction": [
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "mobilize",
+      "effect_ref": "effects[1]",
+      "interest_zh": "劳动与公共服务联盟关心就业保障、工资、教育医疗和居住（计划书 §08）。",
+      "evidence_metrics": [
+        "derived.group.housing_burden_ppm[group.zhongzhou.working.*]",
+        "state.group.service_access_ppm[region.zhongzhou]",
+        "state.pubserv.availability_ppm[region.zhongzhou]"
+      ],
+      "basis_zh": "住房与公共服务同时承压，正是它的关心指标（就业人数与公共服务可用率的人口加权）所覆盖的范围。本事件只加组织力；stance 由 §8.3 按关心指标的变化率更新，不在此预写。"
+    },
+    {
+      "bloc": "bloc.business",
+      "direction": "conditional_oppose",
+      "effect_ref": "none",
+      "interest_zh": "工商业联盟关心能源、运输、利润与政策可预期性。",
+      "evidence_metrics": [
+        "flow.cell.profit_pretax_uu",
+        "state.price.wage_uu_per_person_q"
+      ],
+      "basis_zh": "住房挤压抬高中州的工资要求并挡住劳动力迁入，对其不利；但大规模公共住房建设会占用建设资源与预算，若资金来自提高企业利润税，其立场同样转负。方向由实算决定，本事件不预设。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "oppose_if_resources_shift",
+      "effect_ref": "none",
+      "interest_zh": "农业合作联盟关心农户收入、灌溉与地区资源分配。",
+      "evidence_metrics": [
+        "flow.gov.pay_project_uu（按地区分布）"
+      ],
+      "basis_zh": "其关心的地区资源分配一条会因建设资源集中到中州而下行。这是同一笔预算的真实竞争，不需要事件额外制造对立。"
+    }
+  ],
+  "_note_residents_reaction": {
+    "groups_scope": "region.zhongzhou 的 9 个群组",
+    "channel_zh": "expectation_ppm（一次性位移）",
+    "not_channel_zh": "不写 trust_ppm、living_index_ppm、support_ppm：住房负担已经以 25% 的权重进入生活指数，生活指数再进入支持度，事件重复写入会双计并破坏 INV-123 的来源分解。"
+  },
+  "_note_copy": {
+    "style_note_zh": "三类措辞严格分栏（计划书 §04、12 号文件 §8.6）。占位符只支持整数与 ID（OQ-235）。本事件的文案必须写明租金在首版固定，避免玩家把负担率上升误读成租金上涨。",
+    "placeholder_unit_note_zh": "占位符一律按台账的原生刻度插值，不在文案层做任何单位换算：金额插 μU（不插 U——裁定 R-SCALE-01 后 1 U = 1 000 000 000 μU，除以 1e9 既是运行期计算又会把四位有效数字截成 0），比率插 ppm（不插百分数，那要除以 10 000），区间一律拆成两个整数占位符。OQ-235 允许的是「整数与 ID」，换算过的数既不是台账里的整数，也无法与证据面板逐位对上。此前本文件用的 {housing_cost_u}（U）、{burden_low_pct}（%）、{proj_rejected_range}（区间）三类写法都不满足这一条，已改正。",
+    "accounted": [
+      {
+        "key": "event.E03.accounted.occupancy",
+        "template_zh": "第 {q_display} 季，中州已占用住房 {occupied_units} 套，住房存量 {stock_units} 套，容量上限 {capacity_units} 套；按每套 {persons_per_unit} 人计算，本地区人口 {population_persons} 人。",
+        "placeholders": [
+          "q_display",
+          "occupied_units",
+          "stock_units",
+          "capacity_units",
+          "persons_per_unit",
+          "population_persons"
+        ],
+        "evidence_refs": [
+          "derived.region.housing_occupied_units",
+          "state.region.housing_stock_units",
+          "state.region.housing_capacity_units",
+          "derived.region.population_persons"
+        ]
+      },
+      {
+        "key": "event.E03.accounted.burden",
+        "template_zh": "第 {q_display} 季，中州低技能劳动年龄群组的住房支出为 {housing_cost_uu} μU，住房负担率 {burden_low_ppm} ppm；中技能群组为 {burden_mid_ppm} ppm（ppm 为百万分之一，1 000 000 ppm = 全部可支配收入）。本季全国登记的、因住房硬闸或迁移成本未能成行的人数为 {rejected_persons} 人；该字段按迁出方群组登记，按目的地拆分需查迁移流台账。",
+        "placeholders": [
+          "q_display",
+          "housing_cost_uu",
+          "burden_low_ppm",
+          "burden_mid_ppm",
+          "rejected_persons"
+        ],
+        "evidence_refs": [
+          "flow.group.housing_cost_uu",
+          "derived.group.housing_burden_ppm",
+          "flow.group.migrate_rejected_persons"
+        ]
+      }
+    ],
+    "inferred": [
+      {
+        "key": "event.E03.inferred.gate",
+        "template_zh": "模型中，中州的迁入限制因素是住房硬闸：可容纳人数减去现有人口后不足以接纳全部迁入意愿，差额已登记为被挡回人数。住房容量在模型中不会自动增长。",
+        "placeholders": [],
+        "evidence_refs": [
+          "flow.group.migrate_rejected_persons",
+          "state.region.housing_stock_units"
+        ]
+      },
+      {
+        "key": "event.E03.inferred.rent_fixed",
+        "template_zh": "模型中住房租金在首版固定不变，因此住房负担率的变化来自可支配收入与占用套数，不来自租金调整。当期生活指数由收入、住房、公共服务三项加权合成，住房一项的权重为 {house_weight_ppm} ppm，公共服务一项为 {service_weight_ppm} ppm，收入一项是余下的权重（三者合计 1 000 000 ppm）。",
+        "placeholders": [
+          "house_weight_ppm",
+          "service_weight_ppm"
+        ],
+        "evidence_refs": [
+          "state.price.housing_rent_uu_per_unit_q",
+          "derived.group.housing_burden_ppm"
+        ]
+      }
+    ],
+    "projected": [
+      {
+        "key": "event.E03.projected.no_action",
+        "template_zh": "情景预测（假设：不提交新命令、人口按既有出生死亡与迁移规则演化）：未来四季中州已占用住房套数维持在 {proj_occupied_units} 套附近，被挡回人数在 {proj_rejected_min} 至 {proj_rejected_max} 人之间。本预测由同一套结算规则空跑四季得到，不宣称识别真实世界因果。",
+        "placeholders": [
+          "proj_occupied_units",
+          "proj_rejected_min",
+          "proj_rejected_max"
+        ],
+        "evidence_refs": [
+          "derived.region.housing_occupied_units",
+          "flow.group.migrate_rejected_persons"
+        ]
+      },
+      {
+        "key": "event.E03.projected.with_p06",
+        "template_zh": "情景预测（假设：本季立项 P06，施工能力充足、资金不中断、运行费已纳入承诺）：新增住房最早在第 {commission_q_display} 季可供分配。新增容量会同时放松迁入硬闸，因此占用率未必下降；负担率是否下降取决于新增套数与迁入人数的相对大小。",
+        "placeholders": [
+          "commission_q_display"
+        ],
+        "evidence_refs": [
+          "state.region.housing_pending_units",
+          "state.project.commissioned_q"
+        ]
+      }
+    ]
+  },
+  "_note_acceptance_criteria": [
+    {
+      "test_id": "T-S-E03-NO-FIRE-WHEN-BURDEN-LOW",
+      "given_zh": "构造中州占用 2 240 000 套（第一条成立），但两档住房负担率分别为 200000 与 150000 ppm",
+      "when_zh": "推进 20 个季度",
+      "then_zh": "fire_count 恒为 0；rng.event 不因本事件产生任何抽样。本断言证明占用率单独越线不足以触发，双阈值确实是两个条件",
+      "invariants": [
+        "INV-009",
+        "INV-011"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-NO-FIRE-AT-BASELINE",
+      "given_zh": "无命令、无冲击的基线剧本",
+      "when_zh": "推进前 8 个季度（q = 0..7）",
+      "then_zh": "fire_count == 0。若因基年住房负担率已越线而失败，说明剧本的租金初值或群组收入初值与计划书 §05 的民生基线 100 不自洽，应先修剧本初值而不是放宽本事件阈值",
+      "invariants": [
+        "INV-149"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-BURDEN-THRESHOLD-MARGIN",
+      "given_zh": "载入完整剧本（population_init.json 与 cells_init.json 落地后）",
+      "when_zh": "读取 q = 0 结算后 group.zhongzhou.working.low 与 working.mid 的住房负担率",
+      "then_zh": "两者分别低于各自阈值至少 50000 ppm（5 个百分点）的安全边际；不足即失败，提示阈值或剧本初值需要重新拟合",
+      "invariants": [
+        "INV-152"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-FIRE-WHEN-CONDITIONS-MET",
+      "given_zh": "构造占用 2 240 000 套、两档负担率 320000 与 260000 ppm、q >= 4，固定 root_seed",
+      "when_zh": "连续推进 12 个季度",
+      "then_zh": "fire_count >= 1；两次触发间隔 >= 6；整局不超过 3 次",
+      "invariants": [
+        "INV-130"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-NO-HOUSING-CREATION",
+      "given_zh": "构造一次确定触发与一个除事件外完全相同的对照组",
+      "when_zh": "触发当季结算完成",
+      "then_zh": "housing_capacity_units、housing_stock_units、housing_units_occupied 与人口在两组间逐位相同；region 与 group 的人口部分子系统哈希不变。事件不得凭空造出一套房或挪走一个人",
+      "invariants": [
+        "INV-130",
+        "INV-083",
+        "INV-071"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-EFFECT-DECAY-EXACT",
+      "given_zh": "固定 root_seed，构造一次确定触发（占用 2 240 000 套、两档负担率 320000 与 260000 ppm、q = 4），同时跑一个除事件求值被关闭外完全相同的对照组",
+      "when_zh": "从触发季 q 起连续推进 5 季，逐季读取 state.group.expectation_ppm[group.zhongzhou.elder.low] 与 state.bloc.org_power_ppm[bloc.labor_public] 的「实验组减对照组」之差",
+      "then_zh": "expectation 差按季恰为 [-40000, -28000, -19600, -13720, -9604]；org_power 差按季恰为 [25000, 17500, 12250, 8575, 6002]。整数逐位相等，不允许任何容差（D-02：assertions 容差一律 0）。这两串数由 mul_ppm(x, 700000) 反复作用得到（param.expectation_inertia_ppm 与 param.bloc_org_inertia_ppm 同为 700000）；最后一项 8575 × 0.7 = 6002.5 经 mul_div_floor 向下取整为 6002，本事件唯一一处舍入即在此，测试必须钉死它而不是允许 ±1",
+      "invariants": [
+        "INV-121",
+        "INV-129"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-ORG-POWER-ISOLATION",
+      "given_zh": "同 T-S-E03-EFFECT-DECAY-EXACT 的实验组与对照组",
+      "when_zh": "触发当季结算完成后，读取三个集团的 org_power_ppm、stance_ppm 与 politics.admin_capacity_ppm",
+      "then_zh": "state.bloc.org_power_ppm[bloc.business] 与 [bloc.agri_coop] 在两组间逐位相同；三个集团的 stance_ppm 与 state.politics.admin_capacity_ppm 亦逐位相同。本断言证明 +25000 ppm 不是从别的集团手里转来的（组织力没有守恒式），也没有顺带改动票与行政能力（INV-125）",
+      "invariants": [
+        "INV-125",
+        "INV-129"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-NO-SUPPORT-WRITE-IN-FIRE-Q",
+      "given_zh": "同 T-S-E03-EFFECT-DECAY-EXACT 的实验组与对照组",
+      "when_zh": "触发当季（S08 结束）与下一季（S08 结束）各读一次中州 9 组的 state.group.support_ppm",
+      "then_zh": "触发当季两组的 support_ppm 逐位相同（差恒为 0）；下一季出现非零差值。本断言把「事件对支持度有且仅有一季时滞」写成可执行检查，并证明事件没有绕过 §8.2 直接写支持度（否则来源分解会多出无法归因的一项）",
+      "invariants": [
+        "INV-123"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-COPY-PLACEHOLDERS-INTEGER-ONLY",
+      "given_zh": "载入 report_template_id = tpl.event.e03_housing_squeeze 及本文件 _note_copy 中六条文案的占位符清单",
+      "when_zh": "在一次确定触发上渲染全部六条文案",
+      "then_zh": "每个占位符都解析为一个 int64 整数或一个稳定 ID，没有任何一个需要除法或单位换算；特别地，金额占位符的值等于 flow.group.housing_cost_uu 的原始 μU 整数，比率占位符的值等于 derived.group.housing_burden_ppm 的原始 ppm 整数，渲染结果与证据面板上的数字逐位相同（OQ-235）",
+      "invariants": [
+        "INV-149"
+      ]
+    },
+    {
+      "test_id": "T-S-E03-NO-REDRAW-ON-RELOAD",
+      "given_zh": "在事件已确定触发的那一季之前存档",
+      "when_zh": "save 到 load 再 advance，与直接 advance 各跑一次",
+      "then_zh": "state_hash 逐位相同，log.rng 完全一致，fire_count 与 last_fire_q 一致",
+      "invariants": [
+        "INV-131",
+        "INV-133",
+        "ADV-06"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e03_occupied_units_threshold",
+      "binds_to": "trigger.all_of[0].value",
+      "value": 2230000,
+      "unit": "units",
+      "source_type": "design_assumption",
+      "source_ref": "content/scenarios/chengwan/regions.json：中州住房容量 2 300 000 套、存量 2 240 000 套",
+      "reference_year": 0,
+      "definition": "触发所需的中州已占用住房套数下界，作为占用率的代理（约为容量的 96.9%）。",
+      "valid_range": [
+        1800000,
+        2300000
+      ],
+      "confidence": "low",
+      "calibration_note": "这是一个代理指标：10 号文件中没有占用率比率字段。若剧本调整中州的住房容量或存量，本值必须按同一比例重算，否则事件会变成永不触发或恒定触发。将来若新增 derived.region.housing_occupancy_ppm，应改为比率比较并废弃本卡（留墓碑，不复用 ID）。"
+    },
+    {
+      "value_id": "param.e03_burden_low_threshold_ppm",
+      "binds_to": "trigger.all_of[1].value",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：住房支出占可支配收入 30% 是常被引用的负担线，此处只作为游戏阈值使用，不声称国际标准",
+      "reference_year": 0,
+      "definition": "低技能劳动年龄群组的住房负担率触发下界。",
+      "valid_range": [
+        150000,
+        600000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须与剧本的租金初值和群组收入初值一起拟合：T-S-E03-BURDEN-THRESHOLD-MARGIN 要求基年至少留 5 个百分点余量。若基年就越线，先改剧本初值（租金或收入），不要改本阈值——因为民生基线在基年应为 100（INV-149）。"
+    },
+    {
+      "value_id": "param.e03_burden_mid_threshold_ppm",
+      "binds_to": "trigger.all_of[2].value",
+      "value": 240000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：取低技能阈值的 80%，表示挤压已蔓延到中技能群组",
+      "reference_year": 0,
+      "definition": "中技能劳动年龄群组的住房负担率触发下界（广度条件）。",
+      "valid_range": [
+        120000,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "两档阈值应保持 low > mid 的次序；若拟合后出现 mid 高于 low，说明收入分布或住房分配规则有问题，应检查剧本而不是交换阈值。"
+    },
+    {
+      "value_id": "param.e03_min_q",
+      "binds_to": "trigger.all_of[3].value",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §04 新手前四季：第 4 季完成首次年度审查",
+      "reference_year": 0,
+      "definition": "本事件允许触发的最早季度索引（q 从 0 起，故为第 5 季）。",
+      "valid_range": [
+        0,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "住房是长时滞问题，过早触发会让玩家在还没有任何可用工具时就承担政治后果。"
+    },
+    {
+      "value_id": "param.e03_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 650000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：介于 E01（600000）与 E02（700000）之间",
+      "reference_year": 0,
+      "definition": "四条条件全部成立后本季触发的概率。抽样走 rng.event。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "住房负担是长期可见但不一定被组织起来的问题，故不取 1000000。若试玩者反馈条件成立却长期无事发生、无法理解，提高之。"
+    },
+    {
+      "value_id": "param.e03_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 6,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：与 E01 一致，一年半",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        1,
+        20
+      ],
+      "confidence": "low",
+      "calibration_note": "住房条件是慢变量，冷却过短会让同一状态被反复记录；若压测中出现连续触发，提高之。"
+    },
+    {
+      "value_id": "param.e03_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 3,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：与 E01 一致",
+      "reference_year": 0,
+      "definition": "整局中本事件最多触发次数。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "上限防止 40 季内 expectation 被同一机制单调压低；若 120 季压测中中州预期触底，先降本值。"
+    },
+    {
+      "value_id": "param.e03_expectation_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -40000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：高于 E01（−30000）与 E02（−35000），因为住房是最难在任期内改善的一项",
+      "reference_year": 0,
+      "definition": "触发时对中州各群组未来预期的一次性下调（−4.0 个百分点）。",
+      "valid_range": [
+        -150000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "住房负担已经以 25% 权重进入生活指数并传导到预期；本值只表示公开抗议这件事本身的额外影响。若校准中发现中州预期下降幅度明显大于其生活指数下降所能解释的范围，先降本值。"
+    },
+    {
+      "value_id": "param.e03_labor_org_power_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": 25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：与 E02 对农业合作联盟的 +25000 同量级",
+      "reference_year": 0,
+      "definition": "触发时劳动与公共服务联盟组织力的一次性上调（+2.5 个百分点）。",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "校准检验：bloc.labor_public 的基年组织力为 350000 ppm（politics_init.blocs），三次触发累计 +75000 ppm 后为 425000 ppm，须仍低于上界 1000000 且不超过 bloc.business 的基年 400000 ppm 太多——若本事件单独就让劳动联盟成为组织力最高的集团，说明本值过高。**不得**把本值与否决判定挂钩：12 号文件 §2.1 的否决闸门只读 stance_ppm 与 param.bloc_veto_stance_threshold_ppm，org_power 不在该式中（曾考虑追加组织力闸门，已否决并登记为 OQ-250）；此处原先写的「不应使该集团跨过否决域门槛」是对否决规则的误述，已改正。"
+    }
+  ],
+  "_note_notes_zh": "全部数值为设计假设与测试夹具（计划书 §14、§19）。两处结构性限制已在文件内显式登记：(1) 10 号文件没有住房占用率比率字段，本事件用绝对套数作代理，绑定剧本初值；(2) 首版租金固定（OQ-244），事件名称中的租金抗议指住房负担，不指价格变动，文案必须写明。另外，事件对逐组字段在 trigger 中只写单个 group ID，因为地区级聚合口径在契约中未定义，已登记为待决问题。"
+}

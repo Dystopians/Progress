@@ -1,0 +1,1318 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P06",
+  "label_zh": "公共住房建设",
+  "kind": "project",
+  "problem_statement_zh": "模型里存在一个可观察的机制缺口：地区住房存量 state.region.housing_stock_units 在首版只有本政策一条增长通路（OQ-244）。存量不动时会同时卡住三件事：其一，S07 迁移的硬闸 cap_housing = housing_stock_units × param.persons_per_housing_unit − 地区人口，使人口无法流向有岗位的地区，被挡回的人写入 flow.group.migrate_rejected_persons；其二，derived.group.housing_burden_ppm 居高，经 param.living_weight_house_ppm 压低 state.group.living_index_ppm；其三，中州『住房容量紧张』这条开局约束没有任何可操作的对应工具。本政策改变的是住房的物理供给条件与占用分配，不直接改写就业、产出、支持度中的任何一项。",
+  "_note_schema_extension_zh": "11 号文件 §5.12 的 PolicyDefinition schema 是 additionalProperties: false 的，只声明 20 个顶层键。本文件的扩展键因此全部改写为 §3 允许的 _note_<field> 注释键：注释子树不进逻辑、不进 content_hash，内容一字未删，只是失去机读地位。本轮把最后两个仍留在顶层的非声明键也处理完毕：\n（1）effect_chain —— §5.12 的字段表里没有它，而计划书 §09「每项至少 1 条完整反馈链」（文档优先级第 1 位）要求它必须存在、验收口径 ≥ 4 环。两条规则在 additionalProperties:false 下不可能同时满足，这是 tools/validate_content.py 自己登记的 OQ-V03。按文档优先级「计划书 > 裁定 > 12 > 11 > 10」，缺字段的一侧是 §5.12 而不是计划书，因此 effect_chain 已被正式登记进校验器的 policy_definition schema（必填、array、≥ 4 环），本字段留在顶层即为合法。待 §5.12 与 docs/18 同步补上该字段后，本段可删。\n（2）parameters —— 9 张 param.p06_* 参数身份证原先写在顶层，与 schema 正式字段（/effect/housing_delta_units、/cost/planned_quarters、/cost/one_off_uu、/cost/opex_per_q_uu、/cost/required_construction_uqs、/cost/required_equipment_uqs、/exit_rule/compensation_ppm、/cooldown_q）构成双份事实来源，并且直接违反 11 号文件 §5.15 与裁定 R-PARAM-01「param.* 只在 parameter_set 文件建卡」。本轮按契约把该数组整体撤下：正式字段成为唯一事实来源，全部标定理由与建卡口径降级为 _note_calibration_and_param_cards，parameter_id 全集登记在 _note_parameters_referenced。注意那里保存的是**给建卡人看的规格说明**，不是卡片本身 —— 它刻意不写 parameter_id 键，因为一张写在注释子树里的卡在载入期等于不存在（校验器的 E_PARAM_CARD 硬错误正是为此而设）。在 content/parameters/params_core.json 建成之前，这 9 个参数在内容层就是「尚未建卡」，不得假装已有。",
+  "_note_taxonomy": {
+    "code": "P06",
+    "slug": "public_housing_construction",
+    "category": "housing",
+    "governance_tool_type": "capital_project",
+    "governance_tool_type_zh": "资本项目",
+    "_note_name_zh": "原顶层 name_zh 与 label_zh 逐字相同（「公共住房建设」），属重复事实来源，已并入 label_zh。"
+  },
+  "legal_authority": {
+    "authority_bit": 2,
+    "requires_budget_review": true,
+    "requires_bloc_support": [],
+    "min_seats_ppm": 500000,
+    "_note_authority_name_zh": "预算法案（多年度资本项目与随之产生的长期运行费承诺）",
+    "_note_authority_note_zh": "本政策签约即占用未来若干季预算并新增一项永久性每季运行费义务（state.gov.service_opex_committed_uu），因此按行政令不可开办，必须落在预算审查窗口（q ≡ 3 (mod 4)，INV-127）。集团否决不适用：三个集团的 content.bloc.veto_domains 分别是 land_reform / tax_law / public_employment，均不覆盖住房资本项目，故 requires_bloc_support 为空；集团只以立场影响后续政治结果，不构成开办前置。"
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "type": "mask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "default": 2,
+      "step": 1,
+      "unit": "mask",
+      "label_zh": "地点（地区位掩码）",
+      "desc_zh": "位序固定为 0 北原 / 1 中州 / 2 海岬 / 3 西岭（10 号文件 §0.5）。默认 2 = 仅中州。每选中一个地区各自立一个 project 实例，各自占用该地区 1 个施工槽位、各自独立推进与失败。"
+    },
+    {
+      "key": "scale_ppm",
+      "type": "ppm",
+      "valid_range": [
+        250000,
+        2000000
+      ],
+      "default": 1000000,
+      "step": 250000,
+      "unit": "ppm",
+      "label_zh": "数量（相对基准批次的规模）",
+      "desc_zh": "交付套数 = mul_ppm(param.p06_batch_units, scale_ppm)，即 1000 至 8000 套、步长 1000 套。合同总额、每季支出、所需施工服务量、所需设备量、每季运行费全部按同一 scale_ppm 等比缩放，缩放后一律 floor 取整，取整余数写 log.rounding（INV-005）。"
+    },
+    {
+      "key": "allocation_rule",
+      "type": "enum",
+      "values": [
+        "by_housing_burden",
+        "by_low_skill_working",
+        "uniform_by_population"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 0,
+      "unit": "dimensionless",
+      "label_zh": "分配规则",
+      "desc_zh": "决定新增可占用套数在本地区 9 个群组之间的分配权重，只改变『谁住进去』，不改变套数总量。三种规则的权重向量见 targets.allocation_rules，全部用 split_largest_remainder 分配（INV-003）。",
+      "_note_value_codes": {
+        "by_housing_burden": 0,
+        "by_low_skill_working": 1,
+        "uniform_by_population": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    },
+    {
+      "key": "funding_source",
+      "type": "enum",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 1,
+      "unit": "dimensionless",
+      "label_zh": "资金来源",
+      "desc_zh": "cash 直接占用 state.gov.cash_uu 的未预留部分；bond 进入 S02 02.6 发债需求队列，受 INV-034 的国内与外部双额度约束，票息由规则给出、玩家不能设；reallocation 需先提交 budget_reallocate 命令腾出 project_contracts 额度。",
+      "_note_value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    }
+  ],
+  "preconditions": [
+    {
+      "kind": "legal_authority",
+      "bit": 1,
+      "expr": "(state.politics.legal_authority_mask >> 1) & 1 == 1 且 idiv_floor(state.politics.seats_gov × 1000000, state.politics.seats_total) >= 500000",
+      "blocked_code": "blk.authority",
+      "reject_code": "E_AUTHORITY",
+      "desc_zh": "预算法案授权位未取得，或执政席位比例低于 50%。"
+    },
+    {
+      "kind": "budget_review_window",
+      "expr": "state.time.q == state.politics.next_budget_review_q",
+      "blocked_code": "blk.window",
+      "reject_code": "E_PRECONDITION",
+      "desc_zh": "只能在预算审查季提交（q ≡ 3 (mod 4)，INV-127）。非窗口季提交即拒绝，并给出还要等几季。"
+    },
+    {
+      "kind": "construction_slot",
+      "region_ref": "param:region_mask",
+      "slots": 1,
+      "expr": "对 region_mask 命中的每个 r：derived.region.construction_slots_used[r] < state.region.construction_slots_total[r]",
+      "blocked_code": "blk.no_slot",
+      "reject_code": "E_NO_SLOT",
+      "desc_zh": "该地区并发施工槽位已满（INV-094）。"
+    },
+    {
+      "kind": "housing_headroom",
+      "region_ref": "param:region_mask",
+      "amount_ref": "effect.housing_delta_units",
+      "expr": "对每个 r：state.region.housing_capacity_units[r] − state.region.housing_stock_units[r] >= mul_ppm(param.p06_batch_units, scale_ppm)",
+      "blocked_code": "blk.no_headroom",
+      "reject_code": "E_PRECONDITION",
+      "desc_zh": "配套设施余量不足。housing_capacity_units 表示该地区土地与配套设施能承载的住房上限，housing_stock_units 是已建成套数，INV-083 要求 stock ≤ capacity 恒成立。首版没有任何机制能提高 capacity（效果落点白名单里不存在 housing_capacity_pending），因此余量耗尽时本政策在该地区明显无效，且玩家必须能在提交前看到余量数字。见 open_questions。"
+    },
+    {
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu",
+      "expr": "funding_source == cash 时：state.gov.cash_uu − state.gov.reserved_memo_uu >= mul_ppm(cost.per_quarter_uu, scale_ppm)",
+      "blocked_code": "blk.budget_insufficient",
+      "reject_code": "E_BUDGET_INSUFFICIENT",
+      "desc_zh": "本季可用现金不足以预留首季合同款。预留只减少可用额度，不产生任何现金移动（计划书 §07『预算不是资产』）。"
+    },
+    {
+      "kind": "opex_commitment",
+      "amount_ref": "cost.opex_per_q_uu",
+      "expr": "state.gov.service_opex_committed_uu + mul_ppm(cost.opex_per_q_uu, scale_ppm) <= idiv_floor(annual_plan.expenditure_lines_uu.service_opex + annual_plan.expenditure_lines_uu.discretionary, 4)",
+      "blocked_code": "blk.opex_uncommitted",
+      "reject_code": "E_PRECONDITION",
+      "desc_zh": "建成后的每季运行费必须先有预算承诺落点，否则投运即注定断供。这一条同时是 OQ-245『配套条件』的前半条：不满足时项目可以施工，但停在 completed 不投运。"
+    },
+    {
+      "kind": "cooldown",
+      "expr": "state.time.q >= state.policy.cooldown_until_q[policy.P06]",
+      "blocked_code": "blk.cooldown",
+      "reject_code": "E_POLICY_COOLDOWN",
+      "desc_zh": "开关冷却未过（INV-098）。每次开关产生 toggle_cost_uu 的一次性行政成本。"
+    }
+  ],
+  "cost": {
+    "one_off_uu": 2500000000,
+    "per_quarter_uu": 500000000,
+    "planned_quarters": 5,
+    "spend_lines_uu_per_q": {
+      "import_equipment": 40000000,
+      "domestic_material": 160000000,
+      "construction_service": 300000000
+    },
+    "opex_per_q_uu": 16000000,
+    "required_construction_uqs": 1500000,
+    "required_equipment_uqs": 200000,
+    "_note_physical_counterpart_zh": "金额账与实物账的交叉核对（刻度按裁定 R-SCALE-01：1 U = 1 000 000 000 μU，基年价格 1 000 000 000 μU/Q；Q_SCALE 不变，1 Q = 1 000 000 μQ，故基年 1 μQ = 1000 μU）：construction_service 每季 300 000 000 μU × 5 季 = 1 500 000 000 μU，折 1.5 Q_services = 1 500 000 μQ_services，与 required_construction_uqs 精确相等；import_equipment 每季 40 000 000 μU × 5 季 = 200 000 000 μU，折 0.2 Q_manu = 200 000 μQ_manu，与 required_equipment_uqs 精确相等。domestic_material 每季 160 000 000 μU × 5 季 = 800 000 000 μU（折 0.8 Q_manu = 800 000 μQ_manu）目前没有对应的物量字段：11 号文件 §5.12 的 cost schema 只有 required_construction_uqs 与 required_equipment_uqs 两条物量线，没有 required_material_uqs。在补上之前，这 800 000 000 μU 只作为付给本地区 manu cell 的双边分录存在，不进入任何物量约束；这意味着本项目对国产建材的实物占用在首版是隐形的。已登记为待决问题，不在本文件里自造字段。"
+  },
+  "_note_cost_model": {
+    "scale_note_zh": "下列全部数字为 scale_ppm == 1000000（基准批次 4000 套）时的值，金额一律按裁定 R-SCALE-01 的 1 U = 1 000 000 000 μU 计。实际立项时按 scale_ppm 等比缩放，缩放一律 floor，余数写 log.rounding。校验 V-PD-03 要求 per_quarter_uu × planned_quarters == one_off_uu（500 000 000 × 5 == 2 500 000 000）且 Σ spend_lines_uu_per_q == per_quarter_uu（40 000 000 + 160 000 000 + 300 000 000 == 500 000 000），两条均精确成立。",
+    "unit_economics": {
+      "batch_units": 4000,
+      "cost_per_unit_uu": 625000,
+      "construction_uqs_per_unit": 375,
+      "equipment_uqs_per_unit": 50,
+      "opex_per_unit_uu_per_q": 4000
+    },
+    "budget_curve_uu_per_q": [
+      500000000,
+      500000000,
+      500000000,
+      500000000,
+      500000000
+    ],
+    "budget_curve_note_zh": "曲线为平直曲线。这不是工程判断，而是 V-PD-03 的结构后果：该校验要求 per_quarter_uu 是单一常量，故首版无法表达前重后轻的现实施工支出曲线。已登记为待决问题。",
+    "spend_schedule": [
+      {
+        "offset_q": 0,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 40000000,
+            "payee_agent_id": "agent.row",
+            "ledger_kind": "project_payment",
+            "payee_note_zh": "进口预制构件与电梯设备，同时增 flow.world.imports_uu / imports_uqs[sector.manu]，受 state.world.delivery_capacity_uqs[sector.manu] 约束"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 160000000,
+            "payee_agent_id": "agent.cell.<region>.manu",
+            "ledger_kind": "project_payment",
+            "payee_note_zh": "本地区制造 cell 的建材"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 300000000,
+            "payee_agent_id": "agent.cell.<region>.services",
+            "ledger_kind": "project_payment",
+            "payee_note_zh": "本地区服务 cell 的施工服务"
+          }
+        ],
+        "total_uu": 500000000
+      },
+      {
+        "offset_q": 1,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 40000000,
+            "payee_agent_id": "agent.row",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 160000000,
+            "payee_agent_id": "agent.cell.<region>.manu",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 300000000,
+            "payee_agent_id": "agent.cell.<region>.services",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "total_uu": 500000000
+      },
+      {
+        "offset_q": 2,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 40000000,
+            "payee_agent_id": "agent.row",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 160000000,
+            "payee_agent_id": "agent.cell.<region>.manu",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 300000000,
+            "payee_agent_id": "agent.cell.<region>.services",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "total_uu": 500000000
+      },
+      {
+        "offset_q": 3,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 40000000,
+            "payee_agent_id": "agent.row",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 160000000,
+            "payee_agent_id": "agent.cell.<region>.manu",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 300000000,
+            "payee_agent_id": "agent.cell.<region>.services",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "total_uu": 500000000
+      },
+      {
+        "offset_q": 4,
+        "lines": [
+          {
+            "line": "import_equipment",
+            "amount_uu": 40000000,
+            "payee_agent_id": "agent.row",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "domestic_material",
+            "amount_uu": 160000000,
+            "payee_agent_id": "agent.cell.<region>.manu",
+            "ledger_kind": "project_payment"
+          },
+          {
+            "line": "construction_service",
+            "amount_uu": 300000000,
+            "payee_agent_id": "agent.cell.<region>.services",
+            "ledger_kind": "project_payment"
+          }
+        ],
+        "total_uu": 500000000
+      }
+    ],
+    "spend_schedule_total_uu": 2500000000,
+    "payment_rule_zh": "付款在 S04 04.4 发生，属 payment_priority 第 5 档 project_contracts。每季实付 = min(本季 spend_plan 合计, 该档可用额)，按 spend_lines 用 split_largest_remainder 拆成三笔、各有收款方（INV-003）。付款只增 state.gov.wip_uu 与承包方现金，绝不进入进度函数（INV-087）。资金不足即 status = suspended，suspension_reason = financing，已付部分不退。",
+    "post_completion_asset_zh": "S07 完工时把已形成的 wip 部分转入 state.gov.housing_uu（住房资产科目），state.gov.wip_uu 等额减少。住房资产不进入 state.cell.capacity_* 任何一条产能轨，因此不会被误算成生产能力。"
+  },
+  "_note_funding_requirement": {
+    "allowed_sources": [
+      "cash",
+      "bond",
+      "reallocation"
+    ],
+    "default_source": "bond",
+    "reservation_rule_zh": "S02 02.2：gov.reserved_memo_uu += 本季应付额（memo，不动现金）；gov.committed_memo_uu += 合同总额；state.policy.budget_committed_uu[P06] += 合同总额。reserved_memo 季末归零，要么执行要么释放（INV-033）。",
+    "bond_rule_zh": "funding_source == bond 时进入 S02 02.6：票息 coupon_ppm_per_q 由 param.market_rate_base_ppm + 偿债率斜率给出并 clamp 到 [param.coupon_min_ppm, param.coupon_max_ppm]，写入后永不可改（INV-036）。国内认购上限 min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm))，外部上限 state.world.credit_limit_uu − state.world.credit_used_uu（INV-034）。额度不够时差额进入排序、延期或重组分支，不得静默展期。",
+    "reallocation_rule_zh": "funding_source == reallocation 时，玩家须先提交 budget_reallocate 命令把额度从其它支出线调入 project_contracts；源额度不足即 REJECT(E_BUDGET_INSUFFICIENT)。",
+    "payment_priority_line": "project_contracts",
+    "payment_priority_default_rank": 5,
+    "queues_occupied": [
+      {
+        "queue": "state.region.construction_slots_total",
+        "scope": "每个命中地区各 1 个槽位",
+        "release_on": "S07 完工或 S02 取消（INV-094）"
+      },
+      {
+        "queue": "flow.region.construction_capacity_uqs",
+        "scope": "与该地区其它在建项目按项目下标升序用最大余数法分摊，不是先到先得",
+        "release_on": "本季结算结束自然释放"
+      }
+    ],
+    "long_term_commitment_zh": "开办即同时产生两项未来承诺：剩余合同额进 state.gov.committed_memo_uu；投运后每季运行费进 state.gov.service_opex_committed_uu。两者都是表外备查，禁止进入任何资产负债恒等式（10 号文件 §0.2）。财政页必须同时展示这两项（计划书 §07）。"
+  },
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 6,
+    "max_feedback_q": 12,
+    "commission_delay_q": 1
+  },
+  "_note_lag_model": {
+    "earliest_feedback_q": 6,
+    "full_effect_q": 12,
+    "earliest_path_zh": "在第 q 季（预算审查季）通过 → effective_from_q = q+1，项目在 q+1 立项并开工 → 施工期 5 季（q+1 .. q+5，每季计划施工量 = idiv_floor(required_construction_uqs, planned_quarters)，进度不可能快于计划）→ q+5 的 S07 完工，写 state.region.housing_pending_units → q+6 的 S01 转入 state.region.housing_stock_units → q+6 的 S07 执行占用分配并更新 derived.group.housing_burden_ppm → q+6 的季度报告首次可见。合计 6 季，与计划书 §09『6—12 季』的下界一致。",
+    "full_effect_path_zh": "完整生效需要到第 12 季，原因有二：其一，占用不是一次性铺满，单季最多分配空置量的 param.p06_alloc_share_per_q_ppm（默认 50%），4 季后剩余空置低于 1 套，这表达『搬家与入住需要时间』；其二，住房存量经 S07 §7.5 的 cap_housing 放开迁移后，人口迁入本身逐季发生，地区人口结构与 living_index 要几季才走完。",
+    "lag_is_not_a_constant_zh": "时滞不是写死的常数，它由下列量逐季决定，任何一项恶化都会把 6 季拉长到 12 季甚至无限期：",
+    "lag_drivers": [
+      {
+        "driver_id": "flow.region.construction_capacity_uqs",
+        "effect_zh": "本地区服务 cell 实际产量 × param.construction_share_cap_ppm。低于本季计划施工量时进度按比例放慢；为 0 时 status = suspended(congestion)。"
+      },
+      {
+        "driver_id": "state.region.construction_slots_total",
+        "effect_zh": "并发槽位不足时项目根本进不了队列，等待时间由前序项目何时完工决定。"
+      },
+      {
+        "driver_id": "state.world.delivery_capacity_uqs",
+        "effect_zh": "进口构件到货量约束 delivery_progress_ppm；交付能力为 0 时施工进度满格也不得投运（INV-090）。"
+      },
+      {
+        "driver_id": "state.gov.cash_uu",
+        "effect_zh": "project_contracts 档欠付即 suspended(financing)，停工期不计进度。"
+      },
+      {
+        "driver_id": "state.gov.service_opex_committed_uu",
+        "effect_zh": "运行费未纳入承诺时停在 completed 不投运（OQ-245 配套条件），进度 100% 也不产生任何住房。"
+      },
+      {
+        "driver_id": "param.p06_alloc_share_per_q_ppm",
+        "effect_zh": "决定空置转为占用的速度，即『建成』到『住上』之间的那一段。"
+      }
+    ]
+  },
+  "effect": {
+    "kind": "housing_delta",
+    "target": "state.region.housing_pending_units",
+    "housing_delta_units": 4000,
+    "capacity_delta_uqs_per_q": 0,
+    "capacity_unit_ref": "sector.services",
+    "unit_note_zh": "本政策的效果量纲是住房套数 units，不是 μQ_s/季，因此 capacity_delta_uqs_per_q 为 0，真实效果量写在 housing_delta_units。capacity_unit_ref 填 sector.services 是因为住房由服务部门施工形成、住房服务属服务部门口径；V-PD-05 的『单位与用电系数同口径』一条对套数类效果不适用，已登记为待决问题。落点是 *_pending_* 字段，符合 V-PD-11 与 INV-091。"
+  },
+  "effect_chain": [
+    {
+      "step": 1,
+      "sim_step": "S02",
+      "from": [
+        "state.policy.enabled[policy.P06]",
+        "state.policy.effective_from_q[policy.P06]",
+        "state.policy.params_ppm[policy.P06]"
+      ],
+      "rule": "S02 02.1 资格链通过 → 02.2 预算预留 → 02.7 项目新建：state.meta.entity_seq 递增生成 project.P06_<q>_<nnn>，spend_plan_uu 由 cost 按 scale_ppm 展开且 Σ == total_cost_uu（INV-092），占用 1 个施工槽位（INV-094）",
+      "to": [
+        "state.project.status",
+        "state.project.spend_plan_uu",
+        "state.project.required_construction_uqs",
+        "state.project.required_equipment_uqs",
+        "state.project.queue_slot_held",
+        "state.gov.committed_memo_uu",
+        "state.gov.reserved_memo_uu"
+      ]
+    },
+    {
+      "step": 2,
+      "sim_step": "S04",
+      "from": [
+        "state.gov.cash_uu",
+        "state.project.spend_plan_uu"
+      ],
+      "rule": "S04 04.4 按 payment_priority 的 project_contracts 档付款，三条 spend_lines 用最大余数法拆分并双边入账；付款只增在建工程与承包方现金，与进度函数无任何数据依赖（INV-087）",
+      "to": [
+        "state.project.paid_uu",
+        "state.gov.wip_uu",
+        "state.cell.cash_uu[cell.<region>.services]",
+        "state.cell.cash_uu[cell.<region>.manu]",
+        "flow.world.imports_uu",
+        "flow.gov.pay_project_uu"
+      ]
+    },
+    {
+      "step": 3,
+      "sim_step": "S05",
+      "from": [
+        "flow.cell.output_actual_uqs[cell.<region>.services]"
+      ],
+      "rule": "S05 §5.5：flow.region.construction_capacity_uqs = mul_ppm(服务 cell 实际产量, param.construction_share_cap_ppm)，该份额从服务的市场可售量中扣除；再按项目下标升序对 need_uqs 用 split_largest_remainder 分配",
+      "to": [
+        "flow.region.construction_capacity_uqs",
+        "flow.region.construction_used_uqs",
+        "state.project.construction_progress_ppm"
+      ]
+    },
+    {
+      "step": 4,
+      "sim_step": "S05",
+      "from": [
+        "state.world.delivery_capacity_uqs[sector.manu]",
+        "state.world.import_price_ppm[sector.manu]"
+      ],
+      "rule": "S05 §5.5：交付进度只由实际到货量决定，到货量不得超过外部交付能力（INV-089、INV-104）",
+      "to": [
+        "state.project.delivery_progress_ppm",
+        "flow.world.imports_uqs"
+      ]
+    },
+    {
+      "step": 5,
+      "sim_step": "S07",
+      "from": [
+        "state.project.delivery_progress_ppm",
+        "state.project.construction_progress_ppm",
+        "state.gov.service_opex_committed_uu",
+        "state.pubserv.employment_persons"
+      ],
+      "rule": "S07 §7.1：两条进度均达 1000000 且配套条件满足（运行费已纳入承诺、目标地区 pubserv 在岗人员不为 0，OQ-245）才置 completed 并写 pending；任一不满足则停在原状态并写 blocked_reason（INV-090）",
+      "to": [
+        "state.region.housing_pending_units",
+        "state.gov.housing_uu",
+        "state.gov.wip_uu",
+        "state.gov.service_opex_committed_uu",
+        "state.project.status"
+      ]
+    },
+    {
+      "step": 6,
+      "sim_step": "S01",
+      "from": [
+        "state.region.housing_pending_units"
+      ],
+      "rule": "S01 01.4 是全局唯一的转入点：housing_stock_units += housing_pending_units，随后 pending 置 0；project.status = commissioned，commissioned_q = 当前 q（INV-054、INV-091）",
+      "to": [
+        "state.region.housing_stock_units",
+        "state.project.commissioned_q"
+      ]
+    },
+    {
+      "step": 7,
+      "sim_step": "S07",
+      "from": [
+        "state.region.housing_stock_units",
+        "state.group.housing_units_occupied"
+      ],
+      "rule": "mech.housing_allocation：可分配空置量 = housing_stock_units − Σ_g housing_units_occupied，本季上限 mul_ppm(空置量, param.p06_alloc_share_per_q_ppm)，按 allocation_rule 的权重向量对本地区 9 个群组用 split_largest_remainder 分配（INV-003），分配后断言 Σ occupied ≤ stock ≤ capacity（INV-083）",
+      "to": [
+        "state.group.housing_units_occupied"
+      ]
+    },
+    {
+      "step": 8,
+      "sim_step": "S05 / DERIVED",
+      "from": [
+        "state.group.housing_units_occupied",
+        "state.price.housing_rent_uu_per_unit_q",
+        "derived.group.disposable_income_uu"
+      ],
+      "rule": "S05 结算 flow.group.housing_cost_uu = 占用套数 × 该地区季度使用成本；derived.group.housing_burden_ppm = 住房支出 ÷ 可支配收入。首版租金固定、S07 不更新（OQ-244），因此负担率的下降来自『同一笔支出覆盖更多人』与拥挤度缓解，而不是来自租金下跌",
+      "to": [
+        "flow.group.housing_cost_uu",
+        "derived.group.housing_burden_ppm"
+      ]
+    },
+    {
+      "step": 9,
+      "sim_step": "S07",
+      "from": [
+        "state.region.housing_stock_units",
+        "derived.region.population_persons",
+        "state.region.housing_capacity_units"
+      ],
+      "rule": "S07 §7.5 迁移三道硬闸之一：cap_housing = max(0, housing_stock_units × param.persons_per_housing_unit − 地区人口)；推力项 housing_stress_ppm = 占用 ÷ 容量，经 param.migration_w_house_ppm 计入 push_ppm",
+      "to": [
+        "flow.group.migrate_flow_persons",
+        "flow.group.migrate_rejected_persons"
+      ]
+    },
+    {
+      "step": 10,
+      "sim_step": "S08",
+      "from": [
+        "derived.group.housing_burden_ppm",
+        "state.group.consumption_index_ppm",
+        "state.group.service_access_ppm"
+      ],
+      "rule": "S08 §8.1：living_index_ppm 的住房分量为 mul_ppm(1000000 − housing_burden_ppm, param.living_weight_house_ppm)，与收入分量、服务分量合成",
+      "to": [
+        "state.group.living_index_ppm"
+      ]
+    },
+    {
+      "step": 11,
+      "sim_step": "S08",
+      "from": [
+        "state.group.living_index_ppm",
+        "state.group.expectation_ppm",
+        "state.group.trust_ppm"
+      ],
+      "rule": "S08 §8.2：support_ppm 由三个主观量按 param.support_weight_ppm 合成，每次变动写来源分解（INV-123）；本政策不存在任何直接写 support_ppm 的通路",
+      "to": [
+        "state.group.support_ppm",
+        "derived.politics.support_national_ppm"
+      ]
+    },
+    {
+      "step": 12,
+      "sim_step": "S04 → S07",
+      "from": [
+        "state.gov.service_opex_committed_uu",
+        "state.gov.cash_uu"
+      ],
+      "rule": "S04 service_opex 档实付 ÷ 应付 = flow.pubserv.funding_ratio_ppm；S07 §7.2 据此更新可用率与维护欠账。欠拨只降可用率，不得写 housing_stock_units（INV-102、INV-055）",
+      "to": [
+        "flow.pubserv.funding_ratio_ppm",
+        "state.pubserv.availability_ppm",
+        "state.group.service_access_ppm"
+      ]
+    }
+  ],
+  "_note_targets": {
+    "regions_rule_zh": "由 player_params.region_mask 决定，每个命中地区各生成一个独立 project 实例；跨地区不共享进度、不共享槽位、不互相兜底。",
+    "default_region_id": "region.zhongzhou",
+    "default_region_reason_zh": "计划书 §05 给中州的开局主要约束是『住房容量紧张，公共服务承压』，默认落点与剧本一致；但默认不等于最优，北原与海岬在人口迁入压力上升后同样可能成为正确落点。",
+    "sectors_touched": [
+      {
+        "sector_id": "sector.services",
+        "role_zh": "施工服务的提供方与收款方；施工份额从其市场可售量中扣除，因此本政策会在施工期减少市场上可买到的服务"
+      },
+      {
+        "sector_id": "sector.manu",
+        "role_zh": "国产建材的提供方与收款方"
+      },
+      {
+        "sector_id": "sector.energy",
+        "role_zh": "不直接参与；仅经服务与制造 cell 的用电系数间接产生电力需求"
+      },
+      {
+        "sector_id": "sector.agri",
+        "role_zh": "不参与"
+      }
+    ],
+    "external_counterparty": {
+      "agent_id": "agent.row",
+      "role_zh": "进口构件与设备的卖方，受 state.world.delivery_capacity_uqs 与外部信用额度约束"
+    },
+    "groups_scope_zh": "命中地区内的 9 个群组 group.<region>.{minor|working|elder}.{low|mid|high} 全部在分配范围内。minor 与 elder 组同样占用住房（住房按人不按劳动身份），其分配权重由所在家庭口径近似，首版直接按群组人口与负担率计算，不建家庭实体。",
+    "allocation_rules": [
+      {
+        "value": "by_housing_burden",
+        "label_zh": "按住房负担优先",
+        "weight_expr": "w[g] = mul_ppm(state.group.population_persons[g], derived.group.housing_burden_ppm[g])",
+        "desc_zh": "住房负担率越高权重越大。效果集中在已被住房支出压住的群组，living_index 的改善最明显，但对『想迁入但还没来』的人没有帮助。"
+      },
+      {
+        "value": "by_low_skill_working",
+        "label_zh": "按低技能劳动年龄优先",
+        "weight_expr": "w[g] = state.group.population_persons[g] 若 age == working 且 skill == low，否则 0；若该地区全部 working.low 组人口为 0 则回退为 uniform_by_population 并写 log.explanations",
+        "desc_zh": "把套数集中给低技能劳动年龄群组。它同时放松 S07 §7.5 的 cap_housing，对承接迁入劳动力最有效，但会让老年与未成年群组的负担率几乎不动。"
+      },
+      {
+        "value": "uniform_by_population",
+        "label_zh": "按人口均摊",
+        "weight_expr": "w[g] = state.group.population_persons[g]",
+        "desc_zh": "谁都分一点。总量相同，但任何一个群组的负担率变化都小，politically 最不得罪人，机制上最不出效果。"
+      }
+    ],
+    "allocation_invariants": [
+      "INV-003",
+      "INV-083"
+    ],
+    "not_targeted_zh": "本政策不写 state.cell.capacity_pending_uqs_per_q、不写 state.pubserv.capacity_pending_uqs_per_q、不写任何就业字段、不写任何 GDP 口径字段。住房增加导致的产出变化只能经迁移与劳动供给间接发生，且必须仍受五项生产约束裁决。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 16000000,
+    "opex_per_unit_uu_per_q": 4000,
+    "scope_zh": "投运后每季支付，含管理与维修人员工资、日常维护与公共部位能耗。付给所在地区的 pubserv.<region>（公共服务非市场生产者，无自有现金，其支付由 agent.gov 执行），账本 kind = service_opex，支出法归 G、生产法归 va_nonmarket（11 号文件 §5.3）。",
+    "commitment_rule_zh": "S07 完工时 state.gov.service_opex_committed_uu += mul_ppm(opex_per_q_uu, scale_ppm)，此后每季在 S04 的 service_opex 档（默认第 4 档）支付。该义务与政策是否仍处于 enabled 无关：资产存在一天就要养一天。",
+    "starvation_path_zh": "欠拨时 flow.pubserv.funding_ratio_ppm < 1000000 → S07 §7.2 累积 maintenance_backlog、下调 state.pubserv.availability_ppm（速度 param.opex_starve_decay_ppm）→ state.group.service_access_ppm 下降 → living_index 下降。恢复速度 param.opex_recover_ppm 低于下降速度。",
+    "asset_is_never_deleted_zh": "断供期间 state.region.housing_stock_units、state.region.housing_capacity_units、state.gov.housing_uu 一律不得被写（INV-102 的静态检查落点）。首版没有独立的『住房可用率』字段，断供后果只能经 pubserv 可用率与服务可及性表达，这一点在待决问题中登记。",
+    "invariants": [
+      "INV-102",
+      "INV-055",
+      "INV-030"
+    ]
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "remaining_contract_ppm",
+    "compensation_ppm": 250000
+  },
+  "_note_exit_rule_detail": {
+    "sunk_cost_zh": "已支付的 state.project.paid_uu 一律不回退、现金不增加（INV-093）。取消只减少 state.gov.committed_memo_uu 中尚未支付的剩余合同额。",
+    "delivered_asset_zh": "已投运的住房批次保留：housing_stock_units 与 gov.housing_uu 不动，占用关系不变，居民不被迁出。撤回政策不销毁资产，也不解除该批次的每季运行费义务。",
+    "unfinished_work_zh": "未完工工程按已形成的可回收部分登记 state.project.residual_value_uu，进 gov.housing_uu 或按不可回收部分确认为政府净值损失；state.gov.wip_uu 等额减少。残值不得高于该项目累计 paid_uu。",
+    "compensation_zh": "赔偿 = mul_ppm(剩余合同额, 250000)，即剩余合同额的 25%，以 kind = cancel_penalty 付给承包方（本地区 services cell 与 manu cell 按剩余合同额中两条支出线的比例用最大余数法拆分；import_equipment 线的剩余额付给 agent.row）。赔偿是真实现金支出，现金不足时进欠付。",
+    "slot_release_zh": "取消后立即释放该地区的施工槽位（INV-094）；本季已占用的 construction_capacity 不退还。",
+    "expiry_zh": "本政策没有到期日。state.policy.exit_pending_q 用于玩家主动 policy_repeal：置退出倒计时后，未开工项目直接取消，在建项目按上述规则结算，已投运批次保留。",
+    "toggle_abuse_zh": "反复开关不产生任何额外住房：每次开关计一次 toggle_count、付一次 toggle_cost_uu、并置 cooldown_until_q = q + cooldown_q；effective_from_q 单调不回溯（INV-098）。住房不走 claim_ledger 通道，因为它没有按季重复领取的补助形态。"
+  },
+  "political_reaction": {
+    "bloc.labor_public": 260000,
+    "bloc.business": -140000,
+    "bloc.agri_coop": -90000
+  },
+  "_note_political_reaction_basis": [
+    {
+      "bloc_id": "bloc.labor_public",
+      "direction": "support",
+      "stance_delta_ppm": 260000,
+      "interest_basis_zh": "该集团关心就业保障、工资、教育医疗与居住（10 号文件 §8.3 的关切口径）。住房是其成员的直接支出项：占用套数上升使 derived.group.housing_burden_ppm 下降；同时公共住房的运行费养的是 pubserv 的在职人员，扩大了 bloc.labor_public 的成员规模。支持强度随本地区 working 组实际获得的套数上升，不是好感度。",
+      "weakens_when_zh": "分配规则选 uniform_by_population 且该地区 working 组占比低时，实际到手套数少，支持强度相应下降。"
+    },
+    {
+      "bloc_id": "bloc.business",
+      "direction": "oppose",
+      "stance_delta_ppm": -140000,
+      "interest_basis_zh": "该集团关心能源、运输、利润与政策可预期性。反对来自两条可计算的挤出：施工期内 flow.region.construction_capacity_uqs 被本项目占用，同一地区企业自建与其它资本项目排队变长；服务部门可售量因施工份额扣减而下降，抬高企业购买服务的未满足需求。运行费义务写入 service_opex_committed_uu，进一步压缩未来可用于补助与采购的预算档位。",
+      "weakens_when_zh": "若该地区 cell.<r>.services 的 binding_code 长期为 plan（产能闲置），挤出不成立，反对强度应随之减弱。"
+    },
+    {
+      "bloc_id": "bloc.agri_coop",
+      "direction": "oppose",
+      "stance_delta_ppm": -90000,
+      "interest_basis_zh": "该集团关心农户收入、灌溉与地区资源分配。公共住房的落点集中在人口密集地区，与 P07 灌溉与农业物流争夺同一个预算审查窗口与同一批施工能力；北原若未被选中，本政策对其成员是纯粹的资源转出。",
+      "weakens_when_zh": "region_mask 命中 region.beiyuan 时反对强度显著下降；此时冲突转为该地区内部的施工能力争夺。"
+    }
+  ],
+  "_note_affected_groups_zh": "受益：命中地区内实际获得套数的群组（住房负担率下降 → 生活指数上升）、以及原本被 cap_housing 挡回的迁入者。受损：全体纳税人承担长期运行费；施工期内购买服务的居民与企业面对更少的服务可售量；未被选中地区的群组在同一预算窗口内失去替代方案。分布结果必须逐组保留（INV-124 禁止只留全国值）。",
+  "failure_paths": [
+    {
+      "code": "financing",
+      "test_id": "T-U-D-10",
+      "trigger_zh": "立项后 state.gov.cash_uu 与可用信用额度不足以支付本季 project_contracts 档",
+      "trigger_expr": "state.project.status == in_progress 且 本季该档实付 < 应付",
+      "expected_state_zh": "status = suspended，suspension_reason = financing；paid_uu 不回退；committed_memo 不减；进度不增",
+      "player_explanation_zh": "第 N 季项目款需要 X U，该档可用 Y U，缺口 Z U，工程暂停。已支付的部分不会退回。",
+      "_note_requested_test_id": "T-S-P06-FAIL-FINANCING",
+      "_note_test_binding_zh": "T-U-D-10 test_u_payment_priority 是注册表中唯一断言「第 4..8 档欠付如何显露」的用例：第 1..3 档实付 == 应付、第 4..8 档实付 == 0、arrears 增量 == 第 4..8 档应付之和、期末现金不为负。project_contracts 正是第 5 档，本失败路径的账务判据完全落在它上面。但它不断言 project.status == suspended(financing) 这一项目侧状态，该断言需要 30 号文件 §4.2 的 P06 行登记 T-S-P06-FAIL-FINANCING 后才有归属。"
+    },
+    {
+      "code": "congestion",
+      "test_id": "T-S-P06-GATE",
+      "trigger_zh": "本地区服务 cell 实际产量折出的施工能力为 0，或被其它在建项目分完；或并发项目数已达 construction_slots_total",
+      "trigger_expr": "grant_uqs[p] == 0 且 need_uqs[p] > 0，或 derived.region.construction_slots_used[r] >= state.region.construction_slots_total[r]",
+      "expected_state_zh": "在建项目 status = suspended(congestion)；新项目直接进不了队列，blocked_reason = queue",
+      "player_explanation_zh": "本季该地区可用施工量为 A，本项目本季需要 B，本地区另有 K 个在建项目排在前面。进度不推进。",
+      "_note_requested_test_id": "T-S-P06-FAIL-CONGESTION",
+      "_note_test_binding_zh": "30 号文件 §4.2 的 P06 行把本政策的前置闸门用例定为 E_NO_SLOT，即「并发槽位已满 ⇒ REJECT、state_hash 逐位不变、12 季内 effect.target 累计变化 == 0」，正是本失败路径的第二形态（进不了队列）。第一形态（已在队列但本季施工能力为 0 ⇒ suspended）尚无登记用例，需登记 T-S-P06-FAIL-CONGESTION。"
+    },
+    {
+      "code": "delivery",
+      "test_id": "T-S-P06-CHAIN",
+      "trigger_zh": "外部构件交付能力为 0 或被进口价格冲击压低，delivery_progress_ppm 停滞",
+      "trigger_expr": "state.world.delivery_capacity_uqs[sector.manu] == 0 或 本季到货量 == 0",
+      "expected_state_zh": "施工进度可以满格，但 delivery_progress_ppm < 1000000 ⇒ 不得投运（INV-090）",
+      "player_explanation_zh": "施工进度 100%，构件到货 M%，外部交付能力本季为 0，第 N 季不投运。",
+      "_note_requested_test_id": "T-S-P06-FAIL-DELIVERY",
+      "_note_test_binding_zh": "T-S-P06-CHAIN 的断言 ④ 要求作用路径逐环在 log.explanations 中存在 kind == accounted 的条目、链条条数 == 路径段数（无断段），交付环是其中一段；断言 ② 又要求首次非零变化量等于独立复算值，因此「到货量为 0 却照样投运」会让 CHAIN 变红。但「施工满格 + 交付 0 ⇒ 不得投运」这条专项负向断言（INV-089、INV-090）在 P06 上尚无登记用例，需登记 T-S-P06-FAIL-DELIVERY。"
+    },
+    {
+      "code": "no_headroom",
+      "test_id": "T-U-B-13",
+      "trigger_zh": "目标地区 housing_capacity_units − housing_stock_units 小于本次交付套数",
+      "trigger_expr": "state.region.housing_capacity_units[r] − state.region.housing_stock_units[r] < mul_ppm(param.p06_batch_units, scale_ppm)",
+      "expected_state_zh": "命令 REJECT(E_PRECONDITION)，state_hash 完全不变（INV-137）；不产生项目、不预留资金",
+      "player_explanation_zh": "该地区配套设施只能再容纳 H 套，本方案要建 U 套。可减小规模到 H 套，或改选其它地区。",
+      "_note_requested_test_id": "T-S-P06-FAIL-NOHEADROOM",
+      "_note_test_binding_zh": "T-U-B-13 test_u_housing_cap 断言 Σ_g housing_units_occupied ≤ region.housing_stock_units ≤ region.housing_capacity_units 且 housing_capacity_units 增量 == 0（INV-083/084），正是本失败路径在立项期要保护的那条硬上限。它从迁移侧证伪「容量被自动撑大」，而本路径要求的是立项期 REJECT(E_PRECONDITION) 且 state_hash 不变，后者需登记 T-S-P06-FAIL-NOHEADROOM 才有专属归属。"
+    },
+    {
+      "code": "opex_unfunded",
+      "test_id": "T-S-P06-FAIL-OPEX",
+      "trigger_zh": "两条进度均已 100%，但运行费未纳入下季预算承诺，或目标地区 pubserv 在岗人员为 0",
+      "trigger_expr": "配套条件不满足（OQ-245）",
+      "expected_state_zh": "项目停在 completed 不投运，housing_pending_units 不增加，blocked_reason 可解释；已发生成本不退",
+      "player_explanation_zh": "工程已完工，但每季运行费 W U 没有预算落点，第 N 季不投运。安排运行费后下季自动投运。",
+      "_note_requested_test_id": "T-S-P06-FAIL-OPEXUNFUNDED",
+      "_note_test_binding_zh": "30 号文件 §4.2 的 P06 行只登记了一条失败链 T-S-P06-FAIL-OPEX，其描述是「运行费欠拨 ⇒ 可用率下降但资产不删除」，对应本文件的 opex_starved 一路。本路径（运行费尚无预算落点 ⇒ 停在 completed 不投运）是同一根运行费义务的另一端，暂共用该 ID；拆开需登记 T-S-P06-FAIL-OPEXUNFUNDED。"
+    },
+    {
+      "code": "no_demand",
+      "test_id": "T-R-E-04",
+      "trigger_zh": "投运后目标地区无住房短缺：既有占用率低、无迁入意愿，分配后空置量仍高",
+      "trigger_expr": "state.region.housing_stock_units[r] − Σ_g state.group.housing_units_occupied[g∈r] 在投运后 4 季仍 > 0 且 flow.group.migrate_flow_persons 流入为 0",
+      "expected_state_zh": "空置套数上升；derived.gdp.production_uu 与 state.group.support_ppm 不因投运本身发生任何变化；每季运行费照付，形成可解释的无效支出",
+      "player_explanation_zh": "该地区新增 U 套，已入住 O 套，空置 V 套；本季运行费 W U 仍需支付。住房紧张出现在其它地区。",
+      "_note_requested_test_id": "T-S-P06-FAIL-NODEMAND",
+      "_note_test_binding_zh": "T-R-E-04 test_r_trace 断言每个发生变化的状态字段都能在同 q 同 entity 的日志中找到条目、无法解释的变化字段数 == 0（INV-139）。本路径的核心断言正是「投运这一事件本身不得在 derived.gdp.production_uu 与 state.group.support_ppm 上留下任何无账可查的增量」。但「空置率高时逐季运行费照付」这段正向断言无人拥有，需登记 T-S-P06-FAIL-NODEMAND。"
+    },
+    {
+      "code": "opex_starved",
+      "test_id": "T-S-P06-FAIL-OPEX",
+      "trigger_zh": "住房批次已投运，随后 service_opex 档实付低于应付（排序靠后被推迟，或预算被调走）",
+      "trigger_expr": "flow.pubserv.funding_ratio_ppm < 1000000 且 state.region.housing_stock_units[r] > 0",
+      "expected_state_zh": "state.pubserv.availability_ppm 按 param.opex_starve_decay_ppm 逐季下降、state.group.service_access_ppm 随之下降、欠付逐季登记入 state.gov.arrears_by_payee_uu；而 state.region.housing_stock_units、state.region.housing_capacity_units、state.gov.housing_uu 逐位不变（INV-102：断供降可用率，不删资产）",
+      "player_explanation_zh": "本季运行费应付 W U、实付 0 U，欠付 W U。已建成的 U 套住房不会消失，但维护欠账累积，服务可用率从 A 降到 B，恢复比下降慢。",
+      "_note_requested_test_id": "T-S-P06-FAIL-OPEX",
+      "_note_test_binding_zh": "本条与 30 号文件 §4.2 的 P06 失败链行逐字对应（「运行费欠拨 ⇒ 可用率下降但资产不删除」），是该注册 ID 的专属所有者。原先这条只以验收判据 T-S-P06-OPEX-STARVE-KEEPS-ASSET 的形式存在，而该 ID 未登记；现按契约把它同时立为一条失败路径，内容不减。"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P06-CHAIN",
+    "T-S-P06-GATE",
+    "T-S-P06-FAIL-OPEX",
+    "T-U-C-02",
+    "T-U-B-13",
+    "T-U-A-08",
+    "T-S-D-07",
+    "T-S-D-09"
+  ],
+  "_note_acceptance_tests_basis": {
+    "T-S-P06-CHAIN": "30 号文件 §4.2 的 P06 成功链：命令 → 项目队列（施工能力 + 槽位）→ housing_pending_units → 下季 housing_stock_units → S07 迁移与住房负担 → 生活指数，最早反馈 6—12 季。对应本文件 effect_chain 的 12 环与 lag 的 [6, 12]。",
+    "T-S-P06-GATE": "30 号文件 §4.2 的 P06 前置闸门（E_NO_SLOT），按 §4.3 的模板对 preconditions 逐条构造「恰好一条不满足」：本文件有 7 条前置条件，因此该模板在 P06 上展开为 7 个变体。覆盖原 T-S-P06-PRECOND-NO-EFFECT 的全部断言。",
+    "T-S-P06-FAIL-OPEX": "运行费欠拨 ⇒ 可用率下降但资产不删除（INV-102、INV-055、INV-030）。覆盖原 T-S-P06-OPEX-STARVE-KEEPS-ASSET。",
+    "T-U-C-02": "test_u_effect_target_pending_only：effect.target 必须落在 *_pending_* 白名单字段上、lag.commission_delay_q ≥ 1（INV-091）。这是原 T-S-P06-NO-EARLY-OCCUPANCY 的加载期防线，但它只查内容包，不查「第 k 季完工、第 k+1 季 S01 才转存量」的运行期时序。",
+    "T-U-B-13": "test_u_housing_cap：Σ_g housing_units_occupied ≤ housing_stock_units ≤ housing_capacity_units 恒成立、被挡回的人写 migrate_rejected_persons、capacity 增量 == 0（INV-083/084）。覆盖原 T-S-P06-ALLOC-CONSERVES 的不等式部分与 effect_chain 第 9 环。",
+    "T-U-A-08": "test_u_split_sum：最大余数法的拆分之和精确等于原额（INV-003）。本政策有三处依赖它——三条 spend_lines 的拆分、施工能力在并发项目间的分摊、新增套数在 9 个群组间的分配。覆盖原 T-S-P06-ALLOC-CONSERVES 的守恒部分。",
+    "T-S-D-07": "test_s_cancel_keeps_spent：paid_uu 不回退、现金因赔偿而减少绝不增加、committed_memo 只减未付部分、residual 双边入账、pending 增量 == 0（INV-093）。覆盖原 T-S-P06-CANCEL-NO-REFUND；其夹具是 FX-P04，P06 需要一个同形状的 FX-P06 夹具。",
+    "T-S-D-09": "test_s_reservation_zeroed：每季末 reserved_memo_uu == 0、季内 reserved_memo ≤ cash（INV-033）。本政策在 S02 02.2 做预留，这条是「预留不变成隐形占款」的唯一归属用例。"
+  },
+  "_note_acceptance_criteria": {
+    "_note_status_zh": "以下 7 条是为 P06 写的逐条验收判据（given / when / then / asserts / invariants），内容未删一字，但它们各自的 test_id 尚未登记进 30 号文件的测试矩阵，因此不能出现在 acceptance_tests 数组里（V-PD-07：test_id 必须真实存在）。登记之后，把这里的 test_id 逐条搬进 acceptance_tests 并删除对应的替代绑定即可，判据本身不需要改。",
+    "criteria": [
+      {
+        "test_id": "T-S-P06-PRECOND-NO-EFFECT",
+        "given_zh": "给定 legal_authority 的第 1 位未取得（或当前季不是预算审查季、或配套余量不足），玩家提交 policy_enact(policy.P06)",
+        "when_zh": "当 推进 3 个季度",
+        "then_zh": "则 命令被 REJECT 并写原因码，state_hash 在受理该命令前后逐位不变；state.region.housing_pending_units、state.region.housing_stock_units、state.group.housing_units_occupied、state.gov.committed_memo_uu 全部不变；不产生任何 project 实例",
+        "asserts": [
+          "state_hash(before) == state_hash(after)",
+          "Σ housing_pending_units == 0",
+          "Δ housing_stock_units == 0",
+          "Δ Σ housing_units_occupied == 0",
+          "count(project where policy_idx == P06) == 0"
+        ],
+        "invariants": [
+          "INV-095",
+          "INV-137"
+        ],
+        "required_by_zh": "这是『不满足前置条件时不得发放任何效果』的落点（计划书 §17 政策时滞行）。"
+      },
+      {
+        "test_id": "T-S-P06-NO-DEMAND-NO-BONUS",
+        "given_zh": "给定 目标地区人口零增长、既有住房占用率低于 60%、出口需求与居民收入不变，P06 一批住房按计划完工投运",
+        "when_zh": "当 投运后连续推进 4 个季度",
+        "then_zh": "则 derived.gdp.production_uu 与 state.group.support_ppm 不因投运这一事件发生任何变化（施工期的服务与制造产出照常计入 GDP，投运本身不计）；空置套数 = stock − Σ occupied 上升且可在报告中定位；每季运行费照付并计入政府最终消费",
+        "asserts": [
+          "投运季与前一季的 gdp_production 差额可完全由 value_added 与 pubserv.output 的分项解释",
+          "Δ support_ppm 的来源分解中不存在名为『住房投运』的直接项",
+          "空置套数 > 0",
+          "flow.gov.pay_opex_uu > 0"
+        ],
+        "invariants": [
+          "INV-112",
+          "INV-123",
+          "INV-102"
+        ],
+        "required_by_zh": "这是『没有需求时不得直接发 GDP 或支持率』的落点（计划书 §10 原文的 P06 版本）。"
+      },
+      {
+        "test_id": "T-S-P06-PAY-NO-PROGRESS",
+        "given_zh": "给定 目标地区 cell.<r>.services 的实际产量为 0（施工能力为 0），而政府现金充足",
+        "when_zh": "当 推进 3 个季度，每季正常支付 project_contracts 档",
+        "then_zh": "则 state.project.paid_uu 逐季增加，而 Δstate.project.construction_progress_ppm 恒为 0；静态检查断言进度函数形参表中不含 paid_uu",
+        "asserts": [
+          "paid_uu(q+3) > paid_uu(q)",
+          "construction_progress_ppm(q+3) == construction_progress_ppm(q)",
+          "status == suspended 且 suspension_reason == congestion"
+        ],
+        "invariants": [
+          "INV-087",
+          "INV-088"
+        ]
+      },
+      {
+        "test_id": "T-S-P06-NO-EARLY-OCCUPANCY",
+        "given_zh": "给定 项目在第 k 季的 S07 判定完工",
+        "when_zh": "当 完成第 k 季全部八步，再完成第 k+1 季的 S01",
+        "then_zh": "则 第 k 季末 housing_pending_units == 交付套数 且 housing_stock_units 不变、Σ housing_units_occupied 不变；第 k+1 季 S01 后 housing_stock_units 增加同样套数、housing_pending_units 归 0、commissioned_q == k+1",
+        "asserts": [
+          "housing_pending_units(end of k) == units",
+          "Δhousing_stock_units(k) == 0",
+          "Δhousing_stock_units(S01 of k+1) == units",
+          "Σ housing_pending == 0 after S01"
+        ],
+        "invariants": [
+          "INV-054",
+          "INV-091"
+        ]
+      },
+      {
+        "test_id": "T-S-P06-ALLOC-CONSERVES",
+        "given_zh": "给定 新增 U 套进入 housing_stock_units，allocation_rule 分别取三种取值各跑一次",
+        "when_zh": "当 执行 S07 的占用分配",
+        "then_zh": "则 三种规则下本季分配总量相同（== mul_ppm(空置量, param.p06_alloc_share_per_q_ppm)），只有逐组分布不同；Σ 各组增量精确等于分配总量；Σ_g housing_units_occupied ≤ housing_stock_units ≤ housing_capacity_units 恒成立",
+        "asserts": [
+          "Σ Δoccupied == 分配总量（最大余数法后置断言）",
+          "Σ occupied ≤ stock ≤ capacity",
+          "三种规则的分配总量两两相等",
+          "by_housing_burden 与 uniform_by_population 的逐组向量不相等（否则规则退化）"
+        ],
+        "invariants": [
+          "INV-003",
+          "INV-083"
+        ]
+      },
+      {
+        "test_id": "T-S-P06-OPEX-STARVE-KEEPS-ASSET",
+        "given_zh": "给定 一批公共住房已投运，随后把 service_opex 档的实付降为应付的 0%",
+        "when_zh": "当 连续推进 4 个季度",
+        "then_zh": "则 flow.pubserv.funding_ratio_ppm == 0、state.pubserv.availability_ppm 逐季下降、state.group.service_access_ppm 下降；而 state.region.housing_stock_units、state.region.housing_capacity_units、state.gov.housing_uu 逐位不变；欠付逐季登记入 state.gov.arrears_by_payee_uu",
+        "asserts": [
+          "Δhousing_stock_units == 0",
+          "Δgov.housing_uu == 0",
+          "availability_ppm 单调不增",
+          "arrears_by_payee_uu 增加额 == 未付运行费"
+        ],
+        "invariants": [
+          "INV-102",
+          "INV-055",
+          "INV-030"
+        ]
+      },
+      {
+        "test_id": "T-S-P06-CANCEL-NO-REFUND",
+        "given_zh": "给定 项目已支付 3 季合同款、施工进度 60%，玩家提交 project_cancel",
+        "when_zh": "当 S02 处理该命令",
+        "then_zh": "则 paid_uu 不变、state.gov.cash_uu 不因取消而增加；committed_memo_uu 减少的恰好是未付剩余合同额；cancel_penalty 按剩余合同额的 25% 入账并有真实收款方；residual_value_uu ≤ paid_uu；施工槽位释放；housing_pending_units 与 housing_stock_units 均不变",
+        "asserts": [
+          "Δpaid_uu == 0",
+          "Δgov.cash_uu == −penalty（不得为正）",
+          "Δcommitted_memo == −剩余合同额",
+          "residual_value_uu ≤ paid_uu",
+          "queue_slot_held == 0"
+        ],
+        "invariants": [
+          "INV-093",
+          "INV-032",
+          "INV-094"
+        ]
+      }
+    ]
+  },
+  "_note_test_registry_gap_zh": "30 号文件 §4.2 的 P06 行只登记了三个本政策专属用例：T-S-P06-CHAIN（成功链）、T-S-P06-GATE（前置闸门，E_NO_SLOT）、T-S-P06-FAIL-OPEX（失败链，运行费欠拨不删资产）。而 11 号文件 §5.12 经校验器展开后要求 failure_paths ≥ 4 条、acceptance_tests ≥ 5 条，且每个 test_id 都必须在注册表中真实存在。三条登记 ID 不足以填满这两个下限，于是本文件把无法一一对应的条目绑定到注册表中**确实断言同一条不变量**的跨政策用例上，并在每条旁边写清「请求登记的 P06 专属 ID」与「当前绑定为什么成立、缺哪一段断言」。这是一处契约缺口，不是本文件的取舍：解决办法是在 30 号文件 §4.2/§4.3 为 P06 登记T-S-P06-FAIL-FINANCING / -CONGESTION / -DELIVERY / -NOHEADROOM / -OPEXUNFUNDED / -NODEMAND 与 T-S-P06-OFF，以及 §4.3 已定义但未逐政策展开的 T-S-P<nn>-OFF 模板。在登记完成前，不得把未登记的 ID 写进 failure_paths 或 acceptance_tests —— 指向不存在用例的 test_id 与没有测试是同一件事。 需要登记的验收判据 ID（判据正文已写好，存放在 _note_acceptance_criteria.criteria）：T-S-P06-PAY-NO-PROGRESS（付款不得制造进度，INV-087——注册表里只有 P04 版本）、T-S-P06-NO-EARLY-OCCUPANCY（第 k 季完工、第 k+1 季 S01 才转存量，INV-054/091 的运行期时序，T-U-C-02 只查内容包不查时序）、T-S-P06-PRECOND-NO-EFFECT、T-S-P06-NO-DEMAND-NO-BONUS、T-S-P06-OPEX-STARVE-KEEPS-ASSET、T-S-P06-ALLOC-CONSERVES、T-S-P06-CANCEL-NO-REFUND。其中 PAY-NO-PROGRESS 与 NO-EARLY-OCCUPANCY 目前在注册表中没有任何等价用例，是这份绑定表里覆盖最薄的两处，登记优先级最高。",
+  "mechanism_ids": [
+    "mech.project_queue",
+    "mech.construction_progress",
+    "mech.housing_stock",
+    "mech.housing_occupancy",
+    "mech.asset_commissioning"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 mech.housing_allocation → mech.housing_occupancy（JWMigration._check_housing 与 JWPricing.update_housing_rent 用的同一套占用口径）；mech.service_capacity 换成 mech.construction_progress 与 mech.asset_commissioning：本政策是 project 类，真正经过的是施工进度与投运，不是公共服务产能。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "_note_calibration_and_param_cards": {
+    "single_source_rule_zh": "本节是「补充说明」，不是数据：每条 formal_value 都必须逐位等于 formal_field 指向的 schema 正式字段（无独立字段者由 cross_check_expr 给出它与正式字段之间的整数恒等式）。正式字段是唯一事实来源。本节存在的唯一目的，是把原先写在顶层 parameters 数组里的标定理由与建卡口径保存下来，交给 content/parameters/params_core.json 的建卡人。本节刻意不写 parameter_id / value 这两个键名：注释子树里的参数卡在载入期等于不存在（11_data_contract.md §1.5、§6.4），把卡改个键名藏进注释是自欺，不是修复。",
+    "card_creation_handoff_zh": "下列 9 个 parameter_id 目前在内容层没有任何一张卡（content/parameters/registry.json 是 tools/build_param_registry.py 的生成索引，按裁定 R-SCHEMA-01 属生成产物，不是任何参数的事实来源，不能顶替）。content/parameters/params_core.json 尚未建立，校验器已对此报 E_CONTENT_LAYOUT。该文件建成后，应把本节每条按九字段（parameter_id / value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note，derived 型另加 derivation_expr）抄成正式卡片，并逐条与此处 formal_field 指向的值做一次逐位对账；抄完后本节可整节删除，本文件不再保留任何参数副本。",
+    "scale_note_zh": "本节全部 μU 数值已按裁定 R-SCALE-01（1 U = 1 000 000 000 μU）书写：p06_cost_per_unit_uu 为 625 000 μU/套、p06_opex_per_unit_uu_per_q 为 4000 μU/套/季。μQ 与 ppm 口径不随货币刻度变化，故 p06_construction_uqs_per_unit（375 μQ_services）、p06_equipment_uqs_per_unit（50 μQ_manu）、p06_alloc_share_per_q_ppm（500000 ppm）与 p06_cancel_compensation_ppm（250000 ppm）四条未变。",
+    "entries": [
+      {
+        "params_core_card_to_create": "param.p06_batch_units",
+        "card_status": "not_created_yet",
+        "formal_field": "/effect/housing_delta_units",
+        "formal_value": 4000,
+        "unit": "units",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P06「玩家直接改变地点、数量与分配规则」；§05 中州「住房容量紧张」",
+        "reference_year": 0,
+        "valid_range": [
+          500,
+          20000
+        ],
+        "confidence": "low",
+        "definition_zh": "scale_ppm == 1000000 时一个公共住房批次交付的套数。规模档由 scale_ppm 在 [250000, 2000000] 内以 250000 步长缩放，对应 1000 至 8000 套。",
+        "calibration_note_zh": "检验方式：在中州跑一个批次，观察 derived.group.housing_burden_ppm 与 flow.group.migrate_rejected_persons 是否出现可辨认的变化。若一个批次对 2400 万人口的模型毫无可见影响，先加大本值再考虑改机制；若一个批次就把住房约束一次性解除，说明本值过大，收紧它而不是收紧迁移闸。",
+        "cross_check_zh": "本值在本文件出现三处：正式字段 /effect/housing_delta_units == 4000、注释副本 /_note_cost_model/unit_economics/batch_units == 4000、以及本条 formal_value == 4000，三处必须逐位相等；正式字段是唯一事实来源，另两处是它的只读副本。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_cost_per_unit_uu",
+        "card_status": "not_created_yet",
+        "formal_field": "（无独立正式字段；由 /cost/one_off_uu 承载：one_off_uu == 本值 × effect.housing_delta_units）",
+        "formal_value": 625000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §10「数值是测试夹具，不是现实工程估算」；与 P04 电网 4 U / 8 季的量级对齐",
+        "reference_year": 0,
+        "valid_range": [
+          100000,
+          5000000
+        ],
+        "confidence": "low",
+        "definition_zh": "每套公共住房的建造合同单价。按裁定 R-SCALE-01（1 U = 1 000 000 000 μU）：4000 套 × 625 000 μU = 2 500 000 000 μU = 2.5 U，占基年全年名义 GDP（100 000 000 000 μU）的 2.5%、占年度支出计划 annual_plan.expenditure_incl_interest_uu（22 000 000 000 μU）的约 11.4%。",
+        "calibration_note_zh": "与 param.p06_opex_per_unit_uu_per_q 成对校准：建造单价与每季运行费的比值决定『建得起但养不起』这一取舍是否成立。若玩家总能既建又养，先提高运行费占比，再考虑提高单价。",
+        "cross_check_expr": "625000 * 4000 == 2500000000 == cost.one_off_uu",
+        "blocking_note_zh": "本值没有独立的 schema 字段承载。撤下 parameters 数组后它在内容层暂时无卡，但它可由 cost.one_off_uu ÷ effect.housing_delta_units 逐位复算，因此不存在「改了一处忘了另一处」的静默分叉。params_core.json 建成前，不得因此把它退回本文件顶层 —— §5.15 与 R-PARAM-01 都规定 param.* 只在 parameter_set 文件建卡。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_opex_per_unit_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "（无独立正式字段；由 /cost/opex_per_q_uu 承载：opex_per_q_uu == 本值 × effect.housing_delta_units）",
+        "formal_value": 4000,
+        "unit": "μU/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「服务有运行费：学校、医院、电网和住房建成后需要人员与维护」",
+        "reference_year": 0,
+        "valid_range": [
+          1000,
+          50000
+        ],
+        "confidence": "low",
+        "definition_zh": "每套已投运公共住房的每季人员与维护支出。4000 套合计 16 000 000 μU/季（= 0.016 U/季），约为建造合同额 2 500 000 000 μU 的 0.64%/季（年化约 2.6%）。",
+        "calibration_note_zh": "检验方式：跑满 40 季，统计累计运行费与累计建造成本之比。若 40 季运行费不足建造成本的 20%，『长期承诺』这条机制在首版时间尺度内不会形成压力，应调高本值。",
+        "cross_check_expr": "4000 * 4000 == 16000000 == cost.opex_per_q_uu",
+        "headroom_check_zh": "与 preconditions[5]（opex_commitment）的可行性核对：基年 annual_plan.expenditure_lines_uu 中 service_opex == 0、discretionary == 566 300 000 μU/年，折每季承诺上限 idiv_floor(566300000, 4) == 141 575 000 μU；本政策基准批次的每季运行费 16 000 000 μU 占其 11.3%，即基年条件下该前置条件可满足，但累计约 8 个基准批次即会把这条承诺额度用尽 —— 「建得起但养不起」这一取舍在首版是真的可触发的，不是装饰。",
+        "blocking_note_zh": "同 param.p06_cost_per_unit_uu：无独立正式字段，可由 cost.opex_per_q_uu ÷ effect.housing_delta_units 复算。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_planned_quarters",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/planned_quarters",
+        "formal_value": 5,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P06「最早反馈 6—12 季」",
+        "reference_year": 0,
+        "valid_range": [
+          3,
+          16
+        ],
+        "confidence": "low",
+        "definition_zh": "计划工期。最早反馈季数 = 1（生效时滞）+ 5（工期）+ 1（完工到供能）= 6 季，正好落在计划书给定区间的下界；实际工期在施工能力不足时按比例拉长。",
+        "calibration_note_zh": "本值与 min_feedback_q 有硬关系：任何改动必须同时改 lag.min_feedback_q 并重跑 T-S-P06-NO-EARLY-OCCUPANCY。改动后若最早反馈跌出 [6, 12]，即与计划书 §09 冲突，应回退。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_construction_uqs_per_unit",
+        "card_status": "not_created_yet",
+        "formal_field": "（无独立正式字段；由 /cost/required_construction_uqs 承载：required_construction_uqs == 本值 × effect.housing_delta_units）",
+        "formal_value": 375,
+        "unit": "μQ_services",
+        "source_type": "derived",
+        "source_ref": "由 cost.required_construction_uqs ÷ effect.housing_delta_units 派生：1 500 000 ÷ 4000 == 375",
+        "derivation_expr": "idiv_floor(1500000, 4000)",
+        "reference_year": 0,
+        "valid_range": [
+          50,
+          2000
+        ],
+        "confidence": "low",
+        "definition_zh": "每套住房所需的施工服务总量，单位 μQ_services。与 construction_service 支出线按基年价格交叉核对：裁定 R-SCALE-01 后基年 1 Q_services = 1 000 000 000 μU，而 Q_SCALE 不变即 1 Q_services = 1 000 000 μQ_services，故基年 1 μQ_services = 1000 μU；construction_service 每季 300 000 000 μU 折 300 000 μQ_services，× 5 季 = 1 500 000 μQ_services，与 required_construction_uqs 逐位相等，使金额账与实物账可交叉核对。（旧刻度下本条曾写作「param.uu_to_construction_uqs_ppm == 1000000，即 1 μU 折 1 μQ」；新刻度下该换算应为 1000 μU/μQ —— 这正是裁定 R-SCALE-01 连带要求 2 所说的「分母带 μU 的系数方向相反」，故本条改用基年价格直接表述，不再引用那个参数，以免在内容层留下一个刻度错了的换算入口。）",
+        "calibration_note_zh": "改建造单价或工期后必须重算本值，并断言 required_construction_uqs == mul(本值, batch_units)；不一致即说明金额与实物两本账脱钩。",
+        "cross_check_expr": "375 * 4000 == 1500000 == cost.required_construction_uqs"
+      },
+      {
+        "params_core_card_to_create": "param.p06_equipment_uqs_per_unit",
+        "card_status": "not_created_yet",
+        "formal_field": "（无独立正式字段；由 /cost/required_equipment_uqs 承载：required_equipment_uqs == 本值 × effect.housing_delta_units）",
+        "formal_value": 50,
+        "unit": "μQ_manu",
+        "source_type": "derived",
+        "source_ref": "由 cost.required_equipment_uqs ÷ effect.housing_delta_units 派生：200 000 ÷ 4000 == 50",
+        "derivation_expr": "idiv_floor(200000, 4000)",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          500
+        ],
+        "confidence": "low",
+        "definition_zh": "每套住房所需的进口构件与设备量，单位 μQ_manu，决定 delivery_progress_ppm 的推进速度，受 state.world.delivery_capacity_uqs[sector.manu] 约束。与 import_equipment 支出线按基年价格核对：每季 40 000 000 μU 折 40 000 μQ_manu，× 5 季 = 200 000 μQ_manu，与 required_equipment_uqs 逐位相等。",
+        "calibration_note_zh": "本值为 0 时 delivery 失败路径不可构造（除零由 INV-044 禁止，须改为跳过该约束）。校准时若要关掉进口依赖，必须同时删除 failure_paths 中的 delivery 条目与其测试，不能留一条永不触发的失败路径。",
+        "cross_check_expr": "50 * 4000 == 200000 == cost.required_equipment_uqs"
+      },
+      {
+        "params_core_card_to_create": "param.p06_alloc_share_per_q_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件无正式字段；由 /effect_chain/6/rule 与 /_note_lag_model/full_effect_path_zh 引用）",
+        "formal_value": 500000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P06「最早反馈 6—12 季」的后半段：完整生效需要时间",
+        "reference_year": 0,
+        "valid_range": [
+          50000,
+          1000000
+        ],
+        "confidence": "low",
+        "definition_zh": "单季最多可把多少比例的空置公共住房分配为占用。默认 50%，使一批住房约 4 季后基本住满，从而把『建成』与『住上』分成两件可分别观察的事。",
+        "calibration_note_zh": "取 1000000 时退化为『完工即满住』，此时 max_feedback_q 应同步改为 6，且 lag_model 的 full_effect 说明失效。任何改动必须重跑 T-S-P06-ALLOC-CONSERVES。",
+        "blocking_note_zh": "这是本文件唯一既无正式字段承载、也无法由其它正式字段复算的机制参数：占用铺开速度只出现在 effect_chain 第 7 环的规则文本里。撤下 parameters 数组后它在内容层暂时无卡，params_core.json 建成前 mech.housing_allocation 引用的是一个尚未建卡的参数 ID；不得因此把它退回本文件顶层（§5.15、R-PARAM-01）。这是本规格表里覆盖最薄的一条，建卡优先级最高。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_cancel_compensation_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/exit_rule/compensation_ppm",
+        "formal_value": 250000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「签约即占用未来预算承诺，取消产生违约或沉没成本」；§10 P04「合同赔偿按剩余合同规则结算」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "definition_zh": "取消项目时按未付剩余合同额计提的赔偿比例。取 25%，高于 0（否则取消无成本、可反复开关套利）、低于 100%（否则取消永远不如硬撑）。",
+        "calibration_note_zh": "检验方式：在 ADV 类用例中构造『立项—取消—再立项』循环，断言累计现金流严格恶化。若循环仍有利可图，先提高本值，再考虑加冷却。",
+        "cross_check_zh": "/_note_exit_rule_detail/compensation_zh 的「mul_ppm(剩余合同额, 250000)，即 25%」是本字段的文字副本，两处必须同时改。"
+      },
+      {
+        "params_core_card_to_create": "param.p06_cooldown_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cooldown_q",
+        "formal_value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「预算每 4 季审查」；§17「反复开关补助是否重复领钱」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          16
+        ],
+        "confidence": "low",
+        "definition_zh": "本政策两次开关之间的冷却季数，与预算审查周期对齐，使『撤回后立刻重开』至少要等一个完整预算周期。正式字段是顶层 cooldown_q。",
+        "calibration_note_zh": "与 param.p06_cancel_compensation_ppm 一同构成反套利防线；调低本值前必须先确认赔偿比例足以让循环亏损。"
+      }
+    ]
+  },
+  "_note_parameters_referenced": [
+    "param.p06_batch_units",
+    "param.p06_cost_per_unit_uu",
+    "param.p06_opex_per_unit_uu_per_q",
+    "param.p06_planned_quarters",
+    "param.p06_construction_uqs_per_unit",
+    "param.p06_equipment_uqs_per_unit",
+    "param.p06_alloc_share_per_q_ppm",
+    "param.p06_cancel_compensation_ppm",
+    "param.p06_cooldown_q",
+    "param.policy_toggle_cost_uu",
+    "param.persons_per_housing_unit",
+    "param.living_weight_house_ppm",
+    "param.migration_w_house_ppm",
+    "param.support_weight_ppm",
+    "param.construction_share_cap_ppm",
+    "param.opex_starve_decay_ppm",
+    "param.opex_recover_ppm",
+    "param.market_rate_base_ppm",
+    "param.coupon_min_ppm",
+    "param.coupon_max_ppm",
+    "param.household_bond_appetite_ppm"
+  ],
+  "_note_parameters_referenced_zh": "上列参数由 content/parameters/params_core.json 统一建卡（11_data_contract.md §5.15 的最小集与 docs/18 R-PARAM-01）。本文件只引用、不建卡：parameter_id 全集唯一，同一个参数在两个文件里各写一张卡会直接违反 V-PC-01 的唯一性前提。前 9 个 param.p06_* 原先以 parameters 数组写在本文件顶层，本轮已按契约撤下，建卡规格见 _note_calibration_and_param_cards；param.policy_toggle_cost_uu 由 11_data_contract.md §5.15 的最小集拥有，值为 10000000 μU，本文件顶层 toggle_cost_uu 必须恒等于它，不得独立取值；其余 11 个是本政策读取、由其它机制拥有的参数（住房承载系数、生活指数与支持度权重、施工份额上限、运行费断供与恢复速度、以及发债定价与认购口径）。",
+  "ui_text_keys": {
+    "blocked.authority": "policy.P06.blocked.authority",
+    "blocked.window": "policy.P06.blocked.window",
+    "blocked.no_slot": "policy.P06.blocked.no_slot",
+    "blocked.no_headroom": "policy.P06.blocked.no_headroom",
+    "blocked.budget_insufficient": "policy.P06.blocked.budget_insufficient",
+    "blocked.opex_uncommitted": "policy.P06.blocked.opex_uncommitted",
+    "blocked.cooldown": "policy.P06.blocked.cooldown",
+    "gap.financing": "policy.P06.gap.financing",
+    "note.congestion": "policy.P06.note.congestion",
+    "note.delivery": "policy.P06.note.delivery",
+    "note.opex_unfunded": "policy.P06.note.opex_unfunded",
+    "note.no_demand": "policy.P06.note.no_demand",
+    "note.opex_starved": "policy.P06.note.opex_starved"
+  },
+  "_note_ui_copy": {
+    "format_note_zh": "以下模板按 20_ui_spec.md §9.2 的五行结构书写，槽位一律命名占位，值由资格检查器随原因对象一起返回，界面只填不算（RC-01/RC-02）。每条至少一条可执行出口并附执行后的剩余缺口（RC-06/RC-07/RC-08），至少一条台账链接（RC-12）。正文不使用禁用词表中的词（RC 禁用词表）。本段是文案来源，正式模板须转入 content/ui/reasons_zh_cn.tres 并保持逐字一致（RC-01 要求每个原因码恰有一条模板）。",
+    "code_to_text_key": {
+      "blk.authority": "blocked.authority",
+      "blk.window": "blocked.window",
+      "blk.no_slot": "blocked.no_slot",
+      "blk.no_headroom": "blocked.no_headroom",
+      "blk.budget_insufficient": "blocked.budget_insufficient",
+      "blk.opex_uncommitted": "blocked.opex_uncommitted",
+      "blk.cooldown": "blocked.cooldown",
+      "gap.financing": "gap.financing",
+      "note.congestion": "note.congestion",
+      "note.delivery": "note.delivery",
+      "note.opex_unfunded": "note.opex_unfunded",
+      "note.no_demand": "note.no_demand",
+      "note.opex_starved": "note.opex_starved"
+    },
+    "coverage_note_zh": "覆盖检查：preconditions 的 7 个 blocked_code 与 failure_paths 的 7 条 code 合计 14 个原因位，对应 13 条模板——failure_paths.congestion 与前置条件的槽位阻断共用 blk.no_slot 与 note.congestion 两条（分别对应『进不了队列』与『进了队列但推不动』两种形态），failure_paths.no_headroom 与前置条件的 blk.no_headroom 共用一条。任一 blocked_code 或 failure_path 没有模板即视为缺陷。",
+    "summary_line_zh": "公共住房建设：在 {region_name} 建 {units} 套，第 {start_q} 至 {end_q} 季每季现金 {per_q} U，投运后每季运行费 {opex} U。",
+    "reasons": [
+      {
+        "code": "blk.authority",
+        "severity": "BLOCK",
+        "title_zh": "法定权限 · 第 {quarter} 季",
+        "line_quant_zh": "本政策需要预算法案授权，执政席位比例 {avail}，通过门槛 {need}，差 {gap}。",
+        "exits_zh": [
+          "等待：第 {next_election_q} 季选举（还有 {wait_q} 季，缺口维持 {gap}）",
+          "改选：提交 P01 或 P03 等行政令档政策（缺口降至 0，代价：本季不形成住房）"
+        ],
+        "links_zh": [
+          "▸ 政治台账 · 席位与权限",
+          "▸ 政策目录 · 行政令档"
+        ]
+      },
+      {
+        "code": "blk.window",
+        "severity": "BLOCK",
+        "title_zh": "预算审查窗口 · 第 {quarter} 季",
+        "line_quant_zh": "本政策只在预算审查季提交，最近一次在第 {review_q} 季，还有 {wait_q} 季。",
+        "exits_zh": [
+          "等待：第 {review_q} 季预算审查窗口（还有 {wait_q} 季，缺口降至 0）",
+          "转存草案篮：保留本方案到窗口季自动提交（代价：占用草案位，不占资金）"
+        ],
+        "links_zh": [
+          "▸ 财政台账 · 预算审查日程"
+        ]
+      },
+      {
+        "code": "blk.no_slot",
+        "severity": "BLOCK",
+        "title_zh": "施工槽位 · 第 {quarter} 季",
+        "line_quant_zh": "{region_name} 并发施工槽位需要 {need} 个，当前空闲 {avail} 个，缺口 {gap} 个。",
+        "exits_zh": [
+          "改选地区：{alt_region_name}（空闲 {alt_avail} 个，缺口降至 0）",
+          "等待：{blocking_project_name} 预计第 {free_q} 季完工（还有 {wait_q} 季）",
+          "取消：{blocking_project_name}（代价：赔偿 {penalty} U，已付 {paid} U 不退）"
+        ],
+        "links_zh": [
+          "▸ 项目台账 · {region_name} 在建项目"
+        ]
+      },
+      {
+        "code": "blk.no_headroom",
+        "severity": "BLOCK",
+        "title_zh": "配套设施余量 · 第 {quarter} 季",
+        "line_quant_zh": "{region_name} 还能容纳 {avail} 套，本方案要建 {need} 套，缺口 {gap} 套。",
+        "exits_zh": [
+          "减小规模至 {fit_units} 套（缺口降至 0，代价：住房负担改善幅度按比例下降）",
+          "改选地区：{alt_region_name}（余量 {alt_avail} 套，缺口降至 0）"
+        ],
+        "links_zh": [
+          "▸ 地区台账 · {region_name} 住房容量与存量",
+          "▸ 社会页 · 住房负担分布"
+        ],
+        "extra_note_zh": "首版没有任何政策能提高住房容量上限，余量用尽即表示本工具在该地区已无作用空间。"
+      },
+      {
+        "code": "blk.budget_insufficient",
+        "severity": "BLOCK",
+        "title_zh": "资金来源 · 第 {quarter} 季",
+        "line_quant_zh": "首季合同款需要 {need} U，本季可用现金 {avail} U，缺口 {gap} U。",
+        "exits_zh": [
+          "改用债券融资（缺口降至 {bond_residual} U，代价：每季票息 {coupon} U）",
+          "减小规模至 {fit_units} 套（缺口降至 0）",
+          "预算调剂：从 {source_line_name} 调入 {gap} U（代价：该线本季可用额减少）"
+        ],
+        "links_zh": [
+          "▸ 财政台账 · 现金与预留",
+          "▸ 外部账户 · 信用额度"
+        ]
+      },
+      {
+        "code": "blk.opex_uncommitted",
+        "severity": "BLOCK",
+        "title_zh": "运行费承诺 · 第 {quarter} 季",
+        "line_quant_zh": "投运后每季运行费 {need} U，服务运行费档本季余量 {avail} U，缺口 {gap} U。",
+        "exits_zh": [
+          "预算调剂：从 {source_line_name} 调入 {gap} U（缺口降至 0）",
+          "减小规模至 {fit_units} 套（缺口降至 0，代价：交付套数下降）"
+        ],
+        "links_zh": [
+          "▸ 财政台账 · 已投运服务运行费"
+        ]
+      },
+      {
+        "code": "blk.cooldown",
+        "severity": "BLOCK",
+        "title_zh": "开关冷却 · 第 {quarter} 季",
+        "line_quant_zh": "上次开关在第 {last_toggle_q} 季，冷却到第 {cooldown_until_q} 季，还有 {wait_q} 季。",
+        "exits_zh": [
+          "等待：第 {cooldown_until_q} 季（还有 {wait_q} 季，缺口降至 0）"
+        ],
+        "links_zh": [
+          "▸ 政策台账 · P06 开关记录与行政成本"
+        ]
+      },
+      {
+        "code": "gap.financing",
+        "severity": "GAP",
+        "title_zh": "项目款缺口 · 第 {quarter} 季",
+        "line_quant_zh": "本季项目款需要 {need} U，该档可用 {avail} U，缺口 {gap} U，工程暂停。",
+        "exits_zh": [
+          "调整支付优先级：把项目合同款前移（代价：{demoted_line_name} 本季欠付 {demoted_gap} U）",
+          "发债 {gap} U（代价：每季票息 {coupon} U）",
+          "取消项目（代价：赔偿 {penalty} U，已付 {paid} U 不退）"
+        ],
+        "links_zh": [
+          "▸ 项目台账 · 本项目付款记录",
+          "▸ 财政台账 · 本季欠付"
+        ]
+      },
+      {
+        "code": "note.congestion",
+        "severity": "NOTE",
+        "title_zh": "施工能力 · 第 {quarter} 季",
+        "line_quant_zh": "{region_name} 本季可用施工量 {avail}，本项目需要 {need}，缺口 {gap}，进度不推进。",
+        "exits_zh": [
+          "等待：{blocking_project_name} 第 {free_q} 季完工（还有 {wait_q} 季）",
+          "降低并发：取消 {blocking_project_name}（代价：赔偿 {penalty} U）"
+        ],
+        "links_zh": [
+          "▸ 地区台账 · 服务部门实际产量与施工份额",
+          "▸ 项目台账 · 本地区在建项目排序"
+        ]
+      },
+      {
+        "code": "note.delivery",
+        "severity": "NOTE",
+        "title_zh": "构件到货 · 第 {quarter} 季",
+        "line_quant_zh": "施工进度 {construction_pct}，构件到货 {delivery_pct}，本季外部交付能力 {avail}，缺口 {gap}。",
+        "exits_zh": [
+          "等待：交付能力恢复（当前外部条件下预计第 {recover_q} 季）",
+          "减小规模至 {fit_units} 套（所需构件降至 {fit_need}，缺口降至 {fit_gap}）"
+        ],
+        "links_zh": [
+          "▸ 外部账户 · 交付能力与进口价格"
+        ]
+      },
+      {
+        "code": "note.opex_unfunded",
+        "severity": "NOTE",
+        "title_zh": "投运配套条件 · 第 {quarter} 季",
+        "line_quant_zh": "两条进度均已满格，每季运行费 {need} U 尚无预算落点，本季不投运。",
+        "exits_zh": [
+          "预算调剂：调入 {gap} U（下季自动投运）",
+          "维持现状（代价：工程完工但不形成住房，已付 {paid} U 不退）"
+        ],
+        "links_zh": [
+          "▸ 财政台账 · 服务运行费承诺",
+          "▸ 项目台账 · 完工与投运状态"
+        ]
+      },
+      {
+        "code": "note.no_demand",
+        "severity": "NOTE",
+        "title_zh": "空置与运行费 · 第 {quarter} 季",
+        "line_quant_zh": "{region_name} 新增 {units} 套，已入住 {occupied} 套，空置 {vacant} 套，本季运行费 {opex} U。",
+        "exits_zh": [
+          "改选地区新建：{alt_region_name} 住房负担 {alt_burden}（缺口降至 {alt_gap}）",
+          "维持现状（代价：每季运行费 {opex} U 继续支付）"
+        ],
+        "links_zh": [
+          "▸ 社会页 · 逐组住房负担分布",
+          "▸ 地区台账 · 住房存量与占用"
+        ],
+        "extra_note_zh": "模型中的限制因素：该地区住房不是当前的约束项，新增套数不会经任何通路提高产出或支持度。"
+      },
+      {
+        "code": "note.opex_starved",
+        "severity": "NOTE",
+        "title_zh": "运行费欠拨 · 第 {quarter} 季",
+        "line_quant_zh": "{region_name} 已投运 {units} 套，本季运行费应付 {need} U、实付 {avail} U，欠付 {gap} U；服务可用率 {availability} ，维护欠账 {backlog} U。",
+        "exits_zh": [
+          "补拨 {gap} U（可用率回升速度低于下降速度，预计第 {recover_q} 季回到 {target_availability}）",
+          "调整支付优先级：把服务运行费档前移（代价：{demoted_line_name} 本季欠付 {demoted_gap} U）",
+          "维持现状（代价：可用率继续按每季 {decay} 下降，住房资产本身不减少）"
+        ],
+        "links_zh": [
+          "▸ 财政台账 · 本季欠付与支付优先级",
+          "▸ 社会页 · 服务可及性"
+        ],
+        "extra_note_zh": "断供不删除资产：state.region.housing_stock_units、state.region.housing_capacity_units 与 state.gov.housing_uu 在欠拨期间逐位不变（INV-102）；后果只经 pubserv 可用率与服务可及性表达。"
+      }
+    ]
+  },
+  "_note_notes_zh": "全部数值为设计假设与测试夹具，不是现实工程估算（计划书 §14）。本政策不含任何『平衡修正项』或凭空补贴：住房只能由项目队列形成，占用只能由分配规则拆分，生活指数只能由既有合成式得出。"
+}

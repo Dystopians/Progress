@@ -1,0 +1,776 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E12",
+  "_note_code": "E12",
+  "_note_slug": "annual_budget_review_conflict",
+  "label_zh": "年度预算审查冲突",
+  "_note_name_zh": "年度预算审查冲突",
+  "_note_one_line_zh": "四季一次的预算审查撞上三件事同时发生——执政团队的全国支持度不足、一个组织力足够强的集团有条件开价、政府还欠着账：审查变成一场谈判，行政资源被占用，预算被削与执政风险都由既有的审查规则去判，而不是由这个事件来判。",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的结构修复（对应校验器 E_CONTENT_LAYOUT、E_UNKNOWN_FIELD 与 E_EVENT_EVIDENCE）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）**加上计划书 §13 要求、校验器强制的 consequences**；其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删，只是明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) consequences 从 _note_consequences 升为顶层正式字段，逐条给出对手方或会计解释，并与 effects 逐位对账；升格的理由与遗留的契约待办见 _note_consequences_placement_zh。(4) 单位复核（裁定 R-SCALE-01，1 U = 1 000 000 000 μU）：trigger 中 state.gov.arrears_uu 的阈值与 param.e12_arrears_trigger_uu 由旧刻度的 200 000 μU 改为 200 000 000 μU（两者都是正文一直写着的 0.2 U）。迁移器按「键名含 uu 词元者其子树 ×1000」的规则工作，而承载这个金额的键叫 value / valid_range，故被漏掉；不改的话阈值实际是 0.0002 U，任何一笔零头欠付都能满足它。",
+  "_note_category": "fiscal_politics",
+  "_note_category_zh": "财政与政治",
+  "_note_anchor": {
+    "scope_kind": "national",
+    "schedule_zh": "预算审查在 q ≡ 3 (mod 4)，即每年第 4 季（INV-127；politics.json budget_review.period_q = 4、first_review_q = 3）。计划书 §08 的「预算每 4 季审查」与 §04 的「第 4 季完成首次年度审查」在 q 从 0 起的口径下对应 q = 3、7、11、…、39。",
+    "blocking_bloc_id": "bloc.business",
+    "anchor_reason_zh": "选 bloc.business 作为开价方：politics.json 中它的开局组织力最高（400000）、资源最多（0.9 U），且其否决域 tax_law 正好覆盖预算审查中最常见的收入侧工具（P01/P02）。绑定单一集团是触发语言的限制（scope 只能指向一个稳定 ID，没有「任一集团成立即触发」的选择器，OQ-PENDING-EV-01）；另外两个集团在预算审查中的立场变化仍由 politics.json 的 budget_review.consequences 统一处理，只是不产生事件。"
+  },
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "flow.politics.budget_review_due",
+        "op": "eq",
+        "value": 1,
+        "_note_zh": "本季是预算审查季。该标志由 S02 置位、S08 判定（12 号文件 §8.5），事件在 S08 读它时本季流量尚未清零（流量在下一季 S01 才清零）。"
+      },
+      {
+        "metric": "derived.politics.support_national_ppm",
+        "op": "lt",
+        "value": 480000,
+        "_note_zh": "全国支持度低于 48%。这是本模板对「联盟条件不满足」的可求值替代，理由见 trigger_semantics.coalition_zh。"
+      },
+      {
+        "metric": "state.bloc.org_power_ppm",
+        "scope": "bloc.business",
+        "op": "gt",
+        "value": 450000,
+        "_note_zh": "工商业联盟的组织力高于 45%（开局 400000），即它已积累到足以在审查中开条件的程度。"
+      },
+      {
+        "metric": "state.gov.arrears_uu",
+        "op": "gt",
+        "value": 200000000,
+        "_note_zh": "政府欠付余额超过 0.2 U。欠付是 politics.json 中 budget_review.fail_conditions 的两条之一，因此这一条保证冲突有具体的、台账上查得到的由头，而不是抽象的政治不合。"
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 3,
+        "_note_zh": "最早第一次审查季（q = 3，即第 4 季），与计划书 §04 的新手前四季「完成首次年度审查」对齐。"
+      }
+    ],
+    "probability_ppm": 900000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 4,
+    "max_occurrences": 3
+  },
+  "_note_trigger_semantics": {
+    "evaluation_step": "S08",
+    "conjunction_zh": "五条是逻辑与。第一条把本模板钉死在审查季上：非审查季一律 continue 且不抽样，因此本事件在结构上不可能出现在第 1、2、3 季（q = 0,1,2）。",
+    "no_random_popup_zh": "没有任何「每季 X% 概率政治危机」的路径。触发的前提是一个由日程表决定的季度（q ≡ 3 mod 4）加上三条玩家可查、可改的状态条件。probability_ppm 取 0.9，几乎必然——因为当这四条同时成立时，冲突本来就不该是偶然的；留 0.1 的余量只是为了不让它退化成一个纯粹的日程事件。",
+    "coalition_zh": "任务要求「联盟条件不满足时触发」。politics.json 把联盟条件定义为 reform_domains[d].coalition_mode == all_of 时要求列出的每个集团 stance_ppm[b][p] >= param.bloc_coalition_support_min_ppm。这个条件**无法直接写进触发**：stance_ppm 是 (集团 × 政策) 的二维量，而 trigger 的 scope 只有一个记号位，写 bloc.business 不足以确定是哪条政策的立场（OQ-PENDING-EV-09）。本模板不发明二维 scope，改用两个可求值的替代：(a) derived.politics.support_national_ppm < 480000 —— 席位换算是支持度的纯函数（INV-126），支持度低于半数意味着执政团队在审查中拿不到自有多数，必须靠联盟；(b) bloc.business 的 org_power_ppm > 450000 —— 存在一个有能力开条件的对手。两者合起来表达的是「需要联盟而联盟不稳」。曾考虑直接用 state.politics.seats_gov < 51（101 席的多数线），但席位只在 q ∈ {15, 31} 由 seat_rule 更新，开局固定 56 席，用它会让本事件在前 15 季结构性不可能触发；两害相权取支持度。该替代登记为 OQ-PENDING-EV-09。",
+    "persistence_zh": "本模板不需要持续季数算子：预算审查本身就是四季一次的时间闸，cooldown_q = 4 与它对齐，因此至多每个审查周期触发一次。",
+    "scope_rule_zh": "全局标量（budget_review_due、support_national_ppm、arrears_uu、time.q）不写 scope；集团量用 bloc.<id>。效果落在群组数组上时逐地区列出四条，不使用未定义的全国作用域记号（OQ-PENDING-EV-02）。"
+  },
+  "evidence_refs": [
+    "flow.politics.budget_review_due",
+    "derived.politics.support_national_ppm",
+    "state.bloc.org_power_ppm",
+    "state.bloc.stance_ppm",
+    "state.gov.arrears_uu",
+    "state.gov.arrears_by_payee_uu",
+    "flow.gov.receipts_income_tax_uu",
+    "flow.gov.receipts_profit_tax_uu",
+    "flow.gov.primary_paid_uu",
+    "flow.gov.interest_paid_uu",
+    "derived.fiscal.next4q_debt_service_uu",
+    "state.politics.mandate_status",
+    "state.politics.seats_gov"
+  ],
+  "_note_evidence": [
+    {
+      "metric": "flow.gov.receipts_income_tax_uu",
+      "ledger_alias": "ldg.cash",
+      "page": "page.report",
+      "label_zh": "近四季收入合计",
+      "check_zh": "politics.json 的 budget_review.measures 定义 receipts_4q_uu 为个税、企业利润税与其它收入在 q-3..q 上的加总。**新增借款不在其中**——借款不是收入（INV-029）。审查看的是这个口径，不是国库现金余额。"
+    },
+    {
+      "metric": "flow.gov.primary_paid_uu",
+      "ledger_alias": "ldg.cash",
+      "page": "page.report",
+      "label_zh": "近四季支出合计",
+      "check_zh": "outlays_4q_uu = 基本支出 + 利息，**不含偿还本金**（与计划书 §05 的基线年计划同一口径）。赤字 = 支出 - 收入。"
+    },
+    {
+      "metric": "state.gov.arrears_uu",
+      "ledger_alias": "ldg.cash",
+      "page": "page.report",
+      "label_zh": "政府欠付余额",
+      "check_zh": "budget_review.fail_conditions 的两条之一（另一条是赤字率）。欠付不计息、与 debt 分开记（10 号文件 §2.2）。可按收款方下钻，看清欠的是谁。"
+    },
+    {
+      "metric": "derived.fiscal.next4q_debt_service_uu",
+      "ledger_alias": "ldg.debt",
+      "page": "page.report",
+      "label_zh": "未来四季到期本金与利息",
+      "check_zh": "计划书 §07 明确要求财政页展示这一项，并且强调单独展示债务/GDP 不能替代偿付能力分析。审查中真正难回答的是这张到期表，不是那个比率。"
+    },
+    {
+      "metric": "derived.politics.support_national_ppm",
+      "ledger_alias": "ldg.politics",
+      "page": "page.society",
+      "label_zh": "全国支持度",
+      "check_zh": "由 36 组 support_ppm 按人口加权（最大余数法）得出，且**必须同时保留逐组分布**（INV-124）。只看全国一个数正是计划书 §18 点名的风险。"
+    },
+    {
+      "metric": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "ledger_alias": "ldg.politics",
+      "page": "page.society",
+      "label_zh": "工商业联盟的组织力",
+      "check_zh": "由惯性、成员规模与资源三项合成（§8.3）。它与选票、行政能力由三个不同函数计算，互不引用（INV-125）。"
+    },
+    {
+      "metric": "state.bloc.stance_ppm",
+      "ledger_alias": "ldg.politics",
+      "page": "page.policy",
+      "label_zh": "各集团对 12 项政策的立场",
+      "check_zh": "3×12 的矩阵。政策页必须能从这里解释「为什么这条不能执行」——若某集团对某政策的立场低于 param.bloc_veto_stance_threshold_ppm 且该政策落在其否决域内，命令会被 REJECT(E_BLOC_VETO)（INV-100）。"
+    },
+    {
+      "metric": "state.politics.mandate_status",
+      "ledger_alias": "ldg.politics",
+      "page": "page.overview",
+      "label_zh": "留任资格",
+      "check_zh": "ok / at_risk / lost。**本事件不写它**：它由 §8.5 的留任判定与 politics.json 的 budget_review.consequences 决定。事件与判定必须分开看，见 _note_consequence_separation_zh。"
+    }
+  ],
+  "effects": [
+    {
+      "target": "state.politics.admin_capacity_ppm",
+      "delta_ppm": -12000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -20000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -20000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -20000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.xiling",
+      "delta_ppm": -20000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 20000
+    }
+  ],
+  "_note_consequences": [
+    {
+      "consequence_id": "cons.e12.admin_capacity",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/0",
+      "target": "state.politics.admin_capacity_ppm",
+      "scope": "national",
+      "delta_ppm": -12000,
+      "change_expr": "admin_capacity_ppm := clamp(admin_capacity_ppm + (-12000), 0, 1000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），在同季 §8.5 的留任判定之前",
+      "counterparty": "none",
+      "accounting_zh": "没有对手方，也没有过账行：本条改的是一个 ppm 口径的组织量，不转移货币也不转移实物，因此 ldg.cash / ldg.debt / ldg.commitment 三本账在事件前后逐位不变（INV-130、V-EV-06）。计划书 §13 要求的五项在本条上分别是——实体 ID：state.politics.admin_capacity_ppm（全国标量，无下标）；来源操作：event.E12 的触发本身，日志行 cause = event.E12；数量：-12000 ppm（不是金额，本条没有 μU）；时间：触发当季 S08 一次性写入；约束：clamp 到 [0, 1 000 000]，且落点必须在 11 号文件 §5.13 的事件可写白名单内。",
+      "physical_reading_zh": "审查僵局期间，同一批行政人员的工时被谈判、重新编制预算与答复质询占用——能力不是被摧毁，是被占用。",
+      "duration_q": -1,
+      "duration_note_zh": "**首版没有 admin_capacity 的恢复规则**（12 号文件只说它由 S07 写，没有给更新式），因此这一笔在首版事实上不可逆。本模板因此取 -12000（开局 600000 的 2%）并把触发上限压到 3 次，使本模板对行政能力的永久损害上限为 36000 ppm；与 E11 的 20000 ppm 合计 56000 ppm，约为开局值的 9.3%。登记为 OQ-PENDING-EV-08。",
+      "reversible": false,
+      "evidence_ref": "state.politics.admin_capacity_ppm",
+      "param_ref": "param.e12_admin_capacity_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.expectation_beiyuan",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/1",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -20000,
+      "change_expr": "对 region.beiyuan 的全部 9 个群组 g：expectation_ppm[g] := clamp(expectation_ppm[g] + (-20000), 0, 2000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），**晚于**同季 §8.2 的支持度合成",
+      "counterparty": "none",
+      "accounting_zh": "没有对手方：预期是主观量，下调它不等于任何人得到了什么，因此不产生过账行。计划书 §13 的五项——实体 ID：state.group.expectation_ppm，下标为 region.beiyuan 下的 9 个 group.<r>.<a>.<k>（全国共 36 组，本条只覆盖其中 9 组）；来源操作：event.E12；数量：每组 -20000 ppm，北原一地合计影响 9 组；时间：触发当季 S08 写入，但因为 §8.2 已在本步之前算完，**它要到下一季的 §8.2 才进入支持度**；约束：clamp 到 [0, 2 000 000]（预期的上界是 2e6，不是 1e6）。",
+      "physical_reading_zh": "预算僵局改变的是居民对未来的看法，不是当期的生活水平——所以写 expectation_ppm 而不是 living_index_ppm（后者也根本不在事件可写白名单里）。",
+      "duration_q": 0,
+      "duration_note_zh": "一次性增量，此后落在 §8.1 的惯性式上逐季向 living_index 回归；没有额外的清零步骤。",
+      "reversible": true,
+      "evidence_ref": "state.group.expectation_ppm",
+      "param_ref": "param.e12_expectation_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.expectation_zhongzhou",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/2",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -20000,
+      "change_expr": "对 region.zhongzhou 的全部 9 个群组 g：expectation_ppm[g] := clamp(expectation_ppm[g] + (-20000), 0, 2000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），**晚于**同季 §8.2 的支持度合成",
+      "counterparty": "none",
+      "accounting_zh": "没有对手方：预期是主观量，下调它不等于任何人得到了什么，因此不产生过账行。计划书 §13 的五项——实体 ID：state.group.expectation_ppm，下标为 region.zhongzhou 下的 9 个 group.<r>.<a>.<k>（全国共 36 组，本条只覆盖其中 9 组）；来源操作：event.E12；数量：每组 -20000 ppm，中州一地合计影响 9 组；时间：触发当季 S08 写入，但因为 §8.2 已在本步之前算完，**它要到下一季的 §8.2 才进入支持度**；约束：clamp 到 [0, 2 000 000]（预期的上界是 2e6，不是 1e6）。",
+      "physical_reading_zh": "预算僵局改变的是居民对未来的看法，不是当期的生活水平——所以写 expectation_ppm 而不是 living_index_ppm（后者也根本不在事件可写白名单里）。",
+      "duration_q": 0,
+      "duration_note_zh": "一次性增量，此后落在 §8.1 的惯性式上逐季向 living_index 回归；没有额外的清零步骤。",
+      "reversible": true,
+      "evidence_ref": "state.group.expectation_ppm",
+      "param_ref": "param.e12_expectation_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.expectation_haijia",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/3",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -20000,
+      "change_expr": "对 region.haijia 的全部 9 个群组 g：expectation_ppm[g] := clamp(expectation_ppm[g] + (-20000), 0, 2000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），**晚于**同季 §8.2 的支持度合成",
+      "counterparty": "none",
+      "accounting_zh": "没有对手方：预期是主观量，下调它不等于任何人得到了什么，因此不产生过账行。计划书 §13 的五项——实体 ID：state.group.expectation_ppm，下标为 region.haijia 下的 9 个 group.<r>.<a>.<k>（全国共 36 组，本条只覆盖其中 9 组）；来源操作：event.E12；数量：每组 -20000 ppm，海岬一地合计影响 9 组；时间：触发当季 S08 写入，但因为 §8.2 已在本步之前算完，**它要到下一季的 §8.2 才进入支持度**；约束：clamp 到 [0, 2 000 000]（预期的上界是 2e6，不是 1e6）。",
+      "physical_reading_zh": "预算僵局改变的是居民对未来的看法，不是当期的生活水平——所以写 expectation_ppm 而不是 living_index_ppm（后者也根本不在事件可写白名单里）。",
+      "duration_q": 0,
+      "duration_note_zh": "一次性增量，此后落在 §8.1 的惯性式上逐季向 living_index 回归；没有额外的清零步骤。",
+      "reversible": true,
+      "evidence_ref": "state.group.expectation_ppm",
+      "param_ref": "param.e12_expectation_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.expectation_xiling",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/4",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.xiling",
+      "delta_ppm": -20000,
+      "change_expr": "对 region.xiling 的全部 9 个群组 g：expectation_ppm[g] := clamp(expectation_ppm[g] + (-20000), 0, 2000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），**晚于**同季 §8.2 的支持度合成",
+      "counterparty": "none",
+      "accounting_zh": "没有对手方：预期是主观量，下调它不等于任何人得到了什么，因此不产生过账行。计划书 §13 的五项——实体 ID：state.group.expectation_ppm，下标为 region.xiling 下的 9 个 group.<r>.<a>.<k>（全国共 36 组，本条只覆盖其中 9 组）；来源操作：event.E12；数量：每组 -20000 ppm，西岭一地合计影响 9 组；时间：触发当季 S08 写入，但因为 §8.2 已在本步之前算完，**它要到下一季的 §8.2 才进入支持度**；约束：clamp 到 [0, 2 000 000]（预期的上界是 2e6，不是 1e6）。",
+      "physical_reading_zh": "预算僵局改变的是居民对未来的看法，不是当期的生活水平——所以写 expectation_ppm 而不是 living_index_ppm（后者也根本不在事件可写白名单里）。",
+      "duration_q": 0,
+      "duration_note_zh": "一次性增量，此后落在 §8.1 的惯性式上逐季向 living_index 回归；没有额外的清零步骤。",
+      "reversible": true,
+      "evidence_ref": "state.group.expectation_ppm",
+      "param_ref": "param.e12_expectation_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.business_org_power",
+      "written_by": "event",
+      "agent": "event.E12",
+      "effect_ref": "/effects/5",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 20000,
+      "change_expr": "org_power_ppm[bloc.business] := clamp(org_power_ppm[bloc.business] + 20000, 0, 1000000)",
+      "settlement_step": "S08",
+      "applied_at": "12 号文件 §8.4（事件结算），晚于同季 §8.3 的集团常规更新",
+      "counterparty": "bloc.business ← 执政团队（state.politics）",
+      "counterparty_note_zh": "这是本文件唯一一条有实质对手方的后果，也是唯一一条**零和**的后果：议价地位是相对量，工商业联盟在审查中多出来的分量，正是执政团队在收入侧工具（P01/P02，落在其否决域 tax_law 内）上失去的那一部分。但零和只在语义上成立，在账上不成立——没有任何变量记录「执政团队的议价地位」，因此没有配对的反向过账行，state.politics.* 的任何字段都不因本条而变。",
+      "accounting_zh": "计划书 §13 的五项——实体 ID：state.bloc.org_power_ppm[bloc.business]；来源操作：event.E12；数量：+20000 ppm；时间：触发当季 S08；约束：clamp 到 [0, 1 000 000]，且与 event.E11 的 -15000 ppm 共同作用（方向相反，见 param.e12_business_org_power_delta_ppm 的 calibration_note）。org_power 不是选票也不是行政能力：三者由三个互不引用的函数计算（INV-125），组织力上升不表示这个集团支持政府（stance 与 support 是两套变量，计划书 §08）。",
+      "downstream_zh": "这是本事件真正的长期后果：组织力进入下几季的否决与联盟判定，玩家会发现 option.e12.raise_revenue 这条路在冲突之后更难走。因果有账可查（可在 ldg.politics 与政策页的 blocked_reason 上逐条复核），不是一次隐形惩罚。",
+      "duration_q": 0,
+      "duration_note_zh": "一次性增量，此后按 param.bloc_org_inertia_ppm 的惯性逐季衰减。",
+      "reversible": true,
+      "evidence_ref": "state.bloc.org_power_ppm",
+      "param_ref": "param.e12_business_org_power_delta_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.mandate_status",
+      "written_by": "mechanism",
+      "agent": "politics.json budget_review.consequences + 12 号文件 §8.5 的留任判定",
+      "event_writes": false,
+      "target": "state.politics.mandate_status",
+      "scope": "national",
+      "settlement_step": "S08",
+      "applied_at": "与本事件同一季、同一步，但在事件结算（§8.4）之后独立执行",
+      "counterparty": "none",
+      "formula_zh": "fail_conditions 为 any_of：赤字率超 param.budget_review_deficit_limit_ppm，或欠付超 param.budget_review_arrears_limit_uu，或四季收入 <= 0。一次失败 → at_risk；连续失败达 param.budget_review_fail_to_lost_count → lost；at_risk 回到 ok 需要连续 param.budget_review_recovery_reviews 次通过（恶化快、恢复慢，与 INV-122 同一精神）。",
+      "accounting_zh": "列在这里不是因为事件写了它，而是因为玩家会在同一份报告里同时看到这两件事，必须写明谁写的：写它的是审查规则，不是 event.E12。两者在同一季发生但互不调用——即使本事件不触发，审查照样按规则判；即使本事件触发，审查也可能通过。该字段不在 11 号文件 §5.13 的事件可写白名单内，事件够不到它；T-S-E12-NO-MANDATE-WRITE 是这句话的可执行版本。",
+      "duration_q": -1,
+      "reversible": true,
+      "evidence_ref": "state.politics.mandate_status"
+    },
+    {
+      "consequence_id": "cons.e12.stance_penalty",
+      "written_by": "mechanism",
+      "agent": "politics.json budget_review.consequences.on_fail",
+      "event_writes": false,
+      "target": "state.bloc.stance_ppm",
+      "scope": "全部 3 个集团 × 12 条政策",
+      "settlement_step": "S08",
+      "applied_at": "审查判定为失败的当季，事件结算之后",
+      "counterparty": "none",
+      "formula_zh": "审查失败时对全部 12 条政策的 stance 施加 param.budget_review_stance_penalty_ppm 的惩罚，并 clamp 到 [-1000000, 1000000]。",
+      "accounting_zh": "stance_ppm 虽在事件可写白名单里，本模板**仍然不写它**：审查失败自身已经对同一批数施加惩罚，事件再写一次就是同一件事罚两遍。另有一条结构性理由——stance 是 (集团 × 政策) 的二维量，而 effects 的 scope 只有一个记号位，事件无法安全地指定「哪个集团对哪条政策」（OQ-PENDING-EV-09）。",
+      "duration_q": -1,
+      "reversible": true,
+      "evidence_ref": "state.bloc.stance_ppm"
+    },
+    {
+      "consequence_id": "cons.e12.legal_authority_bit3",
+      "written_by": "mechanism",
+      "agent": "politics.json budget_review.consequences.on_fail",
+      "event_writes": false,
+      "target": "state.politics.legal_authority_mask（第 3 位：重大改革权）",
+      "scope": "national",
+      "settlement_step": "S08",
+      "applied_at": "审查判定为失败的当季，事件结算之后",
+      "counterparty": "none",
+      "formula_zh": "审查失败时撤回位 3：legal_authority_mask := legal_authority_mask & ~(1 << 3)。",
+      "accounting_zh": "该字段不在事件可写白名单内，事件够不到它。它的后果在政策页上可见：位 3 被撤回后，依赖重大改革权的命令返回 REJECT 并必须给出具体的 blocked_reason（INV-100），而不是让按钮静默变灰。",
+      "duration_q": -1,
+      "reversible": true,
+      "evidence_ref": "state.politics.legal_authority_mask"
+    }
+  ],
+  "_note_consequence_separation_zh": "本模板最重要的一条纪律：**预算被削与执政风险不是本事件的效果**。审查的实际后果由 politics.json 的 budget_review.consequences 与 12 号文件 §8.5 决定——一次失败即 mandate_status = at_risk，连续 param.budget_review_fail_to_lost_count 次即 lost，全部 12 条政策的 stance 受 param.budget_review_stance_penalty_ppm 惩罚，legal_authority_mask 的第 3 位（重大改革权）被撤回。这些都不在事件可写白名单里（INV-130），事件也不该去写：审查规则是玩家可以事先读到的规则，事件只是这场审查变成冲突时的社会与政治反应。把留任判定塞进事件，等于把一条可预期的规则改成一次随机惩罚。",
+  "_note_consequence_effect_timing_zh": "12 号文件 §8 的步内顺序是 §8.1 主观量 → §8.2 支持度 → §8.3 集团 → §8.4 事件 → §8.5 留任。因此本事件对预期与组织力的增量**不影响本季已算完的支持度**，要到下一季 §8.2 重算时才进入；但它对 admin_capacity 的扣减在同季 §8.5 之前就已生效。报告措辞必须尊重这个顺序，不得写成事件当季就压低了支持率。",
+  "_note_consequence_no_trust_effect_zh": "本模板刻意不写 trust_ppm。预算审查中的政治冲突不是「承诺没兑现」——§8.1 的失信闭集合是转移支付欠付、运行费欠拨、项目取消、债券违约四项，而这四项若真的发生，信任已经在那条路上掉过一次了。审查冲突本身只是这些后果的政治场合，再扣一次信任就是同一件事罚两遍。",
+  "_note_consequence_no_ledger_effect_zh": "本事件不动现金、不动债务、不动承诺、不动预算（INV-130，V-EV-06）。预算的削减若真的发生，必须表现为玩家的政策命令或既有支出线的退出，每一笔都要经 S02 的资格检查与 S04 的实际支付——不存在「审查直接把某个数字改小」的路径。",
+  "_note_consequence_resource_conservation_zh": "没有任何资源被创造或消灭。全部效果都是三个主观／组织量的 ppm 增量，均在 11 号文件 §5.13 的事件可写白名单内。财政数字一分未改。",
+  "_note_consequences_placement_zh": "本文件的 consequences 是顶层正式字段，是逐条后果的**唯一事实来源**：事件写入的 6 条以 effect_ref 指向 effects 的对应下标，delta_ppm 与之逐位相同（T-S-E12-CONSEQUENCES-MATCH-EFFECTS 钉死这条）；另外 3 条 written_by = \"mechanism\" 的是由审查规则而非本事件写的状态变化，列出它们是为了让玩家在同一份报告里分得清谁写了什么，它们一律带 event_writes = false。此前这些内容放在 _note_consequences 里，因为 11 号文件 §5.13 的 EventTemplate 只声明九个键且 additionalProperties: false，而 tools/validate_content.py 的 check_event 又无条件要求顶层 consequences（缺失即 E_EVENT_EVIDENCE）——两条规则不可能同时满足。现按计划书 §13（文档优先级第一位，「每条变化附带实体 ID、来源操作、金额／数量、时间与约束」）执行：字段升为正式字段，校验器的 schema 表同步声明它为可选键（缺失仍报 E_EVENT_EVIDENCE，口径未降级）。契约侧待办：11 号文件 §5.13 应把 consequences 补进 EventTemplate 的键集合，否则这里仍是校验器与契约的分歧点。",
+  "_note_player_options": [
+    {
+      "option_id": "option.e12.cut_spending",
+      "label_zh": "削减支出以通过审查",
+      "mechanism_zh": "退出或缩小某条既有支出政策（改 policy params，或走 exit_rule 的退出倒计时）。审查看的是近四季的 outlays_4q_uu，因此削减要早做才来得及影响下一次审查。",
+      "command": "cmd.policy_set_params / cmd.policy_exit",
+      "cost_zh": "被削的那条政策的受益群组当期收入或服务下降；若削的是法定转移，对应群组的失信通道可能被触发（§8.1）。开关本身有一次性行政成本，且 toggle_count 单调递增（INV-098）。",
+      "preconditions_zh": "不在冷却期内（q >= cooldown_until_q，否则 REJECT）；**已签合同的承诺不因政策退出而消失**（INV-032）——削政策削不掉已经许出去的工程款。",
+      "lag_q": 1,
+      "lag_note_zh": "参数改动在 effective_from_q 起生效且不回溯（INV-095/098）。对 outlays_4q_uu 这个滚动四季口径而言，要完整体现需要四季。",
+      "failure_modes_zh": [
+        "削的是已承诺的项目支出：committed_memo 不会因此减少，只能通过取消项目，而取消不退已付款还要赔偿（INV-093）。",
+        "削减触发失信：转移支付欠付或运行费欠拨都在 §8.1 的闭集合里，省下的钱换来信任下跌，可能在下次审查前把支持度推得更低。",
+        "削得太晚：滚动四季口径使本次审查看到的仍是旧数字。"
+      ],
+      "political_reaction_zh": "business 立场改善（赤字收敛）；labor_public 强烈反对（其关心指标含就业与公共服务可用率）；agri_coop 视被削项目而定。",
+      "reversible": true,
+      "reversibility_note_zh": "政策参数可再调回，但期间造成的欠付与信任损失不可回滚。"
+    },
+    {
+      "option_id": "option.e12.raise_revenue",
+      "label_zh": "提高收入（P01 个人所得税 / P02 企业利润税）",
+      "mechanism_zh": "调整税率与级距。税额 = 税基 × 税率，floor 取整（少征优于多征）。",
+      "command": "cmd.policy_set_params(policy.P01 | policy.P02)",
+      "cost_zh": "居民可支配收入或企业税后利润下降，经消费与投资两条链子回到产出；且征收受 state.gov.tax_capacity_ppm 的能力约束。",
+      "preconditions_zh": "**P02 落在 tax_law 域，bloc.business 具备否决能力**：若其对该政策的 stance_ppm 低于 param.bloc_veto_stance_threshold_ppm（-600000），命令直接 REJECT(E_BLOC_VETO)，状态完全不变。而本事件的效果之一正是把 business 的组织力推高 20000——玩家会发现这条路在冲突之后更难走，这是有账可查的因果，不是惩罚。",
+      "lag_q": 1,
+      "lag_note_zh": "计划书 §09 给 P01/P02 的最早反馈是 1 季。",
+      "failure_modes_zh": [
+        "税基侵蚀：提高税率不等于税收等比例上升，征收能力与税基反应共同决定实际征得（10 号文件裁定 R-30；计划书 §17 的恶意玩家测试专门问「提高税率后税收是否绕过实际税基」）。",
+        "被否决：见 preconditions。",
+        "征收能力不足：应计税与实收税的差额进 state.gov.tax_receivable_uu，本季现金并未增加。"
+      ],
+      "political_reaction_zh": "business 强烈反对（关心指标是税前利润，而税后利润决定其资源）；labor_public 视税种而定（对 P02 偏支持，对 P01 偏反对）；agri_coop 中性偏负。",
+      "reversible": true
+    },
+    {
+      "option_id": "option.e12.build_tax_capacity",
+      "label_zh": "税务能力建设（P11）",
+      "mechanism_zh": "人员、信息系统与实施计划，效果落在 state.gov.tax_capacity_ppm（mech.tax_capacity）。它改变的是「同样的税率能收到多少」，不是税率本身，因此不落在 tax_law 的否决域上。",
+      "command": "cmd.policy_enact(policy.P11)",
+      "cost_zh": "计划书 §09：「先增加成本，再改变征收覆盖」。4—8 季内只有支出。",
+      "preconditions_zh": "预算预留通过；法定权限位满足。",
+      "lag_q": 6,
+      "lag_note_zh": "4—8 季，取中位 6 季——**跨过本次以及下一次审查**。这是一个「知道对但来不及」的选项，它的存在是为了让玩家在第二局改变政策顺序（计划书 §02 的设计北极星）。",
+      "failure_modes_zh": [
+        "时滞内财政先恶化：成本当季发生，收益要到六季后，可能把本次 at_risk 推成下次 lost。",
+        "税基本身萎缩时，征收能力提高也收不上来——能力作用在覆盖率上，不能创造税基。"
+      ],
+      "political_reaction_zh": "business 反对（实际税负上升）；labor_public 支持；agri_coop 中性偏负。",
+      "reversible": true
+    },
+    {
+      "option_id": "option.e12.do_nothing",
+      "label_zh": "什么都不做",
+      "mechanism_zh": "不下任何命令，让审查按既有规则判。",
+      "command": "none",
+      "cost_zh": "不花钱。",
+      "preconditions_zh": "无。",
+      "lag_q": 0,
+      "failure_modes_zh": [
+        "审查按 politics.json 的 fail_conditions 判定：赤字率或欠付任一超限即失败。一次失败 mandate_status 变 at_risk；连续失败达 param.budget_review_fail_to_lost_count 次变 lost；而 mandate_status 连续 param.no_confidence_q 季为 lost 即执政提前结束（termination_reason = lost_confidence，12 号文件 §8.5）。",
+        "失败还会对全部 12 条政策的 stance 施加惩罚并撤回重大改革权（位 3），玩家在之后几季会发现越来越多政策「不可执行」，政策页必须给出具体的 blocked_reason（INV-100）。",
+        "at_risk 回到 ok 需要连续多次通过，恢复结构性地慢于恶化。",
+        "本事件冷却 4 季（与审查周期同步），至多触发 3 次；上限用尽后审查照常进行、后果照常发生，只是不再有事件提示。"
+      ],
+      "political_reaction_zh": "business 的组织力累积上升，在否决与联盟判定中越来越有分量；全国预期持续走低并在下一季进入支持度；欠付若继续累积，下一次审查更难通过。",
+      "reversible": true,
+      "reversibility_note_zh": "审查失败本身可以靠此后连续通过来恢复 mandate_status；但 lost 一经达成不可通过审查恢复（politics.json on_pass 明写「mandate_status == lost 不能靠通过恢复」）。因此「什么都不做」在第一次是可挽回的，在连续第二次之后不是。"
+    }
+  ],
+  "_note_political_reaction": {
+    "bloc.agri_coop": 0,
+    "bloc.business": 20000,
+    "bloc.labor_public": 0
+  },
+  "_note_political_reaction_note_zh": "本字段沿用 PolicyDefinition（11 号文件 §5.12）的形状：键是集团稳定 ID，值是本事件对该集团 org_power_ppm 的增量（ppm，0 表示本事件不对其写任何效果）。与政策的同名字段不同的是，事件的这个数**已经**逐条出现在 effects 里，此处只是按集团聚合的一个索引，不构成第二条写入路径。逐条理由见 political_reaction_basis。",
+  "_note_political_reaction_basis": [
+    {
+      "actor": "bloc.agri_coop",
+      "direction": "neutral",
+      "delta_org_power_ppm": 0,
+      "writes_effect": false,
+      "basis_zh": "关心指标是农业 cell 的实际增加值，否决域是 land_reform，与预算审查的两条 fail_condition（赤字率、欠付）之间没有直接机制通路。若审查失败撤回位 3 权限，恰好也是 land_reform 所需的权限位——但那是审查规则的后果，不是本事件的后果。"
+    },
+    {
+      "actor": "bloc.business",
+      "direction": "opportunistic_gain",
+      "delta_org_power_ppm": 20000,
+      "writes_effect": true,
+      "basis_zh": "politics.json 给它的否决域是 tax_law，正好覆盖预算审查里最直接的收入侧工具；其开局组织力 400000 与资源 0.9 U 是三个集团中最高的。在执政团队缺少自有多数时，它是最有条件开价的一方。组织力上升表达的是议价地位，不是「支持政府」——stance 与 support 是两套变量（计划书 §08）。"
+    },
+    {
+      "actor": "bloc.labor_public",
+      "direction": "negative_to_government",
+      "delta_org_power_ppm": 0,
+      "writes_effect": false,
+      "basis_zh": "预算冲突的常见解法是削减支出，而它的关心指标含就业与公共服务可用率，因此它是潜在的受损方。但在事件触发的**这一刻**削减还没有发生，给它加组织力等于为尚未发生的事预付反应。若玩家真的削减支出，其关心指标下降会在下一季的 §8.3 常规更新中自动体现——机制已经会做的事，事件不重复做。"
+    }
+  ],
+  "_note_affected_groups_note_zh": "预期下调全国一致（-20000），不分地区：预算审查是全国性的制度事件，首版没有「哪个地区的预算被削」这一信息。与 E10 的地区不对称不同，这里的一致是有依据的，不是偷懒。",
+  "_note_copy": {
+    "headline_zh": "年度预算审查陷入僵局",
+    "accounted_zh": "已经发生：近四季收入 {receipts_4q_uu}，支出（含利息、不含还本）{outlays_4q_uu}，赤字 {deficit_4q_uu}；政府欠付余额 {arrears_uu}；未来四季到期本金与利息 {next4q_debt_service_uu}。全国支持度 {support_national_ppm}，执政席位 {seats_gov} / {seats_total}。以上数字均可在 ldg.cash、ldg.debt 与 ldg.politics 中逐行核对。",
+    "inferred_zh": "规则推断：模型中，预算审查的通过条件是赤字率不超过 {budget_review_deficit_limit_ppm} 且欠付不超过 {budget_review_arrears_limit_uu}，两条任一不满足即判失败。本季在这两条中不满足的是 {failed_condition_id}。工商业联盟的组织力为 {business_org_power_ppm}，在 tax_law 域内具备否决能力的立场阈值为 {bloc_veto_stance_threshold_ppm}。",
+    "projected_zh": "情景预测：若不改变收入与支出安排，下一次审查（第 {next_review_q} 季）的赤字率粗略预览为 {projected_deficit_ratio_ppm}。假设：政策参数不变、不新签合同、无外生冲击、价格与工资按现行规则更新。这是模型在给定假设下的推演。",
+    "wording_rules_zh": "三段分别对应 log.explanations.kind 的 accounted / inferred / projected。本模板的文案还有两条额外纪律：其一，必须写明选举与席位规则是游戏抽象、不模拟真实选区（计划书 §08、politics.json 的 disclaimer_note_zh）；其二，不得把审查失败写成本事件造成的——事件与判定是同一季里两件独立的事，文案要让玩家看得出「即使没有这场冲突，审查也会按同样的规则判」。"
+  },
+  "report_template_id": "tpl.event.budget_review_conflict",
+  "_note_acceptance_tests": [
+    "T-S-E12-NO-TRIGGER-OFF-REVIEW-QUARTER",
+    "T-S-E12-NO-TRIGGER-WHEN-SUPPORTED",
+    "T-S-E12-SAVE-RELOAD-NO-RERANDOM",
+    "T-S-E12-NO-MANDATE-WRITE",
+    "T-S-E12-NO-LEDGER-EFFECT",
+    "T-S-E12-COOLDOWN-ALIGNED-WITH-REVIEW",
+    "T-S-E12-ARREARS-TRIGGER-SCALE",
+    "T-S-E12-CONSEQUENCES-MATCH-EFFECTS"
+  ],
+  "_note_acceptance_tests_spec": [
+    {
+      "test_id": "T-S-E12-NO-TRIGGER-OFF-REVIEW-QUARTER",
+      "given_zh": "构造一局：支持度、组织力、欠付三条条件在**每一季**都成立。",
+      "when_zh": "推进 40 季。",
+      "then_zh": "本事件只可能在 q ≡ 3 (mod 4) 的季度触发；在其余 30 个季度中 fire_count 不增、log.rng 中无本模板的抽样记录。该测试同时反向验证 INV-127（预算审查在 q ≡ 3 mod 4）与「条件不满足时绝不触发」。",
+      "covers": [
+        "trigger.all_of[0]",
+        "INV-127",
+        "INV-009"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-NO-TRIGGER-WHEN-SUPPORTED",
+      "given_zh": "构造一局：每季 derived.politics.support_national_ppm >= 480000 且 state.gov.arrears_uu == 0，其余条件成立。",
+      "when_zh": "推进 40 季，包含 10 个审查季。",
+      "then_zh": "fire_count[event.E12] == 0；10 次预算审查照常发生并照常判定（flow.politics.budget_review_due 每四季置位一次），其中通过与否只由 politics.json 的 fail_conditions 决定。事件缺席不影响审查本身——这是 consequences.separation_zh 的可执行版本。",
+      "covers": [
+        "trigger.all_of[1]",
+        "trigger.all_of[3]",
+        "_note_consequence_separation_zh"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-SAVE-RELOAD-NO-RERANDOM",
+      "given_zh": "在本事件触发的审查季 q* 结算完成后立即存档。",
+      "when_zh": "读档后推进 8 季（跨过下一个审查季）；另一路不存档直接推进 8 季。",
+      "then_zh": "两路每季 state_hash 逐位相同；fire_count 与 last_fire_q 相同；log.rng 完全一致；已确定的这次触发不被重抽，下一个审查季的触发与否也完全一致。",
+      "covers": [
+        "INV-133",
+        "INV-131",
+        "ADV-06"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-NO-MANDATE-WRITE",
+      "given_zh": "两路对照：A 路本事件触发；B 路把本模板从 enabled_events 移除，其余状态与命令完全相同。",
+      "when_zh": "推进同样的季数，含至少两个审查季。",
+      "then_zh": "两路的 state.politics.mandate_status、state.politics.legal_authority_mask、state.bloc.stance_ppm 与 state.gov.* 的全部字段逐季完全相同；差异只出现在 admin_capacity_ppm、四地区的 expectation_ppm 与 bloc.business 的 org_power_ppm 上。该测试证明留任判定与预算削减不是事件的效果。",
+      "covers": [
+        "INV-130",
+        "_note_consequence_separation_zh",
+        "12 号文件 §8.5"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-NO-LEDGER-EFFECT",
+      "given_zh": "构造触发条件成立的一个审查季。",
+      "when_zh": "本事件触发。",
+      "then_zh": "log.ledger 中不存在 cause 指向 event.E12 的过账行；state.gov.cash_uu、derived.gov.debt_uu、state.gov.committed_memo_uu、state.gov.arrears_uu 在事件前后逐位相同；全经济现金总量不变（INV-018）。",
+      "covers": [
+        "INV-130",
+        "INV-018"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-COOLDOWN-ALIGNED-WITH-REVIEW",
+      "given_zh": "构造五条条件在全部审查季都成立的一局（40 季，10 个审查季）。",
+      "when_zh": "推进 40 季。",
+      "then_zh": "fire_count[event.E12] <= 3；两次触发间隔 >= 4 季（与审查周期同步，故实际间隔为 4 的倍数）；state.politics.admin_capacity_ppm 因本模板产生的累计扣减不超过 36000 ppm；且与 event.E11 的累计扣减合计不超过 56000 ppm。",
+      "covers": [
+        "trigger.cooldown_q",
+        "trigger.max_occurrences",
+        "OQ-PENDING-EV-08"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-ARREARS-TRIGGER-SCALE",
+      "given_zh": "构造一个审查季（q = 3）：flow.politics.budget_review_due == 1，derived.politics.support_national_ppm == 470000（< 480000），state.bloc.org_power_ppm[bloc.business] == 460000（> 450000），并把 rng.event 的抽样固定为必然通过 probability_ppm 的那一路（900000 的判定取 draw < 900000）。两路只差一个数：A 路 state.gov.arrears_uu == 200000000，B 路 state.gov.arrears_uu == 199999999。",
+      "when_zh": "各推进 1 季，走完 S08。",
+      "then_zh": "A 路与 B 路的 fire_count[event.E12] 都 == 0：条件是严格大于（op = gt），200000000 本身不满足。再构造 C 路 state.gov.arrears_uu == 200000001，则 fire_count[event.E12] == 1。该测试同时钉死刻度：若有人把阈值改回旧刻度的 200000（0.0002 U），B 路会变成触发，测试立刻失败。",
+      "covers": [
+        "trigger.all_of[3]",
+        "R-SCALE-01",
+        "param.e12_arrears_trigger_uu"
+      ]
+    },
+    {
+      "test_id": "T-S-E12-CONSEQUENCES-MATCH-EFFECTS",
+      "given_zh": "载入内容包后的 event.E12 模板对象（不需要推进任何一季）。",
+      "when_zh": "取 consequences 中 written_by == \"event\" 的全部条目，按 effect_ref 解析出的下标与 effects 逐条比对。",
+      "then_zh": "条数 == 6 且与 effects 的长度相同；每条的 target 与 effects[i].target 字符串相同；delta_ppm 与 effects[i].delta_ppm 整数相同（-12000、-20000 ×4、+20000）；scope 与 effects[i].scope 相同（effects[0] 无 scope，对应 consequences 的 \"national\"）。consequences 中 written_by == \"mechanism\" 的 3 条必须全部带 event_writes == false，且其 target 在 T-S-E12-NO-MANDATE-WRITE 的 A/B 两路中逐季相同。该测试保证 consequences 是解释而不是第二条写入路径：任何一侧被单方面改动都会当场失败。",
+      "covers": [
+        "consequences",
+        "effects",
+        "INV-130"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e12_support_national_trigger_ppm",
+      "value": 480000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §8.5 的 seat_rule 与选举判定；politics.json seats_total = 101、seats_gov = 56",
+      "reference_year": 0,
+      "definition": "触发所要求的全国支持度上限（严格小于该值）。它是「联盟条件不满足」的可求值替代：席位是支持度的纯函数（INV-126），支持度低于半数意味着执政团队在审查中拿不到自有多数。与 trigger.all_of[1].value 必须逐位相同。",
+      "valid_range": [
+        300000,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "取 48% 而不是 50%，留一点缓冲，避免支持度在半数线附近抖动时每个审查季都触发。校准依据：本值必须与 seat_rule 的实际形式（OQ-221 尚未定稿）联合检查——若 seat_rule 不是近似比例的，48% 的支持度未必对应少数席位，届时本值要跟着改。这是本卡对外部未决事项依赖最深的一处。"
+    },
+    {
+      "value_id": "param.e12_business_org_power_trigger_ppm",
+      "value": 450000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "politics.json bloc.business 开局 org_power_ppm = 400000；12 号文件 §8.3",
+      "reference_year": 0,
+      "definition": "触发所要求的工商业联盟组织力下限（严格大于该值）。与 trigger.all_of[2].value 必须逐位相同。",
+      "valid_range": [
+        300000,
+        800000
+      ],
+      "confidence": "low",
+      "calibration_note": "高于开局值 400000，因此基年不会立刻成立：这个集团必须先通过成员规模或资源的增长（§8.3 的三项合成）积累到 45%，才具备开价条件。校准依据：若 40 季基线运行中该值从未被越过，说明 §8.3 的组织力式在首版几乎不动，应先查 param.bloc_org_inertia_ppm 与两项权重，而不是下调本阈值。"
+    },
+    {
+      "value_id": "param.e12_arrears_trigger_uu",
+      "value": 200000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "politics.json budget_review.fail_conditions.arrears；计划书 §05 基年支出 22 U",
+      "reference_year": 0,
+      "definition": "触发所要求的政府欠付余额下限（严格大于该值），0.2 U = 200 000 000 μU（裁定 R-SCALE-01：1 U = 1 000 000 000 μU）。与 trigger.all_of[3].value 必须逐位相同。",
+      "valid_range": [
+        0,
+        3000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值应当**小于** param.budget_review_arrears_limit_uu（审查判失败的欠付线），这样事件会在审查真正失败之前先出现，起到预警作用而不是事后通报。该关系需要一条加载期断言（OQ-PENDING-EV-03）。若 budget_review_arrears_limit_uu 定得比 0.2 U 更低，本值必须同步下调。刻度自检：government_init.json 的 annual_plan.expenditure_incl_interest_uu = 22 000 000 000 μU（22 U，计划书 §05），本阈值是全年支出的 0.91%、单季支出的约 3.6%——一个「已经欠上了、但还没到判失败那一步」的量级。R-SCALE-01 之前本卡写的是 200 000 μU（旧刻度下的 0.2 U）；迁移器按「键名含 uu 词元」改子树，而承载它的键叫 value / valid_range，故漏改，此处补正。"
+    },
+    {
+      "value_id": "param.e12_probability_ppm",
+      "value": 900000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.13 trigger.probability_ppm",
+      "reference_year": 0,
+      "definition": "五条状态条件全部成立之后，本季实际发生公开冲突的概率。",
+      "valid_range": [
+        500000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "四个模板中最高的一个：当执政团队缺少多数、对手有条件开价、而且账上确实欠着钱时，审查变成谈判几乎是必然的。留 0.1 的余量只为避免它退化成纯日程事件。校准依据：若玩家反馈「每次审查必吵一架」显得机械，降到 700000 再看。"
+    },
+    {
+      "value_id": "param.e12_cooldown_q",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "politics.json budget_review.period_q = 4；INV-127",
+      "reference_year": 0,
+      "definition": "两次触发之间必须间隔的最少季数。",
+      "valid_range": [
+        4,
+        16
+      ],
+      "confidence": "low",
+      "calibration_note": "必须**恒等于**预算审查周期，否则会出现「冷却未结束而审查已到」的错配。若将来审查周期改变，本值必须同步改变；建议加一条加载期断言 param.e12_cooldown_q == politics.budget_review.period_q（OQ-PENDING-EV-03）。"
+    },
+    {
+      "value_id": "param.e12_max_occurrences",
+      "value": 3,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.13 trigger.max_occurrences（V-EV-07 要求 >= 1）",
+      "reference_year": 0,
+      "definition": "整局中本模板最多触发的次数。40 季共 10 个审查季，取 3 保持稀有度。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "上限直接决定本模板对 admin_capacity 的永久损害上限（3 × 12000 = 36000 ppm）。在 admin_capacity 的恢复规则补齐（OQ-PENDING-EV-08）之前，不得上调本值。压力测试的 120 季配置下本值同样适用（不随 horizon_q 缩放），这是有意的：更长的局不应意味着更多的政治危机配额，否则 120 季压测会退化成一场必然的崩溃。"
+    },
+    {
+      "value_id": "param.e12_admin_capacity_delta_ppm",
+      "value": -12000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "10 号文件 §8.3 state.politics.admin_capacity_ppm；11 号文件 §5.13 事件可写白名单",
+      "reference_year": 0,
+      "definition": "触发时对全国行政执行能力的一次性增量（负值）。物理解释是审查僵局占用行政工时。与 effects[0].delta_ppm 必须逐位相同。",
+      "valid_range": [
+        -30000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "开局值 600000 的 2%。首版无恢复规则，故此扣减不可逆（OQ-PENDING-EV-08），取值必须保守。校准顺序：先补恢复规则，再考虑加大。"
+    },
+    {
+      "value_id": "param.e12_expectation_delta_ppm",
+      "value": -20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §8.1 预期更新式",
+      "reference_year": 0,
+      "definition": "触发时对全部 36 个群组 expectation_ppm 施加的一次性增量（负值）。四条 effects 用同一值。与 effects[1..4].delta_ppm 必须逐位相同。",
+      "valid_range": [
+        -60000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "小于 E09 的 -35000：预算僵局是关于未来的坏消息，公共服务停摆是当下的坏消息，后者更直接。校准依据：四个模板的 expectation 增量应保持这个相对次序（E09 > E12 > E10 目的地 > E10 来源地），若校准中打破次序，需要先说明理由。"
+    },
+    {
+      "value_id": "param.e12_business_org_power_delta_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号文件 §8.3；politics.json bloc.business 的否决域 tax_law",
+      "reference_year": 0,
+      "definition": "触发时对 bloc.business 的 org_power_ppm 的一次性增量（正值）。与 effects[5].delta_ppm 必须逐位相同。",
+      "valid_range": [
+        0,
+        60000
+      ],
+      "confidence": "low",
+      "calibration_note": "注意本值与 param.e11_business_org_power_delta_ppm（-15000）方向相反：采购曝光削弱这个集团的正当性，预算僵局增强它的议价地位。两者同时存在是刻意的——同一个集团在不同冲突中未必同向，硬凑一致才是伪深度。校准时应联合检查：一局中 E11 与 E12 都触发到上限时，business 的组织力不得被推过 1 000 000 的 clamp 上限。"
+    }
+  ],
+  "_note_parameters_scope_note_zh": "与 E09/E10/E11 同一口径。本模板有三处与 politics.json 的强耦合需要加载期断言（OQ-PENDING-EV-03）：param.e12_cooldown_q == budget_review.period_q；param.e12_arrears_trigger_uu < param.budget_review_arrears_limit_uu；param.e12_support_national_trigger_ppm 与 seat_rule 的形式相容。三者任一失配都会让本事件在语义上错位，而不会在语法上报错——这正是最危险的一类错误。",
+  "_note_mechanism_refs": [
+    "mech.gov_payment_priority",
+    "mech.budget_reservation",
+    "mech.tax_capacity",
+    "mech.tax_collection",
+    "mech.profit_tax",
+    "mech.income_tax_schedule"
+  ],
+  "_note_mechanism_refs_note_zh": "说明性字段，不产生加载期约束。预算审查判定本身（politics.json budget_review.consequences 与 12 号文件 §8.5）在政策 mechanism_ids 清单中没有对应条目，实现时应补一个 mech.budget_review，否则「审查」这条链在机制注册表里无名可查（与 E10 的 mech.migration 同类问题，OQ-PENDING-EV-05）。",
+  "_note_open_question_refs": [
+    "OQ-243",
+    "OQ-221",
+    "OQ-PENDING-EV-01",
+    "OQ-PENDING-EV-02",
+    "OQ-PENDING-EV-03",
+    "OQ-PENDING-EV-05",
+    "OQ-PENDING-EV-08",
+    "OQ-PENDING-EV-09",
+    "OQ-PENDING-EV-10",
+    "OQ-PENDING-EV-11",
+    "OQ-PENDING-EV-12"
+  ],
+  "_note_open_question_refs_note_zh": "以 OQ-2xx 形式出现的编号是 docs/13_open_questions.md 中已登记的条目。以 OQ-PENDING-EV-xx 形式出现的是本批四个事件模板新发现、尚未在 13 号文件登记的问题：现有的 OQ-246 及以后的编号已被若干并行产出的内容文件各自占用且含义互相冲突，因此本文件不自行占号，改用不会碰撞的占位标识，等待 13 号文件的负责人统一编号。逐条内容见 open_questions_proposed。",
+  "_note_open_questions_proposed": [
+    {
+      "pending_id": "OQ-PENDING-EV-01",
+      "slug": "trigger_scope_no_selector",
+      "title_zh": "触发条件的 scope 没有「任一地区／任一集团」选择器",
+      "summary_zh": "11 号文件 §5.13 的条件只有 metric / scope / op / value 四个字段，scope 只能指向一个在加载期解析成下标的稳定 ID。于是一个本质上「哪个地区出问题都算」的事件必须被绑定到某一个地区（E09 绑中州、E10 绑北原→中州、E12 绑 bloc.business），其余地区的同类情形只有机制后果、没有事件。临时取法：显式绑定并在 anchor 字段写明理由，不发明选择器。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-02",
+      "slug": "scope_semantics_group_array",
+      "title_zh": "地区作用域套在群组索引数组上的语义未定义；没有全国作用域记号",
+      "summary_zh": "11 号文件 §5.13 的示例用 scope = region.haijia 对 state.group.trust_ppm 施加效果（广播到该地区全部群组），但没有规定同样的写法用在**触发条件**里该如何聚合（取平均？取最小？任一成立？）。另外 politics.json 用了 scope = national，而 11 号文件从未定义这个记号。临时取法：触发条件里群组量一律用精确的 group.<r>.<a>.<k> 作用域；效果需要全国广播时逐地区列四条。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-03",
+      "slug": "cross_file_threshold_assertions",
+      "title_zh": "事件阈值与其它内容文件的耦合缺少加载期断言",
+      "summary_zh": "至少三处：E10 的住房占用阈值必须小于 regions.json 中中州的 housing_stock_units；E12 的 cooldown_q 必须等于 politics.json 的 budget_review.period_q；E12 的欠付触发线必须小于 param.budget_review_arrears_limit_uu。三者失配都只会造成语义错位（事件永不触发或一开局就触发），不会造成语法错误。临时取法：写进 parameters_scope_note_zh，等待 assertions.json 或校验器支持。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-05",
+      "slug": "mechanism_registry_gaps",
+      "title_zh": "机制注册表缺 mech.migration 与 mech.budget_review",
+      "summary_zh": "已出现的政策文件登记了 30 余个 mech.* ID，但迁移（12 号文件 §7.5）与预算审查判定（§8.5 + politics.json budget_review）都没有对应条目，于是这两条链在机制注册表里无名可查。临时取法：事件的 mechanism_refs 只列已存在的 ID，并在 mechanism_refs_note_zh 中点名缺口。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-08",
+      "slug": "admin_capacity_no_recovery",
+      "title_zh": "state.politics.admin_capacity_ppm 没有恢复规则",
+      "summary_zh": "12 号文件只说它由 S07 写，没有给更新式；11 号文件却把它放进事件与政策的可写白名单。于是任何事件对它的扣减在首版事实上不可逆。临时取法：E11 取 -10000 且上限 2 次、E12 取 -12000 且上限 3 次，两者合计的永久损害上限为开局值的 9.3%，并在卡的 calibration_note 中写明「先补恢复规则，再考虑加大」。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-09",
+      "slug": "stance_two_dimensional_scope",
+      "title_zh": "state.bloc.stance_ppm 是二维量，而 scope 只有一个记号位",
+      "summary_zh": "联盟条件（politics.json coalition_mode = all_of）定义在 stance_ppm[集团][政策] 上，但触发条件的 scope 写 bloc.business 不足以确定是哪条政策的立场，因此真正的联盟条件无法进入触发。临时取法：E12 用「全国支持度 < 48%」+「某集团组织力 > 45%」两条一维条件替代，理由写在 trigger_semantics.coalition_zh。同样的限制也使事件无法安全地把 stance_ppm 写进 effects（尽管它在白名单里）。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-10",
+      "slug": "support_ppm_in_event_whitelist",
+      "title_zh": "事件可写白名单含 support_ppm，与 §8.2 的合成式冲突",
+      "summary_zh": "12 号文件 §8.2 每季由生活／预期／信任三项重算 support_ppm，而 §8.4 的事件在 §8.2 之后运行。事件直接写 support_ppm 会被下一季的重算抹掉，且与 expectation 通道重复计数。临时取法：本批四个模板一律**不写** support_ppm，只写其上游的 expectation_ppm 与 trust_ppm。建议把 support_ppm 从 11 号文件 §5.13 的事件可写白名单中删除。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-11",
+      "slug": "event_op_gte_vs_ge",
+      "title_zh": "V-EV-03 的算子集合与 §5.13 的示例自相矛盾",
+      "summary_zh": "V-EV-03 规定 op ∈ {lt, le, eq, ne, ge, gt}，而同一节的示例 JSON 写的是 \"op\": \"gte\"。本批四个模板按**规范条款**取 ge；内容包中已有的 E01—E04 取示例的 gte。两者不可能同时通过同一个校验器，需要统一（建议以 V-EV-03 为准，或同时接受并在加载期归一）。"
+    },
+    {
+      "pending_id": "OQ-PENDING-EV-12",
+      "slug": "event_schema_extension_fields",
+      "title_zh": "EventTemplate 的 additionalProperties:false 与实际内容文件的扩展字段冲突",
+      "summary_zh": "11 号文件 §3 规定对象键必须是 schema 已声明的键，而 §5.13 的 EventTemplate 只声明了 10 个键，没有 player_options / copy / acceptance_tests / parameters / evidence 等。现有的 policy 文件已经大量扩展同类字段（P09 有 41 个顶层键）。临时取法：本批模板保持 §5.13 声明的字段严格合规（含 effects 白名单与无 ledger_effects），扩展字段一律加在其后并可被校验器忽略。建议 §5.13 明确列出扩展字段或声明一个扩展命名空间。"
+    }
+  ],
+  "_note_notes_zh": "本模板最重要的取舍是把「预算被削与执政风险」完全留给既有的审查规则，事件只负责冲突的社会与政治反应。理由不只是 INV-130 的白名单限制：预算审查的判定条件是玩家可以事先读到的规则（计划书 §04「可以隐藏未来冲击，不隐藏当前规则」），把它塞进事件等于把一条可预期的规则改写成一次随机惩罚。第二个取舍是用「支持度 < 48% + 某集团组织力 > 45%」替代真正的联盟条件 stance_ppm[b][p]——后者是二维量而 trigger 的 scope 只有一个记号位，登记为 OQ-PENDING-EV-09；曾考虑用 seats_gov < 51，但席位只在 q ∈ {15, 31} 更新，会让本事件在前 15 季结构性不可能触发。第三个取舍是不写 trust_ppm 也不写 stance_ppm：前者会与 §8.1 的失信闭集合重复，后者会与审查失败自身的 stance 惩罚叠加。"
+}

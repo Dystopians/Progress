@@ -1,0 +1,1987 @@
+{
+  "schema_kind": "parameter_registry",
+  "schema_version": 1,
+  "generated": 1,
+  "_note_generated": "本文件由 tools/build_param_registry.py 生成，是 content/ 下全部参数身份证的只读索引，不是任何参数的事实来源，也不应进入 content_hash 或被加载器当作 parameter_set 读取。改参数请改各自的来源文件后重新生成本文件。",
+  "tool": "tools/build_param_registry.py",
+  "tool_version": 1,
+  "summary": {
+    "files_scanned": 37,
+    "files_skipped": 1,
+    "card_count": 96,
+    "near_miss_count": 4,
+    "error_count": 0,
+    "warn_count": 26,
+    "contract_min_set_size": 72,
+    "contract_min_set_missing": 0
+  },
+  "stats": {
+    "card_count": 96,
+    "by_source_type": [
+      {
+        "key": "design_assumption",
+        "count": 91,
+        "share_ppm": 947917
+      },
+      {
+        "key": "derived",
+        "count": 5,
+        "share_ppm": 52083
+      }
+    ],
+    "by_confidence": [
+      {
+        "key": "low",
+        "count": 81,
+        "share_ppm": 843750
+      },
+      {
+        "key": "medium",
+        "count": 12,
+        "share_ppm": 125000
+      },
+      {
+        "key": "high",
+        "count": 3,
+        "share_ppm": 31250
+      }
+    ],
+    "by_file": [
+      {
+        "file": "parameters/params_core.json",
+        "count": 96
+      }
+    ]
+  },
+  "files_scanned": [
+    "events/event_E01.json",
+    "events/event_E02.json",
+    "events/event_E03.json",
+    "events/event_E04.json",
+    "events/event_E05.json",
+    "events/event_E06.json",
+    "events/event_E07.json",
+    "events/event_E08.json",
+    "events/event_E09.json",
+    "events/event_E10.json",
+    "events/event_E11.json",
+    "events/event_E12.json",
+    "parameters/params_core.json",
+    "policies/policy_P01.json",
+    "policies/policy_P02.json",
+    "policies/policy_P03.json",
+    "policies/policy_P04.json",
+    "policies/policy_P05.json",
+    "policies/policy_P06.json",
+    "policies/policy_P07.json",
+    "policies/policy_P08.json",
+    "policies/policy_P09.json",
+    "policies/policy_P10.json",
+    "policies/policy_P11.json",
+    "policies/policy_P12.json",
+    "scenarios/chengwan/assertions.json",
+    "scenarios/chengwan/cells_init.json",
+    "scenarios/chengwan/government_init.json",
+    "scenarios/chengwan/io_table.json",
+    "scenarios/chengwan/politics_init.json",
+    "scenarios/chengwan/population_init.json",
+    "scenarios/chengwan/pubserv_init.json",
+    "scenarios/chengwan/regions.json",
+    "scenarios/chengwan/scenario.json",
+    "shocks/shock_S01.json",
+    "shocks/shock_S02.json",
+    "shocks/shock_S03.json"
+  ],
+  "files_skipped": [
+    "parameters/registry.json（本工具自身的生成物，排除以避免自指重复登记）"
+  ],
+  "contract_min_set_missing": [],
+  "near_miss_cards": [
+    {
+      "location": "policies/policy_P09.json/player_params/0",
+      "alt_identity": "key = region_mask"
+    },
+    {
+      "location": "policies/policy_P09.json/player_params/1",
+      "alt_identity": "key = min_investment_ratio_ppm"
+    },
+    {
+      "location": "policies/policy_P09.json/player_params/2",
+      "alt_identity": "key = subsidy_rate_ppm"
+    },
+    {
+      "location": "policies/policy_P09.json/player_params/3",
+      "alt_identity": "key = cap_per_cell_per_q_uu"
+    }
+  ],
+  "findings": [
+    {
+      "check": "PR-017",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.pension_uu_per_elder_q",
+      "location": "parameters/params_core.json/cards/74",
+      "message": "ID 后缀 `_q` 按 10 号文件 §0.2 应配 q 或 季，实得 'μU/人/季'。名字与单位不一致时，两处迟早有一处是错的。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.bond_batch_cap",
+      "location": "parameters/params_core.json/cards/6",
+      "message": "`unit` = '批' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.commitment_horizon_q",
+      "location": "parameters/params_core.json/cards/7",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.default_grace_q",
+      "location": "parameters/params_core.json/cards/11",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.edu_pipeline_slots",
+      "location": "parameters/params_core.json/cards/14",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.log_capacity_rows",
+      "location": "parameters/params_core.json/cards/28",
+      "message": "`unit` = '行' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.max_defer_count",
+      "location": "parameters/params_core.json/cards/88",
+      "message": "`unit` = '次' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.max_defer_quarters",
+      "location": "parameters/params_core.json/cards/89",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.no_confidence_q",
+      "location": "parameters/params_core.json/cards/42",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.pension_uu_per_elder_q",
+      "location": "parameters/params_core.json/cards/74",
+      "message": "`unit` = 'μU/人/季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.persons_per_housing_unit",
+      "location": "parameters/params_core.json/cards/46",
+      "message": "`unit` = '人/套' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.price_clamp_budget_count",
+      "location": "parameters/params_core.json/cards/49",
+      "message": "`unit` = '次' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.proc_transparency_decay_q",
+      "location": "parameters/params_core.json/cards/95",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.proc_transparency_ramp_q",
+      "location": "parameters/params_core.json/cards/85",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.rng_salt",
+      "location": "parameters/params_core.json/cards/56",
+      "message": "`unit` = 'int64' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.rule_issue_tenor_q",
+      "location": "parameters/params_core.json/cards/75",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.student_teacher_ratio",
+      "location": "parameters/params_core.json/cards/57",
+      "message": "`unit` = '人' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.training_lag_q",
+      "location": "parameters/params_core.json/cards/62",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.trust_streak_cap_q",
+      "location": "parameters/params_core.json/cards/65",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.wage_ceil_uu",
+      "location": "parameters/params_core.json/cards/68",
+      "message": "`unit` = 'μU/人/季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.wage_floor_uu",
+      "location": "parameters/params_core.json/cards/69",
+      "message": "`unit` = 'μU/人/季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-018",
+      "severity": "WARN",
+      "contract_error_code": "E_UNIT_MISMATCH",
+      "parameter_id": "param.write_guard_sample_q",
+      "location": "parameters/params_core.json/cards/72",
+      "message": "`unit` = '季' 只出现在 11 号文件 §5.15 的表里，未进 10 号文件 §0.1 的唯一单位定义。两处拼写不统一时，单位一致性无法被机器完全证明。"
+    },
+    {
+      "check": "PR-024",
+      "severity": "WARN",
+      "contract_error_code": "E_PARAM_CARD",
+      "parameter_id": "-",
+      "location": "policies/policy_P09.json/player_params/0",
+      "message": "该对象带有身份证字段却无 `parameter_id`（key = region_mask，容器 `player_params`），未进登记表。若它本应是 param.* 参数，请补 `parameter_id`；若它是内容数据或玩家杠杆，请确认契约 §5.15「内容数据不建卡」的分界线仍然成立。"
+    },
+    {
+      "check": "PR-024",
+      "severity": "WARN",
+      "contract_error_code": "E_PARAM_CARD",
+      "parameter_id": "-",
+      "location": "policies/policy_P09.json/player_params/1",
+      "message": "该对象带有身份证字段却无 `parameter_id`（key = min_investment_ratio_ppm，容器 `player_params`），未进登记表。若它本应是 param.* 参数，请补 `parameter_id`；若它是内容数据或玩家杠杆，请确认契约 §5.15「内容数据不建卡」的分界线仍然成立。"
+    },
+    {
+      "check": "PR-024",
+      "severity": "WARN",
+      "contract_error_code": "E_PARAM_CARD",
+      "parameter_id": "-",
+      "location": "policies/policy_P09.json/player_params/2",
+      "message": "该对象带有身份证字段却无 `parameter_id`（key = subsidy_rate_ppm，容器 `player_params`），未进登记表。若它本应是 param.* 参数，请补 `parameter_id`；若它是内容数据或玩家杠杆，请确认契约 §5.15「内容数据不建卡」的分界线仍然成立。"
+    },
+    {
+      "check": "PR-024",
+      "severity": "WARN",
+      "contract_error_code": "E_PARAM_CARD",
+      "parameter_id": "-",
+      "location": "policies/policy_P09.json/player_params/3",
+      "message": "该对象带有身份证字段却无 `parameter_id`（key = cap_per_cell_per_q_uu，容器 `player_params`），未进登记表。若它本应是 param.* 参数，请补 `parameter_id`；若它是内容数据或玩家杠杆，请确认契约 §5.15「内容数据不建卡」的分界线仍然成立。"
+    }
+  ],
+  "cards": [
+    {
+      "parameter_id": "param.amount_max_uu",
+      "value": 4000000000000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SCALE-01（docs/18_rulings.md）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」；sim/jw_units.gd 的 JWUnits.AMOUNT_MAX",
+      "reference_year": 0,
+      "definition": "单笔金额与任一金额型状态字段的绝对值硬上限。超过即登记 INT_OVERFLOW 并拒绝结算，不做饱和截断。等于 4 000 000 U，约为基年全年名义 GDP（100 000 000 000 μU）的 4 万倍。",
+      "valid_range": [
+        4000000000000000,
+        4000000000000000
+      ],
+      "confidence": "high",
+      "calibration_note": "本卡与 JWUnits.AMOUNT_MAX 重复登记、加载期逐字比对（docs/17_api_skeleton.md §2.6），因此 valid_range 是单点区间：区间放宽就等于允许参数包与代码悄悄分叉。检验方式：T-U-Z-02 在 AMOUNT_MAX 处必须登记溢出而不是截断。R-SCALE-01 之后 AMOUNT_MAX × PPM = 4e21 真的溢出 int64，一切先乘后除必须走 JWMath.mul_div_floor。要改它必须同时改 sim/jw_units.gd、本卡 value 与本区间，三处缺一即拒绝加载。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/0"
+    },
+    {
+      "parameter_id": "param.bloc_care_gain_ppm",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08 利益集团；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "集团所关心的指标每变化 1 000 000 ppm，其立场（stance）随之变化的传导系数。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：把某集团的关心指标压低 10%，断言其立场下降 mul_ppm(100 000, 本值) = 30 000 ppm，可手工复算。本值过大会让集团立场随季度噪声剧烈摆动，玩家读不出因果；过小则任何政策都换不来集团态度变化，政治层退化成布景。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/1"
+    },
+    {
+      "parameter_id": "param.bloc_org_inertia_ppm",
+      "value": 700000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "集团组织力的惯性权重：org_power_t = mul_ppm(本值, org_power_{t−1}) + 规模项 + 资源项。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值与 param.bloc_w_size_ppm、param.bloc_w_resource_ppm 三者之和必须精确为 1 000 000（tools/validate_content.py 以 E_PARAM_RANGE 核这一条）。检验方式：规模与资源都不变时断言组织力逐季严格不变（不是近似相等）；这条恒等式是「惯性 + 两权重 == 1e6」的直接后果，对不上说明取整口径写错了。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/2"
+    },
+    {
+      "parameter_id": "param.bloc_resource_ref_uu",
+      "value": 2000000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SCALE-01 的机械迁移（旧值 2 000 000，unit 以 μU 开头故 ×1000）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "集团可动员资源折算成组织力时的参照额，等于 2 U。资源项 = mul_ppm(min(可动员资源, 本值) 相对本值的比率, param.bloc_w_resource_ppm)。",
+      "valid_range": [
+        100000000,
+        100000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "参照系：基年季度名义 GDP 为 25 000 000 000 μU，本值约为其 8%，即「一个集团能动员相当于季度 GDP 8% 的资源就算满格」。检验方式：断言资源 ≥ 本值时资源项封顶不再增长；断言本值与旧刻度的 2 000 000 之比恰为 1000（R-SCALE-01 的迁移规则 1）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/3"
+    },
+    {
+      "parameter_id": "param.bloc_w_resource_ppm",
+      "value": 100000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（组织力惯性与两项权重，三者合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "集团组织力中「可动员资源相对 param.bloc_resource_ref_uu」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 inertia / w_size 合计 == 1 000 000。检验方式：可动员资源恰等于 param.bloc_resource_ref_uu 时，资源项贡献应等于本值本身，可手工复算。本值在三项里最小，表达「钱能买到影响力，但买不过人数和历史惯性」。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/4"
+    },
+    {
+      "parameter_id": "param.bloc_w_size_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（组织力惯性与两项权重，三者合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "集团组织力中「成员规模相对全国劳动年龄人口」的权重。注意 bloc_affiliation_ppm 允许 Σ > 1 000 000（OQ-223：成员可同时属于多个利益网络），故此处的规模是加权人数而不是人头。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 inertia / w_resource 合计 == 1 000 000。检验方式：把某集团成员比例翻倍，断言组织力的规模项贡献同比例上升。展示层不得把加权人数写成「人数」（T-U-NO-HEADCOUNT-CLAIM 静态检查）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/5"
+    },
+    {
+      "parameter_id": "param.bond_batch_cap",
+      "value": 512,
+      "unit": "批",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §19 工程上限；docs/11_data_contract.md §5.9 bond_book",
+      "reference_year": 0,
+      "definition": "债券台账可同时持有的批次数上限。每季至多新增两批（国内 + 外部），首版 40 季用不满；上限存在的目的是给 bond_book 的数组预分配一个确定的形状。",
+      "valid_range": [
+        64,
+        4096
+      ],
+      "confidence": "medium",
+      "calibration_note": "检验方式：120 季压测中断言批次数不超过本值；触顶时必须拒绝发债并登记原因码。不得静默合并批次——合并会破坏逐批次的利息与还本计算，而裁定 R-SEASON-01（季节系数只作用于 gov_primary，利息与还本由 bond_book 逐批次逐季单算）正依赖它。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/6"
+    },
+    {
+      "parameter_id": "param.commitment_horizon_q",
+      "value": 16,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 承诺与兑现；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "承诺表的滚动窗口长度（16 季）。超过本值的历史承诺不再计入信任的兑现率统计。",
+      "valid_range": [
+        4,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "必须 ≥ param.trust_streak_cap_q（16 ≥ 8），否则连击计数窗口比承诺表还长，会出现「窗口里已经没有这条承诺，但连击还在累加」的错位。检验方式：断言第 17 季时第 1 季的承诺已滚出窗口，且信任不再受它影响。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/7"
+    },
+    {
+      "parameter_id": "param.construction_share_cap_ppm",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06、§09 项目施工；docs/12_simulation_contract.md §5.6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "服务部门单季产出中可被项目施工占用的比例上限。它是上限，不是应当无条件扣除的固定份额。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "遗留缺陷（阻塞级，已登记在 io_table.json 的 open_issues）：docs/12_simulation_contract.md §5.6 现在把「服务产量 × 本值」无条件从可售供给中扣除，而不是扣除项目实际占用量。基年没有在建政府项目，按本值计每季会凭空销毁约 4 747 500 μQ_services，全年约 18 990 000 000 μU，接近 19% 的 GDP。检验方式：断言「无在建项目的季，服务可售供给 == 服务产量」；该断言现在必然失败，修法是把扣除项改为 construction_used_uqs 并保留本值作为上限。在契约改正之前不得调小本值来掩盖它——调小只会让销毁量变小，不会让它消失。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/8"
+    },
+    {
+      "parameter_id": "param.coupon_max_ppm",
+      "value": 60000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "新发债券季度票息的上限（6%/季，约 26%/年）。触顶即表示市场已不愿按价格出清，此后只能靠额度约束或违约路径处理。",
+      "valid_range": [
+        20000,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言触顶的季必须同时登记一条「融资受限」原因码，不得静默按上限继续发债。与 param.default_grace_q 联动——长期触顶却从不进入违约宽限期，说明违约判定这条链断了。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/9"
+    },
+    {
+      "parameter_id": "param.coupon_min_ppm",
+      "value": 2000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "新发债券季度票息的下限（0.2%/季）。防止在极低偿债率下算出零息或负息。",
+      "valid_range": [
+        0,
+        20000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须严格小于 param.coupon_max_ppm。检验方式：构造 dsr == 0 的情形，断言票息等于 max(本值, param.market_rate_base_ppm)；触底次数在 40 季基线中应为 0，否则说明基准利率低于本下限，两者有一个写错了。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/10"
+    },
+    {
+      "parameter_id": "param.default_grace_q",
+      "value": 2,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 违约；docs/12_simulation_contract.md §2.6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "政府无法足额偿付本息后，进入违约判定前的宽限季数。宽限期内欠付计入 gov.arrears_uu，不立即触发重组。",
+      "valid_range": [
+        0,
+        8
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：构造连续 3 季欠付，断言第 3 季末（宽限 2 季用尽）触发违约状态与相应终局判定，第 2 季末不得触发。本值与 param.no_confidence_q 是两条独立的时钟（财政 vs 政治），不得混用或合并。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/11"
+    },
+    {
+      "parameter_id": "param.defer_fee_ppm_per_q",
+      "value": 15000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "docs/31 ADV-F04（延期必须有成本）；docs/18 R-DEFER-01",
+      "reference_year": 0,
+      "definition": "延期赔偿率：每延期 1 季，按剩余合同额的该比例向承包方支付停工赔偿（人员、设备闲置），于延期当季一次付清，现金不足转欠付；赔偿不形成进度与资产。",
+      "valid_range": [
+        0,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-DEFER-01。15000 ⇒ 延满 8 季约付剩余合同额的 12%，低于取消赔偿，使延期是有代价的中间选项而不是免费的排队位。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/90"
+    },
+    {
+      "parameter_id": "param.demand_smooth_ppm",
+      "value": 400000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §3.1 output_plan；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "计划产量对滞后需求的平滑权重：E_t = mul_ppm(本值, 实际需求_{t−1}) + mul_ppm(1e6 − 本值, E_{t−1})。本值越大越贴近上季实际需求，越小越依赖历史。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：给一次阶跃需求，计划产量收敛到新水平 90% 所需季数应为 4～6 季。与 param.inventory_target_ppm 联合决定牛鞭效应强度；40 季基线若出现产量自激振荡，先减小本值再查库存目标。注意 cells_init 目前缺 demand_expect_uqs 初值，E_0 = 0 会让基年首季产量为 0，那是剧本数据缺口，不是本参数的问题。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/12"
+    },
+    {
+      "parameter_id": "param.dissave_ppm",
+      "value": 80000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "居民单季可动用的存量资产比例（5%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + mul_ppm(存款存量, 本值)。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：收入归零的极端情形下消费应按每季 5% 衰减而不是立即归零；断言存款存量非负且逐季单调下降。本值过大会让居民在危机中把存款一季花光，抹掉「危机有持续时间」这一叙事；过小则转移支付类政策毫无短期效果。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/13"
+    },
+    {
+      "parameter_id": "param.edu_pipeline_slots",
+      "value": 8,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "培训队列可同时容纳的在训季数（队列深度）。超出即新批次排队等待，不是静默丢弃。",
+      "valid_range": [
+        1,
+        16
+      ],
+      "confidence": "low",
+      "calibration_note": "必须 ≥ param.training_lag_q（8 ≥ 4，即可同时容纳两批）。检验方式：连续 8 季每季入训一批，断言第 9 季的入训被排队并登记原因码，而不是无声降级。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/14"
+    },
+    {
+      "parameter_id": "param.emission_decay_ppm",
+      "value": 30000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07 环境存量；docs/12_simulation_contract.md §7；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "排放存量的季度自然衰减率（3%）。季末先衰减再累加当季排放。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：停止全部排放后，存量衰减到一半所需季数应为 22～24 季（ln2 / 0.03 ≈ 23）。本值决定环境政策的见效速度：太大则治理一两季就清零，太小则任何政策在 40 季内都看不出效果，两端都会让 P07 / P08 的政治叙事失真。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/15"
+    },
+    {
+      "parameter_id": "param.engel_weight_ppm",
+      "value": [
+        229573,
+        357738,
+        40181,
+        372508
+      ],
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "content/scenarios/chengwan/io_table.json 基年居民消费的分产品结构，按最大余数法反算；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "居民消费预算在四部门之间的分配权重，下标按 docs/10 §0.5 的稠密下标（0 agri / 1 manu / 2 energy / 3 services），四项合计精确为 1 000 000。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "R-STATIONARY-01 平稳化：基年核算是增长快照（净投资 8.85 U/年、存货增加 1.8 U/年），无命令基线只有更新投资，这部分最终需求按产品改由居民消费承接（净投资按 capital_goods_split 12:10 归制造与服务，存货增加归农业与制造），再扣除基年租金 11.39 U/年（住房直接售出，R-HOUSING-01，不进商品预算）后取各产品份额。平稳化商品预算（U/年）：农业 14.063、制造 21.915、能源 2.462、服务 22.819。原值 [266029, 313925, 48637, 371409] 是基年快照口径。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/16"
+    },
+    {
+      "parameter_id": "param.env_exposure_gain_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07；docs/12_simulation_contract.md §7；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "从排放存量折算到人口环境暴露指数的增益系数。暴露指数再经 param.migration_w_env_ppm 进入迁移推力、经生活指数进入支持度。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：单位排放存量的暴露指数增量必须与本值成正比且可手工复算。标定顺序是先定 param.emission_decay_ppm（决定时间尺度）再定本值（决定幅度）。若暴露指数在 40 季内触到区间上界，说明本值过大或 io_table 的 emission_ppm 偏高（能源部门为 500 000 ppm，是四部门里最高的一项）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/17"
+    },
+    {
+      "parameter_id": "param.expectation_inertia_ppm",
+      "value": 700000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08 预期；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "预期指数的惯性权重：expectation_t = mul_ppm(本值, expectation_{t−1}) + mul_ppm(1e6 − 本值, 当期观感)。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：给一次阶跃的当期观感，断言预期收敛到新水平 90% 需要约 7 季（0.7⁷ ≈ 0.082）。本值过大则任何政策在 40 季内都改不动预期，过小则预期等同于当期观感、失去「预期」的意义。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/18"
+    },
+    {
+      "parameter_id": "param.firing_friction_ppm",
+      "value": 60000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §3；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季裁减人数占本 cell 现有在岗人数的比例上限（6%）。",
+      "valid_range": [
+        0,
+        300000
+      ],
+      "confidence": "low",
+      "calibration_note": "取值恒小于 param.hiring_friction_ppm（60 000 vs 100 000），表达「裁员比招聘更慢、更贵」。检验方式：一次 −30% 的需求冲击后，失业率上行应被拉平到至少 3 季；若失业率单季跳到新水平，说明本闸没生效或被别处绕过。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/19"
+    },
+    {
+      "parameter_id": "param.gap_cap_ppm",
+      "value": 500000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §4；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "计入调价的供需缺口上限。实际缺口先 clamp 到 ±本值再进调价式，防止一次极端短缺把价格一步顶到 PRICE_MAX。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值与 param.price_step_max_ppm 是两道独立的闸：本值限制输入，step_max 限制输出。检验方式：构造 90% 短缺的单季情形，断言当季价格变动恰好等于 step_max 而不是缺口的线性外推。若压测里夹逼次数超出预算，先查是不是本值太松导致每季都打到 step_max。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/20"
+    },
+    {
+      "parameter_id": "param.hiring_friction_ppm",
+      "value": 100000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 劳动市场摩擦；docs/12_simulation_contract.md §3；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季新增雇佣人数占本 cell 现有在岗人数的比例上限（10%）。",
+      "valid_range": [
+        0,
+        300000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须大于 param.firing_friction_ppm：扩张比收缩容易是设计意图（收缩有解雇成本与政治代价）。检验方式：一次 +20% 的需求冲击后，就业回到新均衡至少需要 2 季；若一季到位说明本值过大。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/21"
+    },
+    {
+      "parameter_id": "param.household_bond_appetite_ppm",
+      "value": 600000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 国内债的买方；docs/12_simulation_contract.md §2.6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "投资池（agent.invpool）现金中单次可动用于认购新发国债的比例上限（60%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "它是国内融资额度的行为侧闸门，与 gov.credit_limit_domestic_uu 的制度侧闸门并列，两者取小。检验方式：断言任一季的国内认购额 ≤ mul_ppm(投资池期初现金, 本值)。若基年就被绑住，先查 scenario 的 invpool 现金是否偏低，再动本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/22"
+    },
+    {
+      "parameter_id": "param.inventory_target_ppm",
+      "value": 500000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §3.1；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "目标库存覆盖比例：目标期末库存 = mul_ppm(本季预期需求, 本值)。500 000 = 半个季度的需求量。只对 content.storable == 1 的部门生效。",
+      "valid_range": [
+        0,
+        2000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：40 季基线中可库存部门的实际覆盖率应在目标的 ±20% 内游走；系统性低于目标说明产能或材料约束在绑，不是本参数的问题。与 param.price_cover_gain_ppm 成对：改目标必须重看调价的库存项。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/23"
+    },
+    {
+      "parameter_id": "param.invest_propensity_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 扩产；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "企业留存现金中用于资本购置（kind=7 CAPITAL_PURCHASE）的比例（20%）。购置金额折算成产能要经 content.io.capacity_per_capital_uu_ppm。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：40 季基线中总资本存量的年增速应在 2%～5%（基年四部门资本合计 299 000 000 000 μU）。若产能爆炸式增长，先查 capacity_per_capital_uu_ppm——R-SCALE-01 后它已 ÷1000，现为 [200, 180, 55, 160]，整数粒度只剩 0.5%～1.8%，先确认它不是被粒度顶上去的，再动本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/24"
+    },
+    {
+      "parameter_id": "param.io_table_set",
+      "value": 548881274887433,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「只做 4 部门的简化投入产出模型……初始技术系数与价格调整速度均为待校准假设」；计划书 §05 澄湾共和国开局数值（2 400 万人、100 U 年 GDP、8% 失业率）；计划书 §19「本计划尚未导入数据」；docs/11_data_contract.md §5.15 的唯一例外条款",
+      "reference_year": 0,
+      "definition": "IOTable 整表技术系数的集合级身份证（V-PC-07）。IO 系数是内容数据，按裁定 R-PARAM-01 不逐个建卡，但整表的来源与置信度必须被登记，故共用本卡。value 是 content/scenarios/chengwan/io_table.json 八个规范化数组的 SHA-256 十进制前 16 位截断；改了任何一个技术系数而不更新本卡即 E_PARAM_STALE。本卡覆盖的是四部门中间投入系数、分技能用工系数、耗电系数、库存损耗率、季度折旧率、产能折算率、排放系数与可库存标志这八组取值。",
+      "valid_range": [
+        0,
+        9007199254740992
+      ],
+      "confidence": "low",
+      "calibration_note": "**value 的计算口径（V-PC-07 的机器版本，逐字照做即可复现）**：(1) 取 JWIoTable.STATE_ARRAY_IDS 的八个数组，按 docs/10 §0.5 的稠密下标展开——content.io.io_coeff_uqs_per_qs[16]（idx_io = s_from×4 + s_to）；content.io.labor_coeff_persons_per_qs[48]（idx_emp = cell×3 + k，cell = r×4 + s，JSON 里的 \"*\" 通配按部门展开到四个地区）；content.io.energy_coeff_uqs_per_qs[16]（按 cell 展开，JSON 的四元组是按部门写的）；content.io.spoilage_ppm[4]；content.io.depreciation_ppm_per_q[4]；content.io.capacity_per_capital_uu_ppm[4]；content.io.emission_ppm[4]；content.storable[4]。(2) 条目按稳定 ID 的 UTF-8 字节序升序排列（docs/11 §6.4 规则 1），本表次序为 capacity < depreciation < emission < energy < io < labor < spoilage < content.storable。(3) 逐条按 CanonicalEncoder 的数组条目格式拼接：uint16 小端 len(id 的 UTF-8) + id 的 UTF-8 + uint8 type_tag（TAG_ARRAY = 2）+ uint32 小端 n + n × int64 小端，即 sim/state/sim_state.gd 的 canon_array()；本表共 1 090 字节。(4) 对拼接结果取 SHA-256，把 256 位摘要当作大端无符号整数写成十进制、左补零到 78 位，取前 16 位十进制字符解析成整数。当前取值对应的摘要是 815426bd2dd3ce074d163f8eb6ac7dc937568e54a42f9339941afee027e48dba，十进制前 16 位为 0584970399873000，即本卡的 value。**valid_range 的上界不是 9 999 999 999 999 999 而是 9 007 199 254 740 992，这处收窄是两条契约条款的冲突，必须裁定而不是默默忍着**：§5.15 要求 value 记「前 16 位十进制截断」，最大可达 9 999 999 999 999 999；而 §1.2 规定内容包里一切整数的绝对值 ≤ 2^53 = 9 007 199 254 740 992（E_INT_RANGE，防解析器丢精度）。本表当前的前缀是 0584970399873000，两条都满足；但约 10% 的摘要其 16 位前缀会落在 (2^53, 1e16) 区间内，届时本卡**写不进内容包**。在裁定之前不得靠改哈希口径绕开——那会让两次计算出的 value 不可比。建议的裁定方向：§5.15 改为「前 15 位十进制截断」（上界 999 999 999 999 999 < 2^53，永远安全），或为本卡在 §1.2 开一条具名例外。**校准计划**：第一步，用 G1 的 40 季无冲击基线检查基年结构是否自行崩溃；第二步，按计划书 §14 做单一干预，检查 P04 与 P07 的作用路径与时滞；第三步，敏感性优先改制造列与服务列的中间投入系数和用工系数，GDP 结构对这两列最敏感。最脆弱的三个取值是能源自用系数 60 000、能源部门产能折算率 55、服务列中间投入合计 355 000，必须各做三档敏感性。任何改动都必须重跑 io_table.json 的 accounting_checks（三个 residual 仍须为 0）并重算本卡 value。劳动报酬不是本表的自由参数，改工资率必须重跑 tools/refit_base_year.py。本表是虚构剧本的设计假设，不是任何真实国家的投入产出表，不得标注为 observed 或 literature（V-PC-04 要求首版 observed 条目数为 0）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/25"
+    },
+    {
+      "parameter_id": "param.living_weight_house_ppm",
+      "value": 250000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08 生活指数；docs/12_simulation_contract.md §8.1；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "生活指数中住房负担项的权重（25%）。收入项权重是残差式 w_income_ppm = 1 000 000 − living_weight_house_ppm − living_weight_service_ppm，不单独建卡。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.living_weight_service_ppm 之和必须小于 1 000 000，否则收入权重为负。检验方式：断言 w_income_ppm == 500 000；并断言 q=0 的 living_index_ppm 逐组等于 population_init 的登记值（容差 0）——对不上说明三项权重或归一化口径与剧本不一致，必须先对齐再谈标定。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/26"
+    },
+    {
+      "parameter_id": "param.living_weight_service_ppm",
+      "value": 250000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/12_simulation_contract.md §8.1；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "生活指数中公共服务可及性项的权重（25%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.living_weight_house_ppm 成对，两者之和 < 1 000 000。裁定 R-ACCESS-01 之后各群组 service_access_ppm 可以不同，本项因此真的产生分布差异，这正是计划书 §08「保留受益和受损的分布」的要求。检验方式：把某群组的 service_access_ppm 调低 10%，断言其 living_index_ppm 下降 mul_ppm(100 000, 本值) = 25 000 ppm，可手工复算。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/27"
+    },
+    {
+      "parameter_id": "param.log_capacity_rows",
+      "value": 8192,
+      "unit": "行",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §13 可追溯性；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季日志（log.*）的预分配行数。热路径不得扩容；超出即登记一条溢出并丢弃后续行——丢弃必须可见，不得静默。",
+      "valid_range": [
+        1024,
+        65536
+      ],
+      "confidence": "medium",
+      "calibration_note": "检验方式：120 季压测中断言单季日志行数不超过本值。若某季触顶，先查是不是有循环在逐元素写日志（那是实现缺陷），再考虑调大本值。本值直接决定内存占用，不是越大越好。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/28"
+    },
+    {
+      "parameter_id": "param.maintenance_backlog_gain_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 维护欠账；docs/12_simulation_contract.md §5；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季维护支出缺口转化为维护欠账的比例（20%）。欠账是存量，以 ppm 表示相对名义维护需求的倍数。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "维护欠账三参数（gain / recover / max）必须一起标定，单改一个会让欠账要么永不积累要么永不清零。检验方式：维护支出为 0 连续 10 季，断言欠账单调上升并在 param.maintenance_backlog_max_ppm 处封顶。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/29"
+    },
+    {
+      "parameter_id": "param.maintenance_backlog_max_ppm",
+      "value": 400000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09；docs/12_simulation_contract.md §5；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "维护欠账存量的上限（相对名义维护需求的 40%）。封顶存在的目的是让「已经烂到底」有明确定义，而不是让欠账无限增长后任何政策都救不回来。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言欠账在任何 120 季压测中都不超过本值；封顶时必须登记一条原因码，报告里要能看出「这个单元已到欠账上限」。本值不是拟合目标，改它等于改「最坏状态有多坏」。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/30"
+    },
+    {
+      "parameter_id": "param.maintenance_backlog_recover_ppm",
+      "value": 100000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09；docs/12_simulation_contract.md §5；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季超额维护支出用于清偿维护欠账的比例（10%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "恒为 param.maintenance_backlog_gain_ppm 的一半：欠账累积快于清偿。检验方式：欠账打满后恢复足额维护，断言清零所需季数约为积累季数的两倍。三参数中任一改动都必须重跑这条对称性检查。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/31"
+    },
+    {
+      "parameter_id": "param.market_rate_base_ppm",
+      "value": 10000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 债务与利率；docs/11_data_contract.md §5.8、§5.9（bond.q-4_01 的 coupon_ppm_per_q 同值）",
+      "reference_year": 0,
+      "definition": "无风险基准季度利率（1%/季，约 4%/年）。新发债票息 = 本值 + 偿债率斜率项 + 外部利差项，再按 coupon_min / coupon_max 截断。",
+      "valid_range": [
+        0,
+        100000
+      ],
+      "confidence": "medium",
+      "calibration_note": "契约此前在 §5.8 写 12 500、在 §5.15 写 10 000，是同一个数的两处不同写法，已统一为 10 000；剧本 world_init 的利率初值若与本值不一致，两者必须一起改（docs/11 §5.8 明文，且事件可以解释它）。检验方式：断言基年存量债 bond.q-4_01 的 coupon_ppm_per_q 等于本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/32"
+    },
+    {
+      "parameter_id": "param.market_rate_slope_ppm",
+      "value": 5000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10；docs/12_simulation_contract.md §2.6 债券定价；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "偿债率（debt service ratio）每上升 1 000 000 ppm 所带来的票息加成系数：票息 = param.market_rate_base_ppm + mul_ppm(dsr_ppm, 本值)。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-DSR-01 / R-ROLLOVER-01 校准：到期本金按标准期限（16 季等额本金）续发后，稳态下约四分之一的存量债务落在「未来四季到期本金」里，债务/GDP 约 55% 时偿债率约 1.0–1.2（基年约 0.3 只因开局批次多为长期限到期一次还本）。斜率 5 000 使稳态新发票息 ≈ 1% + 0.5% × 1.1 ≈ 1.55%/季，与开局批次（0.8%–1.35%/季）同一量级；偿债率 2.0（封顶）时 2%/季。原值 30 000 在稳态给出约 4.3%/季，利息逐季自我强化。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/33"
+    },
+    {
+      "parameter_id": "param.max_defer_count",
+      "value": 2,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "docs/31 Q-ADV-01（延期次数上限，暂定 2 次）；docs/18 R-DEFER-01",
+      "reference_year": 0,
+      "definition": "同一项目合同允许的延期次数上限（命令 6）。超出即以前置条件不满足拒绝，状态不变。",
+      "valid_range": [
+        0,
+        4
+      ],
+      "confidence": "medium",
+      "calibration_note": "R-DEFER-01。取 0 即关闭延期。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/88"
+    },
+    {
+      "parameter_id": "param.max_defer_quarters",
+      "value": 8,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "docs/31 Q-ADV-01（累计延期长度上限，暂定 8 季）；docs/18 R-DEFER-01",
+      "reference_year": 0,
+      "definition": "同一项目各次延期的季数之和上限。单次季数的形状上界是承诺表滚动窗口 16 季（JWCommands.DEFER_QUARTERS_MAX）。",
+      "valid_range": [
+        0,
+        16
+      ],
+      "confidence": "medium",
+      "calibration_note": "R-DEFER-01。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/89"
+    },
+    {
+      "parameter_id": "param.migration_max_share_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07；docs/12_simulation_contract.md §7；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季迁出人数占来源群组人口的比例上限（2%），逐 (region, age, skill) 群组生效。",
+      "valid_range": [
+        0,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：构造极端吸引力差距，断言单季迁出人数恰等于 mul_ppm(群组人口, 本值) 的向下取整，且全国人口守恒（迁出 == 迁入，容差 0）。本值是防止「一季搬空一个地区」的闸，不是拟合目标；调大它之前先确认 region.migration_cost_uu 确实在起作用。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/34"
+    },
+    {
+      "parameter_id": "param.migration_threshold_ppm",
+      "value": 120000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07 人口迁移；docs/12_simulation_contract.md §7；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "触发迁移所需的地区间综合吸引力差距下限（12%）。差距小于本值时不产生任何迁移流，存在的目的是避免每季都有微小人口来回抖动。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：40 季基线中若两地区吸引力差距始终小于本值，迁移流必须逐季严格为 0（不是近似 0）。若基线里迁移从不发生，先查本值是否过高，再查拉力三项权重。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/35"
+    },
+    {
+      "parameter_id": "param.migration_w_env_ppm",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07 环境暴露；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（迁移推力两项权重，合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "迁移推力中「本地环境暴露指数」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.migration_w_house_ppm 合计 == 1 000 000。检验方式：把某地区 env_exposure_ppm 抬到区间上界、其余不变，断言该地区出现净迁出。若毫无反应，说明 param.env_exposure_gain_ppm 或排放存量这条链先断了，不是本权重的问题。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/36"
+    },
+    {
+      "parameter_id": "param.migration_w_house_ppm",
+      "value": 700000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07 住房压力；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（迁移推力两项权重，合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "迁移推力中「本地住房紧张（占用率与租金负担）」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.migration_w_env_ppm 合计必须精确为 1 000 000。检验方式：住房存量不变而人口增长时，断言推力上升且迁出方向指向住房宽松的地区。本值远大于环境项，表达「住不下比空气差更直接地赶人走」；若试玩显示环境政策毫无人口效应，两项一起改，不要单改一项破坏合计恒等式。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/37"
+    },
+    {
+      "parameter_id": "param.migration_w_job_ppm",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（迁移拉力三项权重，合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "迁移拉力中「目的地空缺岗位相对本地失业」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 wage / service 两项合计 == 1 000 000。检验方式：把某地区失业率抬到 20%（基年为 8%）而工资不变，断言该地区由净迁入转为净迁出。若结果只由工资项决定，说明本值被压得太低。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/38"
+    },
+    {
+      "parameter_id": "param.migration_w_service_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07、§08 服务可及性；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（迁移拉力三项权重，合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "迁移拉力中「目的地公共服务可及性优势」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 wage / job 两项合计 == 1 000 000。裁定 R-ACCESS-01 删除了 service_access_ppm 的人口加权恒等式，各群组取值可以不同，本项因此真的有分布效应，不再被抹平。检验方式：P05 / P10 在一个地区投运公共服务后，断言该地区迁入量上升，且增量集中在服务可及性最低的群组。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/39"
+    },
+    {
+      "parameter_id": "param.migration_w_wage_ppm",
+      "value": 500000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（迁移拉力三项权重，合计 == 1e6）",
+      "reference_year": 0,
+      "definition": "迁移拉力中「目的地工资率相对来源地的优势」的权重。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.migration_w_job_ppm、param.migration_w_service_ppm 合计必须精确为 1 000 000（tools/validate_content.py 以 E_PARAM_RANGE 核这一条）。检验方式：只抬高一个地区的工资、其余条件不变，断言迁入量变化方向为正且单调。敏感性测试必须三项同时改，不能只改一项——那会破坏合计恒等式。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/40"
+    },
+    {
+      "parameter_id": "param.mpc_ppm",
+      "value": 850000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 居民行为；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "边际消费倾向：当期可支配收入中用于消费的比例（75%），其余进存款。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.dissave_ppm 一起决定总需求的短期弹性。检验方式：一次性转移支付 X μU 应在当季产生 mul_ppm(X, 本值) 的消费增量，可逐群组手工复算。若基年支出法 GDP 对不上 100 000 000 000 μU，先查本值与 param.engel_weight_ppm，再查剧本的群组现金与存款。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/41"
+    },
+    {
+      "parameter_id": "param.no_confidence_q",
+      "value": 2,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08 留任资格；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "失去留任资格（席位过半丧失或授权目标失守）后，触发终局判定前的宽限季数。",
+      "valid_range": [
+        0,
+        8
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.default_grace_q 是两条独立时钟（政治 vs 财政），不得合并。检验方式：构造第 q 季失去资格，断言第 q+2 季末触发 Termination.LOST_CONFIDENCE，第 q+1 季末不触发；宽限期内玩家仍可行动，这是设计意图不是漏判。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/42"
+    },
+    {
+      "parameter_id": "param.opex_recover_ppm",
+      "value": 50000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09；docs/12_simulation_contract.md §5；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "公共服务单元恢复足额拨付后，有效容量每季回升的比例（5%/季），上限是名义容量。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "恒小于 param.opex_starve_decay_ppm 的三分之一。检验方式：断供 4 季再恢复，回到 95% 名义容量所需季数应为 12～14 季。若一两季就恢复，玩家会学到「断供没有代价」，而这正是本参数存在的原因。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/43"
+    },
+    {
+      "parameter_id": "param.opex_starve_decay_ppm",
+      "value": 150000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 公共服务断供降效；docs/12_simulation_contract.md §5；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "公共服务单元在运营费未足额拨付的季度里，有效容量相对上季的衰减比例（15%/季）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须大于 param.opex_recover_ppm（150 000 vs 50 000）：坏得比好得快是设计意图，与 INV-122「信任恢复慢于下降」同一条纪律。检验方式：连续断供 4 季后有效容量应降到约 0.85⁴ ≈ 52%，并被政策侧的容量下限（如 param.p11_capacity_floor_ppm）托住；断言衰减在下限处停止而不是继续向 0。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/44"
+    },
+    {
+      "parameter_id": "param.p09_eligible_sector_mask",
+      "value": 6,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P09「资格」；policy_P09.json /_note_calibration_and_param_cards/entries/5（待建卡规格）；10 号文件 §0.5 部门稠密下标",
+      "reference_year": 0,
+      "definition": "设备投资补助的合格部门位掩码，位序 0 agri / 1 manu / 2 energy / 3 services。值 6 = sector.manu + sector.energy。非玩家杠杆。",
+      "valid_range": [
+        1,
+        15
+      ],
+      "confidence": "low",
+      "calibration_note": "扩大到含 agri（值 7）会使 bloc.agri_coop 的反对依据消失，属于设计取舍而非数值微调；若要改，须同时更新 P09 的 political_reaction_basis 与相应测试期望（docs/18 R-SUBSIDY-01）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/76"
+    },
+    {
+      "parameter_id": "param.p11_capacity_decay_ppm",
+      "value": 15000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「停拨款会降低实际服务，而非删除建筑」；INV-102；policy_P11.json /_note_operating_cost/starvation_rule_zh",
+      "reference_year": 0,
+      "definition": "运行费完全欠拨（shortfall == 1 000 000）或政策退出后，征收能力每季下降的 ppm 绝对值；按 shortfall 比例缩放，不低于 param.p11_capacity_floor_ppm。",
+      "valid_range": [
+        1000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-02。连续 4 季完全断供恰好抹平一次满额建设的收益（60 000 / 15 000 == 4）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/92"
+    },
+    {
+      "parameter_id": "param.p11_capacity_floor_ppm",
+      "value": 760000,
+      "unit": "ppm",
+      "source_type": "derived",
+      "source_ref": "content/scenarios/chengwan/government_init.json 的 gov.tax_capacity_ppm；policy_P11.json /_note_params_core_handoff",
+      "reference_year": 0,
+      "definition": "断供或退出时征收能力的回落下限，等于剧本基年征收能力：本政策最坏只能退回实施前的水平，不会让国家比没做过这件事更差。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "R-P11-02。加载期必须与 government_init.json 的 gov.tax_capacity_ppm 逐位相等，不等即拒绝加载；改剧本初值必须同步改这张卡。",
+      "derivation_expr": "government_init.gov.tax_capacity_ppm（加载期逐位复算：JWContentLoader._cross_check_params）",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/91"
+    },
+    {
+      "parameter_id": "param.p11_capacity_recover_ppm",
+      "value": 5000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "INV-122 的同构纪律（恢复慢于下降）；policy_P11.json /_note_params_core_handoff",
+      "reference_year": 0,
+      "definition": "运行费恢复足额拨款后，征收能力每季回升的 ppm 绝对值；上限为建成水平 state.gov.tax_capacity_built_ppm。",
+      "valid_range": [
+        500,
+        50000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-02。加载期强制本值 < param.p11_capacity_decay_ppm（恢复慢于下降）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/93"
+    },
+    {
+      "parameter_id": "param.p11_region_base_share_ppm",
+      "value": [
+        180000,
+        330000,
+        340000,
+        150000
+      ],
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P11.json /_note_params_core_handoff（待建卡规格）；计划书 §09 P11「4—8 季；先增加成本，再改变征收覆盖」；计划书 §05 四地区的产业特征",
+      "reference_year": 0,
+      "definition": "各地区占全国可征税基的份额，下标 beiyuan / zhongzhou / haijia / xiling；region_mask 覆盖地区的份额之和即覆盖率。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-01。四项之和必须 == 1 000 000。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/80"
+    },
+    {
+      "parameter_id": "param.p11_staff_gain_full_ppm",
+      "value": 60000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P11.json /_note_params_core_handoff（待建卡规格）；计划书 §09 P11「4—8 季；先增加成本，再改变征收覆盖」",
+      "reference_year": 0,
+      "definition": "人员投入满编（staffing_scale_ppm == 1 000 000）时征收能力乘数的可达增量上限（ppm 绝对增量）。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-01。检查「全覆盖满额建设一次」的回本季数落在 6—12 季；短于 6 季说明本政策相对 P04/P06 压倒性占优，先下调此值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/77"
+    },
+    {
+      "parameter_id": "param.p11_system_gain_full_ppm",
+      "value": 60000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P11.json /_note_params_core_handoff（待建卡规格）；计划书 §09 P11「4—8 季；先增加成本，再改变征收覆盖」",
+      "reference_year": 0,
+      "definition": "信息系统达到设计规模（system_scale_ppm == 1 000 000）时征收能力乘数的可达增量上限（ppm 绝对增量）。与人员一侧取 min，不相乘。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-01。与 param.p11_staff_gain_full_ppm 同值，使短板只由玩家的投入比例决定。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/78"
+    },
+    {
+      "parameter_id": "param.p11_tax_capacity_ceiling_ppm",
+      "value": 920000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P11.json /_note_params_core_handoff（待建卡规格）；计划书 §09 P11「4—8 季；先增加成本，再改变征收覆盖」；policy_P11.json /effect/cap_ppm",
+      "reference_year": 0,
+      "definition": "征收能力乘数的硬上限。不存在 100% 征收；越过上限的增量被夹逼为 0。",
+      "valid_range": [
+        800000,
+        990000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P11-01。须与 policy_P11.json /effect/cap_ppm 同值。若玩家能靠反复建设长期贴住上限，先调冷却或成本。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/79"
+    },
+    {
+      "parameter_id": "param.payout_ratio_ppm",
+      "value": 1000000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 企业利润分配；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "企业税后利润中分配给居民（财产性收入，kind=18 PROPERTY_INCOME）的比例（30%），其余留存为营运现金与投资来源。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言每季「分配额 + 留存额 == 税后利润」（容差 0，这是会计恒等式不是拟合）；分配额按群组持股比例拆分，必须用最大余数法且逐季登记余数去向。与 param.invest_propensity_ppm 联动：分得多则可投资的留存少，两者一起标定。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/45"
+    },
+    {
+      "parameter_id": "param.pension_uu_per_elder_q",
+      "value": 240,
+      "unit": "μU/人/季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 年度计划「法定转移 4.0 U」；government_init.json annual_plan.expenditure_lines_uu.statutory_transfers；population_init 基年收入恒等式的转移收入 0.9 U/季",
+      "reference_year": 0,
+      "definition": "基本养老金（R-PENSION-01）：每位老年人口每季领取的定额，作为法定转移的常设部分，与 P03 失业救济同档（STATUTORY_TRANSFERS）支付。",
+      "valid_range": [
+        0,
+        5000
+      ],
+      "confidence": "low",
+      "calibration_note": "按年度计划的法定转移额度校准：基年法定转移 1.0 U/季中，P03（最低工资 405 × 替代率 40% × 约 93 万失业者）约 0.15 U/季，余 0.85 U/季 ÷ 老年人口 2 930 000 ≈ 290 μU/人/季（约为低技能工资的 36%）。缺这一项时无命令基线的法定转移只有计划额的约 20%，政府基本支出系统性低于计划，稳态 GDP 相应偏低。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/74"
+    },
+    {
+      "parameter_id": "param.persons_per_housing_unit",
+      "value": 3,
+      "unit": "人/套",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 澄湾共和国 2 400 万人与住房存量设定；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "每套住房的标准居住人数。用于把地区住房存量折算成可容纳人口，进而算住房紧张度与迁移推力。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言 Σ region.housing_stock_units × 本值 与总人口 24 000 000 的比值落在 0.95～1.10，即基年住房总体略紧但不至于住不下。若比值远离该区间，是剧本的住房存量与人口不匹配，不是本参数的问题。本值是整数、没有 ppm 的精细度，改它会整体挪动全部地区的住房紧张度。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/46"
+    },
+    {
+      "parameter_id": "param.policy_toggle_cost_uu",
+      "value": 10000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SCALE-01 的机械迁移（旧值 10 000，unit 以 μU 开头故 ×1000）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」；docs/11_data_contract.md §5.12 的 PolicyDefinition.toggle_cost_uu",
+      "reference_year": 0,
+      "definition": "任一政策开启或关闭一次的一次性行政成本（0.01 U）。从政府现金扣除，按 kind=26 POLICY_TOGGLE_COST 入账，对手方是服务部门（行政服务的购买）。",
+      "valid_range": [
+        0,
+        1000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 docs/11 §5.12 的 PolicyDefinition.toggle_cost_uu 同值，两处必须一致，改一处即不一致。检验方式：断言连续开关 10 次后政府现金恰好减少 10 × 本值，且账本逐笔可查、每笔都有对手方。本值存在的目的是让「反复横跳」有代价，不是财政上的大数——10 000 000 / 25 000 000 000 = 0.4‰，只有基年季度名义 GDP 的万分之四。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/47"
+    },
+    {
+      "parameter_id": "param.price_ceil_ppm",
+      "value": 2500000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "价格相对基年价 BASE_PRICE 的上限比率。绝对上限 PRICE_MAX = mul_ppm(BASE_PRICE, 本值) = 2 500 000 000 μU/Q_s（旧刻度为 2 500 000）。",
+      "valid_range": [
+        1000000,
+        10000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "与 sim/jw_units.gd 的 PRICE_MAX 成对，两边必须同时改。检验方式：S02 供给冲击的重放中，价格触顶次数应落在 param.price_clamp_budget_count 的预算内；若预算被打爆，说明夹逼在承担本该由数量配给承担的工作，先查配给规则再动本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/48"
+    },
+    {
+      "parameter_id": "param.price_clamp_budget_count",
+      "value": 240,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §19 压力测试；docs/30_quality_gates.md 的压测门槛；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "120 季压力测试中允许出现的价格夹逼（触及 PRICE_MIN / PRICE_MAX 或 price_step_max）总次数预算。超出即判定定价规则在用夹逼代替调整，压测失败。",
+      "valid_range": [
+        0,
+        10000
+      ],
+      "confidence": "low",
+      "calibration_note": "240 = 4 部门 × 120 季 × 50%，即「平均每部门每两季至多夹一次」。检验方式：压测报告输出逐部门夹逼计数并与本值比对。本值是闸门不是拟合目标：调大它只能在同时给出「为什么这些夹逼是合理的」之后。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/49"
+    },
+    {
+      "parameter_id": "param.price_cover_gain_ppm",
+      "value": 100000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「根据短缺和库存」；docs/12_simulation_contract.md §4；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "价格对库存覆盖率偏离目标的响应系数：调价式中来自库存项的部分 = mul_ppm(目标覆盖率 − 实际覆盖率, 本值)。只对可库存部门（content.storable == 1）生效。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取值恒为 param.price_gap_gain_ppm 的一半，是「库存是慢变量」的表达，不是巧合；改动时保持这个次序关系，否则库存项会在缺口项之前主导定价。检验方式：能源与服务不可库存（storable = [1, 1, 0, 0]），断言这两个部门的库存项贡献逐季恒为 0。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/50"
+    },
+    {
+      "parameter_id": "param.price_floor_ppm",
+      "value": 400000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「价格根据短缺和库存作有界、平滑的下一季调整」；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "价格相对基年价 BASE_PRICE 的下限比率。绝对下限 PRICE_MIN = mul_ppm(BASE_PRICE, 本值) = 400 000 000 μU/Q_s（R-SCALE-01 后的新刻度，旧刻度为 400 000）。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "与 sim/jw_units.gd 的 PRICE_MIN 是同一约束的两种写法，两边必须同时改，改一边即 E_UNIT_MISMATCH。检验方式：40 季无冲击基线里任一部门价格触底的季数应为 0；若长期贴底，先查 param.price_gap_gain_ppm 与库存目标，再考虑放宽本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/51"
+    },
+    {
+      "parameter_id": "param.price_gap_gain_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §4 价格调整；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "价格对当期供需缺口的响应系数：调价式中来自缺口项的部分 = mul_ppm(gap_ppm, 本值)。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.price_cover_gain_ppm 是同一条调价式的两个加数，必须一起标定。检验方式：单点供给冲击后价格回到基线的半衰期应在 3～6 季；快于 2 季说明本值过大，慢于 10 季说明过小。先动本值再动库存项，因为缺口项主导短期。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/52"
+    },
+    {
+      "parameter_id": "param.price_step_max_ppm",
+      "value": 30000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「有界、平滑的下一季调整」；docs/11_data_contract.md §5.15 的示例卡即本参数",
+      "reference_year": 0,
+      "definition": "单季价格相对上季的最大变动幅度（±3%），上下行对称：先算目标价，再按本值截断。",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "计划书 §18 出现宏观指标无原因振荡时，先减小本值，再动其它参数。检验方式：40 季基线中任一部门的季度价格变动不得超过本值对应的比例。R-SCALE-01 之后 ±3% 对新刻度的价格（1e9 量级）有实际效果；旧刻度下价格只有 1e6 量级时这条平滑同样能算出非零增量，真正被整数截断成 0 的是工资与租金，不是价格。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/53"
+    },
+    {
+      "parameter_id": "param.proc_review_uu_per_opex_ppm",
+      "value": 20000000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "每 1 μU 到位运行费可覆盖的受审支出额（倍数，20 000 000 == 20 倍）：review_capacity = mul_ppm_2(opex_per_q, opex_ok_ppm, 本值)。",
+      "valid_range": [
+        1000000,
+        60000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。抽查比例拉满时审核产能必须成为约束，否则本值过大。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/86"
+    },
+    {
+      "parameter_id": "param.proc_transparency_appeal_load_ppm",
+      "value": 24000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "申诉受理范围带来的额外负荷系数：负荷第二项 = mul_ppm_2(本值, appeal_scope_ppm, coverage_ppm)。",
+      "valid_range": [
+        0,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。略高于披露负荷；申诉范围的主要代价应当是时滞而不是稳态收益。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/84"
+    },
+    {
+      "parameter_id": "param.proc_transparency_decay_ppm",
+      "value": 40000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /exit_rule/_note_exit_detail/decay_branch_zh",
+      "reference_year": 0,
+      "definition": "采购透明撤回后回落期内每季按当前行政能力计提的回落比例：delta = −mul_ppm(本值, admin_capacity_ppm)，再受 param.proc_transparency_step_max_ppm 夹逼。",
+      "valid_range": [
+        0,
+        300000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-02。回落必须快于建设（700 000 处每季约 28 000 ppm，建成后每季约 +16 700），否则「建满 → 撤回省运行费 → 再建」的套利重新出现。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/94"
+    },
+    {
+      "parameter_id": "param.proc_transparency_decay_q",
+      "value": 4,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /exit_rule/_note_exit_detail/decay_branch_zh",
+      "reference_year": 0,
+      "definition": "采购透明撤回后行政能力回落的持续季数（从撤回季起算）。期满后该通道完全静默。",
+      "valid_range": [
+        0,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-02。同时是回落总量的上限（默认参数下累计约 100 000 ppm）；是否另设不低于开局水平的地板登记为 OQ-P12-09。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/95"
+    },
+    {
+      "parameter_id": "param.proc_transparency_gain_ppm",
+      "value": 200000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "有效审核强度转化为行政执行能力的增益系数：gain = mul_ppm(本值, effective_audit_ppm)。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。默认三杠杆完整生效后稳态 delta 应落在 +10 000 ~ +25 000 ppm/季。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/82"
+    },
+    {
+      "parameter_id": "param.proc_transparency_load_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "披露覆盖率带来的流程负荷系数：负荷第一项 = mul_ppm(本值, coverage_ppm)。",
+      "valid_range": [
+        0,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。须使生效后头两季净效应为负（初期流程成本），完整生效后为正。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/83"
+    },
+    {
+      "parameter_id": "param.proc_transparency_ramp_q",
+      "value": 3,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」；policy_P12.json /lag/max_feedback_q",
+      "reference_year": 0,
+      "definition": "审核与申诉流程从开张到满负荷的基础季数；ramp_q_total = 本值 + idiv_floor(appeal_scope_ppm, 500000)。",
+      "valid_range": [
+        1,
+        8
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。与 lag.max_feedback_q（6）联动，改本值须同步。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/85"
+    },
+    {
+      "parameter_id": "param.proc_transparency_step_max_ppm",
+      "value": 40000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "行政执行能力每季净变动的绝对值上限（夹逼写 log.clamp）。",
+      "valid_range": [
+        5000,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。防止单季跳变。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/87"
+    },
+    {
+      "parameter_id": "param.procurement_disclosure_ref_uu",
+      "value": 500000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "policy_P12.json /_note_calibration_and_param_cards（待建卡规格）；计划书 §09 P12「披露规则、审核和申诉安排；2—6 季；初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "逐笔披露门槛的参照单笔对外支出额：门槛 = mul_ppm(本值, disclosure_threshold_ppm)。",
+      "valid_range": [
+        100000000,
+        2000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-P12-01。无命令基线下门槛取 0/25%/50%/75%/100% 时覆盖率不得连续三档相同，否则改本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/81"
+    },
+    {
+      "parameter_id": "param.pubserv_fee_ppm",
+      "value": 170000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 年度计划「非税收入 2.4 U（公共服务收费）」；government_init.json annual_plan.receipt_lines_uu.other",
+      "reference_year": 0,
+      "definition": "公共服务收费率（R-FEE-01）：各群组每获得 1 μQ 公共服务，缴纳基年单价（1 000 μU/μQ）的本比例。S06 个税之后按本季实际交付量征收，受群组现金约束，计 flow.gov.receipts_other_uu。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "按计划书 §05 的非税收入 2.4 U/年校准：基年四地区公共服务产能合计 3 550 000 μQ/季、可用率 100% 全额交付时，0.6 U/季 ÷（3 550 000 μQ × 1 000 μU/μQ）≈ 169 000 ppm，取 170 000。检验：无命令基线第 0 季非税收入应在 0.58–0.62 U。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/73"
+    },
+    {
+      "parameter_id": "param.qty_max_uqs",
+      "value": 1000000000000,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SCALE-01（实物刻度不随货币刻度变）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」；sim/jw_units.gd 的 JWUnits.QTY_MAX",
+      "reference_year": 0,
+      "definition": "单笔实物数量与任一数量型状态字段的绝对值硬上限，等于 1 000 000 Q_s。同时是「该约束不适用」的哨兵值 JWUnits.SENTINEL。",
+      "valid_range": [
+        1000000000000,
+        1000000000000
+      ],
+      "confidence": "high",
+      "calibration_note": "与 JWUnits.QTY_MAX 重复登记、加载期逐字比对，故为单点区间（理由同 param.amount_max_uu）。检验方式：QTY_MAX × PRICE_MAX = 2.5e21 溢出 int64，估值路径必须走 mul_div_floor；T-U-Z-02 在上界处断言溢出被登记。实物刻度与货币刻度无关，R-SCALE-01 不改本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/54"
+    },
+    {
+      "parameter_id": "param.rate_sensitivity_ppm",
+      "value": 100000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07 外部冲击、§10 主权利率；docs/16_external_world_design.md；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "外部融资收紧冲击（shock.S03 通道）每 1 000 000 ppm 的强度，传导到主权利率利差的系数。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "裁定 R-CREDIT-01：world.credit_limit_uu 约束的是**新增**外部借款，存量外债不占额度；本值管价格侧，额度管数量侧，两条不得互相替代。检验方式：触发 S03 的中档强度，断言外部票息上升量 = mul_ppm(冲击强度, 本值)，可手工复算；并断言国内票息不因本值改变（两条融资渠道的隔离性）。 第四轮校准（R-ROLLOVER-01 之后）：S03 强度区间 −2%…+30%，原值 300 000 使最强冲击给外部票息加 9%/季（年化 36%），无命令政府在一次冲击内必然失去执政，40 季回放路线能否跑完取决于种子运气；改为 100 000：最强冲击 +3%/季（年化 12%），仍需玩家应对。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/55"
+    },
+    {
+      "parameter_id": "param.rng_salt",
+      "value": [
+        8566354709439740,
+        1697037501250966,
+        774310021412516,
+        3441291724144371,
+        8107072018497657,
+        1103520599060817
+      ],
+      "unit": "int64",
+      "source_type": "derived",
+      "source_ref": "docs/10_variable_dictionary.md §0.4 的六条随机流稳定 ID；docs/11_data_contract.md §5.15.2「首版必备参数最小集」；sim/state/rng_streams.gd 的 splitmix64 混合式",
+      "reference_year": 0,
+      "definition": "六条独立随机流的盐值，按 JWUnits.RngStream 的枚举顺序排列（0 SHOCK / 1 EVENT / 2 DEMOGRAPHY / 3 MARKET / 4 POLITICS / 5 RESERVED）。抽样式为 splitmix64(root_seed ^ salt[stream] ^ (q << 32) ^ index)；盐值是流隔离的唯一来源，它保证新增一个事件模板不会改变 rng.shock 的任何取值。",
+      "valid_range": [
+        1,
+        9007199254740992
+      ],
+      "confidence": "high",
+      "calibration_note": "**发布后不得更改**（INV-136）：改盐值等于让全部已发布存档的重放失效。本组值不是随手敲的，可逐位复算，公式见 derivation_expr。**掩码取 53 位而不是 63 位是被契约逼的，不是随手选的**：docs/11_data_contract.md §1.2 规定内容包里一切整数的绝对值 ≤ 2^53（JSON 互操作安全区，E_INT_RANGE），而 §5.15.2 把本参数的单位写作 int64。两条并存的唯一解是：运行期类型是 int64，但写在内容包里的字面值必须落在 2^53 以内。盐值只需要两两不同且非零——混合强度由 splitmix64 提供，不由盐值的位宽提供——所以截到 53 位不削弱流隔离。检验方式：test_u_rng_salt_derivation 按 derivation_expr 复算六个值并逐字比对；另断言六个值两两不等、均 > 0 且均 ≤ 2^53——全 0 会让六条流退化成同一条且悄无声息（rng_streams.gd 已就 salt 长度设防，但没有就取值设防）。本卡不进 JWSimState.params 稠密数组，由 JWRngStreams 持有 content.rng.salt[6]，systems/content_loader.gd 的 _read_rng_salt() 是它唯一的读取点。",
+      "derivation_expr": "salt[i] = int.from_bytes(sha256(utf8(rng_id[i])).digest()[0:8], 'big') & 0x1FFFFFFFFFFFFF, rng_id = ['rng.shock', 'rng.event', 'rng.demography', 'rng.market', 'rng.politics', 'rng.reserved']",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/56"
+    },
+    {
+      "parameter_id": "param.rule_issue_tenor_q",
+      "value": 32,
+      "unit": "季",
+      "source_type": "derived",
+      "source_ref": "government_init.json bonds（开局六个批次的原始期限按初始面值加权 ≈ 31 季）；docs/18 R-TENOR-01",
+      "reference_year": 0,
+      "definition": "规则发行（S02 付本息前的预融资、到期本金续发、S04 各支付线的短缺融资）新批次的期限：到期季 = 发行季 + 本值，等额本金摊还。玩家命令 issue_bond 自带期限，不受本值约束。",
+      "valid_range": [
+        4,
+        63
+      ],
+      "confidence": "medium",
+      "calibration_note": "按开局存量债的期限结构取值，使「未来四季到期本金」在无命令基线中大致平稳（计划书 §14 校准第一步）。原先借用 param.commitment_horizon_q（16 季，信任承诺窗口）作期限：16 季等额本金让新债每年约有一半本金落进四季窗口，偿债率从 0.3 升到封顶 2.0，新发票息从 1.14% 升到 2%/季，存量平均票息十年翻倍，无命令基线在第 35、39 季两次审查失败。检验方式：diag_debt 40 季，偿债率与新发票息不得单调走到封顶。上限 63 == JWBondBook.HORIZON_MAX − 1。",
+      "derivation_expr": "Σ_b principal_initial_uu[b] × (maturity_q[b] − issue_q[b]) / Σ_b principal_initial_uu[b] = (8×46 + 7×50 + 14.4×36 + 13.5×27 + 9×16 + 6×9) / 57.9 ≈ 31.1，取整到 32（8 年）",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/75"
+    },
+    {
+      "parameter_id": "param.student_teacher_ratio",
+      "value": 25,
+      "unit": "人",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 公共服务的人力口径；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "教育类公共服务单元中每一名教职人员对应的在学人数。用于把教育容量折算成人力需求。",
+      "valid_range": [
+        5,
+        60
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言 pubserv_init 的教育单元 staff_persons × 本值 ≥ 其覆盖的学龄人口，否则基年开局的教育可及性就低于剧本登记的 service_access_ppm。本值是整数比、不走 ppm；改它会同时改公共服务工资支出与服务可及性，两处都要重算。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/57"
+    },
+    {
+      "parameter_id": "param.support_weight_ppm",
+      "value": [
+        500000,
+        250000,
+        250000
+      ],
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SUPPORT-01（docs/18_rulings.md）；docs/13_open_questions.md OQ-222 的临时取法；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "支持度合成中生活指数、预期、信任三项**变化量**的权重，按 [生活, 预期, 信任] 排列，三项合计精确为 1 000 000。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "裁定 R-SUPPORT-01 之后本组权重加权的是相对基年的变化量而不是水平值：support_ppm = clamp(base_support_ppm + Σ wᵢ·Δindexᵢ, 0, 1 000 000)，因此基年恒等于剧本登记值，不会像绝对加权那样在开局就送出 30 多个百分点的执政基础。三项之和必须精确为 1 000 000（加载期校验）。检验方式：断言 q=0 时 support_ppm 逐组等于 population_init 的 support_ppm（容差 0）。计划书 §14 的敏感性步骤必测三档组合；若所有路线的政治结果都只由生活指数决定，说明权重失衡。注意本卡与 param.living_weight_* 是两组不同的权重，docs/12 §8.1 曾把两者串用，已改正，不得互相代入。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/58"
+    },
+    {
+      "parameter_id": "param.tax_base_rate_ppm",
+      "value": 250000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10；docs/12_simulation_contract.md §2；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "税基侵蚀的参照平均税率（15%）。平均税率低于本值时不产生任何侵蚀，等于给「温和税制」一个免罚区。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-LAFFER-01：锚在基年平均税率附近（P01 默认级距下全国平均名义税率约 23%，高收入组约 25%—28%），使无命令基线几乎不产生侵蚀；原值 150 000 让基年每个组都已处在侵蚀区。与 param.tax_evasion_slope_ppm 成对，单独改任一个都会挪动拉弗拐点。检验方式：断言平均税率恰为本值时侵蚀额为 0（边界严格取等），低于本值时也为 0，不得出现负侵蚀。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/59"
+    },
+    {
+      "parameter_id": "param.tax_evasion_slope_ppm",
+      "value": 1350000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10「税率提高会侵蚀税基」；docs/12_simulation_contract.md §2；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "平均税率每高出 param.tax_base_rate_ppm 一个单位所侵蚀的税基比例系数：税基侵蚀 = mul_ppm(max(0, 平均税率 − 参照税率), 本值)。",
+      "valid_range": [
+        0,
+        3000000
+      ],
+      "confidence": "low",
+      "calibration_note": "R-LAFFER-01：线性侵蚀下单一税率 t 的实收 ∝ t·(1 − s·(t − t0))，静态拐点 t* = (1 + s·t0)/(2s)。原值 250 000（t0 = 15%）给出 t* ≈ 207%，P01 的整个税率区间 [0, 60%] 内加税永远增收，政策博弈退化成「一直加税」；现取 s = 1.35、t0 = 25%，t* ≈ 49.5%，60% 档实收比 50% 档低约 4%。检验方式：扫描 P01 的税率档位（ADV-A04 的六档单一税率），断言财政收入随税率先升后降且拐点唯一。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/60"
+    },
+    {
+      "parameter_id": "param.tax_recovery_ppm",
+      "value": 50000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 欠税；docs/12_simulation_contract.md §2；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "应收欠税存量每季被追回的比例（5%）。追回额计入当季财政收入，存量相应减少。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言「期末应收 == 期初应收 + 当季新增欠税 − 追回额」（容差 0，会计恒等式）。本值与 gov.tax_capacity_ppm 不同：那是当期能不能收上来，本值是历史欠账的清理速度，两者不得互相替代。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/61"
+    },
+    {
+      "parameter_id": "param.training_lag_q",
+      "value": 4,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 教育与培训的时滞；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "一批受训者从入训到技能档位提升所需的季数。期间计入在训队列，不计入对应技能档的劳动供给。",
+      "valid_range": [
+        1,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：T-S-P03 / T-S-P05 断言「入训当季劳动供给不变，第 4 季之后对应技能档人数增加」。本值必须 ≤ param.edu_pipeline_slots（4 ≤ 8），否则队列装不下一批完整的在训人员。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/62"
+    },
+    {
+      "parameter_id": "param.trust_drop_ppm",
+      "value": 80000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「短期补贴不能自动修复长期失信」；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "一次失信（承诺未兑现）带来的信任下降幅度（8%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须严格大于 param.trust_recover_ppm（INV-122，tools/validate_content.py 以 E_PARAM_RANGE 核这一条）。本组取 4:1，即一次失信需要连续四季兑现才补得回来。检验方式：断言「失信一次 + 连续兑现 3 季」之后信任仍低于失信前，第 4 季末恰好回到原水平。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/63"
+    },
+    {
+      "parameter_id": "param.trust_recover_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "一季兑现承诺带来的信任恢复幅度（2%），受 param.trust_streak_cap_q 的连击上限约束。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "INV-122 要求 trust_recover_ppm < trust_drop_ppm，本组取 1:4。检验方式：断言「失信一次后需要连续 4 季兑现才回到原水平」，且第 5 季起不再加速。若试玩显示信任一旦掉下去就永远回不来，先查 param.trust_streak_cap_q 再动本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/64"
+    },
+    {
+      "parameter_id": "param.trust_streak_cap_q",
+      "value": 8,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08；docs/12_simulation_contract.md §8；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "连续兑现计入信任恢复的季数上限（8 季）。超过本值的连击不再增加单季恢复量，防止长期守约后信任免疫一切冲击。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "必须 ≤ param.commitment_horizon_q（8 ≤ 16）。检验方式：连续兑现 12 季，断言第 9 至 12 季的单季恢复量与第 8 季相同（封顶生效）。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/65"
+    },
+    {
+      "parameter_id": "param.uu_to_construction_uqs_ppm",
+      "value": 1000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "裁定 R-SCALE-01 的连带要求 2（分母带 μU 的系数方向相反，取值 ÷1000）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（表中标 ⚠ 待标定）",
+      "reference_year": 0,
+      "definition": "把施工服务的金额折算成施工数量的换算率：施工量_μQ_services = mul_ppm(金额_μU, 本值)。基年价下 1 Q_s = 1 000 000 000 μU 而 1 Q_s = 1 000 000 μQ_s，故 1 μU 对应 10⁻³ μQ_s，即 1 000 ppm。",
+      "valid_range": [
+        1,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "⚠ 这是「分母带 μU」的系数，R-SCALE-01 下方向与金额相反：旧值 1 000 000 ÷ 1000 = 1 000。与 content.io.capacity_per_capital_uu_ppm 是同一类；R-SCALE-01 原文只点名了后者，本参数一并登记。遗留问题：内容层的实测比值并不一致——P07 与 P08 恰好是 1 000 ppm，P04 是 2 000 ppm，P06 约 600 ppm。这说明各政策的「钱→施工量」里混进了各自的材料与管理占比。本参数到底是**中性换算**还是**含占比的换算**必须先定义清楚再标定，否则它同时扮演两个角色。检验方式（定义清楚后）：断言 P07 的 param.p07_spend_line_construction_service_uu_per_q 与 param.p07_required_construction_uqs 的比值恰等于本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/66"
+    },
+    {
+      "parameter_id": "param.wage_cash_share_ppm",
+      "value": 800000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 企业现金约束；docs/12_simulation_contract.md §3；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "企业单季可动用于支付工资的营运现金比例上限（80%）。剩余部分留作中间投入与资本支出，防止企业把现金全部付成工资后无法采购。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：断言任一季任一 cell 的工资支出 ≤ mul_ppm(期初营运现金, 本值)。若基年就被这条绑住，说明 cells_init 的 operating_cash_uu 偏低（基年四部门合计 28 716 000 000 μU，R-REGION-01：每个 cell 开局持有一季工资 + 中间投入），应先查剧本现金而不是放宽本值。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/67"
+    },
+    {
+      "parameter_id": "param.wage_ceil_uu",
+      "value": 22220,
+      "unit": "μU/人/季",
+      "source_type": "derived",
+      "source_ref": "裁定 R-SCALE-01 的机械迁移（旧值 20 000 000，unit 以 μU 开头故 ×1000）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（表中标 ⚠ 待标定）",
+      "reference_year": 0,
+      "definition": "工资率的硬上限，单位是每人每季的 μU。与 param.wage_floor_uu 成对，必须严格大于它。",
+      "valid_range": [
+        2223,
+        222200
+      ],
+      "confidence": "low",
+      "calibration_note": "R-SCALE-01 后重定：旧值 20000000000 比真实人均工资高 4~5 个数量级，S07 的有界平滑把工资直接夹到下限，第 1 季公职工资应付暴涨约 6 万倍、财政随即崩溃。基年最高技能档工资 2222 μU/人/季 的 10 倍，为 120 季（30 年）名义增长留出余量；上限必须严格高于基年最高档。",
+      "derivation_expr": "content.scenario.wage_uu_per_person_q[skill.high] * 10",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/68"
+    },
+    {
+      "parameter_id": "param.wage_floor_uu",
+      "value": 405,
+      "unit": "μU/人/季",
+      "source_type": "derived",
+      "source_ref": "裁定 R-SCALE-01 的机械迁移（旧值 50 000，unit 以 μU 开头故 ×1000）；docs/11_data_contract.md §5.15.2「首版必备参数最小集」（表中标 ⚠ 待标定）",
+      "reference_year": 0,
+      "definition": "工资率的硬下限，单位是每人每季的 μU。作用于逐 (cell, skill) 的工资率，先于 step_max 生效。",
+      "valid_range": [
+        1,
+        810
+      ],
+      "confidence": "low",
+      "calibration_note": "R-SCALE-01 后重定：旧值 50000000 比真实人均工资高 4~5 个数量级，S07 的有界平滑把工资直接夹到下限，第 1 季公职工资应付暴涨约 6 万倍、财政随即崩溃。基年最低技能档工资 810 μU/人/季（population_init 重拟合结果）的 50%。下限必须严格低于基年最低档，否则开局第一次工资调整就会被夹逼抬升。",
+      "derivation_expr": "floor_div(content.scenario.wage_uu_per_person_q[skill.low] * 500000, 1000000)",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/69"
+    },
+    {
+      "parameter_id": "param.wage_gain_ppm",
+      "value": 150000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06；docs/12_simulation_contract.md §3 工资调整；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "工资率对劳动供需缺口的响应系数：Δwage_ppm = mul_ppm(劳动缺口_ppm, 本值)，再按 param.wage_step_max_ppm 截断。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：R-SCALE-01 之后人均季度劳动报酬约 1 360 μU，±2% 的调整有约 27 μU 的实际分辨率，不再像旧刻度（人均约 1.4 μU）那样被整数截断成 0。若 40 季基线中工资长期不动，先查缺口是否恒为 0，再查 param.wage_floor_uu / wage_ceil_uu 是否在夹它。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/70"
+    },
+    {
+      "parameter_id": "param.wage_step_max_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「有界、平滑」；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "单季工资率相对上季的最大变动幅度（±2%），上下行对称。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.price_step_max_ppm 同一族，取值更小，表达「工资比价格更黏」。检验方式：40 季基线中任一 (cell, skill) 的季度工资变动不得超过本值；出现宏观振荡时与 price_step_max_ppm 一起减小。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/71"
+    },
+    {
+      "parameter_id": "param.write_guard_sample_q",
+      "value": 8,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §19 质量闸门；docs/30_quality_gates.md；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
+      "reference_year": 0,
+      "definition": "发布构建中重计算型不变量（INV-014 派生一致性等）的抽样周期：每 8 季全量复算一次。调试构建逐季复算，不受本值影响。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "medium",
+      "calibration_note": "检验方式：断言 40 季重放中恰好触发 5 次全量复算（q = 0, 8, 16, 24, 32）。本值是性能与检出率的折中；调大它会让分歧点定位变粗，但重放二分依赖 checkpoints.jsonl 的逐季 state_hash，那条不受本值影响，本值只影响派生量复算。",
+      "_origin_file": "parameters/params_core.json",
+      "_origin_pointer": "/cards/72"
+    }
+  ]
+}

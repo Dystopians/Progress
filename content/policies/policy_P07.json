@@ -1,0 +1,1294 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P07",
+  "_note_code": "P07",
+  "label_zh": "灌溉与农业物流",
+  "_note_name_zh": "灌溉与农业物流",
+  "_note_slug": "irrigation_and_agri_logistics",
+  "kind": "project",
+  "_note_category": "capital_project",
+  "_note_category_zh": "资本项目",
+  "_note_governance_tool_zh": "资本项目（政府出资建设公共设施，建成后形成地区设施条件与持续运行费义务，不直接向企业或居民转移资金）",
+  "problem_statement_zh": "北原的农业生产在模型里被两件事卡住：一是地区灌溉设施条件（state.region.irrigation_index_ppm）低于基期 1 000 000，使该地区 cell.beiyuan.agri 的 flow.cell.bound_capacity_uqs 被压在 state.cell.capacity_active_uqs_per_q 之下——已有的农业资本用不满；二是灌溉与田间物流设施一旦缺维护，state.cell.maintenance_backlog_ppm 会持续侵蚀同一条产能约束。现有的 12 项工具中没有任何一项能改变地区灌溉设施条件：P04 只写电网容量，P06 只写住房存量，P08 只写港口能力，P09 只补企业自有设备投资。P07 填的就是这个机制缺口：它是唯一能写 state.region.irrigation_index_pending_ppm 的政策。",
+  "_note_problem_statement_mechanism_gap": {
+    "observable_symptom": "flow.cell.binding_code[cell.<region>.agri] == 1（产能为最紧约束）且 flow.cell.bound_capacity_uqs < state.cell.capacity_active_uqs_per_q",
+    "root_state_variable": "state.region.irrigation_index_ppm",
+    "no_other_policy_writes_it": true,
+    "what_it_does_not_solve_zh": "它不增加农业资本（state.cell.capital_value_uu）、不改变技术系数（content.io.*）、不创造需求。若 binding_code 是 0/2/3/4（计划、劳动、能源、材料），本政策对产量没有任何作用，且这一点在季度报告的约束诊断里直接可见。"
+  },
+  "legal_authority": {
+    "authority_bit": 2,
+    "_note_authority": "资本项目预算授权（预算法案档）。与 P04／P06／P08 共用同一授权位：它们同属「政府举债或调剂预算购置固定资产」这一类权限，不另设新位。",
+    "requires_budget_review": false,
+    "requires_bloc_support": [
+      "bloc.agri_coop"
+    ],
+    "min_seats_ppm": 500000,
+    "_note_veto_domain_check": "不落在任何 content.bloc.veto_domains（land_reform / tax_law / public_employment）内；bloc.agri_coop 的支持是 requires_bloc_support 的正向条件，其判定由 S02 02.1 的资格链第 1 项用 state.bloc.stance_ppm 求值，不是好感度。",
+    "_note_political_condition": "席位不足 50%（state.politics.seats_gov × 1 000 000 / state.politics.seats_total < 500 000）时，资本项目授权无法在预算审查窗口取得，命令按 E_SEATS_SHORT 拒绝。"
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "label_zh": "项目地区",
+      "type": "mask",
+      "unit": "mask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "step": 1,
+      "popcount_max": 1,
+      "default": 1,
+      "state_slot": "state.policy.region_mask[policy.P07]",
+      "note_zh": "一次立项只能选一个地区（popcount == 1）：项目占用的是单一地区的施工槽位 state.region.construction_slots_total[r]，跨地区分摊会让 INV-094 的槽位计数失去意义。默认 1 = region.beiyuan。"
+    },
+    {
+      "key": "scale_ppm",
+      "label_zh": "设施投资规模",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        250000,
+        2000000
+      ],
+      "step": 250000,
+      "default": 1000000,
+      "state_slot": "state.policy.params_ppm[policy.P07][0]",
+      "scales_zh": "同比例缩放四个量：cost.one_off_uu、cost.per_quarter_uu 的三条落点、cost.required_construction_uqs、cost.required_equipment_uqs、effect.index_delta_ppm。单位效果的价格恒定，规模不产生隐性递增收益（计划书 §18「某策略在所有开局都压倒性胜出」的防线）。"
+    },
+    {
+      "key": "maintenance_ratio_ppm",
+      "label_zh": "维护计划（占额定运行费的比例）",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        0,
+        1500000
+      ],
+      "step": 250000,
+      "default": 1000000,
+      "state_slot": "state.policy.params_ppm[policy.P07][1]",
+      "note_zh": "这是计划书 §09 给 P07 的第二个玩家杠杆（「设施投资和维护计划」的后半句）。它只决定每季 service_opex 档实际申请的金额 = mul_ppm(opex_per_q_uu × 已投运项目数, maintenance_ratio_ppm)；低于 1 000 000 时 state.cell.maintenance_backlog_ppm 累积，高于 1 000 000 时按 param.maintenance_backlog_recover_ppm 加速回落，上限 1 500 000（再多的钱不会买到更多可用率）。"
+    },
+    {
+      "key": "funding_source",
+      "label_zh": "资金来源",
+      "type": "enum",
+      "unit": "dimensionless",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 2,
+      "value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "step": 1,
+      "state_slot": "state.policy.params_uu[policy.P07][0]",
+      "note_zh": "默认取 reallocation（预算调剂）而不是 bond：基线年已经有 2 U 赤字（INV-146），默认发债会让 P07 在开局就抬高 derived.fiscal.debt_service_ratio_ppm，进而抬高后续全部新发批次的票息（S02 02.6）。默认最保守的一档，玩家要举债必须显式选择。",
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    }
+  ],
+  "preconditions": [
+    {
+      "id": "pre.p07.authority",
+      "kind": "legal_authority",
+      "bit": 2,
+      "reject_code": "E_AUTHORITY",
+      "ui_text_key": "policy.P07.blocked.authority"
+    },
+    {
+      "id": "pre.p07.seats",
+      "kind": "min_seats",
+      "min_seats_ppm": 500000,
+      "reject_code": "E_SEATS_SHORT",
+      "ui_text_key": "policy.P07.blocked.seats"
+    },
+    {
+      "id": "pre.p07.slot",
+      "kind": "construction_slot",
+      "region_ref": "param:region_mask",
+      "slots": 1,
+      "reject_code": "E_NO_SLOT",
+      "ui_text_key": "policy.P07.blocked.slot"
+    },
+    {
+      "id": "pre.p07.budget",
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu",
+      "reject_code": "E_BUDGET_INSUFFICIENT",
+      "ui_text_key": "policy.P07.blocked.budget"
+    },
+    {
+      "id": "pre.p07.season_window",
+      "kind": "metric_compare",
+      "metric": "derived.time.quarter_in_year",
+      "scope": "global",
+      "op": "ne",
+      "value": 2,
+      "reject_code": "E_PRECONDITION",
+      "ui_text_key": "policy.P07.blocked.season",
+      "rationale_zh": "计划书 §09 给 P07 的主要约束之一是「生产季节」。年内第 3 季（quarter_in_year == 2）是 scenario.season_factor_ppm.agri_output 中权重最高的主产季，田间动土会直接中断当季收成，故该季不得立项开工。这是一条纯比较条件，用的是变量字典 §1 已有的 derived.time.quarter_in_year。"
+    },
+    {
+      "id": "pre.p07.region_condition_headroom",
+      "kind": "metric_compare",
+      "metric": "state.region.irrigation_index_ppm",
+      "scope": "param:region_mask",
+      "op": "lt",
+      "value": 1000000,
+      "reject_code": "E_PRECONDITION",
+      "ui_text_key": "policy.P07.blocked.saturated",
+      "rationale_zh": "计划书 §09 给 P07 的主要约束之二是「地区条件」。灌溉设施指数在 S05 只以 clamp(index, floor, 1 000 000) 的形式进入产能约束（见 effect_chain 第 6 环），超过 1 000 000 的部分对产量没有任何作用。因此已达 1 000 000 的地区禁止立项——不是收益递减，是明确无效，必须在提交前就挡住并说明。"
+    },
+    {
+      "id": "pre.p07.region_has_agriculture",
+      "kind": "metric_compare",
+      "metric": "state.cell.capacity_active_uqs_per_q",
+      "scope": "cell:param:region_mask:sector.agri",
+      "op": "gt",
+      "value": 0,
+      "reject_code": "E_PRECONDITION",
+      "ui_text_key": "policy.P07.blocked.no_agri",
+      "rationale_zh": "地区条件之三：目标地区必须有在用农业产能。对 state.cell.capacity_active_uqs_per_q[cell.<r>.agri] == 0 的地区，灌溉指数改变不影响任何产量（min 里那一项本来就是 0）。"
+    }
+  ],
+  "cost": {
+    "one_off_uu": 2400000000,
+    "per_quarter_uu": 400000000,
+    "planned_quarters": 6,
+    "spend_lines_uu_per_q": {
+      "import_equipment": 100000000,
+      "domestic_material": 120000000,
+      "construction_service": 180000000
+    },
+    "opex_per_q_uu": 12000000,
+    "required_construction_uqs": 1080000,
+    "required_equipment_uqs": 600000
+  },
+  "_note_cost_model": {
+    "scale_reference_zh": "下列全部数字是 scale_ppm == 1 000 000 时的值；其它规模按 mul_ppm 同比例缩放，缩放在 S02 02.7 立项时一次性算定并写入 state.project.*，此后不再随参数变动（INV-098 的效果参数不回溯）。",
+    "budget_curve_uu_per_q": [
+      400000000,
+      400000000,
+      400000000,
+      400000000,
+      400000000,
+      400000000
+    ],
+    "budget_curve_index_note_zh": "下标是相对项目开工的季偏移 0..5，不是绝对季度 q。合计 2 400 000 000 μU == cost.one_off_uu（V-PD-03 的精确校验）。",
+    "spend_landing_per_q": [
+      {
+        "line": "import_equipment",
+        "amount_uu": 100000000,
+        "payee_agent": "agent.row",
+        "payee_zh": "外部世界（水泵、计量与冷链机组进口）",
+        "physical_zh": "同时增加 flow.world.imports_uu 与 flow.world.imports_uqs[sector.manu]；受 state.world.delivery_capacity_uqs[sector.manu] 与 state.world.credit_limit_uu 双重约束（INV-104）"
+      },
+      {
+        "line": "domestic_material",
+        "amount_uu": 120000000,
+        "payee_agent": "agent.cell.<region>.manu",
+        "payee_zh": "本地区制造 cell（管材、闸阀、预制件）",
+        "physical_zh": "按 state.price.sector_uu_per_qs[sector.manu] 换算成 μQ_manu 的成交量，走 S05 的企业投入与补库买方档"
+      },
+      {
+        "line": "construction_service",
+        "amount_uu": 180000000,
+        "payee_agent": "agent.cell.<region>.services",
+        "payee_zh": "本地区服务 cell（渠系与田间道路施工）",
+        "physical_zh": "付款进入承包方现金；真正推进进度的是 flow.region.construction_capacity_uqs[r]，二者无函数依赖（INV-087）"
+      }
+    ],
+    "per_quarter_sum_check": {
+      "sum_uu": 400000000,
+      "equals_field": "cost.per_quarter_uu",
+      "tolerance": 0,
+      "invariant_ref": "INV-003 / V-PD-03"
+    },
+    "total_sum_check": {
+      "sum_uu": 2400000000,
+      "equals_field": "cost.one_off_uu",
+      "tolerance": 0
+    },
+    "split_rule_zh": "S04 04.4 用 split_largest_remainder(本季可付额, 三条落点的应付额, 收款方下标) 拆分。现金不足时按 project_contracts 档（支付优先级第 5 档）部分支付，差额记 state.gov.arrears_by_payee_uu 并把项目转 suspended(financing)；已付部分不退。",
+    "capital_landing_zh": "全部已付款先进 state.gov.wip_uu（S04），完工时转入 state.gov.capital_uu（S07 7.1）。灌溉渠系是公共资产，账面留在政府，不转给 cell——因此不产生「政府给企业送资本」的净值跳变，也不触碰 INV-056 的 cell 产能／价值一致性检查。"
+  },
+  "_note_funding_requirement": {
+    "declared_sources": [
+      "cash",
+      "bond",
+      "reallocation"
+    ],
+    "default_source": "reallocation",
+    "reservation_per_q_uu": 400000000,
+    "reservation_field": "state.gov.reserved_memo_uu",
+    "commitment_uu": 2400000000,
+    "commitment_field": "state.gov.committed_memo_uu",
+    "commitment_note_zh": "committed_memo 是表外备查（_memo_uu），不进任何资产负债恒等式（变量字典 §0.2）。立项即占用未来全部 6 季承诺，取消只减未付部分（INV-032／INV-093）。",
+    "payment_priority_tier": "project_contracts",
+    "payment_priority_rank": 5,
+    "opex_priority_tier": "service_opex",
+    "opex_priority_rank": 4,
+    "queue_occupied": {
+      "queue_field": "state.region.construction_slots_total",
+      "slots_held": 1,
+      "field": "state.project.queue_slot_held",
+      "release_zh": "完工（S07 7.1）或取消（S02 02.7）时释放；期间该地区其它资本项目（P04／P06／P08／P07 自身）与之竞争同一组槽位（INV-094）"
+    },
+    "source_rules": {
+      "cash": "需 state.gov.cash_uu − state.gov.reserved_memo_uu ≥ 400 000 000 μU，否则 REJECT(E_BUDGET_INSUFFICIENT)",
+      "bond": "进入 S02 02.6 发债队列；票息由规则给出（玩家不能设），受 min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm)) 与 state.world.credit_limit_uu − credit_used_uu 双重约束；额度不足 REJECT(E_CREDIT_LIMIT)",
+      "reallocation": "需要一条 budget_reallocate 命令把 annual_plan 中某条支出线的额度调给 project_contracts；源额度不足 REJECT(E_BUDGET_INSUFFICIENT)。被调出的那条线本季支出下降，其后果（如 service_opex 下降 → 公共服务可用率下降）照常发生，不做豁免"
+    }
+  },
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 4,
+    "max_feedback_q": 8,
+    "commission_delay_q": 1
+  },
+  "_note_lag_model": {
+    "headline_zh": "计划书 §09 给定「4—8 季」。这个区间不是写死的常数，是下列五个可观察量的合成结果；同一份预算在不同地区、不同季节会落在区间的不同端点。",
+    "drivers": [
+      {
+        "stage": "受理到开工",
+        "quarters": 1,
+        "driven_by": "lag.enact_to_effect_q；S02 02.1 写 state.policy.effective_from_q = q + 1，只能向前不得回溯（INV-098）",
+        "variable": "state.policy.effective_from_q"
+      },
+      {
+        "stage": "施工",
+        "quarters_planned": 6,
+        "driven_by": "每季实得施工量 grant_uqs = split_largest_remainder(min(flow.region.construction_capacity_uqs[r], Σ need), 各在建项目本季计划施工量, 项目下标)；而 flow.region.construction_capacity_uqs[r] = mul_ppm(flow.cell.output_actual_uqs[cell.<r>.services], param.construction_share_cap_ppm)。服务部门减产或同区并发项目多，施工就慢；完全没有施工能力则进度为 0（INV-087/088）",
+        "variable": "state.project.construction_progress_ppm"
+      },
+      {
+        "stage": "设备交付",
+        "quarters_planned": 6,
+        "driven_by": "到货量 ≤ state.world.delivery_capacity_uqs[sector.manu] 的本季剩余额（INV-089/104）；外部交付能力被 shock.S02／S03 压低时，交付进度会比施工进度更慢，并成为完工的独立卡点",
+        "variable": "state.project.delivery_progress_ppm"
+      },
+      {
+        "stage": "完工到供能",
+        "quarters": 1,
+        "driven_by": "lag.commission_delay_q；S07 7.1 只写 state.region.irrigation_index_pending_ppm，S01 01.4 才转入 state.region.irrigation_index_ppm（INV-054/091）。这一季是数据流保证，不是约定",
+        "variable": "state.project.commissioned_q"
+      },
+      {
+        "stage": "产量可见",
+        "quarters_range": [
+          0,
+          3
+        ],
+        "driven_by": "生产季节。设施在 q 投入使用后，产量差异最先出现在 scenario.season_factor_ppm.agri_output 权重高的季度；若投运正好落在低权重季，玩家要多等 1—3 季才能在 flow.cell.output_actual_uqs 上看到同等幅度的变化。这一段是「4—8 季」区间宽度的主要来源",
+        "variable": "flow.cell.output_actual_uqs[cell.<region>.agri]"
+      }
+    ],
+    "min_path_zh": "最快 4 季 = 1（受理）+ 施工与交付均按计划推进且在第 2—3 季末双双到 1 000 000（高规模、低占用、外部交付充足）+ 1（转入）+ 0（投运季恰为主产季）。",
+    "max_path_zh": "最慢 8 季及以上 = 施工能力被同区其它项目挤占或服务部门减产、外部交付能力被冲击压低，任一进度未满 1 000 000 即不得投运（INV-090），再叠加投运季落在低权重季。超过 8 季不是异常，是可解释的拥堵，应在报告里以 state.project.suspension_reason 显示。"
+  },
+  "effect": {
+    "kind": "facility_index_delta",
+    "target": "state.region.irrigation_index_pending_ppm",
+    "index_delta_ppm": 150000,
+    "capacity_unit_ref": "sector.agri",
+    "unit_note_zh": "单位是 ppm 的设施指数增量，基期 1 000 000（变量字典 §0.1「指数一律用 ppm 存储」）。它不是 μQ_s／季的产能，不与任何部门产品单位相加。S01 转入时执行 clamp(index + pending, 0, 2 000 000)。",
+    "effective_ceiling_ppm": 1000000,
+    "ceiling_note_zh": "S05 使用时再 clamp 到 1 000 000（见 effect_chain 第 6 环）：本政策不可能让任一 cell 的产量超过其 state.cell.capacity_active_uqs_per_q，INV-043 在结构上成立。"
+  },
+  "effect_chain": [
+    {
+      "step": 1,
+      "settlement_step": "S04",
+      "from": "state.gov.cash_uu",
+      "rule": "S04 04.4 项目付款：pay_uu = min(本季 spend_plan_uu, project_contracts 档可用额)，用 split_largest_remainder 拆成三条落点，逐笔 post()",
+      "to": [
+        "state.project.paid_uu",
+        "state.gov.wip_uu",
+        "state.cell.cash_uu[cell.<region>.manu]",
+        "state.cell.cash_uu[cell.<region>.services]",
+        "flow.world.imports_uu"
+      ],
+      "note_zh": "本环只移动钱与设备，不产生任何进度。"
+    },
+    {
+      "step": 2,
+      "settlement_step": "S05",
+      "from": "flow.cell.output_actual_uqs[cell.<region>.services]",
+      "rule": "S05 5.5：flow.region.construction_capacity_uqs[r] = mul_ppm(服务实际产量, param.construction_share_cap_ppm)，再按项目下标用 split_largest_remainder 分配；Δconstruction_ppm = idiv_floor(grant_uqs × 1 000 000, state.project.required_construction_uqs)",
+      "to": [
+        "flow.region.construction_capacity_uqs",
+        "flow.region.construction_used_uqs",
+        "state.project.construction_progress_ppm"
+      ],
+      "note_zh": "进度函数的形参表中不含 paid_uu（INV-087 的静态检查）。有钱没有施工能力 ⇒ 进度为 0。"
+    },
+    {
+      "step": 3,
+      "settlement_step": "S05",
+      "from": "state.world.delivery_capacity_uqs[sector.manu]",
+      "rule": "S05 5.5：delivered_uqs = min(本季已订设备量, 外部交付能力剩余额)；Δdelivery_ppm = idiv_floor(delivered_uqs × 1 000 000, state.project.required_equipment_uqs)",
+      "to": [
+        "state.project.delivery_progress_ppm",
+        "flow.world.imports_uqs"
+      ],
+      "note_zh": "交付与施工是两条独立进度，任一未满即不得完工（INV-090）。"
+    },
+    {
+      "step": 4,
+      "settlement_step": "S07",
+      "from": [
+        "state.project.construction_progress_ppm",
+        "state.project.delivery_progress_ppm"
+      ],
+      "rule": "S07 7.1：两进度均 == 1 000 000 且配套条件满足 ⇒ status = completed；目标数组只写 pending；wip 转资本；运行费义务登记；释放槽位",
+      "to": [
+        "state.project.status",
+        "state.region.irrigation_index_pending_ppm",
+        "state.gov.capital_uu",
+        "state.gov.wip_uu",
+        "state.gov.service_opex_committed_uu",
+        "state.project.queue_slot_held"
+      ],
+      "note_zh": "配套条件按 OQ-245 的临时取法落地，见 commissioning_conditions。"
+    },
+    {
+      "step": 5,
+      "settlement_step": "S01",
+      "from": "state.region.irrigation_index_pending_ppm",
+      "rule": "S01 01.4：irrigation_index_ppm[r] = clamp(irrigation_index_ppm[r] + pending, 0, 2 000 000)；pending 置 0；status completed → commissioned，commissioned_q = 本季 q",
+      "to": [
+        "state.region.irrigation_index_ppm",
+        "state.project.status",
+        "state.project.commissioned_q"
+      ],
+      "note_zh": "「当季完工、下季生效」的唯一实现点（INV-054/091）。"
+    },
+    {
+      "step": 6,
+      "settlement_step": "S05",
+      "from": [
+        "state.region.irrigation_index_ppm",
+        "state.cell.maintenance_backlog_ppm[cell.<region>.agri]"
+      ],
+      "rule": "S05 5.3 第 2 项产能约束（mech.irrigation_availability）：bound_capacity = mul_ppm_2(state.cell.capacity_active_uqs_per_q, 1 000 000 − maintenance_backlog_ppm, clamp(state.region.irrigation_index_ppm[r], param.irrigation_avail_floor_ppm, 1 000 000))；只对 sector.agri 的 cell 生效，其余部门该乘子恒为 1 000 000",
+      "to": "flow.cell.bound_capacity_uqs[cell.<region>.agri]",
+      "note_zh": "乘子上限 1 000 000 ⇒ bound_capacity ≤ capacity_active ⇒ INV-043 成立。指数恰为 1 000 000 时该乘子是恒等变换，对基年结果零影响（INV-118 的基年四季 GDP 精确值不受本机制影响）。这一环是本政策唯一需要新注册的机制，见 contract_gaps。"
+    },
+    {
+      "step": 7,
+      "settlement_step": "S05",
+      "from": "flow.cell.bound_capacity_uqs[cell.<region>.agri]",
+      "rule": "S05 5.3 五项取 min，固定序 plan(0) < capacity(1) < labor(2) < energy(3) < materials(4)，严格小于才替换",
+      "to": [
+        "flow.cell.output_actual_uqs[cell.<region>.agri]",
+        "flow.cell.binding_code[cell.<region>.agri]",
+        "log.constraint_diag"
+      ],
+      "note_zh": "只有当 binding_code 原本 == 1 时，放松产能约束才会改变产量。binding_code 是玩家看到「政策为什么没用」的唯一数据来源。"
+    },
+    {
+      "step": 8,
+      "settlement_step": "S05 → S06",
+      "from": "flow.cell.output_actual_uqs[cell.<region>.agri]",
+      "rule": "S05 5.6 市场配给与成交 → S06 6.x 增加值核算：value_added = gross_output − intermediate（INV-111）",
+      "to": [
+        "flow.cell.sold_uqs",
+        "state.cell.inventory_output_uqs",
+        "flow.cell.gross_output_uu",
+        "flow.cell.value_added_uu",
+        "derived.gdp.production_uu"
+      ],
+      "note_zh": "没有买方时产量入库存、记 unmet_demand == 0，并在 S07 压低 state.price.pending_uu_per_qs[sector.agri]。库存增加不是销售收入，也不构成支持度奖励（INV-064、计划书 §06）。"
+    },
+    {
+      "step": 9,
+      "settlement_step": "S03 → S04 → S07 → S08",
+      "from": "flow.cell.output_plan_uqs[cell.<region>.agri]",
+      "rule": "S03 3.2 用工反算（idiv_ceil）+ 摩擦 + 劳动力池 + 工资资金闸 → S04 04.1 付工资 → S05 5.6 居民消费 → S07 7.8 生活指数 → S08 8.2 支持度三项加权",
+      "to": [
+        "state.cell.employment_persons",
+        "flow.group.wage_income_uu",
+        "flow.group.consumption_uu",
+        "state.group.consumption_index_ppm",
+        "state.group.living_index_ppm",
+        "state.group.support_ppm"
+      ],
+      "note_zh": "支持度只能从这条链末端出现，且只经 living／expectation／trust 三个分量（INV-121/123）。政策本身不写任何 support_ppm。"
+    },
+    {
+      "step": 10,
+      "settlement_step": "S04 → S07 → S05",
+      "from": "flow.gov.pay_opex_uu",
+      "rule": "运行费到位率 = idiv_floor(实付 × 1 000 000, 应付)；不足 ⇒ S07 maintenance_backlog_ppm += mul_ppm(1 000 000 − 到位率, param.maintenance_backlog_gain_ppm)，上限 param.maintenance_backlog_max_ppm；足额 ⇒ 按 param.maintenance_backlog_recover_ppm 回落",
+      "to": [
+        "state.cell.maintenance_backlog_ppm[cell.<region>.agri]",
+        "flow.cell.bound_capacity_uqs[cell.<region>.agri]"
+      ],
+      "note_zh": "断供只降本季可用产能，不减 state.gov.capital_uu、不减 state.region.irrigation_index_ppm、不删任何资产（INV-055／INV-102，计划书 §07「停拨款会降低实际服务，而非删除建筑」）。"
+    }
+  ],
+  "_note_targets": {
+    "regions": {
+      "selection": "param:region_mask",
+      "popcount": 1,
+      "default_region": "region.beiyuan",
+      "allocation_rule_zh": "不分摊。一次立项 = 一个地区 = 一个施工槽位 = 一份指数增量。多地区需要提交多条 project_launch 命令，各自独立排队、独立融资、独立失败。"
+    },
+    "sectors": [
+      "sector.agri"
+    ],
+    "cells": [
+      "cell.<region>.agri"
+    ],
+    "cells_paid_as_contractor": [
+      "cell.<region>.manu",
+      "cell.<region>.services"
+    ],
+    "groups_affected": {
+      "primary": [
+        "group.<region>.working.low",
+        "group.<region>.working.mid"
+      ],
+      "channel": "state.cell.employment_persons[cell.<region>.agri] 与 flow.group.wage_income_uu；农业用工系数以 low 档为主（content.io.labor_coeff_persons_per_qs），故 low 档受影响最大",
+      "allocation_rule_zh": "不按政策指定分配：工资按各组在该 cell 的在岗人数用 split_largest_remainder 拆分（S04 04.1），分布是就业结构的结果，不是政策参数"
+    },
+    "blocs_affected": [
+      "bloc.agri_coop",
+      "bloc.business",
+      "bloc.labor_public"
+    ],
+    "not_targeted_zh": "本政策不作用于其它三个部门、不作用于 pubserv、不作用于跨地区物流成本 content.region.logistics_cost_ppm（运行期只读，见 contract_gaps.logistics_channel）。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 12000000,
+    "starts_at_zh": "从 state.project.commissioned_q 起，逐季计入 state.gov.service_opex_committed_uu 与 flow.gov.pay_opex_uu",
+    "cost_composition_zh": "渠系与泵站的人员、维护与自用电；按 service_opex 档（支付优先级第 4 档）付给本地区服务 cell",
+    "player_control": "maintenance_ratio_ppm；本季实际申请额 = mul_ppm(12 000 000 × 已投运项目数, maintenance_ratio_ppm)",
+    "starvation_consequence": {
+      "writes": [
+        "state.cell.maintenance_backlog_ppm[cell.<region>.agri]"
+      ],
+      "does_not_write": [
+        "state.gov.capital_uu",
+        "state.region.irrigation_index_ppm",
+        "state.cell.capacity_active_uqs_per_q"
+      ],
+      "effect_zh": "只降低本季可用产能（S05 5.3 的乘子），资产与设施指数一律不动。恢复比破坏慢：param.maintenance_backlog_recover_ppm < param.maintenance_backlog_gain_ppm。",
+      "invariant_ref": [
+        "INV-055",
+        "INV-102"
+      ],
+      "proposed_test_id": "T-S-P07-MAINT-STARVE-NO-ASSET-DELETION",
+      "interim_bound_test_id": "T-U-D-10"
+    },
+    "arrears_path_zh": "政府现金不足时 service_opex 档按优先级部分支付，差额进 state.gov.arrears_by_payee_uu 并写 log.arrears；这与玩家主动把 maintenance_ratio_ppm 调低是两条不同来源，报告必须分别显示（前者是「付不起」，后者是「不想付」）。"
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "remaining_contract_ppm",
+    "compensation_ppm": 250000,
+    "settlement_zh": {
+      "incurred_cost_zh": "state.project.paid_uu 不回退，state.gov.cash_uu 不增加，已付给承包方的钱不追回（INV-093）。已形成的 state.gov.wip_uu 中超出残值的部分确认为损失，直接减少政府净值，不挂任何科目等待回收。",
+      "delivered_assets_zh": "已投运项目取消政策不撤销设施：state.region.irrigation_index_ppm 保留当前值，state.gov.capital_uu 保留。取消的是「继续投资与继续维护」的承诺，不是拆掉渠道。",
+      "residual_value_zh": "state.project.residual_value_uu = 已完成施工进度对应的可回收工程部分 = mul_ppm(已形成 wip, construction_progress_ppm)；未到货设备的已付款按合同不计入残值（钱已付给外部世界）。",
+      "contract_compensation_zh": "penalty = mul_ppm(剩余未付合同额, 250 000)，即剩余合同额的 25%，post(kind=cancel_penalty, gov → 承包方)。现金不足时同样走 arrears，不得以「项目已取消」为由免付。",
+      "commitment_and_slot_zh": "state.gov.committed_memo_uu 减去剩余未付部分（只减未付，INV-032）；state.project.queue_slot_held 释放；state.policy.cooldown_until_q = q + cooldown_q，防止取消—重开刷成本。",
+      "opex_obligation_zh": "已投运项目在政策退出后仍然保留 opex 义务，直到玩家显式把 maintenance_ratio_ppm 设为 0；设为 0 的后果是 maintenance_backlog 累积，而不是义务消失。"
+    }
+  },
+  "political_reaction": {
+    "bloc.agri_coop": 300000,
+    "bloc.business": -60000,
+    "bloc.labor_public": -40000
+  },
+  "_note_political_reaction_detail": [
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "support",
+      "stance_delta_ppm": 300000,
+      "interest_basis_zh": "该集团的关心指标是「农业 cell 的 flow.cell.value_added_real_uu 之和」（结算合同 §8.3）。P07 是唯一能放松农业产能约束的工具，其投运会直接抬高该指标；即使本季尚未投运，立项本身也把 state.gov.committed_memo_uu 中的一笔锁定在农业设施上，是可验证的资源承诺，而不是表态。",
+      "strength_basis_zh": "强度取 300 000（立场区间上限的 30%）：它反映的是一项设施承诺，不是分配到户的收入。若最终 value_added_real 没有上升，S08 的 care_delta_ppm 会把这 300 000 抵消掉——立场会自己跌回去，政策不能靠一次性表态维持支持。"
+    },
+    {
+      "bloc": "bloc.business",
+      "direction": "oppose",
+      "stance_delta_ppm": -60000,
+      "interest_basis_zh": "该集团的关心指标是「全部 cell 的 flow.cell.profit_pretax_uu 之和」，同时关心能源、运输与政策可预期性（计划书 §08）。P07 占用同一地区的 state.region.construction_slots_total 与 flow.region.construction_capacity_uqs，直接挤压制造业扩产项目与 P04／P08；在 reallocation 资金来源下还会挤占其它支出线。",
+      "strength_basis_zh": "强度只有 −60 000：挤占是真实的但有限（一个槽位、每季 180 000 000 μU 的施工份额）。若该地区施工能力充裕（construction_capacity 远大于需求），这份反对在下一季就会被 care_delta 稀释。"
+    },
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "oppose",
+      "stance_delta_ppm": -40000,
+      "interest_basis_zh": "该集团的关心指标是「全国就业人数 + 公共服务可用率的人口加权」。P07 形成的是农业产能而不是公共部门岗位，且投运后永久增加 state.gov.service_opex_committed_uu，在 service_opex 档与学校、医院的运行费竞争同一笔钱（支付优先级第 4 档内部按收款方拆分）。",
+      "strength_basis_zh": "强度 −40 000，为三者中最小：P07 确实通过农业就业（state.cell.employment_persons[cell.<r>.agri]）提高该集团关心指标的前半段，两股力量方向相反，净反对很弱。若政府同时压低 maintenance_ratio_ppm 去挤公共服务，care_delta 会把这份反对放大，而这是资金分配的结果，不是本字段能预设的。"
+    }
+  ],
+  "failure_paths": [
+    {
+      "code": "financing",
+      "test_id": "T-U-D-10",
+      "_note_proposed_test_id": "T-S-P07-FAIL-FINANCING",
+      "_note_registry_coverage_zh": "T-U-D-10（test_u_payment_priority）直接断言：现金不足时第 4..8 档实付额 == 0、arrears 增量 == 第 4..8 档应付之和、期末现金不为负。P07 的 project_contracts 是第 5 档、service_opex 是第 4 档，两者都落在该断言范围内。未覆盖的是「项目因此转 suspended(financing) 且已付部分不退」这一段，需要 T-S-P07-FAIL-FINANCING 单独登记。",
+      "suspension_reason_code": "financing",
+      "trigger_zh": "S04 中 project_contracts 档可用额 < 本季应付 400 000 000 μU（现金耗尽、发债额度用满或预算调剂源不足）",
+      "state_evidence": [
+        "state.project.status == suspended",
+        "state.project.suspension_reason == financing",
+        "state.gov.arrears_by_payee_uu",
+        "log.arrears"
+      ],
+      "player_explanation_key": "policy.P07.fail.financing"
+    },
+    {
+      "code": "congestion",
+      "test_id": "T-S-P07-CHAIN",
+      "_note_proposed_test_id": "T-S-P07-FAIL-CONGESTION",
+      "_note_registry_coverage_zh": "T-S-P07-CHAIN 的断言④要求路径逐段在 log.explanations 中有 accounted 条目、链条无断段；「施工能力 → 进度」这一段缺失或被付款顶替时 CHAIN 会红。未覆盖的是 FX-CONG 式的并发挤占（Σ queue_slot_held == construction_slots_total、后到项目 suspended(congestion)），需要 T-S-P07-FAIL-CONGESTION 单独登记。",
+      "suspension_reason_code": "congestion",
+      "trigger_zh": "本季 grant_uqs == 0 而 need_uqs > 0：同地区在建项目瓜分 flow.region.construction_capacity_uqs，或 cell.<region>.services 自身减产（服务部门被劳动／能源／材料卡住）",
+      "state_evidence": [
+        "flow.region.construction_capacity_uqs",
+        "flow.region.construction_used_uqs",
+        "flow.cell.binding_code[cell.<region>.services]",
+        "derived.region.construction_slots_used"
+      ],
+      "player_explanation_key": "policy.P07.fail.congestion"
+    },
+    {
+      "code": "delivery",
+      "test_id": "T-S-P07-CHAIN",
+      "_note_proposed_test_id": "T-S-P07-FAIL-DELIVERY",
+      "_note_registry_coverage_zh": "同上：CHAIN 的断言④覆盖「到货 → 交付进度」这一段的存在性。未覆盖的是「外部交付能力归零时交付进度逐季增量 == 0 且不得投运」，需要 T-S-P07-FAIL-DELIVERY 配一个 FX-NODEL 的 P07 变体夹具。",
+      "suspension_reason_code": "delivery",
+      "trigger_zh": "state.world.delivery_capacity_uqs[sector.manu] 被 shock.S02／S03 压低或已被其它项目用尽，state.project.delivery_progress_ppm 停滞；即使施工 100% 也不得投运（INV-090）",
+      "state_evidence": [
+        "state.project.delivery_progress_ppm",
+        "state.world.delivery_capacity_uqs",
+        "flow.world.imports_uqs"
+      ],
+      "player_explanation_key": "policy.P07.fail.delivery"
+    },
+    {
+      "code": "season_window_blocked",
+      "test_id": "T-S-P07-GATE",
+      "_note_proposed_test_id": "T-S-P07-SEASON-WINDOW",
+      "_note_registry_coverage_zh": "§4.3 的 GATE 模板明写「按政策的 preconditions 逐条构造恰好一条不满足」，并把 E_PRECONDITION 列进允许的精确错误码。pre.p07.season_window 就是其中一条，GATE 的断言②（state_hash 逐位不变）与⑤（blocked_reason 有本地化条目）正是本路径要的。",
+      "suspension_reason_code": "none",
+      "trigger_zh": "在 derived.time.quarter_in_year == 2（主产季）提交立项命令；命令被 REJECT(E_PRECONDITION)，状态完全不变（INV-137）",
+      "state_evidence": [
+        "derived.time.quarter_in_year",
+        "derived.policy.blocked_reason == precondition",
+        "log.rejections"
+      ],
+      "player_explanation_key": "policy.P07.fail.season_window"
+    },
+    {
+      "code": "season_trough_commission",
+      "test_id": "T-S-P07-FAIL-SEASON",
+      "_note_proposed_test_id": "T-S-P07-FAIL-SEASON",
+      "_note_registry_coverage_zh": "与矩阵 §4.2 登记的语义逐字对齐：「季节系数低谷季投运 ⇒ 当季产出增量 == 0，效果推迟到生产季」。这是本政策唯一已登记的失败链。",
+      "suspension_reason_code": "none",
+      "trigger_zh": "项目在 scenario.season_factor_ppm.agri_output 权重最低的季投运：state.region.irrigation_index_ppm 当季确实上升，但 flow.cell.output_actual_uqs[cell.<region>.agri] 的当季增量为 0——季节系数把该季的计划产量压在新的 bound_capacity 之下，binding_code 回到 0（计划）。效果不是消失，而是推迟到下一个高权重季才可见；这是计划书 §09 给 P07 的「生产季节」约束在投运侧的表现，也是 lag 区间「4—8 季」宽度的主要来源。",
+      "state_evidence": [
+        "state.region.irrigation_index_ppm（当季已上升）",
+        "flow.cell.bound_capacity_uqs[cell.<region>.agri]（当季已放宽）",
+        "flow.cell.output_actual_uqs[cell.<region>.agri]（当季增量 == 0）",
+        "flow.cell.binding_code[cell.<region>.agri]",
+        "scenario.season_factor_ppm.agri_output"
+      ],
+      "player_explanation_key": "policy.P07.fail.season_trough"
+    },
+    {
+      "code": "saturated",
+      "test_id": "T-S-P07-GATE",
+      "_note_proposed_test_id": "T-S-P07-CEILING-CLAMP",
+      "_note_registry_coverage_zh": "立项侧（index 已达 1 000 000 ⇒ REJECT）由 GATE 模板覆盖：pre.p07.region_condition_headroom 是它逐条构造的前置之一，断言④「effect.target 在随后 12 季累计变化 == 0」正是本路径要的。未覆盖的是「已在建项目完工后超出上限的那部分被登记为可见的无效支出」，需要 T-S-P07-CEILING-CLAMP 单独登记。",
+      "suspension_reason_code": "none",
+      "trigger_zh": "目标地区 state.region.irrigation_index_ppm 已达 1 000 000：新命令被 REJECT；已在建项目完工时增量被 S05 的乘子上限吃掉（S01 仍写入 index，但超过 1 000 000 的部分对 bound_capacity 无作用），登记为可见的无效支出",
+      "state_evidence": [
+        "state.region.irrigation_index_ppm",
+        "flow.cell.bound_capacity_uqs",
+        "log.clamp",
+        "log.explanations"
+      ],
+      "player_explanation_key": "policy.P07.fail.saturated"
+    },
+    {
+      "code": "not_binding",
+      "test_id": "T-S-P07-CHAIN",
+      "_note_proposed_test_id": "T-S-P07-FAIL-NOT-BINDING",
+      "_note_registry_coverage_zh": "CHAIN 的断言③把「结果指标首次非零出现的季」限定在 [min_feedback_q, max_feedback_q] 内，并要求该变化量等于按政策参数独立复算的值——实现若在 binding_code != 1 时也发放产量，复算值对不上，CHAIN 会红。未覆盖的是「binding_code ∈ {0,2,3,4} 时产量增量精确为 0」这条正面断言，需要 T-S-P07-FAIL-NOT-BINDING 单独登记。",
+      "suspension_reason_code": "none",
+      "trigger_zh": "投运后 flow.cell.binding_code[cell.<region>.agri] != 1：产量真正的最紧约束是计划(0)、劳动(2)、能源(3) 或材料(4)。此时放松产能约束对 output_actual 没有任何影响——政策在这个条件下明确无效",
+      "state_evidence": [
+        "flow.cell.binding_code",
+        "log.constraint_diag（五项候选值与各自 slack）"
+      ],
+      "player_explanation_key": "policy.P07.fail.not_binding"
+    },
+    {
+      "code": "no_demand",
+      "test_id": "T-S-A-14",
+      "_note_proposed_test_id": "T-S-P07-FAIL-NODEMAND",
+      "_note_registry_coverage_zh": "T-S-A-14（test_s_inventory_identity_all）逐 cell 逐品种断言库存恒等式残差 == 0 且无无提示负库存——没有买方时新增产量必须原样进 state.cell.inventory_output_uqs，既不能蒸发也不能变成销售收入。未覆盖的是「不得因投运发放支持度与 GDP 奖励」，需要 T-S-P07-FAIL-NODEMAND（对应 P04 的 T-S-P04-NO-DEMAND-NO-BONUS）单独登记。",
+      "suspension_reason_code": "no_demand",
+      "trigger_zh": "新增产量无人购买：flow.cell.output_plan_uqs 因上季 sold + unmet 偏低而不上升（binding_code == 0），或产出转入 state.cell.inventory_output_uqs 并在 S07 压低农产品价格",
+      "state_evidence": [
+        "flow.cell.binding_code == 0",
+        "state.cell.inventory_output_uqs",
+        "flow.market.unmet_demand_uqs",
+        "flow.price.gap_ppm[sector.agri]"
+      ],
+      "player_explanation_key": "policy.P07.fail.no_demand"
+    },
+    {
+      "code": "maintenance_starved",
+      "test_id": "T-U-D-10",
+      "_note_proposed_test_id": "T-S-P07-FAIL-MAINT-STARVED",
+      "_note_registry_coverage_zh": "T-U-D-10 覆盖「付不起」这一支：service_opex 第 4 档在现金不足时实付 0、差额进 arrears。未覆盖「不想付」这一支（玩家把 maintenance_ratio_ppm 调低）以及「backlog 上升但资产与设施指数一次也没被写」的 WriteGuard 断言，需要 T-S-P07-FAIL-MAINT-STARVED 单独登记。",
+      "suspension_reason_code": "none",
+      "trigger_zh": "maintenance_ratio_ppm 长期低于 1 000 000，或 service_opex 档连续欠拨：state.cell.maintenance_backlog_ppm 累积到 param.maintenance_backlog_max_ppm，把已建成设施的收益逐季吃回去",
+      "state_evidence": [
+        "state.cell.maintenance_backlog_ppm",
+        "flow.gov.pay_opex_uu",
+        "state.gov.arrears_by_payee_uu"
+      ],
+      "player_explanation_key": "policy.P07.fail.maintenance_starved"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P07-CHAIN",
+    "T-S-P07-GATE",
+    "T-S-P07-FAIL-SEASON",
+    "T-U-C-00",
+    "T-U-C-01",
+    "T-U-C-02",
+    "T-S-A-12",
+    "T-S-A-14",
+    "T-S-A-24",
+    "T-U-D-08",
+    "T-U-D-10"
+  ],
+  "_note_acceptance_tests_detail": [
+    {
+      "proposed_test_id": "T-S-P07-PRECOND-NO-EFFECT",
+      "interim_bound_test_id": "T-S-P07-GATE",
+      "mandatory_reason_zh": "计划书 §17「未满足前置条件不得发放效果」的本政策落点",
+      "given_zh": "给定 state.politics.legal_authority_mask 的第 2 位为 0（资本项目授权未取得），其余条件全部满足",
+      "when_zh": "当玩家在任一季提交 policy_enact(policy.P07) 与 project_launch",
+      "then_zh": "则命令 REJECT(E_AUTHORITY)，state_hash 与提交前逐位相同；全程 state.region.irrigation_index_ppm、state.region.irrigation_index_pending_ppm、state.gov.committed_memo_uu、state.gov.cash_uu 均不变；derived.policy.blocked_reason[policy.P07] == authority 且本地化表中存在对应文案条目",
+      "invariant_ref": [
+        "INV-095",
+        "INV-100",
+        "INV-137"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-NO-DEMAND-NO-BONUS",
+      "interim_bound_test_id": "T-S-A-14",
+      "mandatory_reason_zh": "计划书 §10「没有销路时，不能直接发放 GDP 与支持率奖励」的本政策落点",
+      "given_zh": "给定项目已投运（commissioned_q == k），且把 state.world.export_demand_ppm[sector.agri] 置 0 并压低居民可支配收入，使农产品需求低于既有产量",
+      "when_zh": "当推进到第 k+1、k+2 季",
+      "then_zh": "则 flow.cell.binding_code[cell.<region>.agri] == 0（计划为最紧约束），flow.cell.output_actual_uqs 不因投运而上升；derived.gdp.production_uu 的变化可被 flow.cell.value_added_uu 的逐项分解完全解释，其中不含任何以「项目投运」为来源的条目；state.group.support_ppm 的变化分解（INV-123）中不存在政策投运项；未售产量进 state.cell.inventory_output_uqs 并在 S07 使 flow.price.gap_ppm[sector.agri] 为负",
+      "invariant_ref": [
+        "INV-064",
+        "INV-112",
+        "INV-123"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-PAY-NO-PROGRESS",
+      "interim_bound_test_id": "T-S-P07-CHAIN",
+      "given_zh": "给定项目在建、政府现金充足，且把 cell.<region>.services 的 flow.cell.output_actual_uqs 压到 0（劳动或材料卡死），使 flow.region.construction_capacity_uqs[r] == 0",
+      "when_zh": "当推进一季，S04 照常按合同付款",
+      "then_zh": "则 state.project.paid_uu 增加 400 000 000 μU，而 Δstate.project.construction_progress_ppm == 0；status == suspended 且 suspension_reason == congestion；进度函数的形参表中不含 paid_uu（静态检查同时执行）",
+      "invariant_ref": [
+        "INV-087",
+        "INV-088"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-NO-EARLY-COMMISSION",
+      "interim_bound_test_id": "T-U-C-02",
+      "given_zh": "给定施工进度在第 6 季达到 1 000 000，而 state.world.delivery_capacity_uqs[sector.manu] == 0 使交付进度停在 600 000",
+      "when_zh": "当推进到第 6、7、8 季",
+      "then_zh": "则 state.project.status 始终不为 completed；state.region.irrigation_index_ppm 与 irrigation_index_pending_ppm 全程不变；state.gov.service_opex_committed_uu 不增加；flow.cell.bound_capacity_uqs[cell.<region>.agri] 与未立项基线逐季逐位相同",
+      "invariant_ref": [
+        "INV-090",
+        "INV-091"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-COMMISSION-LAG",
+      "interim_bound_test_id": "T-U-C-02",
+      "given_zh": "给定两条进度在第 k 季的 S05 双双达到 1 000 000，且配套条件满足",
+      "when_zh": "当第 k 季的 S07 与第 k+1 季的 S01 依次执行",
+      "then_zh": "则第 k 季末 state.region.irrigation_index_pending_ppm == 150 000 而 state.region.irrigation_index_ppm 不变，第 k 季的 flow.cell.bound_capacity_uqs 不含任何新增；第 k+1 季 S01 后 pending == 0、index 增加 150 000（经 clamp 到 0..2 000 000）、state.project.commissioned_q == k+1；第 k+1 季的 bound_capacity 才含新增",
+      "invariant_ref": [
+        "INV-054",
+        "INV-091"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-COST-SPLIT-EXACT",
+      "interim_bound_test_id": "T-U-C-01",
+      "given_zh": "给定 scale_ppm 取 valid_range 内全部五档（250 000 / 500 000 / 1 000 000 / 1 500 000 / 2 000 000）",
+      "when_zh": "当项目按计划推进 6 季，每季三条落点各自付款",
+      "then_zh": "则逐季 Σ 三条落点实付 == 当季 state.project.spend_plan_uu（精确，容差 0）；Σ 六季 spend_plan == state.project.total_cost_uu == mul_ppm(2 400 000 000, scale_ppm)；任一规模档下拆分余数为 0（split_largest_remainder 的后置断言）",
+      "invariant_ref": [
+        "INV-003",
+        "INV-092"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-MAINT-STARVE-NO-ASSET-DELETION",
+      "interim_bound_test_id": "T-U-D-10",
+      "given_zh": "给定项目已投运，玩家把 maintenance_ratio_ppm 设为 0 并保持 8 季",
+      "when_zh": "当逐季推进",
+      "then_zh": "则 state.cell.maintenance_backlog_ppm[cell.<region>.agri] 单调上升至 param.maintenance_backlog_max_ppm 并停住；flow.cell.bound_capacity_uqs 同步下降；而 state.gov.capital_uu、state.region.irrigation_index_ppm、state.cell.capacity_active_uqs_per_q 三者在这条路径上一次也没有被写（WriteGuard 断言）；随后把 maintenance_ratio_ppm 恢复到 1 500 000，backlog 的回落速度严格慢于上升速度",
+      "invariant_ref": [
+        "INV-055",
+        "INV-102"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-CANCEL-NO-REFUND",
+      "interim_bound_test_id": "T-U-D-08",
+      "given_zh": "给定项目在第 3 季（已付 1 200 000 000 μU、construction_progress_ppm == 500 000）",
+      "when_zh": "当玩家提交 project_cancel",
+      "then_zh": "则 state.project.paid_uu 不变、state.gov.cash_uu 不因取消而增加；state.gov.committed_memo_uu 只减去未付的 1 200 000 000；penalty == mul_ppm(1 200 000 000, 250 000) == 300 000 000 并作为 kind=cancel_penalty 过账；state.project.residual_value_uu 登记且 wip 超出残值的部分确认为政府净值损失；queue_slot_held 归 0；state.policy.cooldown_until_q == q + 4",
+      "invariant_ref": [
+        "INV-032",
+        "INV-093"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-SEASON-WINDOW",
+      "interim_bound_test_id": "T-S-P07-GATE",
+      "given_zh": "给定 derived.time.quarter_in_year == 2（年内第 3 季，主产季）",
+      "when_zh": "当提交 policy_enact(policy.P07)",
+      "then_zh": "则 REJECT(E_PRECONDITION)，blocked_reason == precondition，UI 返回 policy.P07.blocked.season 的具体文案（含当前季与最近可开工季）；把季度推进到 quarter_in_year == 3 后同一条命令被受理",
+      "invariant_ref": [
+        "INV-100",
+        "INV-137"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P07-CEILING-CLAMP",
+      "interim_bound_test_id": "T-S-P07-CHAIN",
+      "given_zh": "给定目标地区 state.region.irrigation_index_ppm == 950 000，一个 scale_ppm == 1 000 000 的项目在建",
+      "when_zh": "当项目完工并在下季 S01 转入",
+      "then_zh": "则 index 变为 1 100 000（未超 2 000 000 的存储上限，不触发 S01 的 clamp），但 S05 的乘子取 clamp(1 100 000, floor, 1 000 000) == 1 000 000，flow.cell.bound_capacity_uqs 的增量只对应 950 000 → 1 000 000 的那一段；超出部分写 log.explanations 的 accounted 条目并在报告中标为无效支出；此后新的 P07 立项命令被 pre.p07.region_condition_headroom 拒绝",
+      "invariant_ref": [
+        "INV-043",
+        "INV-069"
+      ]
+    }
+  ],
+  "_note_commissioning_conditions": {
+    "oq_ref": "OQ-245",
+    "conditions": [
+      {
+        "id": "commission.p07.opex_budgeted",
+        "check": "state.gov.service_opex_committed_uu + opex_per_q_uu 可由下季预算承担（不使 service_opex 档在下季必然欠拨）",
+        "fail_behavior": "停在 status == completed 不投运，写 blocked_reason 与 log.explanations"
+      },
+      {
+        "id": "commission.p07.agri_staffed",
+        "check": "Σ_k state.cell.employment_persons[idx_emp(cell.<region>.agri, k)] > 0",
+        "fail_behavior": "同上：无人耕作的地区，渠道建成也不投运，原因可解释"
+      }
+    ]
+  },
+  "mechanism_ids": [
+    "mech.project_queue",
+    "mech.construction_progress",
+    "mech.equipment_delivery",
+    "mech.irrigation_index",
+    "mech.facility_availability",
+    "mech.maintenance_backlog",
+    "mech.service_opex"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 mech.irrigation_availability → mech.facility_availability（JWCapital.availability 是同一个函数，按设施分别起名即伪深度）；其余六项现已注册，原样保留。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "_note_parameters_pending_cards": [
+    {
+      "params_core_card_to_create": "param.p07_one_off_cost_uu",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/one_off_uu",
+      "formal_field_pointer": "/cost/one_off_uu",
+      "formal_value": 2400000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 的 P04 测试夹具（总成本 4 U / 8 季）按同一量级下调；计划书 §09 P07 的工期区间 4—8 季",
+      "reference_year": 0,
+      "definition_zh": "scale_ppm == 1 000 000 时，一个 P07 项目的合同总额，含设备、材料与施工三条落点，不含投运后的运行费。",
+      "proposed_valid_range": [
+        600000000,
+        6000000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "先验：一个项目的合同总额应显著小于基年全年 GDP 的 3%（3 U），否则单个地区项目会主导整局财政。校准顺序：若 T-X 压测显示 40 季内玩家能同时铺开 4 个以上 P07 而不触发任何融资约束，先上调本值，再考虑收紧施工槽位。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_planned_quarters",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/planned_quarters",
+      "formal_field_pointer": "/cost/planned_quarters",
+      "formal_value": 6,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09「P07 灌溉与农业物流 … 4—8 季」",
+      "reference_year": 0,
+      "definition_zh": "P07 项目的计划工期（季），用于展开 spend_plan_uu 与每季计划施工量；实际工期由施工能力与交付能力决定，可长于本值。",
+      "proposed_valid_range": [
+        4,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "本值只决定「计划」。检验方式：在基线剧本下统计实际完工季与本值的差，若中位数差 > 2 季，说明 param.construction_share_cap_ppm 或施工槽位设置与工期假设不匹配，应先动那两个参数，而不是把本值改大掩盖拥堵。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_spend_line_import_equipment_uu_per_q",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/spend_lines_uu_per_q/import_equipment",
+      "formal_field_pointer": "/cost/spend_lines_uu_per_q/import_equipment",
+      "formal_value": 100000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10「支出落点：测试拆分 … 各有收款方」",
+      "reference_year": 0,
+      "definition_zh": "每季付给 agent.row 的进口设备款（水泵、计量、冷链机组），同时形成 flow.world.imports_uu。",
+      "proposed_valid_range": [
+        0,
+        400000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "三条落点之和必须精确等于 param.p07_per_quarter_uu（V-PD-03，容差 0）。改任一条必须同时改另一条或总额。进口比例过高会让 P07 完全受制于外部交付冲击，试玩若出现「P07 永远卡在交付」，先降本值。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_spend_line_domestic_material_uu_per_q",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/spend_lines_uu_per_q/domestic_material",
+      "formal_field_pointer": "/cost/spend_lines_uu_per_q/domestic_material",
+      "formal_value": 120000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 支出落点拆分",
+      "reference_year": 0,
+      "definition_zh": "每季付给 cell.<region>.manu 的国产材料款（管材、闸阀、预制件）。",
+      "proposed_valid_range": [
+        0,
+        400000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "同上：三条之和 == 400 000 000。本条是 P07 对制造业的正向溢出通道，若试玩显示资本项目对 manu 完全没有拉动，先检查本条是否被压得过低。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_spend_line_construction_service_uu_per_q",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/spend_lines_uu_per_q/construction_service",
+      "formal_field_pointer": "/cost/spend_lines_uu_per_q/construction_service",
+      "formal_value": 180000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 支出落点拆分",
+      "reference_year": 0,
+      "definition_zh": "每季付给 cell.<region>.services 的施工服务款。付款额与进度无函数依赖（INV-087），它只决定承包方现金。",
+      "proposed_valid_range": [
+        0,
+        400000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "本条与 param.p07_required_construction_uqs 在基年价下按 1 μQ_services ↔ 1 000 μU 对应（R-SCALE-01 之后：基年价 1 000 000 000 μU/Q_services ÷ Q_SCALE 1 000 000 μQ_s/Q_s）：180 000 000 μU/季 × 6 季 = 1 080 000 000 μU ÷ 1 000 = 1 080 000 μQ_services。若将来基年价或 Q_SCALE 变动，必须同步重算 required_construction_uqs，否则「付得起但永远施不完」。注意 param.uu_to_construction_uqs_ppm == 1 000 000（旧刻度下的「1 μU ↔ 1 μQ_services」）在 R-SCALE-01 之后已不成立，本条不再引用它，理由见 _note_contract_gaps.stale_uu_to_uqs_convention。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_per_quarter_uu",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/per_quarter_uu",
+      "formal_field_pointer": "/cost/per_quarter_uu",
+      "formal_value": 400000000,
+      "unit": "μU",
+      "source_type": "derived",
+      "source_ref": "本文件 cost.spend_lines_uu_per_q",
+      "reference_year": 0,
+      "definition_zh": "每季合同支出 = 三条落点之和。",
+      "derivation_expr": "param.p07_spend_line_import_equipment_uu_per_q + param.p07_spend_line_domestic_material_uu_per_q + param.p07_spend_line_construction_service_uu_per_q",
+      "proposed_valid_range": [
+        100000000,
+        1000000000
+      ],
+      "confidence": "high",
+      "calibration_note_zh": "派生量，禁止单独手写。加载期由 V-PD-03 复算：per_quarter_uu × planned_quarters == one_off_uu 且 Σ spend_lines == per_quarter_uu，任一不符即 E_POLICY_COST。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_required_construction_uqs",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/required_construction_uqs",
+      "formal_field_pointer": "/cost/required_construction_uqs",
+      "formal_value": 1080000,
+      "unit": "μQ_s",
+      "source_type": "derived",
+      "source_ref": "基年价 1 000 000 000 μU/Q_services 与 Q_SCALE = 1 000 000 μQ_s/Q_s（变量字典 §0.1；刻度按 docs/18 R-SCALE-01）",
+      "reference_year": 0,
+      "definition_zh": "完成一个 scale_ppm == 1 000 000 的 P07 项目所需的施工服务总量，用于把每季实得施工量换算成进度增量。",
+      "derivation_expr": "idiv_floor(param.p07_spend_line_construction_service_uu_per_q * param.p07_planned_quarters * 1000000, content.price.base_uu_per_qs[sector.services])",
+      "proposed_valid_range": [
+        200000,
+        6000000
+      ],
+      "confidence": "medium",
+      "calibration_note_zh": "检验方式：在施工能力不受限的夹具里，项目应恰好在 planned_quarters 季完工；若系统性早完工或晚完工，说明本值与施工款的换算关系错了，先修换算，不要直接调本值。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_required_equipment_uqs",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/required_equipment_uqs",
+      "formal_field_pointer": "/cost/required_equipment_uqs",
+      "formal_value": 600000,
+      "unit": "μQ_s",
+      "source_type": "derived",
+      "source_ref": "基年价 1 000 000 000 μU/Q_manu 与 Q_SCALE = 1 000 000 μQ_s/Q_s（变量字典 §0.1；刻度按 docs/18 R-SCALE-01）",
+      "reference_year": 0,
+      "definition_zh": "完成一个 scale_ppm == 1 000 000 的 P07 项目所需的设备总量（μQ_manu），用于把实际到货量换算成交付进度增量。",
+      "derivation_expr": "idiv_floor(param.p07_spend_line_import_equipment_uu_per_q * param.p07_planned_quarters * 1000000, content.price.base_uu_per_qs[sector.manu])",
+      "proposed_valid_range": [
+        0,
+        4000000
+      ],
+      "confidence": "medium",
+      "calibration_note_zh": "与 state.world.delivery_capacity_uqs[sector.manu] 同口径。若基线剧本的外部交付能力远大于本值，`delivery` 失败路径将永远无法触发，届时应收紧剧本的交付能力，而不是抬高本值。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_index_delta_ppm",
+      "card_status": "not_created_yet",
+      "formal_field": "/effect/index_delta_ppm",
+      "formal_field_pointer": "/effect/index_delta_ppm",
+      "formal_value": 150000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10「容量效果：测试参数 … 单位必须与部门用电系数一致」的同构处理：本政策的效果单位是设施指数 ppm",
+      "reference_year": 0,
+      "definition_zh": "scale_ppm == 1 000 000 的一个 P07 项目投运后，目标地区 state.region.irrigation_index_ppm 的增量（基期 1 000 000 = 15 个指数点）。",
+      "proposed_valid_range": [
+        20000,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "本值与 param.p07_one_off_cost_uu 共同决定「每 μU 买到多少农业可用产能」，是 P07 与 P04／P06 之间取舍是否成立的关键。检验：单一干预测试中，一个项目应把北原农业产量抬高到可见但不颠覆的幅度；若一个项目就让农业约束从 capacity 切换到 labor 并再也切不回来，说明本值偏大。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.irrigation_avail_floor_ppm",
+      "card_status": "not_created_yet",
+      "formal_field": "（本文件没有对应的 schema 正式字段：它是 S05 5.3 灌溉可用率乘子的下限，属于全局机制参数，只在 /effect_chain/5/rule 中被引用）",
+      "formal_value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06「某项投入系数为零时跳过该约束，不做除零运算」的同类保守处理：设施条件极差不等于产量归零",
+      "reference_year": 0,
+      "definition_zh": "S05 5.3 中灌溉可用率乘子的下限。设施指数再低，农业产能约束也不低于在用产能的 30%（旱作与人工灌溉的兜底）。",
+      "proposed_valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "它决定 P07 的最大可能收益（1 000 000 − 本值）。若 120 季压测中出现某地区农业产量归零导致全国 GDP 判定为 Fault（OQ-219），先检查是否是本值被调得过低。",
+      "blocking_note_zh": "本文件唯一没有正式字段承载的数值。它决定 P07 的最大可能收益（1 000 000 − 本值），但按 11 号文件 §5.15 与 docs/18 R-PARAM-01，param.* 只能建卡在 parameter_set 文件里，而 content/parameters/params_core.json 目前不存在。在它建成之前，/effect_chain/5/rule 引用的是一个尚未建卡的参数 ID——这是已知缺口，不是本文件可以靠自建字段补上的。",
+      "single_source_rule_zh": "本条只是说明与标定线索，刻意不写 parameter_id / value 两个字段名（理由同上）。"
+    },
+    {
+      "params_core_card_to_create": "param.irrigation_index_effective_ceiling_ppm",
+      "card_status": "not_created_yet",
+      "formal_field": "/effect/effective_ceiling_ppm",
+      "formal_field_pointer": "/effect/effective_ceiling_ppm",
+      "formal_value": 1000000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "INV-043「output_actual ≤ capacity_active」",
+      "reference_year": 0,
+      "definition_zh": "S05 使用灌溉指数时的上限。超过基期 1 000 000 的指数对产能约束没有作用，这是让 INV-043 在结构上成立的护栏，不是可调的平衡旋钮。",
+      "proposed_valid_range": [
+        1000000,
+        1000000
+      ],
+      "confidence": "high",
+      "calibration_note_zh": "valid_range 为单点：放宽它等于允许政策把产量顶到在用产能之上，属于「凭空产能」，必须先改 INV-043 与 12 号文件 §5.3 才谈得上改本值。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_opex_per_q_uu",
+      "card_status": "not_created_yet",
+      "formal_field": "/cost/opex_per_q_uu",
+      "formal_field_pointer": "/cost/opex_per_q_uu",
+      "formal_value": 12000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10「运行费：启用后每季 0.02 U」按本政策资产规模等比折算（0.5% 合同额／季）",
+      "reference_year": 0,
+      "definition_zh": "一个已投运 P07 项目每季的额定运行费（渠系清淤、泵站人员与自用电），计入 state.gov.service_opex_committed_uu。",
+      "proposed_valid_range": [
+        0,
+        60000000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "检验：多个项目投运后，Σ service_opex 应能在 40 季内形成可感知的财政刚性（计划书 §07「不是钱够不够，而是承诺能否维持」）。若玩家在 40 季里从未因运行费被迫取舍，本值偏低。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_compensation_ppm",
+      "card_status": "not_created_yet",
+      "formal_field": "/exit_rule/compensation_ppm",
+      "formal_field_pointer": "/exit_rule/compensation_ppm",
+      "formal_value": 250000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10「合同赔偿按剩余合同规则结算」；P04 夹具取 300 000",
+      "reference_year": 0,
+      "definition_zh": "取消项目时按剩余未付合同额计算的赔偿比例。土建合同的解约成本低于设备合同，故略低于 P04。",
+      "proposed_valid_range": [
+        0,
+        600000
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "检验：ADV 类测试中「立项—取消」反复操作的净成本必须严格为正且逐次累加（取消成本 + toggle 成本 + 冷却）。若出现零成本反复横跳，先查 claim 与 cooldown，再看本值。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_season_blackout_quarter",
+      "card_status": "not_created_yet",
+      "formal_field": "/preconditions/4/value",
+      "formal_field_pointer": "/preconditions/4/value",
+      "formal_value": 2,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09「主要约束：施工、地区条件与生产季节」；scenario.season_factor_ppm.agri_output 的最高权重季",
+      "reference_year": 0,
+      "definition_zh": "禁止 P07 立项开工的年内季序（derived.time.quarter_in_year，0 起）。默认 2，即农业产出季节系数最高的那一季。",
+      "proposed_valid_range": [
+        0,
+        3
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "本值必须与剧本 season_factor_ppm.agri_output 的 argmax 一致；剧本改季节系数而本值不改，会出现「在收获季照常动土」的不可解释行为。建议加一条载入期交叉校验（见 contract_gaps）。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    },
+    {
+      "params_core_card_to_create": "param.p07_cooldown_q",
+      "card_status": "not_created_yet",
+      "formal_field": "/cooldown_q",
+      "formal_field_pointer": "/cooldown_q",
+      "formal_value": 4,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §17「反复开关补助是否重复领钱」的同类防线；P04 夹具取 4",
+      "reference_year": 0,
+      "definition_zh": "P07 开关或取消后的冷却季数，期间 policy_enact／project_launch 一律 REJECT(E_POLICY_COOLDOWN)。",
+      "proposed_valid_range": [
+        1,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note_zh": "与 param.policy_toggle_cost_uu 共同构成反复横跳的成本。检验：ADV 类 20 季交替开关测试中，被冷却拒绝的命令数必须 > 0。",
+      "single_source_rule_zh": "本条只是说明与标定线索。数值的唯一事实来源是 formal_field 指向的 schema 正式字段；本块刻意不写 parameter_id / value 两个字段名，因为写在注释子树里的参数卡对载入器等于不存在（11 号文件 §1.5、§6.4），校验器会据此报 E_PARAM_CARD。"
+    }
+  ],
+  "_note_parameters_referenced": [
+    "param.p07_one_off_cost_uu",
+    "param.p07_planned_quarters",
+    "param.p07_spend_line_import_equipment_uu_per_q",
+    "param.p07_spend_line_domestic_material_uu_per_q",
+    "param.p07_spend_line_construction_service_uu_per_q",
+    "param.p07_per_quarter_uu",
+    "param.p07_required_construction_uqs",
+    "param.p07_required_equipment_uqs",
+    "param.p07_index_delta_ppm",
+    "param.irrigation_avail_floor_ppm",
+    "param.irrigation_index_effective_ceiling_ppm",
+    "param.p07_opex_per_q_uu",
+    "param.p07_compensation_ppm",
+    "param.p07_season_blackout_quarter",
+    "param.p07_cooldown_q",
+    "param.construction_share_cap_ppm",
+    "param.maintenance_backlog_gain_ppm",
+    "param.maintenance_backlog_recover_ppm",
+    "param.maintenance_backlog_max_ppm",
+    "param.household_bond_appetite_ppm",
+    "param.policy_toggle_cost_uu"
+  ],
+  "_note_parameters_referenced_zh": "本文件引用但不再自建卡的全部 param.* 。前 15 个原先写在顶层 parameters 数组里，现已按 11 号文件 §3（扩展键只能是 _note_<field>）与 §5.15 / docs/18 R-PARAM-01（param.* 只能建卡在 parameter_set 文件里）双重约束撤下：其中 14 个的数值已经有 schema 正式字段承载（见 _note_parameters_pending_cards[*].formal_field），正式字段成为唯一事实来源；只有 param.irrigation_avail_floor_ppm 没有正式字段落点，它连同后 6 个全局参数一起，等 content/parameters/params_core.json 建成后统一建卡。不能改名成 _note_parameters 原样保留：注释子树里的参数卡按契约等于不存在，那样会把 1 个 E_UNKNOWN_FIELD 换成 15 个 E_PARAM_CARD，是更坏的写法而不是更好的。",
+  "ui_text_keys": {
+    "blocked.authority": "policy.P07.blocked.authority",
+    "blocked.seats": "policy.P07.blocked.seats",
+    "blocked.slot": "policy.P07.blocked.slot",
+    "blocked.budget": "policy.P07.blocked.budget",
+    "blocked.season": "policy.P07.blocked.season",
+    "blocked.saturated": "policy.P07.blocked.saturated",
+    "blocked.no_agri": "policy.P07.blocked.no_agri",
+    "blocked.cooldown": "policy.P07.blocked.cooldown",
+    "fail.financing": "policy.P07.fail.financing",
+    "fail.congestion": "policy.P07.fail.congestion",
+    "fail.delivery": "policy.P07.fail.delivery",
+    "fail.season_window": "policy.P07.fail.season_window",
+    "fail.season_trough": "policy.P07.fail.season_trough",
+    "fail.saturated": "policy.P07.fail.saturated",
+    "fail.not_binding": "policy.P07.fail.not_binding",
+    "fail.no_demand": "policy.P07.fail.no_demand",
+    "fail.maintenance_starved": "policy.P07.fail.maintenance_starved"
+  },
+  "_note_ui_copy": {
+    "placeholder_note_zh": "花括号内是 Presentation 层插值的整数或稳定 ID，格式化规则见 OQ-235；SimCore 不生成任何文案。",
+    "summary_zh": "在一个地区新建灌溉与田间物流设施：政府出资施工与购置设备，建成后提高该地区的灌溉设施条件，使已有农业产能能被用满。它不增加农业资本，也不创造买家。",
+    "blocked": {
+      "policy.P07.blocked.authority": "无法执行：尚未取得资本项目预算授权（授权位 2）。需要在预算审查季通过一次预算法案才能立项。",
+      "policy.P07.blocked.seats": "无法执行：执政席位 {seats_gov}/{seats_total} 未达资本项目所需的半数（500 000 ppm）。",
+      "policy.P07.blocked.slot": "无法执行：{region_zh} 的施工队列已满（{slots_used}/{slots_total}）。先完工或取消一个在建项目，或换一个地区。",
+      "policy.P07.blocked.budget": "无法执行：本季 project_contracts 档可用额为 {avail_uu} μU，低于所需的 {need_uu} μU。可改用债券融资，或先做一次预算调剂。",
+      "policy.P07.blocked.season": "无法执行：现在是年内第 {quarter_display} 季，农业主产季不得动土。最近可开工的季度是 {next_window_q}。",
+      "policy.P07.blocked.saturated": "无法执行：{region_zh} 的灌溉设施条件已达 {index_ppm}，超过 1 000 000 的部分不会再提高农业可用产能。这里继续投资不会有产出效果。",
+      "policy.P07.blocked.no_agri": "无法执行：{region_zh} 的在用农业产能为 0，灌溉设施不会作用于任何生产单元。",
+      "policy.P07.blocked.cooldown": "无法执行：本政策在第 {cooldown_until_q} 季前处于冷却期（上次开关发生在第 {last_toggle_q} 季）。"
+    },
+    "fail": {
+      "policy.P07.fail.financing": "项目已中断（资金）：本季应付 {due_uu} μU，实付 {paid_uu} μU，差额已记为对 {payee_zh} 的欠付。已付出的钱不会退回，进度停在 {construction_ppm}。",
+      "policy.P07.fail.congestion": "项目已中断（施工拥堵）：{region_zh} 本季可用施工量 {capacity_uqs}，已被 {competing_count} 个在建项目占用，本项目实得 0。施工能力来自本地区服务部门的实际产量，不来自付款。",
+      "policy.P07.fail.delivery": "项目无法完工（设备未到货）：交付进度 {delivery_ppm}，外部交付能力 {delivery_capacity_uqs}。施工即使达到 100%，设备未齐也不会投运。",
+      "policy.P07.fail.season_window": "命令被拒（生产季节）：现在是年内第 {quarter_display} 季，农业主产季不得动土，本季状态未发生任何改变。最近可开工的季度是 {next_window_q}。",
+      "policy.P07.fail.season_trough": "设施已投运，但本季产量未变（季节）：{region_zh} 的灌溉条件已由 {index_before} 提高到 {index_after}，可用产能也已放宽；但本季农业季节系数为 {season_factor_ppm}，计划产量仍低于放宽后的产能上限，最紧约束是计划而不是产能。效果不会消失，预计在第 {next_peak_q} 季的主产季才在产量上可见。",
+      "policy.P07.fail.saturated": "支出未形成效果（设施条件已达上限）：{region_zh} 的灌溉指数已到 {index_ppm}，本次投运中有 {wasted_ppm} 的增量不会提高任何产量。",
+      "policy.P07.fail.not_binding": "设施已投运，但产量未变：{region_zh} 农业当前的最紧约束是{binding_zh}，不是产能。放宽灌溉条件不会改变这一项。五项约束的数值见约束诊断。",
+      "policy.P07.fail.no_demand": "产量未增加（没有销路）：上季成交 {sold_uqs}、未满足需求 {unmet_uqs}，计划产量因此未上调。新增的可用产能处于闲置，库存 {inventory_uqs} 上升并将压低下季农产品价格。",
+      "policy.P07.fail.maintenance_starved": "设施可用率下降（维护不足）：维护计划为额定运行费的 {maintenance_ratio_ppm}，维护欠账已累积到 {backlog_ppm}，本季农业可用产能被压低 {loss_uqs}。设施资产没有减少，恢复比累积慢。"
+    },
+    "report_zh": {
+      "on_enact": "已立项：{region_zh} 灌溉与农业物流，合同总额 {total_cost_uu} μU，计划 {planned_quarters} 季，占用 1 个施工槽位，投运后每季运行费 {opex_uu} μU。",
+      "on_commission": "已投运：{region_zh} 灌溉设施条件由 {index_before} 提高到 {index_after}。产量是否上升，仍取决于该地区农业的最紧约束、用工与销路。"
+    }
+  },
+  "_note_contract_gaps": {
+    "note_zh": "以下是本政策在写作与修复过程中发现的契约缺口。按纪律，本文件按现行契约执行并把问题登记出去，不私自改契约。原先登记的两条 unresolvable_conflicts（effect_chain 与 parameters）已分别在校验器侧与内容侧了结，改写进 schema_extensions_used，不再是死结。",
+    "irrigation_consumption_rule": {
+      "problem_zh": "10 号文件把 state.region.irrigation_index_ppm 标注为「P07 作用点」，11 号文件把 irrigation_index_pending_ppm 列入效果落点白名单，但 12 号文件只写了 S01 的转入，没有任何一步消费这个指数。按现状它是一个只写不读的状态变量，P07 会变成「花钱但在模型里毫无作用」。",
+      "proposed_fix_zh": "在 12 号文件 §5.3 的第 2 项产能约束中为 sector.agri 增加一个乘子（本文件 effect_chain 第 6 环给出了完整公式），并在 MechanismRegistry 注册 mech.irrigation_availability。乘子上限恒为 1 000 000，指数等于 1 000 000 时是恒等变换。",
+      "base_year_impact_zh": "若剧本把各地区 irrigation_index_ppm 初值设为 1 000 000（指数基期约定），本机制对基年四季 GDP 零影响，INV-118 不受波及；若剧本按地区故事设为低于 1 000 000（如北原灌溉薄弱），剧本作者必须在这个机制在位的前提下校准基年，不能两边各算各的。"
+    },
+    "maintenance_backlog_driver": {
+      "problem_zh": "12 号文件 §7.2 把 state.cell.maintenance_backlog_ppm 的驱动源写成 flow.pubserv.funding_ratio_ppm（按地区索引的公共服务拨款到位率），但该字段在 10 号文件里是 16 个 cell 的数组。P07 需要的是「本地区已投运设施的运行费到位率驱动对应 cell 的维护欠账」。",
+      "proposed_fix_zh": "把 §7.2 的驱动源改写为逐设施的运行费到位率，并明确它写到哪个 cell 下标；P07 写 cell.<region>.agri，P04 写电网（region 级），P10 写 pubserv。"
+    },
+    "logistics_channel": {
+      "problem_zh": "P07 名称中的「农业物流」在现行契约下只有一半可实现。跨地区物流成本 content.region.logistics_cost_ppm 与损耗率 content.io.spoilage_ppm 都是运行期只读的内容常量，且 spoilage 是全国按部门的 4 个值，没有地区维度，不在任何效果落点白名单内。",
+      "first_version_decision_zh": "首版把 P07 的可实现部分全部落在灌溉设施条件这一条机制上（渠系、田间道路与仓储共同决定「收得上来的产量」），并在文案中如实说明；不为了名字凑一个假的第二效果。降低农产品损耗留待后续版本，需要先给 spoilage 加地区维度并纳入效果落点白名单。"
+    },
+    "schema_extensions_used": {
+      "problem_zh": "11 号文件 §5.12 的 PolicyDefinition 采用 additionalProperties: false。本文件为满足计划书 §09/§10 的说明要求，曾使用两个该 schema 未声明的顶层键：effect_chain 与 parameters。两者现已各自了结，顶层未声明键为 0。",
+      "effect_chain_zh": "已由校验器侧解决：tools/validate_content.py 按文档优先级（计划书 §09 > docs/18 > 12 > 11 > 10）把 effect_chain 正式登记进 SCHEMAS[\"policy_definition\"]（必填、array、>= 4 环）。本文件保留 effect_chain 原名与十环规格不变。遗留：docs/11 §5.12 的字段表与 docs/18 的裁定记录需同步补上该字段，在那之前校验器的 schema 表与 §5.12 正文差这一个字段。",
+      "parameters_zh": "已由内容侧解决：顶层 parameters 数组撤下，15 张卡的数值改由 schema 正式字段承载（14 张有落点，逐张在 _note_parameters_pending_cards[*].formal_field 指明并已逐字段复核相等），标定线索与建卡交接降级为 _note_parameters_pending_cards，引用清单登记在 _note_parameters_referenced。注意这不是把卡藏进注释：该注释块刻意不写 parameter_id / value 两个字段名，因为注释子树里的参数卡按 11 号文件 §1.5 / §6.4 等于不存在，校验器对此有 E_PARAM_CARD 硬规则——保留的是「人还能读懂的建卡交接单」，不是卡片本身。真正的出口仍是 content/parameters/params_core.json（该文件目前不存在，校验器已就此单独报 E_NOT_FOUND），那是另一个文件的工作。",
+      "also_extended": [
+        "player_params 项增加 label_zh / unit / step / state_slot / popcount_max / value_codes（计划书 §09 要求每个 lever 有类型、区间、步长、默认值、单位）",
+        "preconditions 增加 metric_compare / min_seats 两种 kind（S02 02.1 说前置条件「只有比较」，但 §5.12 的示例只列了三种 kind）",
+        "failure_paths 项增加 trigger_zh / state_evidence / player_explanation_key / suspension_reason_code",
+        "effect.kind 增加 facility_index_delta（现有示例只有 capacity_delta；V-PD-05 的单位校验需要按 effect.kind 分支）"
+      ],
+      "moved_to_note_keys_zh": "原先这 18 个顶层扩展键已按 11 号文件 §3 的裁定 D-01 改名为 _note_<field> 注释键，内容一字未删：_note_code、_note_name_zh、_note_slug、_note_category、_note_category_zh、_note_governance_tool_zh、_note_problem_statement_mechanism_gap、_note_cost_model、_note_funding_requirement、_note_lag_model、_note_targets、_note_operating_cost、_note_political_reaction_detail、_note_acceptance_tests_detail、_note_commissioning_conditions、_note_ui_copy、_note_contract_gaps、_note_notes_zh。代价要如实说明：注释键不进载入器、不进 content_hash，所以 targets / funding_requirement / operating_cost / commissioning_conditions 这四块目前是「写下来但机器读不到」的规格。它们要真正生效，必须在 11 号文件 §5.12 正式登记。",
+      "legal_authority_zh": "/legal_authority 的 authority_zh / veto_domain_check_zh / political_condition_zh 同样改成 _note_authority / _note_veto_domain_check / _note_political_condition；该子对象的允许键只有 authority_bit、requires_budget_review、requires_bloc_support、min_seats_ppm 四个。"
+    },
+    "stale_uu_to_uqs_convention": {
+      "problem_zh": "param.uu_to_construction_uqs_ppm == 1 000 000 编码的是旧刻度下「1 μU ↔ 1 μQ_services」的换算。R-SCALE-01 之后基年价是 1 000 000 000 μU/Q_services，而 Q_SCALE 仍是 1 000 000 μQ_s/Q_s，真实换算已变成 1 μQ_services ↔ 1 000 μU。沿用旧式 mul_ppm(施工款, uu_to_construction_uqs_ppm) 会把 P07 的施工物量需求算成 1 080 000 000 μQ_services，是正确值 1 080 000 的 1 000 倍——「付得起但永远施不完」。",
+      "what_this_file_did_zh": "本文件只改自己这一处：required_construction_uqs 的 derivation_expr 改为按基年价与 Q_SCALE 复算 idiv_floor(180 000 000 × 6 × 1 000 000, 1 000 000 000) == 1 080 000，与字段现值精确相等；字段值本身未动（1 080 000 一直是对的，错的是那条推导式）。param.uu_to_construction_uqs_ppm 本身的取值不归本文件裁定。",
+      "affects_other_files_zh": "同一条旧换算仍写在 content/policies/policy_P06.json（/_note_* 的 required_construction_uqs 说明）、content/policies/policy_P08.json 与 content/parameters/registry.json 里，policy_P04.json 另有一处自认的 2 倍口径冲突。需要由账目口径负责人统一裁定：是废掉 param.uu_to_construction_uqs_ppm 改走基年价，还是把它重定为 1 000（每 μQ_s 的 μU 数）。"
+    }
+  },
+  "_note_notes_zh": "本文件的全部数值是首版测试夹具，不是现实工程估算或农业经济观测（计划书 §14、§19）。source_type 一律为 design_assumption 或 derived，内容包中不存在 observed 条目。",
+  "_note_test_registry_gap": {
+    "problem_zh": "docs/30_quality_gates.md 的矩阵对 P07 只登记了三条 ID：T-S-P07-CHAIN、T-S-P07-GATE、T-S-P07-FAIL-SEASON（§4.2 一行 + §4.3 的三个参数化模板，其中 T-S-P<nn>-OFF 只以模板形式出现，字面 ID 不在文件里）。而 11 号文件的 V-PD-06/07 要求 failure_paths >= 4、acceptance_tests >= 5 且逐条在矩阵中真实存在。三条供不上九条失败路径与十一条验收判据——除 P04（§4.4 有完整展开）外，其余 11 个政策都撞同一堵墙。",
+    "why_not_fixed_here_zh": "矩阵是 docs/30_quality_gates.md 的内容，不归本文件改；校验器 OQ-V02 也说明注册表 tests/tools/test_registry.gd 尚未落成代码、暂以该矩阵为准。本文件按现行契约执行：改绑到已登记 ID，把原本那 15 个 P07 专属 ID 与完整规格原样留在下面，等矩阵补行时照抄。",
+    "required_action_zh": "在 docs/30_quality_gates.md §4 增加一节「P07 的完整验收」（形如 §4.4 的 P04 表），逐条登记 proposed_matrix_rows 中的 ID，并同步 tests/tools/test_registry.gd；之后把本文件 failure_paths[*].test_id 与 acceptance_tests 改回专属 ID，并删除本注释块。在那之前，T-U-Z-02（矩阵与注册表互为子集）无法判定本政策的覆盖是否真实。",
+    "acceptance_binding": [
+      {
+        "test_id": "T-S-P07-CHAIN",
+        "applies_zh": "§4.3 CHAIN 模板：enact_to_effect_q 内 effect.target 累计变化 == 0；首次非零变化量等于按政策参数独立复算的值；结果指标首见季落在 [min_feedback_q=4, max_feedback_q=8] 内；路径逐段有 accounted 条目。这正是本文件 effect_chain 十环的可执行版本。"
+      },
+      {
+        "test_id": "T-S-P07-GATE",
+        "applies_zh": "§4.3 GATE 模板：按 preconditions 逐条构造恰好一条不满足。本政策有 7 条前置（authority / seats / slot / budget / season_window / region_condition_headroom / region_has_agriculture），逐条展开即 7 个用例。"
+      },
+      {
+        "test_id": "T-S-P07-FAIL-SEASON",
+        "applies_zh": "§4.2 为 P07 登记的失败链，语义 = 低谷季投运当季产出增量 == 0。对应本文件 failure_paths 的 season_trough_commission。"
+      },
+      {
+        "test_id": "T-U-C-00",
+        "applies_zh": "test_u_policy_catalog_complete 对 content/policies/ 全量 12 个文件断言：九项必填缺失计数 == 0、failure_paths 非空、test_id 与 mechanism_ids 在注册表中可解析。本文件是它的被测对象之一。"
+      },
+      {
+        "test_id": "T-U-C-01",
+        "applies_zh": "test_u_policy_cost_exact：per_quarter_uu × planned_quarters == one_off_uu 与 Σ spend_lines == per_quarter_uu，容差 0，加载器归一化补偿次数 == 0。本文件 400 000 000 × 6 == 2 400 000 000、100 000 000 + 120 000 000 + 180 000 000 == 400 000 000 由它逐条断言。"
+      },
+      {
+        "test_id": "T-U-C-02",
+        "applies_zh": "test_u_effect_target_pending_only：effect.target 必须落在 *_pending_* 上、commission_delay_q >= 1。本文件落点是 state.region.irrigation_index_pending_ppm、commission_delay_q == 1，「当季完工、下季生效」的结构性防线由它守。"
+      },
+      {
+        "test_id": "T-S-A-12",
+        "applies_zh": "test_s_rounding_residual_explained：每条 log.rounding 的 total − Σ parts == residual。本政策每季把 400 000 000 μU 拆成三条落点走的是 split_largest_remainder，余数必须显式登记而不是静默丢失。"
+      },
+      {
+        "test_id": "T-S-A-14",
+        "applies_zh": "test_s_inventory_identity_all：逐 cell 逐品种库存恒等式残差 == 0。没有买方时新增农产品必须原样进库存，这是 no_demand 路径的会计侧。"
+      },
+      {
+        "test_id": "T-S-A-24",
+        "applies_zh": "test_s_base_year_gdp：基年四季 Σ gdp_production_uu == 100 000 000 000，容差 0。本政策要求新增 mech.irrigation_availability 乘子（见 _note_contract_gaps），指数等于 1 000 000 时该乘子必须是恒等变换——这条测试是它不许扰动基年的判据。"
+      },
+      {
+        "test_id": "T-U-D-08",
+        "applies_zh": "test_u_committed_memo_sources：签约 / 履约 / 取消三个写入点，取消只减未付部分。本政策 committed_memo_uu == 2 400 000 000 的生命周期由它断言。"
+      },
+      {
+        "test_id": "T-U-D-10",
+        "applies_zh": "test_u_payment_priority：现金不足时第 4..8 档实付 0、差额进 arrears、期末现金不为负。本政策的 project_contracts（第 5 档）与 service_opex（第 4 档）都在其中。"
+      }
+    ],
+    "proposed_matrix_rows_zh": "下列 15 个 ID 是本政策需要、但矩阵尚未登记的用例；完整的 given / when / then 见 _note_acceptance_tests_detail 与 failure_paths[*] 的 _note_proposed_test_id。登记时套件一律 scenario，夹具需要新建 FX-P07 系列（FX-P07 = FX-BASE + q=0 在 region.beiyuan 立项 P07，scale_ppm=1 000 000，funding_source=reallocation；FX-P07-NOCON / FX-P07-NODEL / FX-P07-NODEMAND 分别按 FX-NOCON / FX-NODEL / FX-NODEMAND 的覆盖方式派生）。",
+    "proposed_matrix_rows": [
+      "T-S-P07-PRECOND-NO-EFFECT",
+      "T-S-P07-NO-DEMAND-NO-BONUS",
+      "T-S-P07-PAY-NO-PROGRESS",
+      "T-S-P07-NO-EARLY-COMMISSION",
+      "T-S-P07-COMMISSION-LAG",
+      "T-S-P07-COST-SPLIT-EXACT",
+      "T-S-P07-MAINT-STARVE-NO-ASSET-DELETION",
+      "T-S-P07-CANCEL-NO-REFUND",
+      "T-S-P07-SEASON-WINDOW",
+      "T-S-P07-CEILING-CLAMP",
+      "T-S-P07-FAIL-FINANCING",
+      "T-S-P07-FAIL-CONGESTION",
+      "T-S-P07-FAIL-DELIVERY",
+      "T-S-P07-FAIL-NOT-BINDING",
+      "T-S-P07-FAIL-NODEMAND"
+    ]
+  }
+}

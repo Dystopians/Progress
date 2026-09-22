@@ -1,0 +1,364 @@
+{
+  "schema_kind": "shock_definition",
+  "schema_version": 1,
+  "shock_id": "shock.S01",
+  "label_zh": "出口需求变化",
+  "channel": "export_demand",
+  "targets": ["sector.agri", "sector.manu", "sector.energy", "sector.services"],
+  "target_weights_ppm": [200000, 700000, 100000, 0],
+  "arrival": {
+    "hazard_ppm_per_q": 120000,
+    "earliest_q": 4,
+    "min_gap_q": 4,
+    "max_active": 1
+  },
+  "magnitude_ppm": { "min": -600000, "max": 199999 },
+  "duration_q": { "min": 2, "max": 9 },
+  "onset_profile": "step",
+  "decay_profile": "none",
+  "rng_stream": "rng.shock",
+  "log_fields": [
+    "q",
+    "shock_id",
+    "rng_stream",
+    "draw_count_before",
+    "draw_index",
+    "raw_u64",
+    "mapped_value",
+    "magnitude_ppm",
+    "duration_q",
+    "tier_id",
+    "eff_ppm",
+    "applied_world_fields"
+  ],
+
+  "_note_spec_ext": {
+    "_note_why_this_key_zh": "原先这一组扩展说明块直接写在顶层，触发 11_data_contract.md §3 的 E_UNKNOWN_FIELD（additionalProperties: false）。§3 只给两条出路：改进契约后正式登记，或改名为 _note_<field> 注释键。本文件不自行改契约，因此取后者：把整组扩展说明原样收进 _note_spec_ext 这一个注释键——一字未删、任何数值一字未改，只改了嵌套位置；契约声明的 14 个字段全部留在顶层，加载器读到的内容与改动前逐字相同。代价必须诚实登记：tools/validate_content.py 的 V-SH-04 用 walk(skip_notes=True) 跳过 _note* 整棵子树，因此本块内出现的 state.* 字段名从此不再被机器核对「冲击可写白名单」，只剩人工评审；V-SH-TIER（概率档位合计 1e6）不受影响，它用的是不跳过注释的 deep_find。这一点连同「扩展块应升 content.schema_version 正式并入 §5.14，还是整体移到 docs/」一并登记为 OQ-255。",
+    "ext_rationale_zh": "以下字段不在 11_data_contract.md §5.14 的 ShockDefinition 示例键集合内，而 §3 规定 additionalProperties: false。本文件按任务卡（计划书 §07「三类外生冲击」的完整要求：强度分布、持续期分布、最早季、自相关与冷却、抽样协议、传导链、先行信号）写全，不私自修改契约。冲突已登记为 OQ-255，由契约维护者决定是以 content.schema_version 升级的方式并入 §5.14，还是把这些块移到 docs/。在契约未扩展前，加载器只读上面的契约字段；下列各块是同一事实的可审计说明，凡有数值处一律用 *_ref 指回契约字段或 world.json，不引入第二处事实来源。",
+
+    "spec_ext_version": 1,
+    "code": "S01",
+    "slug": "export_demand",
+    "name_zh": "出口需求变化",
+    "_note_name_zh": "任务卡要求的 name_zh 与契约字段 label_zh 逐字相等；label_zh 是唯一事实来源，name_zh 只是别名，二者不一致即视为内容包错误。",
+
+    "external_account_targets": {
+      "primary_field": "state.world.export_demand_ppm",
+      "primary_field_shape": "int[4]，按 10 号文件 §0.5 稠密下标 agri/manu/energy/services",
+      "base_field": "scenario.json#world_init.export_demand_ppm（基年全为 1 000 000）",
+      "clamp_range_ppm": [0, 3000000],
+      "writes_no_other_field": 1,
+      "whitelist_ref": "11_data_contract.md §5.14「冲击可写白名单」；INV-108；V-SH-04",
+      "formula_ref": "12_simulation_contract.md §1.1 01.7",
+      "formula_zh": "state.world.export_demand_ppm[s] = clamp(base_export_ppm[s] + mul_ppm(eff_ppm[S01], target_weights_ppm[S01][s]), 0, 3000000)　# rounding: floor（mul_ppm 内部），reason=不凭空多给外部需求",
+      "weights_rationale_zh": "权重取自 world.json#export_demand.export_baseline_uqs_per_q = [100000, 350000, 50000, 0] 的份额：100/500 = 200 000 ppm、350/500 = 700 000 ppm、50/500 = 100 000 ppm、0。services 权重必须为 0：world.json 已锁定该部门出口基准量与交付能力均为 0，给它权重只会产生『抽到了冲击但什么也没发生』的不可解释现象（world.json#shock_binding.rules_zh 第 4 条）。",
+      "dilution_warning_zh": "V-SH-03 要求 Σ target_weights_ppm == 1 000 000，因此强度 m 是一笔被拆到各部门的『预算』，而不是各部门各自的强度倍数。总量口径的换算系数是 Σ(出口份额_s × 权重_s) = 0.2×0.2 + 0.7×0.7 + 0.1×0.1 = 0.54。即：可实现出口潜量的相对变化 ≈ m × 540 000 ppm（逐项 mul_ppm 的向下取整会带来几 ppm 的偏差，档位表里给的是逐步整数复算出来的精确值，不是这个近似式的结果）。玩家看到的部门指数变化与总量变化必然不同，报告必须同时给出两者，不得只报一个。该结构问题（权重应是分布还是各部门独立倍数）登记为 OQ-256。"
+    },
+
+    "magnitude_distribution": {
+      "authoritative_form_zh": "权威分布是契约 §5.14 规定的闭区间整数均匀分布：draw_range(rng.shock, q, -600000, 199999)，用 12 号 §0.4 的拒绝采样消除取模偏差。下面的档位表不是第二个抽样机制，而是对同一均匀分布的等价读数。",
+      "interval_ppm": [-600000, 199999],
+      "interval_size": 800000,
+      "_note_interval_size": "闭区间整数个数 = 199999 - (-600000) + 1 = 800000。刻意取 800 000 而不是看起来更整齐的 [-600000, 200000]（那是 800 001 个整数），目的是让每个档位的概率 = 档位宽度 × 1 000 000 / 800 000 = 宽度 × 1.25 为精确整数，档位概率表不需要任何取整近似。这与本项目『不存在四舍五入』的整数纪律一致（10 号文件 §0.9）。",
+      "probability_per_integer_ppm_x1000": 1250,
+      "_note_probability_per_integer_ppm_x1000": "单个整数取值的概率 = 1.25 ppm。本项目禁止小数，故以千分之 ppm 记为 1250。",
+      "downside_share_ppm": 750000,
+      "upside_share_ppm": 250000,
+      "_note_asymmetry": "下行区间 [-600000, -1] 共 600 000 个整数（75%），上行区间 [0, 199999] 共 200 000 个整数（25%）。这个不对称是设计假设，不是对现实外需波动的估计；理由是首版要让玩家遇到『外部订单流失』这一类可讲清楚的困难，而不是让运气成为主要变量。校准时若发现 40 季里几乎必然遭遇一次严重外需收缩、玩家把它当成剧本脚本而非风险，应先收窄下行区间，而不是调低到达率。",
+      "zero_draw_zh": "m == 0 是合法抽样结果，概率 1.25 ppm。此时冲击登记为 active、eff_ppm == 0、外部需求指数不变。报告必须如实显示『本季外部需求冲击已发生，强度为 0，指数无变化』，不得因为没有可见后果就把该记录从 ldg.event 中隐去——隐去它会让 shock_log 与 log.rng 对不上（INV-011）。",
+      "tiers": [
+        {
+          "tier_id": "tier.s01.severe",
+          "label_zh": "严重收缩",
+          "range_ppm": [-600000, -480001],
+          "width": 120000,
+          "probability_ppm": 150000,
+          "edge_case_zh": "最不利端 m = -600000：export_demand_ppm = [880000, 580000, 940000, 1000000]；可实现出口潜量 500 000 → 338 000 μQ/季（-32.4000%）。"
+        },
+        {
+          "tier_id": "tier.s01.major",
+          "label_zh": "明显收缩",
+          "range_ppm": [-480000, -320001],
+          "width": 160000,
+          "probability_ppm": 200000,
+          "edge_case_zh": "最不利端 m = -480000：export_demand_ppm = [904000, 664000, 952000, 1000000]；出口潜量 370 400 μQ/季（-25.9200%）。"
+        },
+        {
+          "tier_id": "tier.s01.moderate",
+          "label_zh": "温和收缩",
+          "range_ppm": [-320000, -120001],
+          "width": 200000,
+          "probability_ppm": 250000,
+          "edge_case_zh": "最不利端 m = -320000：export_demand_ppm = [936000, 776000, 968000, 1000000]；出口潜量 413 600 μQ/季（-17.2800%）。"
+        },
+        {
+          "tier_id": "tier.s01.mild",
+          "label_zh": "轻微收缩",
+          "range_ppm": [-120000, -1],
+          "width": 120000,
+          "probability_ppm": 150000,
+          "edge_case_zh": "最不利端 m = -120000：export_demand_ppm = [976000, 916000, 988000, 1000000]；出口潜量 467 600 μQ/季（-6.4800%）。"
+        },
+        {
+          "tier_id": "tier.s01.favorable",
+          "label_zh": "小幅回暖",
+          "range_ppm": [0, 199999],
+          "width": 200000,
+          "probability_ppm": 250000,
+          "edge_case_zh": "最有利端 m = 199999：export_demand_ppm = [1039999, 1139999, 1019999, 1000000]；出口潜量 553 997 μQ/季（+10.7994%；整数取整使它略低于 199 999 × 0.54 = +10.7999% 的理论值）。上行不会被交付能力截断：最严重上行下 manu 出口潜量 398 999 μQ，远低于 delivery_capacity_uqs[1] = 2 400 000。"
+        }
+      ],
+      "tier_width_sum": 800000,
+      "tier_probability_sum_ppm": 1000000,
+      "tier_consistency_rule_zh": "档位必须是区间的一个划分：宽度之和精确等于 interval_size，概率之和精确等于 1 000 000，且相邻档位首尾相接无缝无叠。建议由 tools/check_shock_tiers.gd 在加载期复核（本文件不自行新增错误码）。",
+      "tier_is_readout_not_sampler_zh": "禁止实现成『先抽档位再在档内均匀抽』。那会引入第二套概率，且与 12 号 §1.1 01.6 的 draw_range 逐位不一致，重放必然分歧。档位只在报告与规则卡里用于把一个 ppm 数字翻译成一句人话。",
+      "shape_limitation_zh": "契约 §5.14 的 magnitude_ppm 只有 min/max 两个自由度，因此强度分布只能是均匀分布。三角形、双峰或长尾分布都无法表达，等宽档位的概率必然相等。若校准阶段确认需要『小冲击常见、大冲击罕见』的形状，必须先扩展 §5.14 的 schema（升 content.schema_version），登记为 OQ-257。"
+    },
+
+    "duration_distribution": {
+      "authoritative_form_zh": "draw_range(rng.shock, q, 2, 9)，闭区间整数均匀，共 8 个取值。",
+      "interval_q": [2, 9],
+      "interval_size": 8,
+      "tiers": [
+        { "duration_q": 2, "probability_ppm": 125000 },
+        { "duration_q": 3, "probability_ppm": 125000 },
+        { "duration_q": 4, "probability_ppm": 125000 },
+        { "duration_q": 5, "probability_ppm": 125000 },
+        { "duration_q": 6, "probability_ppm": 125000 },
+        { "duration_q": 7, "probability_ppm": 125000 },
+        { "duration_q": 8, "probability_ppm": 125000 },
+        { "duration_q": 9, "probability_ppm": 125000 }
+      ],
+      "tier_probability_sum_ppm": 1000000,
+      "_note_interval_size": "取 8 个整数而不是别的个数，是为了让 1 000 000 / 8 = 125 000 精确整除，持续期档位概率同样不需要取整。",
+      "rationale_zh": "下限 2 季：1 季的冲击玩家来不及做任何反应就结束了，只会被读成噪声，违反计划书 §04『每一季都有判断』。上限 9 季：一次外需收缩最多覆盖 40 季任期的 22.5%，不至于把整局变成单一事件的复盘。均值 5.5 季。",
+      "expected_episodes_zh": "粗估（非精确解析解）：earliest_q = 4，到达率 120 000 ppm/季 ⇒ 期望等待约 8.3 季；一次完整周期 ≈ 等待 8.3 + 存续 5.5 + 冷却 4 ≈ 17.8 季。40 季任期期望约 2 次，120 季压力测试期望约 6—7 次。"
+    },
+
+    "arrival_rule": {
+      "earliest_q": 4,
+      "earliest_q_rationale_zh": "q = 0..3 是计划书 §04『新手前四季』的教学窗口：第 1 季找供电瓶颈、第 2 季理解建设时滞、第 3 季学会查分配后果、第 4 季完成首次年度审查。外生冲击最早只能在 q = 4 到达，保证玩家先学会读规则、再面对运气。这不是『隐藏规则』：20_ui_spec.md §（规则卡）要求冲击规则卡整张可见，只隐藏本局抽样值。",
+      "min_gap_q": 4,
+      "min_gap_semantics_zh": "冷却从上一次冲击**结束**的季度算起：12 号 §1.1 01.6 的闸门是 q - last_end_q[k] < min_gap_q[k] 则不抽样。初值取 last_end_q = -min_gap_q，使 q = earliest_q 当季即可参与抽样。",
+      "max_active": 1,
+      "max_active_forced_zh": "只能是 1。10 号文件 §7 的状态形状是 state.world.shock_active[3] / shock_remaining_q[3] / shock_magnitude_ppm[3]，每个通道只有一个槽位，结构上无法承载第二个并发实例。max_active > 1 是不可表示的值，加载期应直接拒绝。",
+      "autocorrelation_zh": "季度间自相关完全由 onset_profile = step 与 decay_profile = none 决定：一次冲击在其 duration_q 季内强度恒定（组内自相关为 1），结束后强度归 0，两次冲击之间无记忆（组间自相关为 0）。首版不存在 AR(1) 式的连续自相关——§5.14 的 schema 没有可承载它的字段，凭空加一个衰减系数会在 12 号 §1.1 01.7 之外产生第二套演化规则。",
+      "profile_choice_rationale_zh": "12 号 §1.1 01.7 的衰减因子写成『step -> 1e6 全程；linear -> 剩余季数/总季数』，把 onset_profile 的取值（step | ramp_2q）与 decay_profile 的取值（none | linear）混在同一个判断里，字面上无法确定 decay_ppm 到底读哪个字段。本文件取最保守解：onset_profile = step 且 decay_profile = none，此时**无论按哪一种读法** decay_ppm 都等于 1 000 000，行为唯一确定。代价是冲击结束时强度从满档直接归 0，玩家会看到一次台阶式恢复；这是可解释的，且报告能提前给出剩余季数。启用 linear 衰减必须先修 12 号 §1.1 01.7 的判据，登记为 OQ-258。",
+      "no_player_influence_zh": "到达率、强度与持续期都与玩家命令无关，也与国内状态无关。任何让政策降低冲击概率的设计都会把外生冲击变成内生变量，破坏计划书 §07『外生冲击』的定义；政策只能改变冲击发生后的**承受能力**（如 P08 放宽交付上限、P02 改变企业现金缓冲），不能改变冲击本身。"
+    },
+
+    "sampling_protocol": {
+      "stream": "rng.shock",
+      "stream_index": 0,
+      "stream_index_ref": "10_variable_dictionary.md §（随机流表）：0 rng.shock / 1 rng.event / 2 rng.demography / 3 rng.market / 4 rng.politics / 5 rng.reserved",
+      "separation_from_commands_zh": "命令流（commands.jsonl）与冲击日志（shock_log.jsonl）分开存储（11 号 §6.1 规则 7、§6.2）。抽样是计数器式的 f(root_seed, salt[stream], q, draw_index)，rng.event 多抽 1 000 次也不改变 rng.shock 的任何取值（INV-009，测试 T-U-E-05 / test_u_rng_isolation）。这就是计划书 §12『多写一句新闻不改变经济抽样』的执行点。",
+      "step": "S01",
+      "order_zh": "同一季内按 shock_id 升序处理 S01 → S02 → S03，绝不按文件遍历顺序（INV-008）。S01 总是先抽，因此它的 draw_index 在同一季中最小。",
+      "draw_sequence": [
+        { "phase": "A_reuse", "draws": 0, "zh": "先查 shock_log 是否已有 (q, shock.S01) 的记录；命中则直接套用该记录，rng.shock 计数器不推进（INV-109，对抗测试 ADV-06 / ADV-H01）。" },
+        { "phase": "B_persist", "draws": 0, "zh": "若 state.world.shock_remaining_q[0] > 0，则本季只做 remaining -= 1 与归零判定，不抽样。" },
+        { "phase": "C_gate", "draws": 0, "zh": "闸门：q < earliest_q，或 q - last_end_q < min_gap_q，则本季不抽样。闸门判定不消耗随机数——这一点必须写成测试，否则闸门参数一改，同一 seed 的全部后续抽样会整体错位。" },
+        { "phase": "D_arrival", "draws": 1, "zh": "draw_ppm(rng.shock, q) < hazard_ppm_per_q 则到达。draw_ppm 内部是 draw_below(1 000 000) 的拒绝采样，被拒的那一次也推进计数器并写 log.rng（12 号 §0.4，INV-011）。" },
+        { "phase": "E_magnitude", "draws": 1, "zh": "draw_range(rng.shock, q, magnitude_ppm.min, magnitude_ppm.max)。" },
+        { "phase": "F_duration", "draws": 1, "zh": "draw_range(rng.shock, q, duration_q.min, duration_q.max)。" }
+      ],
+      "draws_per_quarter_zh": "未到达的季消耗 1 次抽样；到达的季消耗 3 次（不含拒绝采样的重抽，期望重抽次数 < 1e-12）。强度必须在持续期之前抽，顺序固定不可交换。",
+      "log_two_tier_zh": "两层日志，职责不同，缺一不可：(1) log.rng —— 每一次抽样（含被拒的那一次）都写一行，含 stream / q / draw_index / raw_u64，季末必须满足『log.rng 条数 == Σ Δdraw_count』（INV-011）；这是计划书 §07『每次抽样写入日志』的字面执行点。(2) shock_log.jsonl —— 只记**到达**的冲击，是决策记录而非抽样记录，字段见 shock_log_record。两者的对账关系：任何一条 shock_log 记录都能在 log.rng 中找到连续 3 次（或更多，若发生拒绝重抽）同 q 同流的抽样。",
+      "shock_log_record": {
+        "q": "到达季度索引",
+        "shock_id": "shock.S01",
+        "rng_stream": "rng.shock",
+        "draw_count_before": "本季处理 S01 之前 state.rng.draw_count[0] 的值 —— 任务卡要求的『抽样前状态』",
+        "draw_index": "强度抽样所用的 draw_index（= draw_count_before + 1）",
+        "raw_u64": "splitmix64 的原始输出（位型），供人工复核映射是否正确",
+        "mapped_value": "映射后的强度 magnitude_ppm",
+        "magnitude_ppm": "抽出的强度",
+        "duration_q": "抽出的持续季数",
+        "tier_id": "magnitude_ppm 落入的档位 ID（由区间表反查，不参与抽样）",
+        "eff_ppm": "本季生效强度 = mul_ppm(magnitude_ppm, decay_ppm)，step + none 下恒等于 magnitude_ppm",
+        "applied_world_fields": "本季写入后的 state.world.export_demand_ppm[4] 实际值 —— 任务卡要求的『生效参数』",
+        "shock_state_before": "抽样前的 {shock_active, shock_remaining_q, last_end_q}"
+      },
+      "shock_log_record_note_zh": "V-SH-05 只强制要求 log_fields 含 draw_index / raw_u64 / mapped_value；上表其余字段是本任务卡要求的补充（季度、流名、抽样前状态、档位、生效参数）。它们是 shock_log 写入方的额外职责，不改变任何结算语义。若契约维护者认为 shock_log 的行格式应当固定，请一并在 OQ-255 中裁定。",
+      "no_arrival_not_logged_zh": "按 12 号 §1.1 01.6 的字面规定，未到达的季**不写** shock_log（只写 log.rng）。本文件照契约执行，不擅自加 arrived == 0 的记录——那会让 01.6 的『先查 shock_log』分支在未到达季也命中，虽然语义等价，却是对结算步的实质改动。由此产生的后果登记为 OQ-259。",
+      "reload_determinism_zh": "重载存档不得改变已确定的抽样结果，由三件事共同保证：(1) 抽样是纯函数 f(root_seed, salt[0], q, draw_index)，不读时钟、不读引擎随机源（12 号 §0.1 禁止事项）；(2) manifest.draw_count[6] 与全量 shock_log.jsonl 一起入档（11 号 §6.2、§6.3），读档后随机流状态逐位恢复；(3) S01 先查 shock_log 再抽样。验收：ADV-06 / ADV-H01 断言 save→load→advance 与直接 advance 的 state_hash 逐位相同、log.rng 逐条相同、shock_log 该季记录被复用。",
+      "replay_zh": "commands_only 模式（11 号 §6.5）从 q = 0 用 root_seed + 内容包 + commands.jsonl 重跑，冲击序列必然复现；shock_log 在重放中是**待比对的期望值**，不是输入。若重放出的冲击与存档中的 shock_log 不符，说明内容包或参数包已漂移，应由 content_hash / param_set_version 比对先一步拦住（只读检视模式）。"
+    },
+
+    "transmission": {
+      "principle_zh": "冲击只写 state.world.export_demand_ppm，此后一步也不再插手。国内的每一个变化都必须是某个已有结算步按既有规则算出来的结果。冲击**不能也不得**直接改 GDP、增加值、库存、产能、人口、支持度、信任或预期——前者由 V-SH-04 白名单 + INV-108 在加载期与静态检查两处拦住，后者（主观 ppm 字段）只有事件模板可写，两个白名单交集为空（OQ-229 的 T-U-SHOCK-EVENT-DISJOINT）。",
+      "chain": [
+        { "step": "S01", "zh": "01.7 写入 state.world.export_demand_ppm[s]。到此为止，本季国内状态一个字节都没变。" },
+        { "step": "S05", "zh": "world.json#export_demand.realizable_export_rule：potential_uqs[s] = mul_ppm(export_baseline_uqs_per_q[s], export_demand_ppm[s])；首版 param.export_price_elasticity_ppm 全为 0，故 desired_uqs == potential_uqs；demand_uqs[买方类 4][s] = min(desired_uqs[s], delivery_capacity_uqs[s])。这是 12 号 §5.6 的第 5 类买方（出口）。" },
+        { "step": "S05", "zh": "两级配给：出口固定排在五类买方的最后一档（OQ-238）。外需下降先表现为**出口需求行本身变小**，而不是被别人挤掉；此时国内买方反而更容易吃饱，这正是玩家需要分辨的『需求侧 vs 供给侧』。未成交部分记 flow.cell.unmet_demand_uqs，不得转为收入、不得留待下季补记。" },
+        { "step": "S05", "zh": "成交量下降 ⇒ flow.cell.sold_uqs 下降；本季产量已在 §5.3 按 min 五约束定死，卖不掉的部分留在 state.cell.inventory_output_uqs（存货上升），并在 §5.8 计提 spoilage。" },
+        { "step": "S06", "zh": "GDP 是**核算结果**：生产法增加值 = 总产出 − 中间投入；支出法里 X 下降、dINV 上升，两者相抵后净影响小于出口跌幅。这正是计划书 §06『GDP 是核算结果，不是直接加到增长率上的奖励』。没有任何一行代码把冲击强度加到 GDP 上。cell 利润下降 ⇒ profit_tax 下降 ⇒ flow.gov.receipts 下降 ⇒ 赤字扩大 ⇒ 下季可能被迫发债。" },
+        { "step": "S07", "zh": "价格：存货覆盖率上升 ⇒ 下季价格下调，受 param.price_step_max_ppm 限幅、param.price_floor_ppm 托底，每次夹逼写 log.clamp（INV-069）。" },
+        { "step": "S03（下季）", "zh": "需求预期 D_prev = sold + unmet_demand。外需下降让两项同时变小 ⇒ E 下降 ⇒ output_plan 下降 ⇒ need_k 下降 ⇒ 受 param.firing_friction_ppm 限速的裁员 ⇒ state.cell.employment_persons 下降 ⇒ 失业率**反算**上升。这是冲击唯一的就业传导路径，没有旁路。" },
+        { "step": "S04（下季）", "zh": "wage_bill 下降 ⇒ 居民工资收入下降 ⇒ S05 的 budget[g] 下降 ⇒ 消费下降 ⇒ 其他部门的需求也下降。第二轮扩散只经由已实现的现金，不经由任何『信心』变量。" },
+        { "step": "S08（下季）", "zh": "生活指数由已实现的实际可支配收入、住房负担与服务可及性算出；支持度由生活／预期／信任三项加权。冲击对民意的影响**全部是二阶的**，且每一步都能在报告里指回一笔具体的成交或一次具体的裁员。" }
+      ],
+      "magnitude_reality_check_zh": "诚实登记冲击的真实威力：基年出口 0.5 U/季 = 2 U/年 = 基年名义 GDP 100 U 的 2%（world.json#export_demand 的规模由 agent.row 的 15 U 初始现金反推，不是对现实开放度的估计）。因此最严重档（-32.4000% 出口潜量）的**总量口径**直接影响约为年 GDP 的 0.65%。S01 的真正杀伤在海岬制造部门的需求侧瓶颈、就业与企业现金流，不在总量。校准时若觉得『冲击没感觉』，正确做法是先裁定 OQ-201 能否放大出口规模（必须同时放大 agent.row 初始现金），**不是**调大 magnitude 区间去掩盖规模问题。",
+      "forbidden_zh": [
+        "禁止让 S01 直接写 flow.world.exports_uu / exports_uqs；它们只能是成交的结果（world.json#export_demand.no_self_dealing_rules_zh）。",
+        "禁止让 S01 写 content.world.export_baseline_uqs_per_q —— 那是内容常量，运行期任何系统都不得写。",
+        "禁止把冲击强度直接加到 derived.gdp.* 或任何 state.group.* 的主观 ppm 字段上。",
+        "禁止在冲击季对企业或政府追加任何形式的补偿、缓冲或平滑项（计划书 §13 禁止后处理补丁）。",
+        "禁止用『冲击季暂停某条不变量检查』的方式让结算通过；不变量在冲击季与平常季完全一致。"
+      ]
+    },
+
+    "leading_signals": {
+      "principle_zh": "先行信号必须全部是『已经发生』的量（20_ui_spec.md 的三分法：已经发生 / 规则推断 / 情景预测）。冲击一旦落地，它的类别、档位、强度与剩余季数都是当季已确定的状态，必须在 ldg.event 与世界页如实披露；被隐藏的只有**尚未抽出**的未来冲击。",
+      "signals": [
+        { "order": 1, "where": "世界页 / 规则卡", "what_zh": "state.world.export_demand_ppm 四部门当季值，与基年 1 000 000 并排显示；同时显示本次冲击的档位标签、强度 ppm 与剩余季数。", "class": "已经发生" },
+        { "order": 2, "where": "季度报告 / 外部账户", "what_zh": "本季出口成交量 flow.world.exports_uqs 与出口未满足需求；出口额 flow.world.exports_uu 的环比。", "class": "已经发生" },
+        { "order": 3, "where": "地区页 / 海岬", "what_zh": "cell.haijia.manu 的 flow.cell.binding_code 由 1/2/3/4（产能／劳动／能源／材料）转为 0（plan）。这是最干净的判别信号：瓶颈从供给侧移到需求侧。", "class": "已经发生" },
+        { "order": 4, "where": "地区页 / 台账", "what_zh": "state.cell.inventory_output_uqs 连续上升，同时 flow.cell.unmet_demand_uqs 下降。『存货涨 + 未满足降』只可能是需求问题；『存货降 + 未满足涨』才是供给问题。", "class": "已经发生" },
+        { "order": 5, "where": "季度报告 / 规则推断", "what_zh": "下季计划产量与下季价格的规则推断值（S03 的 E 与 S07 的价格调整都是确定性规则，可以在本季末直接算出来并标注为『规则推断』）。", "class": "规则推断" },
+        { "order": 6, "where": "预算页 / 四季现金预测", "what_zh": "利润税下滑对未来四季收入的影响，必须标注为『情景预测』，且假设行写明『不含未来冲击（已隐藏）』。", "class": "情景预测" }
+      ],
+      "what_is_hidden_zh": "隐藏的只有两样：尚未到达的冲击是否会到达，以及到达时会抽到什么。已到达冲击的全部参数（档位、强度、持续期、剩余季数、写入的外部账户值）一律公开。规则卡整张不得隐藏（20_ui_spec.md B-06）。"
+    },
+
+    "acceptance_tests": [
+      "T-S-SHOCK-S01-WHITELIST：断言一次 S01 冲击季内，除 state.world.export_demand_ppm 外的所有 state.world.* 与全部国内状态字段的 WriteGuard 写入次数为 0（INV-108、V-SH-04）。",
+      "T-S-SHOCK-S01-NO-GDP-WRITE：断言 derived.gdp.* 与 state.group.{expectation,trust,support}_ppm 在 S01 步内写入次数为 0；GDP 的变化必须能由 S05/S06 的分录逐笔加总复现。",
+      "T-S-SHOCK-S01-TIER-PARTITION：断言五个档位宽度之和 == 800 000、概率之和 == 1 000 000、区间首尾相接无缝无叠，且任一 magnitude_ppm 恰好落入一个档位。",
+      "T-S-SHOCK-S01-GATE-NO-DRAW：构造 q < earliest_q 与 q - last_end_q < min_gap_q 两种情形，断言 state.rng.draw_count[0] 增量 == 0（闸门不得消耗随机数）。",
+      "T-S-SHOCK-S01-DRAW-COUNT：断言未到达季 Δdraw_count[0] == 1、到达季 == 3（不含拒绝重抽），且 log.rng 条数与之精确相等（INV-011）。",
+      "T-S-SHOCK-S01-DEMAND-SIDE：把强度压到 tier.s01.severe 最不利端，断言 cell.haijia.manu 的 binding_code 变为 0（plan）、inventory_output 上升、unmet_demand 下降；同时断言产能未被任何代码下调（需求冲击不得伪装成产能冲击）。",
+      "ADV-06 / ADV-H01：存档重载不得重抽已确定冲击（已在 31_adversarial_tests.md 登记，本文件是其内容侧前提）。",
+      "ADV-I04：自造出口订单（已登记）。本文件提供其对照组所需的『把 export_demand_ppm 用冲击压到下限』的取值来源。"
+    ],
+
+    "value_cards": [
+      {
+        "field_ref": "target_weights_ppm",
+        "value": [200000, 700000, 100000, 0],
+        "unit": "ppm",
+        "source_type": "derived",
+        "derivation_expr": "split_largest_remainder(1000000, world.json#export_demand.export_baseline_uqs_per_q, 部门下标) = split_largest_remainder(1000000, [100000,350000,50000,0], [0,1,2,3])",
+        "source_ref": "计划书 §07「出口需求变化」；world.json#export_demand.export_baseline_uqs_per_q；11_data_contract.md V-SH-03",
+        "reference_year": 0,
+        "definition": "冲击强度在四个部门之间的分配权重，Σ 必须精确等于 1 000 000。取值为各部门出口基准量的份额，故权重变化只能来自出口基准量变化，不能单独调。",
+        "valid_range": [0, 1000000],
+        "confidence": "medium",
+        "calibration_note": "复算方式：100000/500000 = 200 000、350000/500000 = 700 000、50000/500000 = 100 000，无余数，最大余数法不产生调整。若 T03 修改出口基准量，本权重必须同步重算，否则 world.json 与本文件会出现两个互相矛盾的部门结构。检验：断言 Σ weights == 1 000 000（V-SH-03）且 weights[3] == 0（services 无出口通道）。"
+      },
+      {
+        "field_ref": "magnitude_ppm.min",
+        "value": -600000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「三类外生冲击足够开局：出口需求变化」「冲击强度和持续时间由剧本配置」",
+        "reference_year": 0,
+        "definition": "外部需求指数偏移量的下界。经 target_weights 分摊后，最不利情形下制造部门出口需求指数降至 580 000 ppm，可实现出口潜量下降 32.4%。",
+        "valid_range": [-1400000, 0],
+        "confidence": "low",
+        "calibration_note": "上界 -1 400 000 由 12 号 §1.1 01.7 的 clamp 下限反推：1 000 000 + mul_ppm(m, 700000) ≥ 0 ⟹ m ≥ -1 428 571，取整到 -1 400 000 以留裕度。校准顺序：先按计划书 §14『先无冲击运行 → 单一干预 → 敏感性 → 组合冲击』跑完前三步，再在组合冲击阶段看『出口下降 + 融资收紧』同时发生时报告是否仍能把问题定位到部门与地区。若玩家读不懂，先减小本值，不要加解释性文案。"
+      },
+      {
+        "field_ref": "magnitude_ppm.max",
+        "value": 199999,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；11_data_contract.md §5.14「闭区间，整数均匀」",
+        "reference_year": 0,
+        "definition": "外部需求指数偏移量的上界。取 199 999 而非 200 000，使闭区间整数个数恰为 800 000，档位概率可精确整除。",
+        "valid_range": [0, 1000000],
+        "confidence": "low",
+        "calibration_note": "检验方式：在最有利档跑一次，断言出口量仍受 delivery_capacity_uqs 与国内可售供给双重约束，不出现『外需一好就无限出口』。若上调本值，必须同时检查 export_demand_ppm 是否逼近 3 000 000 的 clamp 上限——触顶会被 log.clamp 记录，触顶即说明区间与 clamp 不匹配。"
+      },
+      {
+        "field_ref": "duration_q.min",
+        "value": 2,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §04「每一季都有判断，而非例行点击」；§07「持续时间由剧本配置」",
+        "reference_year": 0,
+        "definition": "一次出口需求冲击的最短持续季数。低于 2 季玩家来不及做出并观察到任何反应。",
+        "valid_range": [1, 4],
+        "confidence": "low",
+        "calibration_note": "检验方式：试玩记录里看玩家是否对 2 季冲击做出过任何命令。若全部试玩者都把它当噪声忽略，说明下限过短，应上调；不要靠加大强度来引起注意。"
+      },
+      {
+        "field_ref": "duration_q.max",
+        "value": 9,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §03「10 年 / 40 季度」；§07",
+        "reference_year": 0,
+        "definition": "一次出口需求冲击的最长持续季数，上限 9 季 = 40 季任期的 22.5%。与 min 共同构成 8 个等概率取值，使 1 000 000 / 8 精确整除。",
+        "valid_range": [2, 16],
+        "confidence": "low",
+        "calibration_note": "检验方式：120 季压力测试统计『处于某个冲击存续期内的季数占比』。若单一通道占比超过 40%，冲击就从风险退化为常态背景，应先下调本值。修改本值时必须同时检查 (max - min + 1) 是否仍能整除 1 000 000，否则持续期档位概率将不再精确。"
+      },
+      {
+        "field_ref": "arrival.hazard_ppm_per_q",
+        "value": 120000,
+        "unit": "ppm/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「三类外生冲击」；§14「最后加组合冲击」",
+        "reference_year": 0,
+        "definition": "在闸门放行的季度，本季到达一次出口需求冲击的概率（12%）。闸门不放行的季度不抽样，因此这不是无条件季度概率。",
+        "valid_range": [0, 500000],
+        "confidence": "low",
+        "calibration_note": "检验方式：100 个种子各跑 40 季，统计 S01 的到达次数分布与『S01 与 S03 至少重叠一季』的种子占比。目标是 40 季期望 2 次左右、组合冲击有足够样本可供 §14 第四步检验。若从未重叠，说明三个通道的到达率与冷却期把它们互相排开了，应先调冷却期而不是一味调高到达率。"
+      },
+      {
+        "field_ref": "arrival.earliest_q",
+        "value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §04「新手前四季」；§05",
+        "reference_year": 0,
+        "definition": "允许出现本冲击的最早季度索引（q = 4 即第 5 季），使 q = 0..3 的教学窗口不被外生冲击打断。",
+        "valid_range": [0, 12],
+        "confidence": "medium",
+        "calibration_note": "检验方式：22_onboarding.md 的前四季验收（5 名首次体验者中至少 4 名可完成前 4 季）。若把本值调到 0..3，必须重做那一轮验收；若调得更晚，要检查 40 季内是否还有足够的冲击样本。"
+      },
+      {
+        "field_ref": "arrival.min_gap_q",
+        "value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07；12_simulation_contract.md §1.1 01.6 的 q - last_end_q < min_gap_q 闸门",
+        "reference_year": 0,
+        "definition": "上一次本通道冲击结束后，到下一次可能到达之间的最短间隔季数（冷却期）。冷却期内不抽样、不消耗随机数。",
+        "valid_range": [0, 16],
+        "confidence": "low",
+        "calibration_note": "**本值目前无法执行**：12 号 §1.1 01.6 引用了 last_end_q[k]，但 10 号文件 §7 的 state.world.* 里没有这个字段（只有 shock_active / shock_remaining_q / shock_magnitude_ppm）。在新增 state.world.shock_last_end_q[3] 之前，冷却闸门只能退化为『存续期内不重抽』，min_gap_q 实际为 0。登记为 OQ-260，**这是本文件发现的最严重的一条契约缺口**。检验方式：T-S-SHOCK-S01-GATE-NO-DRAW 在字段补齐前必然失败，不得把它标记为跳过。"
+      },
+      {
+        "field_ref": "arrival.max_active",
+        "value": 1,
+        "unit": "件",
+        "source_type": "derived",
+        "derivation_expr": "state.world.shock_active 的数组长度约束：每个 channel 恰好一个槽位 ⟹ max_active == 1",
+        "source_ref": "10_variable_dictionary.md §7（state.world.shock_active[3] / shock_remaining_q[3] / shock_magnitude_ppm[3]）",
+        "reference_year": 0,
+        "definition": "同一通道允许同时存续的冲击实例数。由状态形状强制为 1，不是可调参数。",
+        "valid_range": [1, 1],
+        "confidence": "high",
+        "calibration_note": "检验方式：加载期断言 max_active == 1，任何其它取值直接拒绝加载。若将来要支持叠加冲击，必须先把三个 state.world.shock_* 数组改成可变长 SoA 并升 save.schema_version（11 号 §6.7 M-1..M-9），这是破坏性变更。"
+      }
+    ],
+
+    "open_question_refs": [
+      "OQ-255 扩展字段的归属：文件名一侧已按契约 §2 落实为 shocks/shock_S01.json（原 S01_export_demand.json），此半已结；仍待裁定的是 §3 的 additionalProperties: false 与本文件必须写全的说明块之间的冲突。现行处理是整组收进 _note_spec_ext 注释键，副作用是 V-SH-04 不再核对块内出现的 state.* 字段名。请裁定：升 content.schema_version 正式并入 §5.14，还是把这些块移到 docs/。",
+      "OQ-256 target_weights_ppm 的语义：Σ == 1 000 000 使强度成为被拆分的预算，部门指数变化必然小于名义强度；应否改为各部门独立倍数（各自 ≤ 1 000 000、不约束和）。",
+      "OQ-257 强度分布只能是均匀分布：§5.14 只有 min/max 两个自由度，无法表达『小冲击常见、大冲击罕见』。",
+      "OQ-258 12 号 §1.1 01.7 的衰减因子把 onset_profile 与 decay_profile 的取值混在同一判据里，decay_ppm 读哪个字段不确定。",
+      "OQ-259 未到达的抽样不写 shock_log，只写 log.rng；两者的对账规则与 ADV-06『draw_count 增量 == 0』的适用范围需明确。",
+      "OQ-260 12 号 §1.1 01.6 引用 last_end_q[k]，但状态字典中无此字段，min_gap_q 目前不可执行。",
+      "OQ-201 出口规模上限由 agent.row 初始现金反推，直接决定 S01 的总量威力。",
+      "OQ-228 冲击只按部门落点、不按地区落点（沿用既有裁定）。",
+      "OQ-229 冲击（S01 步）与事件（S08 步）天然错开、写入字段集合不相交，无相乘放大。",
+      "OQ-238 出口在 12 号 §5.6 的配给中固定排最后一档。",
+      "OQ-247 出口价格弹性通道未进入 12 号 §5.6 的权威公式，首版弹性为 0。"
+    ],
+
+    "notes_zh": "数值为测试起点，不是现实国家数据，也不是已经跑出的结果。强度与持续时间由剧本配置，全部属于待校准的设计假设（计划书 §07、§14）。本文件不含任何平衡修正项、凭空补贴或后处理补丁（计划书 §13）；冲击对国内的每一点影响都必须能在某一步结算的分录里逐笔找到来源，找不到即为缺陷，不是调参问题。"
+  }
+}

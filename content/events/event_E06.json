@@ -1,0 +1,908 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "_note_schema_extension": "本文件的顶层键只有两类。(1) 11_data_contract.md §5.13 已声明的 9 个键（schema_kind、schema_version、event_id、label_zh、trigger、effects、evidence_refs、report_template_id、kind），名称与语义逐字照搬，additionalProperties:false 之下不得多出任何别的正式键。(2) 其余全部是 _note_<field> 注释键：载入器不读、不进 content_hash、不参与任何逻辑（§1.5、§3、§6.4），内容一字未删。本轮把原先留在顶层的 consequences 与 parameters 两个键也归入第 (2) 类：consequences -> _note_consequences，parameters -> _note_parameters，后者每张卡的 parameter_id 同时改名为 value_id，因为 §5.15 规定 param.* 正式身份证只能落在 content/parameters/params_core.json 的 cards[] 里，写在事件文件里的那份不是正式卡片、只是这十七个取值的来源与校准登记（九个字段一个未删，另加 binds_to 指明每个取值在本文件里的生效位置）。这与同批的 event_E05 / event_E07 写法一致。校验器 tools/validate_content.py 的 check_event 曾要求 consequences 出现在**非注释**位置，与 §5.13 的 additionalProperties:false 直接互斥（任一事件文件都必挨一条 ERROR）；该冲突已按「检查的是有没有逐条后果解释，不是它写在哪个键名下」的读法在校验器侧修正，逐条后果必须含对手方／会计解释这一条**没有放宽**。详见 OQ-LOCAL-E06-06。",
+  "event_id": "event.E06",
+  "label_zh": "港口拥堵与进口设备延迟",
+  "kind": "inferred",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "flow.world.imports_uu",
+        "op": "ge",
+        "value": 3160006997
+      },
+      {
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.manu",
+        "op": "le",
+        "value": 2400000
+      },
+      {
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.agri",
+        "op": "le",
+        "value": 400000
+      },
+      {
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.energy",
+        "op": "le",
+        "value": 600000
+      },
+      {
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.services",
+        "op": "le",
+        "value": 0
+      },
+      {
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.manu",
+        "op": "le",
+        "value": 1000000
+      },
+      {
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.agri",
+        "op": "le",
+        "value": 1000000
+      },
+      {
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.energy",
+        "op": "le",
+        "value": 1000000
+      },
+      {
+        "metric": "state.region.port_capacity_uqs_per_q",
+        "scope": "region.haijia",
+        "op": "lt",
+        "value": 3000000
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2
+      }
+    ],
+    "probability_ppm": 800000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 4,
+    "max_occurrences": 4
+  },
+  "_note_metric_id_fix": "原稿的 c1 与 evidence_refs[0] 引用 flow.world.imports_uqs，该 ID 在 10_variable_dictionary.md 中**取不到**：§8.4 的那一行写成 `flow.world.imports_uu` / `imports_uqs[]`，后半截没有写全前缀，凡是按「state|flow|derived|log|content 开头的反引号串」提取稳定 ID 的工具（含 tools/validate_content.py 的 load_doc_ids）都不会登记它，尽管 INV-104 与 12 号 §04.4 都在用这个量。本文件不改文档、也不继续引用一个取不到的 ID，改为只用可解析的 ID 重建判据；文档侧的写法缺陷已上报。",
+  "_note_op_vocabulary": "本文件一律使用 11_data_contract.md V-EV-03 的规范集合 op ∈ {lt, le, eq, ne, ge, gt}。§5.13 的示例 JSON 里写的是 \"gte\"，与 V-EV-03 不一致；规范条款优先于示例，冲突已上报。",
+  "_note_scope_semantics": "契约未定义 scope 求值语义。本文件按最保守读法使用：标量指标（flow.world.imports_uu、state.time.q）省略 scope；scope 为 sector.<s> 时取该部门在 4 长数组中的唯一下标（state.world.delivery_capacity_uqs、state.world.import_price_ppm）；scope 为 region.<r> 时取该地区在 4 长数组中的唯一下标（state.region.port_capacity_uqs_per_q）。全部十处都是单一下标取值或标量取值，不需要任何求和或量词。",
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -30000
+    },
+    {
+      "target": "state.group.trust_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -8000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 25000
+    },
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.business.policy.P08",
+      "delta_ppm": 90000
+    }
+  ],
+  "_note_effects_scope_gap": "state.bloc.stance_ppm 是「集团 × 政策」的二维量，而契约没有定义复合 scope 的写法（§5.13 的示例只给了一维 scope）。本文件沿用原稿的 \"bloc.business.policy.P08\" 复合写法，因为删掉这条 effect 会丢掉「拥堵抬高 P08 政治可行性」这条真实反馈链。该写法目前既不在 ID 正则里、也没有求值规定，已上报。",
+  "evidence_refs": [
+    "flow.world.imports_uu",
+    "state.world.delivery_capacity_uqs",
+    "state.world.import_price_ppm",
+    "content.price.base_uu_per_qs",
+    "state.region.port_capacity_uqs_per_q",
+    "state.project.delivery_progress_ppm",
+    "state.project.required_equipment_uqs",
+    "state.project.suspension_reason",
+    "state.project.paid_uu",
+    "state.gov.committed_memo_uu",
+    "state.world.credit_used_uu",
+    "state.world.credit_limit_uu"
+  ],
+  "_note_consequences": [
+    {
+      "written_by": "event",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia 的 9 个群组",
+      "formula": "expectation_ppm[g] = clamp(expectation_ppm[g] + (-30000), 0, 2000000)",
+      "param_ref": "param.e06_expectation_delta_ppm",
+      "duration_q": "一次性写入存量；此后由 S08 的预期更新式自行回归",
+      "reversible": true,
+      "reversal_zh": "交付形势改善、项目投运后预期自然回升。"
+    },
+    {
+      "written_by": "event",
+      "target": "state.group.trust_ppm",
+      "scope": "region.haijia 的 9 个群组",
+      "formula": "trust_ppm[g] = clamp(trust_ppm[g] + (-8000), 0, 1000000)",
+      "param_ref": "param.e06_trust_delta_ppm",
+      "duration_q": "一次性写入存量；恢复慢于下降（INV-122）",
+      "reversible": true,
+      "contract_risk_zh": "与 E05 同一处契约缺口：12 号 §8 说 trust 只由一个失信事件闭集合驱动。本事件写 trust 的语义是「已公布的完工期被交付延迟推翻」，必须被登记进该闭集合；未登记则删除本条 effect。已上报。"
+    },
+    {
+      "written_by": "event",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "formula": "org_power_ppm[business] = clamp(org_power_ppm[business] + 25000, 0, 1000000)",
+      "param_ref": "param.e06_org_power_delta_ppm",
+      "duration_q": "一次性写入存量；受 param.bloc_org_inertia_ppm 惯性拉回",
+      "reversible": true,
+      "basis_zh": "计划书 §08：工商业联盟关心能源、运输、利润与政策可预期性。运输正是它的核心议题，拥堵给了它可动员的题目。"
+    },
+    {
+      "written_by": "event",
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.business.policy.P08",
+      "formula": "stance_ppm[business][P08] = clamp(stance_ppm[business][P08] + 90000, -1000000, 1000000)",
+      "param_ref": "param.e06_stance_delta_ppm",
+      "duration_q": "一次性写入存量",
+      "reversible": true,
+      "note_zh": "立场上升只降低 P08 的改革阻力（legal_authority.requires_bloc_support 的判定输入），不给 P08 任何折扣、不缩短工期、不减少成本。stance 不直接进 support（12 号 §8.3）。"
+    },
+    {
+      "written_by": "mechanism",
+      "mechanism_step": "S05",
+      "target": "state.project.delivery_progress_ppm",
+      "formula": "delivered_uqs = min(本季已订设备量, world.delivery_capacity_uqs[SECTOR_MANU] 的剩余额)；Δdelivery_ppm = idiv_floor(delivered_uqs × 1e6, required_equipment_uqs)",
+      "duration_q": "持续到占用率回落",
+      "reversible": true,
+      "event_writes": false,
+      "note_zh": "这是任务描述里「直接延迟在建项目的设备交付」那句话的真实落点。它由 S05 的 min() 产生，不是由事件产生：事件既不写 delivery_progress，也不写 delivery_capacity（INV-130、V-EV-06）。若让事件去写，就等于允许内容包凭空造出或扣掉实物，那正是计划书 §13 禁止的后处理补丁。"
+    },
+    {
+      "written_by": "mechanism",
+      "mechanism_step": "S07",
+      "target": "state.project.status / state.project.suspension_reason",
+      "formula": "delivery_progress < 1 000 000 ⇒ 不满足 INV-090 的完工充要条件 ⇒ 停在 in_progress/completed 之前，suspension_reason = delivery",
+      "duration_q": "持续",
+      "reversible": true,
+      "event_writes": false,
+      "note_zh": "计划书 §10 P04 的验收测试之一：第 8 季未交付齐全不得投运。拥堵把这条测试变成玩家会真的遇到的情形。"
+    },
+    {
+      "written_by": "mechanism",
+      "mechanism_step": "S04",
+      "target": "state.project.paid_uu / state.gov.cash_uu",
+      "formula": "按履约进度支付；交付停滞时该分项不再产生新的付款义务，已付部分不返还",
+      "duration_q": "持续",
+      "reversible": false,
+      "event_writes": false,
+      "note_zh": "已经付出去的设备款留在承包方与 agent.row 手里，双边入账，没有任何一方凭空多出或少掉钱（INV-015/017/018）。「钱花了、货没到」在账上是 wip 增加而产能不增加，不是钱消失。"
+    },
+    {
+      "written_by": "none",
+      "target": "任何账本科目、库存、产能、人口",
+      "formula": "无",
+      "duration_q": "—",
+      "reversible": "—",
+      "event_writes": false,
+      "note_zh": "首版事件没有任何账本效应（INV-130）。本事件不改变一件设备的去向，也不改变一分钱的归属。"
+    }
+  ],
+  "_note_parameters": [
+    {
+      "value_id": "param.e06_import_value_threshold_uu",
+      "binds_to": "trigger.all_of[0].value",
+      "value": 3160006997,
+      "unit": "μU",
+      "source_type": "derived",
+      "derivation_expr": "UU_PER_UQS = idiv_floor(JWUnits.BASE_PRICE, JWUnits.Q_SCALE) = idiv_floor(1000000000, 1000000) = 1000（R-SCALE-01 之后基年价下 1 μQ_s 值 1000 μU）；param.e06_other_lines_value_cap_uu + UU_PER_UQS * mul_ppm(param.e06_delivery_capacity_reference_uqs, param.e06_utilization_floor_ppm) = 1000006997 + 1000 * idiv_floor(2400000 * 900000, 1000000) = 1000006997 + 1000 * 2160000 = 1000006997 + 2160000000 = 3160006997",
+      "source_ref": "剧本 content/scenarios/chengwan/scenario.json 的 world_init.delivery_capacity_uqs = [400000, 2400000, 600000, 0]（μQ_s/季）；占用率下界取 900000 ppm；货币刻度 1 U = 1e9 μU、基年价 1e9 μU/Q_s（裁定 R-SCALE-01）",
+      "reference_year": 0,
+      "definition": "触发所需的本季进口支出总额下限（μU，全部四条进口线合计）。它与另外三条线的支出上界、三条价格上限、制造品线能力上限一起，构成「制造品进口线交付能力占用率 ≥ 900 000 ppm」的下界证明（推导见 _note_trigger_detail.utilization_proof_zh）。3 160 006 997 μU ≈ 3.16 U，约为基年全年名义 GDP（100 000 000 000 μU）的 0.0032%——它衡量的是单季进口支出，不是产出。",
+      "valid_range": [
+        1000,
+        3400007996
+      ],
+      "confidence": "low",
+      "calibration_note": "valid_range 的上界 3 400 007 996 μU = 基年价下四条线交付能力对应的进口支出物理上限（含每线的取整松弛），本值超过它这条触发就恒假。可达上限（各线取 value_s = 1000 × cap_s 的整点）为 3 400 000 000 μU，仍高出本阈值 239 993 003 μU，故非恒假。本值是派生量，剧本一改 delivery_capacity_uqs 就必须整组重算（V-PC-05 复算 derivation_expr，见 T-U-E06-DERIVED-PARAM-RECOMPUTE）。校准方式：在 G1 的 40 季无命令基线里统计 flow.world.imports_uu 的分布；首版进口主要来自项目 import_equipment 分项（policy_P04 的 spend_lines_uu_per_q.import_equipment = 200 000 000 μU/季，折合 200 000 μQ_manu/季），单个 P04 规模的项目只占本阈值的约 6.3%，基线很可能远低于本阈值，那意味着本事件在首版几乎不会触发——正确的处理不是下调本值（会破坏 90% 的语义），而是先把 flow.world.imports_uqs[] 的 ID 在 10 号文件里写全，再把 c1..c8 八条替换成单条分线占用率比较。"
+    },
+    {
+      "value_id": "param.e06_other_lines_value_cap_uu",
+      "binds_to": "（不直接绑定某条触发；是 c1 阈值推导中的扣除项）",
+      "value": 1000006997,
+      "unit": "μU",
+      "source_type": "derived",
+      "derivation_expr": "UU_PER_UQS = idiv_floor(JWUnits.BASE_PRICE, JWUnits.Q_SCALE) = 1000；(UU_PER_UQS * delivery_capacity_uqs[agri] + (UU_PER_UQS - 1)) + (UU_PER_UQS * delivery_capacity_uqs[energy] + (UU_PER_UQS - 1)) + (mul_ppm(UU_PER_UQS, 5000000) - 1) = (1000 * 400000 + 999) + (1000 * 600000 + 999) + (5000 - 1) = 400000999 + 600000999 + 4999 = 1000006997。前两项的 +999 是 qty = mul_div_floor(value, 1e6, p) 的向下取整松弛（同一 qty 最多对应 999 μU 的多付）；第三项是服务线：c5 使 qty_services = 0，但价格没有上限条件，只能用 12 号 §01.7 的钳位上界 import_price_ppm ≤ 5 000 000 得 value_services ≤ 4999。",
+      "source_ref": "剧本 scenario.json world_init.delivery_capacity_uqs；12 号 §04.4「import_equipment -> agent.row（同时增 flow.world.imports_uu / imports_uqs）」；12 号 §01.7 import_price_ppm 钳位区间 [100 000, 5 000 000]；INV-104",
+      "reference_year": 0,
+      "definition": "制造品之外三条进口线在本季最多能占掉的进口支出（μU）。它是把「全国进口支出合计」还原成「制造品线进口支出下界」时必须扣掉的松弛量。",
+      "valid_range": [
+        0,
+        3400007996
+      ],
+      "confidence": "low",
+      "calibration_note": "这是本判据精度的全部代价：因为只有全国合计额、没有分线量，制造品线的下界必须先让出 1 000 006 997 μU。其中 1 000 000 000 μU 是农业与能源两条线的真实能力折价，剩下的 6 997 μU 全部是整数取整与价格钳位带来的纯松弛——留着它们比把数字凑整要紧，凑整会让下界证明从「必然成立」降级成「多半成立」。剧本调高农业或能源进口线能力时本值与阈值必须同步重算，否则下界证明失效。补上分线量 flow.world.imports_uqs[] 后本取值应整条作废。"
+    },
+    {
+      "value_id": "param.e06_delivery_capacity_reference_uqs",
+      "binds_to": "trigger.all_of[1].value",
+      "value": 2400000,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 scenario.json：world_init.delivery_capacity_uqs[sector.manu] = 2400000；计划书 §07「进口还受交付能力与外部信用额度约束」",
+      "reference_year": 0,
+      "definition": "制造品进口线交付能力的参照上限（μQ_manu/季）；触发条件 c2 要求当季能力不高于此值，它同时是占用率的分母上界。按基年价折算，它对应 1000 × 2 400 000 = 2 400 000 000 μU 的进口支出。",
+      "valid_range": [
+        1,
+        100000000
+      ],
+      "confidence": "low",
+      "calibration_note": "这是剧本基年值的镜像，存在的目的是让占用率下界可证明。剧本改这个数而本卡不改，V-PC 校验应报 E_PARAM_STALE 类错误（与 IOTable 的 param.io_table_set 同思路）。不要为了让事件更容易触发而单独下调本值——那会破坏它与剧本的一致性；分母变小只会让证明出的占用率下界更高，不会更低。"
+    },
+    {
+      "value_id": "param.e06_agri_capacity_reference_uqs",
+      "binds_to": "trigger.all_of[2].value",
+      "value": 400000,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 scenario.json：world_init.delivery_capacity_uqs[sector.agri] = 400000",
+      "reference_year": 0,
+      "definition": "农产品进口线交付能力的参照上限；触发条件 c3 要求当季能力不高于此值，用于把该线的进口支出从全国合计中扣除。",
+      "valid_range": [
+        0,
+        100000000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须与剧本基年值一致；调高它就必须同步调高 param.e06_other_lines_value_cap_uu 与阈值，否则下界证明不成立（会把别的线的进口额算成制造品线的）。"
+    },
+    {
+      "value_id": "param.e06_energy_capacity_reference_uqs",
+      "binds_to": "trigger.all_of[3].value",
+      "value": 600000,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 scenario.json：world_init.delivery_capacity_uqs[sector.energy] = 600000",
+      "reference_year": 0,
+      "definition": "能源进口线交付能力的参照上限；触发条件 c4 要求当季能力不高于此值，用途同 c3。",
+      "valid_range": [
+        0,
+        100000000
+      ],
+      "confidence": "low",
+      "calibration_note": "同 param.e06_agri_capacity_reference_uqs：它只是剧本值的镜像，任何改动必须整组重算。"
+    },
+    {
+      "value_id": "param.e06_services_capacity_reference_uqs",
+      "binds_to": "trigger.all_of[4].value",
+      "value": 0,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 scenario.json：world_init.delivery_capacity_uqs[sector.services] = 0；计划书 §06「服务不可库存」，首版服务无跨境交付通路",
+      "reference_year": 0,
+      "definition": "服务进口线交付能力的参照上限；触发条件 c5 要求当季能力为 0，因而该线本季进口支出必为 0，不占用扣除额。",
+      "valid_range": [
+        0,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "valid_range 故意锁死为 [0, 0]：一旦剧本给服务线开出正的交付能力，本条件就不再能把该线的到货量判为 0，整个下界证明需要重写而不是改参数。想放开必须先改证明。注意即使能力为 0，服务线仍在 param.e06_other_lines_value_cap_uu 里占了 4 999 μU 的取整／钳位松弛，那是价格钳位上界带来的，不是它真能进口什么。"
+    },
+    {
+      "value_id": "param.e06_import_price_ceiling_ppm",
+      "binds_to": "trigger.all_of[5].value / all_of[6].value / all_of[7].value",
+      "value": 1000000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 scenario.json：world_init.import_price_ppm 四项均为 1000000（基年）；12 号 §01.7 冲击写 state.world.import_price_ppm 并钳位在 [100 000, 5 000 000]；11 号 §5.1 价格后缀 _uu_per_qs 基年 = 1 000 000 000 μU/Q_s（裁定 R-SCALE-01）",
+      "reference_year": 0,
+      "definition": "触发条件 c6..c8 对进口价格指数的上限。它锁住 μU 与 μQ_s 之间的换算率：import_price_ppm[s] ≤ 1 000 000 等价于单价 p_s = mul_ppm(1 000 000 000, import_price_ppm[s]) ≤ 1 000 000 000 μU/Q_s，即 1 μQ_s 不超过 1 000 μU。只有在这个上限下，「支出额 ÷ 1 000 不高于到货量」与「到货量 × 1 000 + 999 不低于支出额」两个方向的换算才同时成立，全国合计支出才能被当成分线到货量的下界使用。",
+      "valid_range": [
+        1,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值不是调节旋钮，它是换算成立的充分条件。R-SCALE-01 之后 μU 与 μQ_s 不再同刻度，换算率是 1 000 而不是 1：价格指数高于 1 000 000 会让 1 μQ_s 的支出超过 1 000 μU，步骤 4 的 idiv_floor(value_manu, 1000) 不再是到货量的下界，证明直接失效。代价必须如实登记：shock.S02（进口价格上涨）期间本事件不再触发——这个方向是保守的（宁可漏报，不可谎报），但也意味着「价格涨 + 量顶格」这种最难受的组合首版讲不出来。补上 flow.world.imports_uqs[] 后本取值连同 c6..c8 一并作废。"
+    },
+    {
+      "value_id": "param.e06_utilization_floor_ppm",
+      "binds_to": "（不直接绑定某条触发；是 c1 阈值推导中的占用率下界）",
+      "value": 900000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「不能仅靠外汇充足标签无限采购」；§09 P08「进口设备与外部需求，不能自造订单」",
+      "reference_year": 0,
+      "definition": "判定为拥堵的制造品进口线交付能力占用率下界（90%）。",
+      "valid_range": [
+        500000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "90% 是一个惯例阈值，不是实测结论。校准方式：在 G1 的 40 季无命令基线里统计该占用率的分布；若基线本身长期在 90% 以上，说明剧本的交付能力对基年在建工程设得太紧，应先查剧本初值，再考虑上调本值到 95%。下调本值会让事件在正常季度刷屏。本值改动后 param.e06_import_value_threshold_uu 必须按 derivation_expr 重算。"
+    },
+    {
+      "value_id": "param.e06_port_capacity_relief_uqs",
+      "binds_to": "trigger.all_of[8].value",
+      "value": 3000000,
+      "unit": "μQ_s/q",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 content/scenarios/chengwan/regions.json：region.haijia 的 port_capacity_uqs_per_q；计划书 §09 P08「设备与通行能力投资」",
+      "reference_year": 0,
+      "definition": "海岬港口通行能力的解除阈值：达到或超过此值后本事件不再触发。",
+      "valid_range": [
+        1,
+        100000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值必须严格大于剧本基年值，否则事件从第一季起就被自己关掉——载入期应有一条断言把它和 regions.json 的基年值绑定核对。P08 的 effect.capacity_delta_uqs_per_q 定稿后，本值应设为「一次最小规模扩建即可跨过」的水平，使玩家的投资有可见回报；若 P08 单次增量远大于该差额，本值可上调，但必须同时说明玩家要花多少钱才买得到这次沉默。"
+    },
+    {
+      "value_id": "param.e06_trigger_earliest_q",
+      "binds_to": "trigger.all_of[9].value",
+      "value": 2,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §04「新手前四季」：第 1—2 季用于认识简报与建设时滞，不适合再叠一层外部约束",
+      "reference_year": 0,
+      "definition": "本事件最早可触发的季度索引（q ≥ 2，即基年第 3 季）。",
+      "valid_range": [
+        0,
+        39
+      ],
+      "confidence": "low",
+      "calibration_note": "q=0、q=1 的进口量主要来自剧本预置的在建工程与基年计划，此时报拥堵会把「基年本来就这样」误报成「出问题了」。若试玩显示玩家在第 3 季看到本事件仍不明白交付与施工是两条进度条，应先改报告措辞，再考虑推迟本值。"
+    },
+    {
+      "value_id": "param.e06_expectation_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -30000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「至少区分当期生活、未来预期与程序信任」；§04「辨认不可逆成本与未来运行负担」",
+      "reference_year": 0,
+      "definition": "触发时写入海岬各群组 state.group.expectation_ppm 的一次性增量（−3.0 个百分点）。",
+      "valid_range": [
+        -200000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "略小于 E05 的 −35000：交付延迟是工期问题，不是「学了没用」那种结构性落空。若海岬同时遭遇限电与拥堵而支持度断崖，先查两个事件是否在同季叠加（两者冷却不同步），再考虑下调本值。"
+    },
+    {
+      "value_id": "param.e06_trust_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": -8000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "12 号 §8「程序信任只受承诺兑现与否驱动」；INV-122",
+      "reference_year": 0,
+      "definition": "触发时写入海岬各群组 state.group.trust_ppm 的一次性增量（−0.8 个百分点）。",
+      "valid_range": [
+        -100000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "取 E05 的三分之二：公布的完工期被推迟，属于「兑现延后」而非「兑现失败」。前置条件是本事件被登记进 12 号 §8 的失信事件闭集合；未登记则删除对应 effect，不要保留一个没有规则支撑的信任扣分。"
+    },
+    {
+      "value_id": "param.e06_org_power_delta_ppm",
+      "binds_to": "effects[2].delta_ppm",
+      "value": 25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「工商业联盟影响投资意愿与改革阻力」；世界银行 WDR 2017 [4]",
+      "reference_year": 0,
+      "definition": "触发时写入 bloc.business 的 state.bloc.org_power_ppm 一次性增量。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "略大于 E05 给劳动联盟的 18 000：运输是工商业联盟的核心议题，动员成本更低。S08 的惯性项会在 3—4 季内拉回。若组织力在 40 季内被事件推到饱和，先查 param.bloc_org_inertia_ppm。"
+    },
+    {
+      "value_id": "param.e06_stance_delta_ppm",
+      "binds_to": "effects[3].delta_ppm",
+      "value": 90000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P08「港口与物流升级」；§08「集团反对某政策不会自动等同于反对政府的一切」",
+      "reference_year": 0,
+      "definition": "触发时写入 state.bloc.stance_ppm[bloc.business][policy.P08] 的一次性增量。",
+      "valid_range": [
+        0,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "立场上升只降低 P08 的政治阻力，不给任何经济折扣。若三次触发后 P08 变成必然通过、玩家不再需要权衡，说明本值过大或 legal_authority.min_seats_ppm 过低，先查权限门槛。"
+    },
+    {
+      "value_id": "param.e06_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 800000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §12「事件由状态条件触发」；11 号 §5.13 V-EV-07",
+      "reference_year": 0,
+      "definition": "十条触发条件全部成立后本季实际触发的概率（80%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "高于 E05 的 70%：拥堵是玩家必须尽早知道的工期风险，漏报的代价大于重复提醒。抽样只能否定、不能肯定。鉴于本版触发条件已经比设计意图更严（见 param.e06_other_lines_value_cap_uu），若试玩显示玩家被延迟打个措手不及，先把本值直接置 1 000 000，再谈改条件。"
+    },
+    {
+      "value_id": "param.e06_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P08「6—10 季」；§17「被忽视的警告」",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        0,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "四季约等于玩家做出一次投资决定到看见第一笔交付变化的最短周期。若玩家在冷却期内已经启动 P08 却仍被再次提醒，应把「已有在建港口项目」加进触发条件，而不是拉长冷却。"
+    },
+    {
+      "value_id": "param.e06_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 4,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §03「12 个条件触发模板」；§17 试玩记录",
+      "reference_year": 0,
+      "definition": "整局中本事件的最大触发次数。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "比 E05 多一次：拥堵会随外部冲击反复出现，且每次的在建项目组合不同，重复提醒的信息量不为零。次数用尽后外部账户页与项目台账仍可查。"
+    }
+  ],
+  "report_template_id": "tpl.event.e06_port_congestion_import_delay",
+  "_note_code": "E06",
+  "_note_slug": "port_congestion_import_delay",
+  "_note_name_zh": "港口拥堵与进口设备延迟",
+  "_note_name_zh_rule": "name_zh 必须与 label_zh 逐字相同；原稿把二者并列在顶层，现只保留契约声明的 label_zh，另一份作为注释保留，防止两处文案漂移。",
+  "_note_one_line_zh": "制造品进口线的每季交付能力被吃到九成以上，而海岬港口尚未扩建——所有在建项目的设备到货挤在同一个上限里排队，付了钱也换不来交付进度。",
+  "_note_trigger_detail": {
+    "utilization_proof_zh": "任务要求的判据是「制造品进口交付能力占用率 ≥ 90%」。但 trigger 只有 metric-op-常量 的比较，没有表达式求值器（V-EV-03），模型里也不存在占用率这个派生量，而且**分线到货量 flow.world.imports_uqs 的 ID 在 10 号文件里取不到**（见 _note_metric_id_fix），只剩一个全国合计的金额量 flow.world.imports_uu。因此本文件用十条可求值的比较重建了一个可证明的下界。\n记 qty_s 为第 s 条进口线本季到货量（μQ_s），value_s 为其本季进口支出（μU），cap_s 为其交付能力（μQ_s），p_s 为进口单价 = mul_ppm(content.price.base_uu_per_qs[s] = 1 000 000 000, state.world.import_price_ppm[s])，单位 μU/Q_s。\n步骤 0（刻度）：裁定 R-SCALE-01 之后 1 U = 1 000 000 000 μU，而 1 Q_s 仍是 1 000 000 μQ_s，两者**不再同刻度**：基年价下 1 μQ_s 值 UU_PER_UQS = idiv_floor(1 000 000 000, 1 000 000) = 1 000 μU。下面每一步都必须带着这个 1 000 倍；旧稿把 value 与 qty 直接比大小，那只在旧刻度（1 U = 1e6 μU）下成立。\n步骤 1（换算的两个方向）：12 号 §04.4 规定 import_equipment 分项先有 μU 付款、同一笔交易同时增 imports_uu 与 imports_uqs，故 qty_s = mul_div_floor(value_s, 1 000 000, p_s)。当 import_price_ppm[s] ≤ 1 000 000 时 p_s ≤ 1 000 000 000，于是：\n  (a) 下界方向：qty_s ≥ idiv_floor(value_s × 1 000 000, 1 000 000 000) = idiv_floor(value_s, 1 000)；\n  (b) 上界方向：由 floor(x) > x − 1 得 value_s × 1 000 000 / p_s < qty_s + 1，即 value_s < (qty_s + 1) × p_s / 1 000 000 ≤ (qty_s + 1) × 1 000，整数化为 value_s ≤ 1 000 × qty_s + 999。这个 999 是向下取整的松弛，必须真的留在证明里，不能抹掉。\n步骤 2（其它三条线的支出上界）：由 INV-104 有 qty_s ≤ cap_s。c3/c4 把 cap_agri、cap_energy 钉在 400 000 / 600 000 μQ_s，c6/c8 把这两条线的价格钉在 ≤ 1 000 000 ppm，代入步骤 1(b)：value_agri ≤ 1 000 × 400 000 + 999 = 400 000 999 μU，value_energy ≤ 1 000 × 600 000 + 999 = 600 000 999 μU。c5 把 cap_services 钉为 0，故 qty_services = 0；服务线没有价格条件，只能用 12 号 §01.7 的钳位上界 import_price_ppm ≤ 5 000 000（即 p_services ≤ 5 000 000 000 μU/Q_s）代入步骤 1(b)：value_services < (0 + 1) × 5 000 000 000 / 1 000 000 = 5 000，即 ≤ 4 999 μU。三者合计 ≤ 400 000 999 + 600 000 999 + 4 999 = 1 000 006 997 μU = param.e06_other_lines_value_cap_uu。\n步骤 3（制造品线支出下界）：c1 给出 Σ_s value_s = flow.world.imports_uu ≥ 3 160 006 997 μU，于是 value_manu ≥ 3 160 006 997 − 1 000 006 997 = 2 160 000 000 μU。\n步骤 4（回到数量）：c7 使 p_manu ≤ 1 000 000 000，代入步骤 1(a)：qty_manu ≥ idiv_floor(2 160 000 000, 1 000) = 2 160 000 μQ_manu。\n步骤 5（占用率）：c2 使 cap_manu ≤ 2 400 000 μQ_manu，故占用率 = idiv_floor(qty_manu × 1 000 000, cap_manu) ≥ idiv_floor(2 160 000 × 1 000 000, 2 400 000) = 900 000 ppm = 90%。\n这是一个下界证明，不是近似：十条条件同时成立时占用率必然不低于 90%。全程只用 idiv_floor / mul_div_floor / mul_ppm 三个整数入口，没有任何中间量超过 2 160 000 × 1 000 000 = 2.16e12 < INT64_MAX。",
+    "proof_dependency_zh": "步骤 3 依赖两条必须写明的前提。\n前提一：flow.world.imports_uu 恰好等于四条部门进口线支出之和，不存在第五类进口科目。12 号 §04.4（import_equipment -> agent.row 同时增 imports_uu / imports_uqs）与 §9 支出法分解（M = flow.world.imports_uu）与之一致。若将来新增不落在部门线上的进口支出，本事件的阈值必须重算，否则下界失效。\n前提二（步骤 1 的前提）：同一条线的 value_s 与 qty_s 由同一笔交易按 §04.4 同步登记，不存在「只增 imports_uu 而不增 imports_uqs」的路径——否则 INV-104 的 qty_s ≤ cap_s 就不再能反过来给 value_s 封顶，步骤 2 整段作废。§04.4 的括号注「同时增」正是这条，但它写在一行注释里，没有不变量编号。\n两条前提都已上报，建议在 10 号文件里各写成一条不变量。",
+    "cost_of_this_encoding_zh": "诚实登记代价三项：(1) 因为只有全国合计额，制造品线的下界必须先让出 1 000 006 997 μU 的松弛（其中 1 000 000 000 μU 是农业与能源两条线的真实能力折价，6 997 μU 是取整与价格钳位的纯松弛），触发条件比设计意图**更严**——会漏报、不会谎报；(2) 进口价格一旦高于基年（shock.S02 上行）本事件立即静默，而那恰恰是进口最难受的时候；(3) 农业与能源两条线的能力被钉死在基年值，剧本调它们就必须整组重算参数。三项都指向同一个正确的长期解法：把 flow.world.imports_uqs[] 的稳定 ID 在 10 号文件里写全（它已被 INV-104 使用），或新增 derived.world.delivery_utilization_ppm，然后把 c1..c8 八条压回成一条分线占用率比较。",
+    "feasibility_zh": "这不是一条恒假条件。基年价下取 qty = [400 000, 2 400 000, 600 000, 0] μQ_s、四条价格均为 1 000 000 ppm，各线支出 value_s = 1 000 × cap_s，合计 imports_uu = 1 000 × 3 400 000 = 3 400 000 000 μU，高于阈值 3 160 006 997 μU，余量 239 993 003 μU，且此时 c2..c10 全部成立。把取整松弛也算进来，imports_uu 的物理上限是 3 400 007 996 μU（= param 卡 valid_range 的上界）。",
+    "conditions": [
+      {
+        "ref": "c1",
+        "metric": "flow.world.imports_uu",
+        "op": "ge",
+        "value": 3160006997,
+        "param_ref": "param.e06_import_value_threshold_uu",
+        "why_zh": "本季全部进口支出合计（μU）。它是 12 号 §04.4 的 import_equipment 等分项付款的双边入账结果，已经被 INV-104 的交付上限截断过；它贴近上限，正意味着还有订单没排上。阈值 3 160 006 997 μU 是 R-SCALE-01 新刻度下的值（旧刻度 1 U = 1e6 μU 时的写法是 3 160 000，那个数在本刻度下等于 3.16 U 的千分之一，会让这条触发几乎每季成立）。"
+      },
+      {
+        "ref": "c2",
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.manu",
+        "op": "le",
+        "value": 2400000,
+        "param_ref": "param.e06_delivery_capacity_reference_uqs",
+        "why_zh": "制造品进口线的每季交付能力，剧本基年值 2 400 000 μQ_manu/季。它是占用率的分母上界。shock.S03 与外部供给变化可以下调它，那时占用率下界只会更高，事件更该出现。"
+      },
+      {
+        "ref": "c3",
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.agri",
+        "op": "le",
+        "value": 400000,
+        "param_ref": "param.e06_agri_capacity_reference_uqs",
+        "why_zh": "农产品进口线能力上限，用于给该线的本季支出封顶，从全国合计里扣掉。"
+      },
+      {
+        "ref": "c4",
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.energy",
+        "op": "le",
+        "value": 600000,
+        "param_ref": "param.e06_energy_capacity_reference_uqs",
+        "why_zh": "能源进口线能力上限，用途同 c3。"
+      },
+      {
+        "ref": "c5",
+        "metric": "state.world.delivery_capacity_uqs",
+        "scope": "sector.services",
+        "op": "le",
+        "value": 0,
+        "param_ref": "param.e06_services_capacity_reference_uqs",
+        "why_zh": "服务进口线能力为 0，故该线本季到货量必为 0。注意它的支出**不是**严格为 0：没有价格条件时只能用 12 号 §01.7 的价格钳位上界把它封在 4 999 μU 以内，这笔松弛已计入 param.e06_other_lines_value_cap_uu。这条同时是一道剧本一致性检查：服务线一旦被开出正能力，本事件的证明立即失效并被这条挡住。"
+      },
+      {
+        "ref": "c6",
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.agri",
+        "op": "le",
+        "value": 1000000,
+        "param_ref": "param.e06_import_price_ceiling_ppm",
+        "why_zh": "农产品进口价格不高于基年，使步骤 1(b) 的「支出 ≤ 1 000 × 到货量 + 999」成立。"
+      },
+      {
+        "ref": "c7",
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.manu",
+        "op": "le",
+        "value": 1000000,
+        "param_ref": "param.e06_import_price_ceiling_ppm",
+        "why_zh": "制造品进口价格不高于基年，使步骤 1(a) 的「到货量 ≥ idiv_floor(支出额, 1 000)」成立。这一条是价格与数量之间唯一的桥，缺它整条判据变成拿金额冒充数量——R-SCALE-01 之后金额与数量差 1 000 倍，冒充的后果比旧刻度下大三个数量级。"
+      },
+      {
+        "ref": "c8",
+        "metric": "state.world.import_price_ppm",
+        "scope": "sector.energy",
+        "op": "le",
+        "value": 1000000,
+        "param_ref": "param.e06_import_price_ceiling_ppm",
+        "why_zh": "能源进口价格不高于基年，使步骤 1(b) 对该线成立，用途同 c6。"
+      },
+      {
+        "ref": "c9",
+        "metric": "state.region.port_capacity_uqs_per_q",
+        "scope": "region.haijia",
+        "op": "lt",
+        "value": 3000000,
+        "param_ref": "param.e06_port_capacity_relief_uqs",
+        "why_zh": "海岬港口通行能力。这一条的作用是让事件在玩家真的把港口扩建到 3 000 000 以上之后自动停止出现——它表达的是「玩家尚未投资这条通路」，而不是物理因果。诚实说明：首版的进口结算公式（12 号 §5）只引用 world.delivery_capacity_uqs，港口能力还没有进入进口的截断链路，因此本条是一个可查、可清除的状态判据，不是当期物理瓶颈。这个缺口已上报。"
+      },
+      {
+        "ref": "c10",
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 2,
+        "param_ref": "param.e06_trigger_earliest_q",
+        "why_zh": "开局两季不谈拥堵。q=0、q=1 的进口量主要来自剧本预置的在建工程与基年计划，此时报拥堵会把「基年本来就这样」误报成「出问题了」。"
+      }
+    ],
+    "randomness_zh": "十条条件全部成立后才抽样一次，用 rng.event，写一条 log.rng。抽样只能让条件已成立的事件不发生。抽样值由 draw(rng.event, q, index) 计数器式给出（10 号 §10），与季度绑定、可重算，读档不会重抽出不同结果。",
+    "cooldown_and_cap_zh": "cooldown_q = 4、max_occurrences = 4。四季一次的节奏与 P04/P08 的工期量级（6—10 季）相称：玩家做出一次投资决定后，至少要一个建设周期才会看到交付形势变化，中间不该被同一条消息反复打断。"
+  },
+  "_note_evidence": [
+    {
+      "label_zh": "本季进口支出与各线交付上限",
+      "metric": "flow.world.imports_uu",
+      "stable_id": "flow.world.imports_uu",
+      "page": "国家总览 → 外部账户 → 进口交付",
+      "read_zh": "本季进口支出合计（μU），与 state.world.delivery_capacity_uqs 四项、state.world.import_price_ppm 四项并排显示。首版只有合计额是权威量，分线到货量在 10 号文件里尚未取得可解析的稳定 ID，界面上不得伪造一行「制造品到货量」。",
+      "check_zh": "imports_uqs[s] ≤ delivery_capacity_uqs[s] 逐季成立（INV-104），进口支出同时受买方现金与外部信用额度约束。"
+    },
+    {
+      "label_zh": "进口价格指数与基年价",
+      "metric": "state.world.import_price_ppm",
+      "stable_id": "state.world.import_price_ppm",
+      "page": "国家总览 → 外部账户",
+      "read_zh": "四条线的 import_price_ppm 与 content.price.base_uu_per_qs。它们决定同一笔 μU 支出能换回多少 μQ；本事件的判据只在价格不高于基年时成立，界面应把这一条件显示出来。",
+      "check_zh": "shock.S02（进口价格变化）只写 state.world.* 白名单字段（INV-108），不直接改国内账户。"
+    },
+    {
+      "label_zh": "各在建项目的交付进度",
+      "metric": "state.project.delivery_progress_ppm",
+      "stable_id": "state.project.delivery_progress_ppm",
+      "page": "政策工作台 → 项目台账 → 逐项目",
+      "read_zh": "每个项目的交付进度、所需设备总量、本季实际到货量，以及施工进度。交付与施工是两条独立的进度条。",
+      "check_zh": "交付进度增量只由实际到货量决定（INV-089）；付款不制造交付进度，也不制造施工进度（INV-087）。"
+    },
+    {
+      "label_zh": "项目中断原因",
+      "metric": "state.project.suspension_reason",
+      "stable_id": "state.project.suspension_reason",
+      "page": "政策工作台 → 项目台账 → 状态",
+      "read_zh": "原因码取值 none|financing|delivery|congestion|fuel|no_demand。本事件对应的是 delivery。",
+      "check_zh": "原因码必须与实际发生的路径一致；玩家点进去要能看到是哪一季、差多少设备。"
+    },
+    {
+      "label_zh": "已付款与已签承诺",
+      "metric": "state.project.paid_uu",
+      "stable_id": "state.project.paid_uu",
+      "page": "财政页 → 项目合同 / 季度报告 → 已经发生",
+      "read_zh": "逐项目逐分项的已付金额，以及 gov.committed_memo_uu 里剩余的未来承诺。",
+      "check_zh": "付款只增 wip 与承包方现金（INV-092）；取消项目时已付款不返还、现金不增加（INV-093）。这是「钱花了、货没到」这句话的账面依据。"
+    },
+    {
+      "label_zh": "港口通行能力",
+      "metric": "state.region.port_capacity_uqs_per_q",
+      "stable_id": "state.region.port_capacity_uqs_per_q",
+      "page": "地区页面 → 海岬 → 基础设施",
+      "read_zh": "当前值与 pending 值。P08 完工后写 pending，下一季 S01 才转入在用（INV-091）。",
+      "check_zh": "首版该量尚未进入进口截断公式，报告中必须写明这一点，不得暗示扩港当季就能提高到货量。"
+    },
+    {
+      "label_zh": "外部信用额度",
+      "metric": "state.world.credit_used_uu",
+      "stable_id": "state.world.credit_used_uu",
+      "page": "国家总览 → 外部账户",
+      "read_zh": "credit_used_uu / credit_limit_uu。用来区分「买不到」与「买不起」：额度未用满而到货贴着上限，问题在交付能力；额度用满，问题在融资。",
+      "check_zh": "credit_used_uu ∈ [0, credit_limit_uu]（INV-034）；shock.S03 收紧的是 limit，不是已用额。"
+    }
+  ],
+  "_note_player_options": [
+    {
+      "option_id": "E06.O0",
+      "label_zh": "什么都不做",
+      "implemented_as": "不发任何命令",
+      "cost_zh": "直接成本 0。但在建项目的合同款按履约进度继续发生，gov.committed_memo_uu 不会因为货没到就减少。",
+      "preconditions_zh": "无。这个选项永远可用。",
+      "lag_q": 0,
+      "failure_modes_zh": "没有失败路径，只有后果：交付进度按上限逐季爬升，P04 这类「第 8 季交付齐全」的项目会错过完工条件，停在未投运状态；运行费承诺已经登记但服务能力还没出现。冷却结束后本事件可再触发（最多 4 次）。",
+      "political_reaction_zh": "工商业联盟组织力继续上升；海岬群组预期继续下滑。若同期还有限电问题，海岬会成为支持度流失最快的地区。",
+      "consequence_zh": "不作为在这里是一个真实可选项：如果在建项目本来就不急，让它们排队比再开一个项目更省钱。代价是工期不可控。"
+    },
+    {
+      "option_id": "E06.O1",
+      "label_zh": "启动港口与物流升级（P08）",
+      "implemented_as": "project_launch { policy_id: policy.P08, region_id: region.haijia, scale_ppm, funding_source }",
+      "cost_zh": "按 P08 的 cost.one_off_uu 与 per_quarter_uu 计；签约当季即占用 committed_memo，并占用海岬的一个施工槽位。",
+      "preconditions_zh": "海岬有空闲施工槽位；资金来源已声明且可预留（INV-033）；法定权限位已获得；预算审查窗口（q ≡ 3 mod 4）如政策定义要求。",
+      "lag_q": 7,
+      "lag_note_zh": "P08 工期 6—10 季，完工写 port_capacity_pending，下一季 S01 转入在用（INV-091）。",
+      "failure_modes_zh": "(a) 自指拥堵：P08 自己要进口港口设备，会和其它项目抢同一条 2 400 000 μQ/季的交付线，在拥堵期启动扩港反而让所有项目一起变慢；(b) 施工拥堵：海岬施工槽位有限，超出者 suspended(congestion)，不是静默排队（INV-094）；(c) 融资中断；(d) 计划书 §09 明写的「不能自造订单」——港口能力提高不保证外部需求存在。",
+      "political_reaction_zh": "工商业联盟立场显著上升；若资金来源是发债，债务/GDP 与未来四季到期本金同步上升，可能把 event.E07 的触发条件推近。",
+      "consequence_zh": "这是唯一能提高 port_capacity 的路径，但要诚实提醒玩家：首版的进口到货量由 world.delivery_capacity_uqs 截断，扩港改善的是本地通行能力与 P08 自身的机制链路，不等于当季就能多进设备。"
+    },
+    {
+      "option_id": "E06.O2",
+      "label_zh": "给在建项目排序：延期让路",
+      "implemented_as": "project_defer { project_id, quarters }",
+      "cost_zh": "无新增现金支出，但合同延期按各政策 exit_rule 的条款处理；被延期项目的运行费承诺与完工期同步后移。",
+      "preconditions_zh": "合同允许延期；项目存在且未完工。",
+      "lag_q": 1,
+      "failure_modes_zh": "(a) 延期不释放交付能力给别人，只是自己不再下单——如果同期没有其他项目在等设备，这一步什么也没换来；(b) 被延期项目的沉没成本已经发生，延期不退款；(c) 若延期的是电网项目，供电约束会在更长时间里卡住制造业，问题从交付转移到能源。",
+      "political_reaction_zh": "被延期项目所在地区的群组预期下降；工商业联盟对被延期政策的立场下降。",
+      "consequence_zh": "这是最便宜的选项，也是最诚实的选项：承认交付能力是稀缺的，主动决定谁先谁后，而不是让上限替你决定。"
+    },
+    {
+      "option_id": "E06.O3",
+      "label_zh": "取消一个项目，收回槽位与订单",
+      "implemented_as": "project_cancel { project_id }",
+      "cost_zh": "penalty = mul_ppm(剩余合同额, exit_rule.compensation_ppm)，立即以 kind = cancel_penalty 付给承包方；committed_memo 减去剩余合同额；释放施工槽位。",
+      "preconditions_zh": "项目存在且未完工。",
+      "lag_q": 0,
+      "failure_modes_zh": "(a) 已付款不返还、现金不增加（INV-093）——取消换不回钱，只换回未来的承诺额度与一个槽位；(b) 未完工工程只登记残值，超出残值的 wip 确认为损失，政府净值下降；(c) 若取消的项目本来就快完工，等于把已经花掉的钱全部变成残值。",
+      "political_reaction_zh": "承包方所属部门的经营现金减少；工商业联盟对政策可预期性的评价下降（这是它四项关心内容之一），组织力上升而立场下降。",
+      "consequence_zh": "唯一能立刻减少设备订单需求的选项，代价是不可逆的沉没成本与政治可信度。它存在的意义是让玩家明白：预算不是资产，签约即占用未来。"
+    }
+  ],
+  "_note_political_reaction": {
+    "blocs": [
+      {
+        "bloc_id": "bloc.business",
+        "label_zh": "工商业联盟",
+        "direction": "组织力上升、对 P08 的立场明显上升",
+        "magnitude_ppm": {
+          "org_power": 25000,
+          "stance_on_p08": 90000
+        },
+        "basis_zh": "计划书 §08 明列该联盟关心「能源、运输、利润与政策可预期性」。交付拥堵同时命中运输与可预期性两项，是它最容易组织协商的议题。它的立场上升不等于选票上升——stance 影响改革可行性，不直接进 support（12 号 §8.3）。",
+        "evidence_used_zh": "flow.world.imports_uu 贴近四条线交付能力的合计上限；state.project.suspension_reason == delivery。"
+      },
+      {
+        "bloc_id": "bloc.labor_public",
+        "label_zh": "劳动与公共服务联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "交付延迟本身不减少就业、不拖欠工资、不降低服务可用率——它只是让新增能力来得更晚。若玩家用削减转移支付的办法给 P08 找钱，该联盟的反应会由那条预算命令产生，而不是由本事件产生。不给每个集团都编一个反应，是为了避免计划书 §09 的伪深度。",
+        "evidence_used_zh": "无。"
+      },
+      {
+        "bloc_id": "bloc.agri_coop",
+        "label_zh": "农业合作联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "农产品进口线在本判据里只作为扣除项出现，拥堵落在制造品线上。若玩家把港口预算挤占灌溉预算，反应经 P07 的立场通道产生。",
+        "evidence_used_zh": "无。"
+      }
+    ],
+    "groups": [
+      {
+        "scope": "group.haijia.working.mid 与 group.haijia.working.high",
+        "direction": "预期下降、信任小幅下降",
+        "basis_zh": "海岬的优势是港口与制造业区位，开局约束是电网可靠性不足与设备依赖进口（计划书 §05）。这两档劳动力的收入前景与制造业扩产直接相关，交付延迟意味着扩产被推迟。"
+      },
+      {
+        "scope": "group.haijia.* 全部 9 组",
+        "direction": "按同一 delta 写入预期与信任",
+        "basis_zh": "首版按地区统一写入，不做分档差异化。分档差异需要证据支撑，现在没有；编一个差异系数属于无依据的自创机制。分布仍然逐组保留，报告展示分布而不只展示地区平均（INV-124）。"
+      }
+    ],
+    "no_support_write_zh": "本事件不直接写 state.group.support_ppm，让支持度变动保留生活／预期／信任三项的来源分解（INV-123）。"
+  },
+  "_note_copy": {
+    "headline_zh": "海岬：设备在港外排队，工程在图纸上等着",
+    "accounted_zh": "本季进口支出合计 {imports_uu} μU。四条进口线本季交付能力上限分别为 {delivery_capacity_uqs} μQ/季，进口价格指数分别为 {import_price_ppm} ppm（基年 = 1 000 000）。海岬港口通行能力 {port_capacity_uqs_per_q} μQ/季。外部信用额度已用 {credit_used_uu} μU。在建项目中有 {delayed_project_count} 项的中断原因码为「交付」，这些项目至今已付款 {paid_uu} μU，已签未来承诺 {committed_memo_uu} μU。以上为本季外部账户与项目台账的精确加总，可逐笔下钻。",
+    "inferred_zh": "模型中的限制因素：在上述进口支出、各线交付上限与进口价格同时成立的条件下，可以推出本季制造品进口线的到货量至少达到其交付能力的 {utilization_note} ppm（推导：扣除其余三条线在本季最多可能占用的支出后，余下的支出全部落在制造品线上；而进口价格不高于基年，意味着每 1 000 μU 支出至少换回 1 μQ 到货——基年价是 1 000 000 000 μU/Q_s，即 1 μQ_s 值 1 000 μU）。在这一约束下，各项目的设备到货按已订量与剩余交付能力的较小值分配，交付进度的增量只由实际到货量决定，与已付款额没有函数关系。交付进度不足 100% 时，项目不满足完工条件，因而不会投运，也不会提供新增能力。此处不把交付、施工、融资三项瓶颈的影响相加。",
+    "projected_zh": "情景预测（假设：不追加任何命令、各线交付能力与进口价格维持本季水平、在建项目订单不变）：按当前到货速率，进度最落后的项目预计还需若干季才能达到交付齐全。不利条件情景另设一条：若外部供给或价格发生不利变化，到货速率会进一步下降。两条预览均由同一套结算规则跑四季只读副本得出，不宣称识别真实世界的因果关系。",
+    "wording_rules_zh": "第一段只报本季已发生的量与账；第二段只用「模型中的限制因素」「在这一约束下」「可以推出」，禁止「导致」「因为」；第三段先写假设后写结论。三条特别注意：(1) 不得写「港口拥堵导致设备延迟」——首版的进口截断只引用交付能力，港口能力尚未进入该公式，这样写会对玩家撒谎，正确写法是分别陈述两个可查事实；(2) 第二段的占用率是**推出的下界**，不是实测值，措辞必须是「至少达到」，不得写成「等于」或「已达」；(3) 首版没有可读的分线到货量，界面上不得凭 imports_uu 除以价格再编一个「制造品到货量」数字充当实测。",
+    "placeholders": [
+      {
+        "key": "imports_uu",
+        "source": "flow.world.imports_uu",
+        "type": "int"
+      },
+      {
+        "key": "delivery_capacity_uqs",
+        "source": "state.world.delivery_capacity_uqs",
+        "type": "int"
+      },
+      {
+        "key": "import_price_ppm",
+        "source": "state.world.import_price_ppm",
+        "type": "int"
+      },
+      {
+        "key": "port_capacity_uqs_per_q",
+        "source": "state.region.port_capacity_uqs_per_q",
+        "type": "int"
+      },
+      {
+        "key": "credit_used_uu",
+        "source": "state.world.credit_used_uu",
+        "type": "int"
+      },
+      {
+        "key": "delayed_project_count",
+        "source": "state.project.suspension_reason",
+        "type": "int"
+      },
+      {
+        "key": "paid_uu",
+        "source": "state.project.paid_uu",
+        "type": "int"
+      },
+      {
+        "key": "committed_memo_uu",
+        "source": "state.gov.committed_memo_uu",
+        "type": "int"
+      },
+      {
+        "key": "utilization_note",
+        "source": "param.e06_utilization_floor_ppm",
+        "type": "int"
+      }
+    ],
+    "_note_placeholders": "模板只支持整数与 ID 两种插值（OQ-235）。delivery_capacity_uqs 与 import_price_ppm 是 4 长数组，模板需按部门下标逐项展开成四个整数，不得先求和再插值。utilization_note 插的是 _note_parameters 里 param.e06_utilization_floor_ppm 的下界常量 900 000 ppm，而不是一个运行期计算的占用率——因为该派生量在首版不存在。imports_uu / paid_uu / committed_memo_uu 三个占位符都是 μU（1 U = 1 000 000 000 μU，裁定 R-SCALE-01），界面换算成 U 时只能整除展示或标注小数位由 UI 层负责，模板本身不做除法。若将来新增 derived.world.delivery_utilization_ppm，这里应改插实测值，并把 wording_rules 第 (2) 条从「至少达到」放宽为「等于」。"
+  },
+  "_note_acceptance_tests": [
+    {
+      "test_id": "T-S-E06-NO-FIRE-WHEN-COND-FALSE",
+      "kind": "scenario",
+      "purpose_zh": "条件不满足时绝不触发。",
+      "given_zh": "构造五个夹具，每个只让一条触发条件不成立：(1) 本季进口支出 3 160 006 996 μU（阈值减 1）；(2) 制造品线交付能力被冲击抬到 2 400 001 μQ_manu；(3) 制造品进口价格指数被 shock.S02 抬到 1 000 001 ppm；(4) 海岬港口能力已扩至 3 000 000 μQ_s/季；(5) q = 1。",
+      "when_zh": "各跑 12 季，probability_ppm 临时置 1 000 000。",
+      "then_zh": "五个夹具中 fire_count[E06] 恒为 0；expectation_ppm、trust_ppm、org_power_ppm、stance_ppm 相对空跑基线逐位不变。特别地，夹具 (4) 证明「玩家扩港后事件自动停止」，夹具 (2) 证明「能力充裕时不报拥堵」，夹具 (3) 证明「价格换算前提被破坏时宁可静默」。"
+    },
+    {
+      "test_id": "T-S-E06-UTILIZATION-LOWER-BOUND-HOLDS",
+      "kind": "scenario",
+      "purpose_zh": "触发时占用率下界必须真的成立，而不是写在文案里。",
+      "given_zh": "遍历若干组随机的 (qty_agri, qty_manu, qty_energy) 与四条 import_price_ppm 组合，按 12 号 §04.4 的口径算出各线 value_s 与 flow.world.imports_uu = Σ_s value_s。",
+      "when_zh": "筛出十条触发条件全部成立的那些组合。",
+      "then_zh": "逐组断言 idiv_floor(qty_manu × 1 000 000, delivery_capacity_uqs[manu]) ≥ 900 000。任何一组不成立即说明推导有误或结算口径与 _note_trigger_detail.utilization_proof_zh 不一致，必须先修判据再谈参数。同时断言非恒假：取 qty = [400 000, 2 400 000, 600 000, 0]、四条价格均为 1 000 000 ppm 时 imports_uu = 3 400 000 000 μU ≥ 3 160 006 997 μU，十条条件全部成立。"
+    },
+    {
+      "test_id": "T-S-E06-RELOAD-NO-REDRAW",
+      "kind": "scenario",
+      "purpose_zh": "重载存档不得重抽已确定事件。",
+      "given_zh": "固定命令流跑到某季 q*，该季 E06 条件全部成立。",
+      "when_zh": "路径 A：直接 advance 到 q*+3；路径 B：q* 前存档、读档，再 advance 到 q*+3。",
+      "then_zh": "两条路径逐季 state_hash 逐位相同；rng.event 流的 log.rng 记录完全一致；fire_count[E06] 与 last_fire_q[E06] 相同（INV-133、ADV-06）。"
+    },
+    {
+      "test_id": "T-S-E06-NO-LEDGER-NO-PHYSICAL-EFFECT",
+      "kind": "scenario",
+      "purpose_zh": "事件不得凭空增减资源，也不得改变实物流。",
+      "given_zh": "同一命令流两次运行：一次允许 E06 触发，一次 probability_ppm 置 0。",
+      "when_zh": "跑满 40 季。",
+      "then_zh": "两次运行的 log.ledger 与 log.physical 行数与内容完全相同；全经济现金总量恒等于 scenario.total_cash_uu（INV-018）；flow.world.imports_uu、state.project.delivery_progress_ppm、state.world.delivery_capacity_uqs 逐季相同——即交付延迟完全由机制产生，事件一个字节也没改。"
+    },
+    {
+      "test_id": "T-S-E06-DELIVERY-BLOCKS-COMMISSION",
+      "kind": "scenario",
+      "purpose_zh": "交付不足必须真的挡住投运（计划书 §10 P04 验收测试的直接对应）。",
+      "given_zh": "启动一个 8 季工期的设备类项目，把 world.delivery_capacity_uqs[manu] 压到只够其它项目使用。",
+      "when_zh": "跑到第 8 季末并继续两季。",
+      "then_zh": "delivery_progress_ppm < 1 000 000；project.status 不进入 commissioned；capacity_pending 与 capacity_active 均无增量（INV-090/091）；suspension_reason == delivery；同期 paid_uu 仍按履约进度增加且不返还（INV-092/093）。"
+    },
+    {
+      "test_id": "T-S-E06-PAY-NO-PROGRESS",
+      "kind": "scenario",
+      "purpose_zh": "付款不制造交付进度（INV-087 的交付侧对应）。",
+      "given_zh": "把某项目当季付款额翻倍（通过预算调剂），交付能力不变。",
+      "when_zh": "结算一季。",
+      "then_zh": "delivery_progress_ppm 的增量与未翻倍的基线逐位相同；construction_progress_ppm 同样不受付款额影响。"
+    },
+    {
+      "test_id": "T-U-E06-METRIC-IDS-EXIST",
+      "kind": "unit",
+      "purpose_zh": "触发与证据引用的 ID 真实存在，效果落在白名单内。",
+      "given_zh": "加载内容包。",
+      "when_zh": "运行内容校验器。",
+      "then_zh": "trigger.all_of[*].metric 与 evidence_refs[*] 全部可解析（V-EV-02）；evidence_refs 非空（V-EV-08）；effects[*].target 全部在事件可写白名单内且只用 delta_ppm（V-EV-05）；不存在 ledger_effects 字段（V-EV-06）；rng_stream == rng.event（V-EV-04）。"
+    },
+    {
+      "test_id": "T-U-E06-DERIVED-PARAM-RECOMPUTE",
+      "kind": "unit",
+      "purpose_zh": "派生参数与剧本初值不得脱钩（V-PC-05）。",
+      "given_zh": "加载内容包与剧本。",
+      "when_zh": "按 derivation_expr 复算 param.e06_other_lines_value_cap_uu 与 param.e06_import_value_threshold_uu（注意 UU_PER_UQS = idiv_floor(JWUnits.BASE_PRICE, JWUnits.Q_SCALE) = 1000，来自裁定 R-SCALE-01）。",
+      "then_zh": "复算值与登记值逐位相等：1000006997 与 3160006997；且 trigger.all_of[0].value 必须逐位等于 param.e06_import_value_threshold_uu 的 value（旧刻度遗留的 3160000 会在这一条上失败）；且 param.e06_{agri,manu,energy,services}_capacity_reference_uqs 四个取值与 scenario.world_init.delivery_capacity_uqs 四项逐位相等，不符即失败（剧本改了交付能力而事件卡没改，属于 E_PARAM_STALE 类缺陷）。"
+    },
+    {
+      "test_id": "T-U-E06-TRIGGER-SCALE-CONSISTENT",
+      "kind": "unit",
+      "purpose_zh": "阈值与货币刻度必须同源，禁止旧刻度数字残留在触发器里（裁定 R-SCALE-01 连带要求 4）。",
+      "given_zh": "加载 content/events/event_E06.json 与 sim/jw_units.gd。",
+      "when_zh": "读取 trigger.all_of[0]（metric == \"flow.world.imports_uu\"）的 value，以及 JWUnits.U_SCALE、JWUnits.BASE_PRICE、JWUnits.Q_SCALE。",
+      "then_zh": "断言 JWUnits.U_SCALE == 1000000000 且 JWUnits.BASE_PRICE == 1000000000 且 JWUnits.Q_SCALE == 1000000；断言 trigger.all_of[0].value == 3160006997；断言 3160006997 ≤ JWUnits.AMOUNT_MAX（4000000000000000）。凡 metric 以 _uu 结尾的触发条件，其 value 必须落在 [0, AMOUNT_MAX] 内且不得等于该值除以 1000 后仍是整数阈值的旧刻度写法——这一条钉死「正文与触发器同时迁移」。"
+    }
+  ],
+  "_note_design_notes_zh": "这张卡里最重要的三处克制。第一，任务描述写的是「直接延迟在建项目的设备交付」，但本事件一行也没有去写交付进度：延迟是 S05 的 delivered_uqs = min(已订量, 剩余交付能力) 自己产生的，事件只负责把它命名、拿出台账、并让政治反应发生。如果允许事件直接扣交付进度，就等于允许内容包凭空销毁实物，那和「平衡修正项」是同一类错误（计划书 §13）。第二，措辞：首版的进口截断公式只引用 world.delivery_capacity_uqs，港口能力还没进去，所以报告不能写「港口拥堵导致交付延迟」——只能分别陈述「到货贴着上限」和「港口尚未扩建」两个可查事实。第三，原稿把「占用率 ≥ 90%」建在一个取不到的分线量 ID 上，那条触发永远无法求值，等于这张卡在机制上是死的。修法不是把阈值改成一个看起来对的数字，而是重新做一遍推导：只用能取到的全国合计额、各线能力上限与价格上限，证明出同一个 90% 的下界，并把这次改写多付出的代价（松弛 1 000 006 997 μU、价格上行时静默、三条线能力被钉死）逐条写进取值登记与待决问题。宁可触发得更少，也不要在报告里讲一个模型算不出来的数。本轮修订另补两处：(1) 按裁定 R-SCALE-01 把 1 U = 1e9 μU 的新刻度贯彻到证明与阈值——μU 与 μQ_s 从此差 1 000 倍，旧稿「value_s ≤ qty_s」那一步在新刻度下是错的，阈值也从 3 160 000 改成 3 160 006 997；(2) 把契约 §5.13 未声明的 consequences / parameters 两个顶层键降级为 _note_ 注释键，内容一字未删，见 _note_schema_extension 与 OQ-LOCAL-E06-06。",
+  "_note_open_questions_local": [
+    {
+      "ref": "OQ-LOCAL-E06-01",
+      "question_zh": "10 号文件 §8.4 把进口的额与量写成一行 `flow.world.imports_uu` / `imports_uqs[]`，后半截没有写全前缀，导致 flow.world.imports_uqs 这个**已被 INV-104 与 12 号 §04.4 使用**的量取不到稳定 ID，任何按前缀提取 ID 的工具（含 tools/validate_content.py）都判它不存在。出口侧 `flow.world.exports_uu` / `exports_uqs[]` 同一处有同样的问题。",
+      "conservative_take_zh": "不改文档。本文件改为只引用可解析的 ID，用「全国合计额 + 各线能力上限 + 价格上限」重建 90% 占用率的下界证明，代价逐条登记在参数卡里。文档侧的正确修法是把两个 uqs 量的稳定 ID 写全（单元格里各占一个完整反引号串）。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-02",
+      "question_zh": "缺少 derived.world.delivery_utilization_ppm。「占用率越阈值」这类判据在只有 metric-op-常量比较的触发器里无法直接表达；本文件用十条比较做下界证明，其中八条只是为了把「金额」还原成「某一条线的数量」。",
+      "conservative_take_zh": "使用可证明的下界写法，并用 source_type = derived 与 derivation_expr 锁住阈值与剧本初值的关系（V-PC-05 复算，见 T-U-E06-DERIVED-PARAM-RECOMPUTE）。补上分线量或占用率派生量后，c1..c8 应压回成一条比较，本卡随之简化。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-03",
+      "question_zh": "下界证明依赖一条尚未写成不变量的前提：flow.world.imports_uu 恰好等于四条部门进口线支出之和，不存在第五类进口科目。12 号 §04.4 与 §9 的支出法分解与之一致，但没有任何地方把它写死。",
+      "conservative_take_zh": "在 _note_trigger_detail.proof_dependency_zh 里显式登记该前提，并建议 10 号文件补一条不变量。新增非部门进口科目时本事件的阈值必须重算。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-04",
+      "question_zh": "state.region.port_capacity_uqs_per_q 在首版没有进入任何进口截断公式（12 号 §5 的 delivered_uqs 只引用 world.delivery_capacity_uqs），因此港口能力目前只是 P08 的效果落点，不是物理瓶颈。",
+      "conservative_take_zh": "把它当作「玩家是否已投资」的状态判据使用，并在 _note_copy.wording_rules_zh 里明令禁止写出港口拥堵导致交付延迟的因果句。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-05",
+      "question_zh": "P08 自身需要进口港口设备，会与被它拯救的项目争抢同一条交付线。这条自指关系在契约里没有任何处理规定（是否给在建的扩港项目优先配额）。",
+      "conservative_take_zh": "首版不设优先配额，按现有分配规则排队，并在 _note_player_options E06.O1 的失败路径里显式写出这个自指风险，让玩家自己承担时点选择。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-06",
+      "question_zh": "11 号 §5.13 的 EventTemplate 只声明 9 个键并要求 additionalProperties:false，而校验器 tools/validate_content.py 的 check_event 又要求顶层出现**非注释**的 consequences 键（缺失即 E_EVENT_EVIDENCE），两条规则无法同时满足：留在顶层必报 E_UNKNOWN_FIELD，移进注释键则报 E_EVENT_EVIDENCE。该 consequences 要求的出处是「任务书 C」，而任务书不在 docs/18 规定的文档优先级链（计划书 > 18 > 12 > 11 > 10）之内；契约对计划书 §13「每条变化附带实体 ID」的正式落点是 V-EV-08 的 evidence_refs，不是另立一个键。同理，§5.15 规定 param.* 正式身份证只能落在 params_core.json，而该文件至今不存在，19 个内容文件都在内嵌卡片。",
+      "conservative_take_zh": "本文件把 consequences / parameters 全部降级为 _note_ 注释键（内容一字未删，参数卡的 parameter_id 改名 value_id 并补 binds_to），与 event_E05 / event_E07 写法统一。校验器侧按「检查的是有没有逐条后果的对手方／会计解释，而不是它写在哪个键名下」修正读取位置：consequences 不在时回落读 _note_consequences，两处都没有才报 E_EVENT_EVIDENCE，每条后果必须含解释键这一条未放宽。真正的长期修法二选一：§5.13 正式补声明 consequences，或把它彻底并入 evidence_refs + report_template 的现有通道；params_core.json 建成后 17 张卡迁入，本文件的 _note_parameters 只留 binds_to 索引。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-07",
+      "question_zh": "state.bloc.stance_ppm 是「集团 × 政策」二维量，effects[3] 用了复合 scope \"bloc.business.policy.P08\"，而契约既没定义复合 scope 的写法，也没把它纳入 ID 正则。",
+      "conservative_take_zh": "沿用复合写法并显式登记（删掉这条 effect 会丢掉「拥堵抬高 P08 政治可行性」这条真实反馈链）。契约应补一条二维 scope 的规范写法，或改为 { \"scope\": \"bloc.business\", \"policy_ref\": \"policy.P08\" } 之类的显式两字段形式。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E06-08",
+      "question_zh": "本事件的阈值 param.e06_import_value_threshold_uu 里含 6 997 μU 的纯取整／钳位松弛（农业与能源各 999 μU，服务线 4 999 μU）。它来自 qty = mul_div_floor(value, 1e6, p) 的向下取整，以及服务线没有价格上限条件、只能吃 12 号 §01.7 的钳位上界 5 000 000 ppm。在旧刻度（1 U = 1e6 μU）下这三笔松弛小于 1 μU、可以忽略；R-SCALE-01 之后它们是真实存在的整数。",
+      "conservative_take_zh": "如实把松弛写进 derivation_expr 与阈值，不凑整。凑整成 3 160 000 000 会让下界证明从「必然成立」降级成「多半成立」——占用率可能落到 899 999 ppm 而报告仍宣称「至少 90%」，那就是对玩家撒谎。若嫌阈值难看，正确的收紧方式是给服务线也加一条 import_price_ppm ≤ 1 000 000 的触发条件（可把 4 999 压到 999，合计松弛降到 2 997 μU），代价是多一个与港口无关的静默条件；本版选择不加，宁可数字难看也不加一条语义上说不通的触发。",
+      "escalated": true
+    }
+  ]
+}

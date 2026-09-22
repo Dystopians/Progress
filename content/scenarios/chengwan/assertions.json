@@ -1,0 +1,100 @@
+{
+  "schema_kind": "assertions",
+  "schema_version": 1,
+  "_note_purpose_zh": "载入期冗余断言，逐字落实 11_data_contract.md §5.11。本文件是断言，不是输入：SimCore 的加载器绝不从这里读任何值（INV-143 的静态一半），它只在剧本全部初值文件装配完成后重算一遍同样的量，再与这里的 expect 逐条比对，不一致即拒绝加载。因此本文件里的每个数都必须能在别处被独立算出来——凡是只能在这里找到的数，就是一个被伪造的目标值。",
+  "_note_authority_zh": "11 条断言的 id / at / expr / expect / tolerance 全部照抄 11_data_contract.md §5.11 的示例块，不是本文件自行选取的。其中 expect 的数值又都能上溯到计划书 §05 的锁定值：总人口 2400 万、四地区 900/700/500/300 万、基年全年名义 GDP 100 U、政府债务 50 U、国库现金 2 U、全年收入 20 U 与支出 22 U（赤字 2 U）、失业率 8%、民生基线指数 100。本文件没有一个 design_assumption 数值。",
+  "_note_tolerance_policy_zh": "tolerance 一律为 0。唯一例外是 assert.unemployment 的 500 ppm，该例外由 11_data_contract.md §5.11 与 §9 裁定 D-02 写死在协议里，理由是计划书 §05 给出的是被四舍五入过的「8%」而不是精确 ppm，而就业分配是整数人。出现第二个非零容差本身就是 E_ASSERT_TOLERANCE，即放宽必须先改协议，不能改数据。本文件不新增任何容差，也不为了让某条断言好过而把 expect 往实测值上靠。",
+  "_note_count_zh": "恰好 11 条，与 §5.11 列出的集合一一对应，不多不少。没有追加自拟断言：§5.10 之前的 V-* 校验器（V-POP-*、V-FIN-*、V-POL-* 等）已经覆盖存款恒等式、就业两侧交叉对账、债券字段与支付优先级全排列等项，11_data_contract.md §5.15 前的说明也明确这些「由 V-* 校验器与 assertions.json 负责，不需要也不允许逐个建卡」。在本文件里重写一遍同样的规则，等于为同一条约束造出第二个事实来源，与 §1 总原则相悖。若将来要扩充断言集合，应先在 §5.11 登记，再落到本文件。",
+  "_note_verification_zh": "本次落地时逐条用磁盘上的兄弟文件复算过，全部精确命中（详见每条的 _note_zh）。复算依赖的文件：population_init.json（36 群组）、government_init.json、io_table.json 的基年核算附录、scenario.json、cells_init.json。所有 μU 计量的 expect 与注释内数字均已按裁定 R-SCALE-01（1 U = 10⁹ μU）重述——本文件的键名不含 uu 词元，故未被 tools/migrate_currency_scale.py 覆盖，属该裁定「连带要求 4」登记的字符串正文遗留，此处补齐。人数（_persons）、ppm 指数与容差不随货币刻度改变，保持原值。assert.base_year_gdp 的 expect 取值 100 U 是计划书锁定值，不是从 cells_init 反推出来的；cells_init.json / pubserv_init.json / params_core.json 只影响它的实际可执行性。",
+  "_note_pending_zh": "本文件按契约逐字执行，同时登记四处契约层面的未决点（不在本文件私自修补，已随任务返回）：一、assert.interest_in_spend 的 at 是 load，但 expect 写成 sum_q(0..3, bond_coupon_total_uu)，而 sum_q 是跨季聚合、bond_coupon_total_uu 也不是 10_variable_dictionary.md §9 中的字段名（权威名是 flow.gov.interest_paid_uu，写入者 S02）；载入期唯一讲得通的读法是「按 government_init.bonds 逐批次重算 q=0..3 的票息再求和」，这正是 INV-147 的措辞，但 §5.11 没写明。二、expect 的类型是三态（整数 / 整数数组 / 字符串表达式），schema 与校验器都没有声明这一点。三、sum_by_region 与 state.price.sector_uu_per_qs 返回数组的顺序，§5.11 没写；本文件按 10_variable_dictionary.md §0.5 的稠密下标顺序（地区 beiyuan/zhongzhou/haijia/xiling，部门 agri/manu/energy/services）填写 expect。四、derived.labor.unemployment_ppm 与 derived.living.consumption_index_ppm 在 §9.3 中的计算位置分别是 S03 与 S07，却被要求在 at=load 求值；两者都能由 population_init 的初值直接算出，但需要在契约里给出「载入期定义」，否则解释器无所依据。",
+  "checks": [
+    {
+      "id": "assert.total_population",
+      "at": "load",
+      "expr": "sum(group.*.population_persons)",
+      "expect": 24000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 锁定的总人口 2400 万。复算：population_init.json 的 36 个 groups[*].population_persons 求和 = 24000000，精确命中。人口是整数人，不存在取整残差，故容差 0。"
+    },
+    {
+      "id": "assert.region_population",
+      "at": "load",
+      "expr": "sum_by_region(group.*.population_persons)",
+      "expect": [9000000, 7000000, 5000000, 3000000],
+      "tolerance": 0,
+      "_note_zh": "北原 900 万 / 中州 700 万 / 海岬 500 万 / 西岭 300 万，计划书 §05 锁定，四者之和等于上一条的 2400 万。数组顺序按 10_variable_dictionary.md §0.5 的地区稠密下标 0 beiyuan / 1 zhongzhou / 2 haijia / 3 xiling，不是文件中的出现顺序。复算：按 group_id 第二段分组求和 = 9000000 / 7000000 / 5000000 / 3000000，四项全部精确命中。"
+    },
+    {
+      "id": "assert.unemployment",
+      "at": "load",
+      "expr": "derived.labor.unemployment_ppm",
+      "expect": 80000,
+      "tolerance": 500,
+      "_note_zh": "计划书 §05 的失业率 8%，分母是劳动力而不是总人口，且必须由初始就业分配反算——剧本 schema 中根本不存在失业率输入字段（11_data_contract.md §5.7 的旁注），所以这一条是「反算得出」这件事唯一的机器执行点。复算：劳动力 = Σ idiv_floor(population_persons × participation_ppm, 1000000) = 11677007 人；在岗 = Σ employed_persons 各去向之和 = 10742846 人；失业 934161 人；idiv_floor(934161 × 1000000, 11677007) = 80000 ppm，落在 INV-143 要求的 [79500, 80500] 内，且恰好等于中心值。500 ppm 是全协议唯一的非零容差，此处不是因为算不准才要容差，而是因为「8%」本身是被四舍五入过的目标值。"
+    },
+    {
+      "id": "assert.gov_debt",
+      "at": "load",
+      "expr": "derived.gov.debt_uu",
+      "expect": 50000000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 锁定的政府债务 50 U，在 R-SCALE-01 的 1 U = 10⁹ μU 刻度下即 50000000000 μU（docs/11 §5.11 与 docs/10 §14 已同步为该值）。derived.gov.debt_uu 按 INV-035 等于全部在存批次 principal_outstanding_uu 之和，只含计息借款（计划书 §07：欠付另记应付款，不进 Debt）。复算：government_init.json 六个批次 8000000000 + 7000000000 + 10000000000 + 10000000000 + 9000000000 + 6000000000 = 50000000000，精确命中。批次结构本身是 design_assumption（§5.9 旁注），但合计 50 U 是锁定值，所以断言只钉合计。"
+    },
+    {
+      "id": "assert.gov_cash",
+      "at": "load",
+      "expr": "state.gov.cash_uu",
+      "expect": 2000000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 锁定的国库现金 2 U，R-SCALE-01 刻度下即 2000000000 μU。复算：government_init.json /gov/cash_uu = 2000000000，精确命中。这是本组断言里唯一直接读状态字段、不做任何聚合的一条，它的作用是防止「初值文件被改了而锁定值没跟着改」。"
+    },
+    {
+      "id": "assert.annual_deficit",
+      "at": "load",
+      "expr": "annual_plan.expenditure_incl_interest_uu - annual_plan.receipts_uu",
+      "expect": 2000000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 的基线年赤字 2 U：全年收入 20 U、支出 22 U（含利息、不含偿还本金）。R-SCALE-01 刻度下复算：22000000000 − 20000000000 = 2000000000，与 government_init.json /annual_plan/deficit_uu 登记的 2000000000 一致。注意这条断言只钉「计划口径」的赤字，不等于基年现金缺口：基年还本 3600000000 μU 不在支出计划内，维持国库现金不下降需要新增借款 5600000000 μU，那是 S02 的融资问题，不归本断言管。"
+    },
+    {
+      "id": "assert.base_prices",
+      "at": "load",
+      "expr": "state.price.sector_uu_per_qs",
+      "expect": [1000000000, 1000000000, 1000000000, 1000000000],
+      "tolerance": 0,
+      "_note_zh": "INV-148：基年全部门现行价 == 基年价 == JWUnits.BASE_PRICE == 1000000000 μU/Q_s（R-SCALE-01 把 BASE_PRICE 由 10⁶ 改为 10⁹），因此基年名义额与实际额在数值上恒等，「实际 GDP 用基年产品价格核算」（计划书 §06）才有意义。数组顺序按 §0.5 的部门稠密下标 0 agri / 1 manu / 2 energy / 3 services。复算：scenario.json /prices_init/sector_uu_per_qs 与 /prices_init/base_uu_per_qs 均为四个 1000000000，io_table.json 基年核算附录 product_unit_definition 的四个 base_price_uu_per_qs 也都是 1000000000，三处一致。"
+    },
+    {
+      "id": "assert.living_index",
+      "at": "load",
+      "expr": "derived.living.consumption_index_ppm",
+      "expect": 1000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 的民生基线：消费与公共服务指数 = 100，表示相对变化的基准，不冒充真实国际排名。指数一律以 ppm 存储（10_variable_dictionary.md §0.1），基期 100.00 即 1000000，展示层再除以 10000。复算：population_init.json 的 derived_check.index_base_check 给出人口加权 consumption_index_ppm = 1000000（36 组逐组均为 1000000，加权分母 24000000），精确命中。"
+    },
+    {
+      "id": "assert.interest_in_spend",
+      "at": "load",
+      "expr": "annual_plan.expenditure_lines_uu.interest",
+      "expect": "sum_q(0..3, bond_coupon_total_uu)",
+      "tolerance": 0,
+      "_note_zh": "INV-147：支出计划里的利息项不是写上去的，必须等于基年四季逐批次票息之和，防止债务表与利息各写各的。复算（逐批次 principal_outstanding × coupon_ppm_per_q ÷ 1000000，等额本金批次按每季递减后的余额计）：bond.q-20_01 四季 64000000×4 = 256000000；bond.q-16_01 59500000×4 = 238000000；bond.q-12_01 95000000+91200000+87400000+83600000 = 357200000；bond.q-8_01 125000000+118750000+112500000+106250000 = 462500000；bond.q-4_01 99000000×4 = 396000000；bond.q-2_01 81000000×4 = 324000000；合计 2033700000，与 government_init.json /annual_plan/expenditure_lines_uu/interest 的 2033700000 精确相等，全程无余数（R-SCALE-01 后未偿本金取 100000000 μU 的整数倍、票息取 500 ppm 的整数倍就是为此）。本条的 expect 是字符串表达式而不是整数，是照抄 §5.11；它同时也是 at=load 与 sum_q 语义冲突的那一条，见顶层 _note_pending_zh 第一点。"
+    },
+    {
+      "id": "assert.base_year_gdp",
+      "at": "q_end:3",
+      "expr": "sum_q(0..3, derived.gdp.production_uu)",
+      "expect": 100000000000,
+      "tolerance": 0,
+      "_note_zh": "计划书 §05 锁定的基年全年名义 GDP = 100 U，R-SCALE-01 刻度下对应 INV-118「无命令跑满基年四季合计精确等于 100000000000 μU，容差 0」（等于 JWUnits 的 BASE_YEAR_GDP_UU）。这是全组唯一一条 at 不是 load 的断言：它必须真的跑完 q=0..3 才能判定，因此它检验的是结算过程而不是初值表。目标值的可达性在 io_table.json 的基年核算附录里已离线配平——四部门年增加值 17193500000 + 25066000000 + 6912000000 + 40828500000 = 90000000000，加公共非市场产出 10000000000，合计 100000000000，逐季 25000000000。风险已由 OQ-203 登记：INV-050 规定本季生产只用期初库存，同期投入产出平衡被打断，四季实跑未必自然凑出 100 U；协议给的退路是预置期初存货并由离线求解器反解各 cell 初始产量，而不是放宽这里的容差。"
+    },
+    {
+      "id": "assert.cash_total",
+      "at": "load",
+      "expr": "sum(all_agents.cash_uu)",
+      "expect": "scenario.total_cash_uu",
+      "tolerance": 0,
+      "_note_zh": "INV-018：全经济现金总量恒定，等于 scenario.total_cash_uu。这条断言是「没有无来源资金」（计划书 §16 人工评审要点、§15 G1 门槛）在载入期的锚点：它把 56 个现金科目的初值和钉死在一个可对账的常数上，之后任何一季现金总量变动都会被同一个恒等式抓住。expect 写成字段路径而非字面量是有意的——总量本身是 derived，不该在本文件再抄一遍数字，否则就出现第二个事实来源。当前 scenario.json /total_cash_uu = 63716000000（R-SCALE-01 刻度），其构成为 gov 2000000000 + invpool 9000000000 + row 15000000000 + 36 个群组合计 9000000000 + 16 个 cell 合计 28716000000 + agent.opening 0（OQ-217 裁定开账分录的现金腿不经 agent.opening，其现金科目恒为 0）。cells_init.json /cells[*]/cash_uu 实测求和 = 28716000000，已核对一致；R-REGION-01 之前 cell 合计为 20000000000、总量为 55000000000（每个 cell 的开局现金改为不少于一季工资 + 中间投入后重新求和）。"
+    }
+  ]
+}

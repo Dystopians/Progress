@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "t": {
+    "so.empty.why": "尚未开局，没有群组数据。",
+    "so.empty.when": "开局后，36 个群组（4 地区 × 3 年龄 × 3 技能）的收入、负担与服务显示在这里。",
+    "so.empty.rule": "规则：社会页只显示分布与分组数字，不输出基尼系数或任何分配评分。",
+    "so.precision": "精度说明：群组数字是模型中 36 个代表性群组的平均值，不代表组内每一个人；「·」表示该组人口为 0，「—」表示该字段对该组不适用。本页不合成任何分配评分。",
+
+    "so.matrix.title": "群组矩阵 · 4 地区 × 3 年龄 × 3 技能",
+    "so.matrix.field": "显示字段",
+    "so.field.income": "人均可支配收入变化",
+    "so.field.burden": "住房负担",
+    "so.field.access": "公共服务可及",
+    "so.field.edu": "在读培训占比",
+    "so.col.region": "地区",
+    "so.col.age": "年龄",
+    "so.cell.empty": "该组人口为 0",
+    "so.cell.line": "就业 {emp} · {val}",
+    "so.base.none": "尚无基期（首次结算后建立）",
+    "so.matrix.footer.income": "人均可支配收入相对 {base_q} 的变化（名义）；未成年组不适用。",
+    "so.matrix.footer.burden": "住房负担 = 住房支出 ÷ 该组可支配收入（本季）；对照基期 {base_q}。",
+    "so.matrix.footer.access": "公共服务可及 = 医疗、教育、公用事业三项可及率的简单平均（本季）；对照基期 {base_q}。",
+    "so.matrix.footer.edu": "在读培训占比 = 教育与培训队列在读人数 ÷ 该组人口（本季）；对照基期 {base_q}。",
+
+    "so.moods.title": "三类民意（分列，不合成）",
+    "so.mood_base": "基期=第 1 季",
+    "so.moods.note": "生活感受、预期、信任是三个独立的量：不相加、不平均、不合成。全国支持度 {support} 是另一个量，由选举与审查规则使用。",
+
+    "so.dist.title": "人均可支配收入分布",
+    "so.dist.cold.why": "开账状态：分布需要一次结算的收入数据。",
+    "so.dist.cold.when": "第一季结算后显示 P10、P50、均值与 P90。",
+    "so.dist.cold.rule": "规则：分位数按群组人口加权计算；不输出基尼系数。",
+    "so.dist.line": "实记 · 人均可支配收入（本季，名义，每人每季）：P10 {p10}、P50 {p50}、均值 {mean}、P90 {p90}。人均量级远小于 0.01 U，按内部单位 μU 显示。",
+    "so.dist.gap": "实记 · 最高组（{hi}）与最低组（{lo}）的人均可支配收入之比为 {ratio} 倍（未成年组不计）。",
+    "so.dist.caption": "横条长度到 P90；细线依次为 P10、P50（粗）与均值。分位数由 36 个群组按人口加权得到。",
+    "so.dist.mean": "均值",
+
+    "so.blocs.title": "三个集团（各自单列）",
+    "so.bloc.line": "实记 · 组织力 {org}，资源 {res}。",
+    "so.bloc.stance": "立场高于 {sup_th} 的政策：{sup}；低于 {opp_th} 的政策：{opp}。",
+    "so.bloc.veto": "否决域：{domains}；立场低于 {veto} 且政策属于否决域时，命令被拒绝。",
+    "so.blocs.note": "集团的组织力与资源不来自选票；席位、集团否决、行政能力是三条独立的门槛。",
+    "veto.land_reform": "土地改革",
+    "veto.tax_law": "税法",
+    "veto.public_employment": "公共部门雇佣",
+
+    "so.wl.title": "受益与受损",
+    "so.wl.source": "来源",
+    "so.wl.src.settled": "本季结算（实）",
+    "so.wl.src.draft": "当前草案（预）",
+    "so.wl.draft_pending": "草案影响正在重算，或草案篮为空。",
+    "so.wl.settled_pending": "需要两季结算数据才能比较群组的变化；下一季结算后显示。",
+    "so.wl.line": "实记 · {group}：生活指数较上季 {d}（{q}）。"
+  }
+}

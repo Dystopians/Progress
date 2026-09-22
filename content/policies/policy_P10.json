@@ -1,0 +1,1346 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P10",
+  "_note_code": "P10",
+  "_note_slug": "primary_healthcare_funding",
+  "label_zh": "基础医疗拨款",
+  "kind": "capacity",
+  "_note_governance_tool": {
+    "primary": "service_grant",
+    "primary_label_zh": "服务拨款",
+    "secondary": "capital_project",
+    "secondary_label_zh": "资本项目",
+    "why_one_policy_zh": "计划书 §09 给定本政策的玩家杠杆是「服务容量、人员与地区权重」。服务容量在本模型里只能由 pubserv 的 capacity_active 提供，而 capacity_active 只能由一个走施工与交付进度的项目产生（INV-054/INV-091）。因此设施扩容不是另一项政策，而是同一治理决策的第二条腿；把它拆成两条政策会制造两个 mechanism_ids 相同的条目，正是计划书 §09 所说的伪深度。"
+  },
+  "_note_field_map": {
+    "note_zh": "计划书 §09/§10 的字段名与本文件键名的对照。本文件以 11_data_contract.md §5.12 的键名为准，不另立同义键（例如不写 name_zh，一律用 label_zh）。键名一律英文 snake_case（11 号文件 §3）。§5.12 未声明的补充规格按 §3 的出路写成 _note_* 注释键，本表如实标出，使「哪些规格已有正式契约入口、哪些只是注释」一眼可见。",
+    "entries": [
+      {
+        "plan_field_zh": "目标问题",
+        "json_key": "problem_statement_zh"
+      },
+      {
+        "plan_field_zh": "法定权限",
+        "json_key": "legal_authority"
+      },
+      {
+        "plan_field_zh": "玩家可直接改变的参数",
+        "json_key": "player_params"
+      },
+      {
+        "plan_field_zh": "启动条件",
+        "json_key": "preconditions"
+      },
+      {
+        "plan_field_zh": "一次性与持续成本",
+        "json_key": "cost（正式）+ _note_operating_cost + _note_funding_requirement（注释）"
+      },
+      {
+        "plan_field_zh": "生效时滞",
+        "json_key": "lag（正式）+ _note_lag_model（注释）"
+      },
+      {
+        "plan_field_zh": "作用链",
+        "json_key": "effect + effect_chain（正式）+ _note_additional_effects（注释）"
+      },
+      {
+        "plan_field_zh": "作用对象",
+        "json_key": "_note_targets（注释）"
+      },
+      {
+        "plan_field_zh": "运行费",
+        "json_key": "_note_operating_cost（注释）；金额的正式落点是 cost.opex_per_q_uu"
+      },
+      {
+        "plan_field_zh": "退出规则",
+        "json_key": "exit_rule"
+      },
+      {
+        "plan_field_zh": "政治反应",
+        "json_key": "political_reaction（正式）+ _note_political_reaction_basis（注释）"
+      },
+      {
+        "plan_field_zh": "可验证的失败路径",
+        "json_key": "failure_paths"
+      },
+      {
+        "plan_field_zh": "验收测试",
+        "json_key": "acceptance_tests（正式）+ _note_acceptance_tests_spec（注释）"
+      },
+      {
+        "plan_field_zh": "参数身份证",
+        "json_key": "_note_params_core_pending（param.* 的迁移草稿，正式落点在 content/parameters/params_core.json 的 cards[]） + _note_content_value_cards（内容值，按裁定 R-PARAM-01 不建卡）"
+      },
+      {
+        "plan_field_zh": "界面文案",
+        "json_key": "ui_text_keys（正式）+ _note_ui_copy（注释）"
+      },
+      {
+        "plan_field_zh": "名称",
+        "json_key": "label_zh"
+      },
+      {
+        "plan_field_zh": "所属治理工具类型",
+        "json_key": "_note_governance_tool（注释）"
+      }
+    ]
+  },
+  "problem_statement_zh": "模型里存在一个可观察的机制缺口：公共服务主体 pubserv.<region> 的实际交付量 flow.pubserv.delivered_uqs 受 capacity_active_uqs_per_q 与 availability_ppm 双重封顶，而居民的医疗需求由群组人口与年龄结构生成。两者之差不会消失，它被登记为 state.pubserv.queue_persons（排队人数），并经 state.group.service_access_ppm[health] 压低 state.group.living_index_ppm。现有工具里没有任何一项可以提高 pubserv 的医疗交付量：运行费欠拨只会让 availability_ppm 单向衰减（INV-102），而 capacity_active 在首版只能由项目投运产生。P10 是唯一一条把政府现金转成「医疗服务交付量」的通路。它解决的不是「满意度低」，而是「有人排队且没有任何机制让队列变短」——按已落地的剧本，q = 0 的医疗容量 = mul_ppm(pubserv_init.capacity_active_uqs_per_q, service_capacity_split_ppm[health]) 为北原 377 567 / 中州 398 594 / 海岬 265 944 / 西岭 141 225 μQ_services/季，对应需求 441 000 / 351 400 / 244 000 / 156 900 μQ_services/季：北原缺 63 433、西岭缺 15 675，中州与海岬有余量。开局就有两个地区在排队，且没有任何既有机制会让它变短。",
+  "legal_authority": {
+    "authority_bit": 1,
+    "_note_authority_label_zh": "预算法案授权（服务拨款档）",
+    "_note_instrument_zh": "预算法案",
+    "requires_budget_review": true,
+    "requires_bloc_support": [
+      "bloc.labor_public"
+    ],
+    "min_seats_ppm": 500000,
+    "_note_rationale_zh": "本政策改变的是 gov 的 service_opex 与 public_wages 两条经常性支出档，属于跨年度经常性承诺，不能由行政令单独设立；因此挂在预算审查窗口（state.politics.next_budget_review_q，q ≡ 3 (mod 4)，INV-127）。requires_bloc_support 取 bloc.labor_public：公共部门编制扩张需要该集团在议程上不否决（content.bloc.veto_domains 含 public_employment）。min_seats_ppm 取执政席位过半，因为预算法案需要多数。"
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "label_zh": "作用地区",
+      "type": "mask",
+      "unit": "bitmask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "step": 1,
+      "default": 15,
+      "param_slot": "policy_enact 命令槽 j=0 → state.policy.region_mask[policy.P10]",
+      "desc_zh": "位 0 北原 / 位 1 中州 / 位 2 海岬 / 位 3 西岭（稠密下标见 10 号文件 §0.5）。至少选 1 个地区。"
+    },
+    {
+      "key": "grant_per_q_uu",
+      "label_zh": "每季基础医疗拨款",
+      "type": "uu",
+      "unit": "μU/季",
+      "valid_range": [
+        0,
+        240000000
+      ],
+      "step": 10000000,
+      "default": 20000000,
+      "param_slot": "policy_enact 命令槽 j=1 → state.policy.params_uu[policy.P10][1]",
+      "desc_zh": "进入 gov 支付优先级 service_opex 档、指定用于基础医疗的季度拨款额。它与本季该档应付额之比决定 flow.pubserv.funding_ratio_ppm，进而决定 availability_ppm 是恢复还是衰减（12 号文件 §4.1 与 §7.2）。档位按本内容包已落地的剧本反算，不再引用文档示例：government_init.json 的 gov.service_opex_committed_uu == 0、annual_plan.expenditure_lines_uu.service_opex == 0（既有公共服务的运行费整笔在 pubserv 账户内，由 procurement 4 200 000 000 μU/年 与 public_wages 9 000 000 000 μU/年 承担，见该文件 _note_gov），因此 q = 0 的应付额为 0，按 12 号文件 §4.1 的 due_uu == 0 分支 funding_ratio_ppm 恒为 1 000 000。本政策的应付额只由它自己投运的扩容包产生：每个标准包 cost.opex_per_q_uu == 18 000 000 μU/季，可建上限是 4 地区 × capacity_program_scale_ppm 2 000 000 ppm == 8 个标准包，故应付额上限 144 000 000 μU/季。valid_range 上限取 240 000 000（在最大义务之上留 66.7% 余量，使「建得起就养得起」在任何合法建设规模下都可达）；default 取 20 000 000，恰好足额覆盖第一个标准包的运行费并留 2 000 000 余量，占开局国库现金 2 000 000 000 μU 的 1%，在 capacity_program_scale_ppm == 0 的默认组合下只是预留、不形成支出。取 0 是合法取值：其后果是已投运包的可用率按 param.opex_starve_decay_ppm 衰减，资产不被删除（INV-102）。"
+    },
+    {
+      "key": "staff_target_ppm",
+      "label_zh": "医护编制目标",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        800000,
+        1400000
+      ],
+      "step": 25000,
+      "default": 1000000,
+      "param_slot": "policy_enact 命令槽 j=2 → state.policy.params_ppm[policy.P10][2]",
+      "desc_zh": "相对「按现有医疗容量应配医护人数」的倍数。1 000 000 表示恰好配齐；低于 1 000 000 表示缩编；高于 1 000 000 表示超配。目标值经 S03 的招工闸（地区同技能劳动力池 INV-076 与 param.hiring_friction_ppm）才可能实现，因此这是一个意愿参数，不是结果参数。"
+    },
+    {
+      "key": "region_weight_rule",
+      "label_zh": "地区权重规则",
+      "type": "enum",
+      "unit": "dimensionless",
+      "values": [
+        "equal",
+        "by_population",
+        "by_queue"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 2,
+      "encoding": {
+        "equal": 0,
+        "by_population": 1,
+        "by_queue": 2
+      },
+      "step": 1,
+      "default_encoded": 2,
+      "param_slot": "policy_enact 命令槽 j=3 → state.policy.params_ppm[policy.P10][3]",
+      "desc_zh": "拨款额在选中地区之间的分配规则，按 encoding 编码为整数存入 ppm 槽（SimCore 运行期不出现字符串，10 号文件 §0.6）。V-PD-09 的 default ∈ valid_range 对 default_encoded 求值。分配一律用 split_largest_remainder，Σ 分项精确等于拨款额（INV-003）。by_queue 的权重取上季末 state.pubserv.queue_persons；当全部选中地区的权重和为 0 时退化为 by_population（显式规定，避免 W == 0 时把余额丢进登记账）。",
+      "_note_value_codes": {
+        "equal": 0,
+        "by_population": 1,
+        "by_queue": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    }
+  ],
+  "preconditions": [
+    {
+      "code": "blk.authority",
+      "kind": "legal_authority",
+      "bit": 3,
+      "expr_zh": "state.politics.legal_authority_mask 的第 3 位 == 1",
+      "blocking": true
+    },
+    {
+      "code": "blk.window",
+      "kind": "budget_window",
+      "metric": "state.politics.next_budget_review_q",
+      "op": "le",
+      "value_ref": "state.time.q",
+      "expr_zh": "state.politics.next_budget_review_q <= state.time.q（即本季是预算审查季，q ≡ 3 (mod 4)，INV-127）",
+      "blocking": true
+    },
+    {
+      "code": "blk.cooldown",
+      "kind": "cooldown",
+      "metric": "state.policy.cooldown_until_q[policy.P10]",
+      "op": "le",
+      "value_ref": "state.time.q",
+      "expr_zh": "state.policy.cooldown_until_q[policy.P10] <= state.time.q（INV-098）",
+      "blocking": true
+    },
+    {
+      "code": "gap.budget_opex",
+      "kind": "budget_reservation",
+      "amount_ref": "player_params.grant_per_q_uu",
+      "priority_line": "service_opex",
+      "expr_zh": "S02 能在 state.gov.cash_uu 内为 service_opex 档预留 grant_per_q_uu（reserved_memo <= cash，INV-033）",
+      "blocking": true
+    },
+    {
+      "code": "gap.budget_project",
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu",
+      "scale_ref": "project_launch.scale_ppm（capacity_program_scale_ppm，见 _note_launch_command_fields）",
+      "per_region": true,
+      "priority_line": "project_contracts",
+      "applies_when": {
+        "metric": "project_launch.scale_ppm（capacity_program_scale_ppm，见 _note_launch_command_fields）",
+        "op": "gt",
+        "value": 0
+      },
+      "expr_zh": "选中地区数 × mul_ppm(cost.per_quarter_uu, capacity_program_scale_ppm) 可在 project_contracts 档预留；且合同总额进入 state.gov.committed_memo_uu（INV-032）",
+      "blocking": true
+    },
+    {
+      "code": "blk.no_slot",
+      "kind": "construction_slot",
+      "region_ref": "param:region_mask",
+      "slots": 1,
+      "applies_when": {
+        "metric": "project_launch.scale_ppm（capacity_program_scale_ppm，见 _note_launch_command_fields）",
+        "op": "gt",
+        "value": 0
+      },
+      "expr_zh": "每个选中地区 derived.region.construction_slots_used < state.region.construction_slots_total（INV-094）",
+      "blocking": true
+    }
+  ],
+  "cost": {
+    "_note_scope_zh": "以下为「单地区、单个标准扩容包、capacity_program_scale_ppm == 1 000 000」口径。多地区与非标准规模按 player_params 线性缩放，缩放后的每一项仍须整数且拆分和精确相等。",
+    "one_off_uu": 900000000,
+    "per_quarter_uu": 150000000,
+    "planned_quarters": 6,
+    "spend_lines_uu_per_q": {
+      "import_equipment": 45000000,
+      "domestic_material": 30000000,
+      "construction_service": 75000000
+    },
+    "_note_spend_lines_payee_zh": {
+      "import_equipment": "agent.row（同时增 flow.world.imports_uu / imports_uqs[sector.manu]，受 state.world.delivery_capacity_uqs[manu] 与 state.world.credit_limit_uu 约束）",
+      "domestic_material": "agent.cell.<region>.manu",
+      "construction_service": "agent.cell.<region>.services（并占用 flow.region.construction_capacity_uqs）"
+    },
+    "opex_per_q_uu": 18000000,
+    "required_construction_uqs": 450000,
+    "required_equipment_uqs": 270000,
+    "_note_budget_curve_uu_per_q": [
+      150000000,
+      150000000,
+      150000000,
+      150000000,
+      150000000,
+      150000000
+    ],
+    "_note_budget_curve_note_zh": "逐季支出计划（μU），长度 == planned_quarters，Σ == one_off_uu == 900000000。每季三个支出落点之和 45000000 + 30000000 + 75000000 == 150000000 == per_quarter_uu（V-PD-03，精确，加载器不做归一化补偿）。未履约部分不计完成：付款不制造进度（INV-087）。"
+  },
+  "_note_operating_cost": {
+    "service_opex_per_q_uu": 18000000,
+    "service_opex_scope_zh": "每个已投运扩容包每季的中间消耗与维护支出，投运时计入 state.gov.service_opex_committed_uu（12 号文件 §7.1），由 service_opex 档支付。不含人员工资。",
+    "staff_wage_channel_zh": "医护人员工资走 gov 支付优先级的 public_wages 档，金额 == Σ_k state.pubserv.health_staff_persons[r][k] × state.price.wage_uu_per_person_q[k]，人员构成按 param.p10_staff_skill_mix_ppm 分档。首版不允许欠薪（INV-079），因此编制扩张的真实上限是 public_wages 档的可支付额，而不是本政策的任何参数。",
+    "staff_required_rule_zh": "required_staff[r] = base_health_staff_persons[r] + idiv_ceil(mul(delta_health_capacity_uqs_per_q[r], param.p10_staff_per_capacity_persons_per_qs), 1000000)；target_staff[r] = mul_ppm(required_staff[r], staff_target_ppm)。base_health_staff_persons[r] 取 pubserv_init.json 的 health_staff_persons（北原 125 262 / 中州 255 610 / 海岬 73 373 / 西岭 36 892），delta 只计本政策投运的扩容包带来的医疗容量增量。这样 staff_target_ppm == 1 000 000 在 q = 0 逐地区精确等于剧本在岗人数（V-P10-01(a)，容差 0），开局不会出现与政策无关的招聘或裁员。不能对既有容量套用单一全国系数：四地区的现有医护密度是 331 760 / 641 279 / 275 896 / 261 228 人/Q_services，相差 2.4 倍，套全国均值 415 046 会在 q = 0 要求中州裁员 35%、北原增员 25%。",
+    "starvation_consequence_zh": "断供（实付 < 应付）只降低 state.pubserv.availability_ppm[r]，按 12 号文件 §7.2 以 mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm) 递减，并把相关项目置 suspended(financing)。state.pubserv.capacity_active_uqs_per_q、state.pubserv.capital_value_uu 在该路径下不得被写（INV-102）：不删除建筑、不注销资产。恢复时按 param.opex_recover_ppm 每季回升，封顶 1 000 000。本路径只在本政策已有扩容包投运（service_opex 档应付额 > 0）之后才可能发生：应付额为 0 时按 12 号文件 §4.1 的 due_uu == 0 分支，funding_ratio_ppm 恒为 1 000 000。",
+    "trust_side_effect_zh": "对已承诺地区的 service_opex 欠拨会在 S08 §8.1 计入该地区群组的 breach_count，压低 state.group.trust_ppm；信任恢复慢于下降（param.trust_recover_ppm < param.trust_drop_ppm，INV-122）。这不是额外惩罚，而是既有失信通道的一个来源。"
+  },
+  "_note_funding_requirement": {
+    "funding_source_param_zh": "立项与拨款命令必须显式声明资金来源，取值同 command 的 funding_source：cash | bond | reallocation。缺省不填即 REJECT（计划书 §07「融资必须有对手方」）。",
+    "sources": [
+      {
+        "id": "cash",
+        "label_zh": "国库现金",
+        "constraint_zh": "受 state.gov.cash_uu >= 0（INV-016）与 state.gov.reserved_memo_uu <= cash（INV-033）约束。"
+      },
+      {
+        "id": "bond",
+        "label_zh": "债券融资",
+        "constraint_zh": "国内 <= min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm))；外部 <= state.world.credit_limit_uu − state.world.credit_used_uu（INV-034）。票息由 state.world.sovereign_rate_ppm_per_q 决定，玩家不能设利率。"
+      },
+      {
+        "id": "reallocation",
+        "label_zh": "税收调度（预算内调剂）",
+        "constraint_zh": "由 budget_reallocate 命令从其它支出档划入；源档额度不足即 REJECT(E_BUDGET_INSUFFICIENT)。调剂不产生新增借款，也不进入任何 GDP 口径（INV-029）。"
+      }
+    ],
+    "payment_priority_lines_used": [
+      "service_opex",
+      "public_wages",
+      "project_contracts"
+    ],
+    "priority_note_zh": "三条档位在 state.gov.payment_priority 中的相对次序由玩家的 set_payment_priority 命令决定（8 类全排列，INV-039）。把 service_opex 排到末档是一个合法选择，其后果就是失败路径 financing。",
+    "project_queue_zh": "设施扩容占用 state.region.construction_slots_total 的 1 个槽位／地区（INV-094）；同时其进度受 flow.region.construction_capacity_uqs（由本地区 cell.<r>.services 实际产量按 param.construction_share_cap_ppm 折出）限制。两条约束分别对应失败路径 congestion 的两种形态：开不了工与推不动进度。",
+    "not_occupied_zh": "capacity_program_scale_ppm == 0 时，本政策不占用任何施工槽位、不产生 committed_memo，只占 service_opex 与 public_wages 两档的当季现金。"
+  },
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 2,
+    "max_feedback_q": 4,
+    "commission_delay_q": 1
+  },
+  "_note_lag_model": {
+    "earliest_feedback_path": "availability_recovery",
+    "earliest_feedback_q": 2,
+    "full_effect_q_range": [
+      2,
+      11
+    ],
+    "derivation_zh": "时滞不是写死的常数，它由三个量决定。(1) 生效：命令在 q = t 受理，S02 在 q = t + enact_to_effect_q(1) 通过并预留资金。(2) 可用率恢复：q = t+1 的 S04 足额支付后，S07 §7.2 才把 availability_ppm 抬高一次（+param.opex_recover_ppm）；该值要到 q = t+2 的 S05 才被 funded = mul_ppm(capacity_active, availability) 读到，所以 delivered_uqs 的首次上升最早在 t+2。恢复到 1 000 000 所需季数 = idiv_ceil(1 000 000 − availability_ppm_start, param.opex_recover_ppm)；以 param.opex_recover_ppm = 50 000 与典型缺口 150 000 计为 3 季，故完全生效落在 t+4 之内 —— 这正是计划书 §09 给 P10 的「2—4 季」。但这条腿在本剧本的基年没有行程：pubserv_init.json 四个地区的 availability_ppm 全为 1 000 000，government_init.json 的 service_opex 档应付额为 0，按 12 号文件 §4.1 的 due_uu == 0 分支比值恒为 1 000 000，没有可恢复的缺口。它只在两种情形下成为最早反馈腿：本政策的扩容包投运后出现欠拨，或冲击／剧本把某地区的 availability_ppm 压到 1 000 000 以下。该前提与计划书 §09「2—4 季」之间的冲突登记在 _note_open_questions_registered 的待决依赖 D，本文件不单方面裁定，也不因此改小 lag.min_feedback_q（计划书是第 1 优先级文档）。(3) 编制：S03 的 param.hiring_friction_ppm 使单季在岗人数最多增加 10%，抬高 15% 编制需要 2 季；若地区同技能劳动力池不足（INV-076），季数无上界，此时表现为失败路径 staff_shortage 而不是更长的时滞。(4) 设施：planned_quarters(6) + commission_delay_q(1) = 7 季，且完工前一季才写 capacity_pending、再下一季 S01 才转 capacity_active（INV-091）。设施路径明确慢于 2—4 季，它不是「最早反馈」，玩家在预览里看到的是两条不同的时间线。",
+    "drivers": [
+      "param.opex_recover_ppm 与 state.pubserv.availability_ppm 的当前缺口（决定可用率恢复季数）",
+      "param.opex_starve_decay_ppm 与 shortfall_ppm（决定断供时的衰减速度，不对称于恢复）",
+      "param.hiring_friction_ppm 与地区同技能可用劳动力池（决定编制到位季数）",
+      "cost.planned_quarters、flow.region.construction_capacity_uqs、state.world.delivery_capacity_uqs[sector.manu]（决定设施路径的完工季）",
+      "state.gov.payment_priority 中 service_opex 的档位（决定当季是否足额支付）"
+    ]
+  },
+  "effect": {
+    "kind": "capacity_delta",
+    "target": "state.pubserv.capacity_pending_uqs_per_q",
+    "capacity_delta_uqs_per_q": 144000,
+    "capacity_unit_ref": "sector.services",
+    "unit_note_zh": "μQ_services/季，与 state.pubserv.capacity_active_uqs_per_q 同口径；由 mul_ppm(cost.one_off_uu, content.io.capacity_per_capital_uu_ppm[sector.services]) 派生，载入期按 V-P10-02 复算。按 capacity_program_scale_ppm 缩放。只写 *_pending_*，下一季 S01 转 active（INV-054/INV-091，V-PD-11）。"
+  },
+  "_note_additional_effects": [
+    {
+      "kind": "staff_target",
+      "target": "state.pubserv.health_staff_persons",
+      "rule_zh": "S03 把 target_staff[r] 作为该地区医疗岗的目标在岗人数（构造式见 _note_operating_cost.staff_required_rule_zh：基期在岗人数 + 新增容量按 param.p10_staff_per_capacity_persons_per_qs 反算的增量），按 param.p10_staff_skill_mix_ppm 分到 low/mid/high 三档，再经 S03 §3.2 的摩擦上限、地区劳动力池闸与工资资金闸得到实际在岗人数。群组侧 state.group.employed_persons[g][pubserv] 同步写回，两侧逐（地区，技能）精确相等（INV-077）。",
+      "writer_step": "S03"
+    },
+    {
+      "kind": "opex_commitment",
+      "target": "state.gov.service_opex_committed_uu",
+      "rule_zh": "每个扩容包投运时 += mul_ppm(cost.opex_per_q_uu, capacity_program_scale_ppm)（12 号文件 §7.1）。这是一条只增的持续义务，退出政策不会使它消失（见 exit_rule）。",
+      "writer_step": "S07"
+    }
+  ],
+  "effect_chain": [
+    {
+      "link": 1,
+      "from": "state.policy.params_uu[policy.P10][1]（每季拨款额 grant_per_q_uu）",
+      "rule": "S02 §2.1 政策生效与预算预留；按 payment_priority 的 service_opex 档预留（INV-033）",
+      "to": "state.gov.reserved_memo_uu",
+      "step": "S02"
+    },
+    {
+      "link": 2,
+      "from": "state.gov.reserved_memo_uu",
+      "rule": "S04 §4.1 按 region_weight_rule 用 split_largest_remainder 分到选中地区，Σ 分项精确等于拨款额（INV-003）；现金不足则部分支付并登记 state.gov.arrears_by_payee_uu（ARREARS，INV-030）",
+      "to": "flow.gov.pay_opex_uu[region]",
+      "step": "S04"
+    },
+    {
+      "link": 3,
+      "from": "flow.gov.pay_opex_uu[region]",
+      "rule": "S04 §4.1 funding_ratio_ppm[r] = (due_uu == 0) ? 1 000 000 : mul_div_floor(实付, 1 000 000, 应付)（新刻度下 AMOUNT_MAX × 1e6 == 4e21 真的溢出 int64，必须走 mul_div_floor，裁定 R-SCALE-01）；应付 = 本政策已在该地区投运的扩容包数 × mul_ppm(cost.opex_per_q_uu, capacity_program_scale_ppm)。既有公共服务的运行费不在本档（government_init.json 的 service_opex 档开局为 0），所以在第一个包投运之前该地区应付为 0、比值恒为 1 000 000。",
+      "to": "flow.pubserv.funding_ratio_ppm[region]",
+      "step": "S04"
+    },
+    {
+      "link": 4,
+      "from": "flow.pubserv.funding_ratio_ppm[region]",
+      "rule": "S07 §7.2 足额则 availability_ppm += param.opex_recover_ppm（封顶 1 000 000）；欠拨则 −= mul_ppm(param.opex_starve_decay_ppm, shortfall_ppm)。capacity_active 与 capital_value 在本路径下不得被写（INV-102）",
+      "to": "state.pubserv.availability_ppm[region]",
+      "step": "S07"
+    },
+    {
+      "link": 5,
+      "from": "state.pubserv.availability_ppm[region] × state.pubserv.capacity_active_uqs_per_q[region]",
+      "rule": "S05 §5.7 funded = mul_ppm(capacity_active, availability)；delivered = min(funded, 本地区医疗服务需求)",
+      "to": "flow.pubserv.delivered_uqs[region]",
+      "step": "S05"
+    },
+    {
+      "link": 6,
+      "from": "flow.pubserv.delivered_uqs[region] 与本地区医疗服务需求之差",
+      "rule": "S05 §5.7 未获服务人数按各组需求用 split_largest_remainder 摊回；需求由 param.p10_health_need_uqs_per_kperson_q 与 param.p10_health_need_age_ppm 从 state.group.population_persons 生成",
+      "to": "state.pubserv.queue_persons[region]",
+      "step": "S05"
+    },
+    {
+      "link": 7,
+      "from": "flow.pubserv.delivered_uqs[region] 分摊到组的部分",
+      "rule": "S07 §7.8 service_access_ppm[g][health] = idiv_floor(delivered_to_g × 1 000 000, max(base_delivered_g, 1))；base_* 在 q = 0 由剧本固定，之后只读",
+      "to": "state.group.service_access_ppm[g][health]",
+      "step": "S07"
+    },
+    {
+      "link": 8,
+      "from": "state.group.service_access_ppm[g][health]",
+      "rule": "S08 §8.1 当期生活指数中 param.living_weight_service_ppm 权重的服务分量",
+      "to": "state.group.living_index_ppm[g]",
+      "step": "S08"
+    },
+    {
+      "link": 9,
+      "from": "state.group.living_index_ppm[g]",
+      "rule": "S08 §8.2 support 按 param.support_weight_ppm[0]（生活）合成，来源分解逐项记录（INV-123）；全国值只由逐组值按人口加最大余数法得出（INV-124）",
+      "to": "state.group.support_ppm[g] → derived.politics.support_national_ppm",
+      "step": "S08"
+    },
+    {
+      "link": 10,
+      "from": "state.policy.params_ppm[policy.P10][2]（编制目标 staff_target_ppm）",
+      "rule": "S03 §3.2 target_staff = mul_ppm(required_staff, staff_target_ppm)，required_staff = 基期在岗人数 + idiv_ceil(mul(本政策新增医疗容量, param.p10_staff_per_capacity_persons_per_qs), 1000000)；经 param.hiring_friction_ppm 摩擦上限、地区同技能劳动力池配给（INV-076）与工资资金闸（INV-079）",
+      "to": "state.pubserv.health_staff_persons[region] 与 state.group.employed_persons[g][pubserv]",
+      "step": "S03"
+    },
+    {
+      "link": 11,
+      "from": "project_launch.scale_ppm（设施规模 capacity_program_scale_ppm，见 _note_launch_command_fields）",
+      "rule": "S02 立项占 state.region.construction_slots_total 槽位；S05 §5.5 施工进度只由实投施工量决定（INV-087/088），交付进度只由实际到货设备量决定并受 state.world.delivery_capacity_uqs[sector.manu] 约束（INV-089）",
+      "to": "state.project.construction_progress_ppm / state.project.delivery_progress_ppm",
+      "step": "S02 → S05"
+    },
+    {
+      "link": 12,
+      "from": "两项进度 == 1 000 000 且配套条件满足（运行费已纳入承诺 且 state.pubserv.health_staff_persons >= mul_ppm(该包所需医护, param.p10_commission_staff_ratio_ppm)，OQ-245）",
+      "rule": "S07 §7.1 完工只写 pending（INV-091）",
+      "to": "state.pubserv.capacity_pending_uqs_per_q[region]",
+      "step": "S07"
+    },
+    {
+      "link": 13,
+      "from": "state.pubserv.capacity_pending_uqs_per_q[region]",
+      "rule": "S01 §1.1 pending → active 并清零 pending；capacity_active 的增量写入点全局唯一（INV-054）",
+      "to": "state.pubserv.capacity_active_uqs_per_q[region]（回到第 5 环）",
+      "step": "S01"
+    },
+    {
+      "link": 14,
+      "from": "flow.pubserv.wage_bill_uu + flow.pubserv.intermediate_uu + flow.pubserv.depreciation_uu",
+      "rule": "S06 §6.3 非市场产出按成本计价，全额计入 flow.gov.final_consumption_uu，不重复计算（INV-101）",
+      "to": "flow.pubserv.output_uu[region] → derived.gdp.production_uu",
+      "step": "S06",
+      "honesty_note_zh": "这一环是会计恒等，不是政策收益。多花钱雇医护，按成本计价的非市场产出必然上升，这不能被解释成「医疗拨款提高了增长」。判断本政策是否奏效，只能看第 6、7 环（排队人数与服务可及性），不能看这一环。"
+    }
+  ],
+  "_note_targets": {
+    "regions_rule_zh": "由 player_params.region_mask 选中；位掩码 0..3 对应 region.beiyuan / region.zhongzhou / region.haijia / region.xiling。",
+    "entities": [
+      "pubserv.beiyuan",
+      "pubserv.zhongzhou",
+      "pubserv.haijia",
+      "pubserv.xiling"
+    ],
+    "entities_note_zh": "只作用于被选中地区的 pubserv 主体（sector.services 的非市场子账户）。不直接作用于任何 cell.<region>.<sector>。",
+    "groups_rule_zh": "被选中地区的全部 9 个 group.<region>.<age>.<skill>，经 state.group.service_access_ppm[g][health] 受影响。医疗需求权重按年龄档 param.p10_health_need_age_ppm 分档（minor / working / elder），因此老年占比高的地区在同等人口下需求更高，受益与受损的分布被保留（计划书 §08）。",
+    "allocation_rule_zh": "拨款额在选中地区之间的分配一律用 split_largest_remainder(grant_per_q_uu, weights, 地区下标)，Σ 分项 == grant_per_q_uu 精确成立（INV-003）。weights 由 region_weight_rule 决定：equal → 每区 1；by_population → derived.region.population_persons；by_queue → 上季末 state.pubserv.queue_persons。by_queue 且全部权重为 0 时退化为 by_population（显式规定，不进入 W == 0 分支）。并列余数按地区下标升序（0 北原 → 3 西岭）打破，禁止随机。",
+    "excluded_zh": "不作用于 sector.services 的市场部分（商业、物流、施工、住房服务），也不改变 content.pubserv.service_capacity_split_ppm 中 education / utility 的份额：本政策只能增加医疗口径的容量与人员，不能把教育容量改挂到医疗名下。"
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "remaining_contract_ppm",
+    "compensation_ppm": 300000,
+    "settlement_zh": [
+      "已发生成本：state.project.paid_uu 不回退，现金不增加（INV-093）。已支付的进口设备款、材料款与施工款留在收款方账上。",
+      "已交付资产：已投运的容量留在 state.pubserv.capacity_active_uqs_per_q 与 capital_value_uu 上，不被删除（INV-102）。已投运资产的运行费义务 state.gov.service_opex_committed_uu 不因政策退出而减少 —— 退出只意味着不再新增拨款，于是 availability_ppm 按 param.opex_starve_decay_ppm 衰减。这是本政策最重要的不可逆成本，必须在确认前的四季现金预测里显示。",
+      "未完工工程：按当前 wip 登记 state.project.residual_value_uu；state.gov.committed_memo_uu 只减去未付部分（INV-032）。",
+      "合同赔偿：cancel_penalty_uu = mul_ppm(合同剩余未付额, compensation_ppm)，以 kind = cancel_penalty 入账，三种 GDP 口径均为 none（11 号文件 §5.3）。",
+      "人员：编制目标回落到 800 000 ppm 下限或政策关闭后的基线，缩编只能由 S03 在下一季通过 separations 实现（INV-080）；首版裁员不产生遣散费（OQ-211）。",
+      "冷却与重开：toggle_count 递增并产生一次性行政成本 toggle_cost_uu；cooldown_until_q 推进 cooldown_q 季。重新开启不补发历史季的任何拨款（INV-097 的同类纪律）。"
+    ]
+  },
+  "political_reaction": {
+    "bloc.labor_public": 320000,
+    "bloc.agri_coop": 110000,
+    "bloc.business": -80000
+  },
+  "_note_political_reaction_basis": [
+    {
+      "bloc_id": "bloc.labor_public",
+      "direction": "support",
+      "stance_delta_ppm": 320000,
+      "interest_channel_zh": "该集团关心就业保障、工资与教育医疗（计划书 §08）。本政策直接抬高 state.pubserv.health_staff_persons 与 state.group.employed_persons[g][pubserv]，其成员规模（derived.bloc.membership_persons）随之上升，state.bloc.resource_uu 的来源也扩大。依据是编制与工资这两个可核算的量，不是好感。",
+      "reverses_when_zh": "若 service_opex 或 public_wages 出现欠付（state.gov.arrears_by_payee_uu 指向 pubserv 或其在职人员），立场按同一利益通道反向：承诺的编制没有兑现比没有承诺更糟。"
+    },
+    {
+      "bloc_id": "bloc.agri_coop",
+      "direction": "conditional_support",
+      "stance_delta_ppm": 110000,
+      "interest_channel_zh": "该集团关心农户收入与地区资源分配。北原与西岭是 q = 0 仅有的两个正排队地区（需求 441 000 / 156 900 对容量 377 567 / 141 225 μQ_services/季，缺口 63 433 / 15 675），若 region_mask 含 region.beiyuan 或 region.xiling，其成员的服务可及性上升，立场为正；若拨款全部投向 region.zhongzhou 与 region.haijia（这两个地区在 q = 0 本就有容量余量 47 194 / 21 944 μQ_services/季，加钱不产生交付），同一通道给出负值（地区资源分配向城市倾斜）。因此这个数值是条件性的，由实际的地区权重结果决定，不是固定态度。不能拿 state.group.service_access_ppm[health] 的基期值当依据：population_init.json 把 36 个组的基期可及率一律登记为 1 000 000（裁定 R-ACCESS-01 的相对口径），基期不平等在本剧本里只体现为排队缺口。",
+      "reverses_when_zh": "region_mask 不含 region.beiyuan 且不含 region.xiling 时，取 −60 000。"
+    },
+    {
+      "bloc_id": "bloc.business",
+      "direction": "oppose",
+      "stance_delta_ppm": -80000,
+      "interest_channel_zh": "该集团关心能源、运输、利润与政策可预期性。本政策占用 project_contracts 档与 state.region.construction_slots_total 槽位，与 P04 电网、P08 港口等直接改善其生产条件的项目竞争同一批施工能力与预算；同时经常性支出上升会抬高偿债率 derived.fiscal.debt_service_ratio_ppm，进而抬高新发债票息（INV-038），提高其面对的融资价格预期。反对的依据是被挤出的项目与被抬高的利率，不是意识形态。",
+      "reverses_when_zh": "capacity_program_scale_ppm == 0（不占施工槽位）且 funding_source == reallocation（不新增借款）时，取 −20 000。"
+    }
+  ],
+  "_note_affected_groups_zh": "群组层面不存在独立的政治反应字段。群组只通过 state.group.living_index_ppm / expectation_ppm / trust_ppm 三个分开存储的量影响 support_ppm（INV-121），本政策的群组效应全部经 effect_chain 第 7—9 环产生。任何「给某群组直接加支持度」的写法都违反 INV-095/INV-123。",
+  "failure_paths": [
+    {
+      "code": "financing",
+      "label_zh": "拨款被支付优先级挤出",
+      "test_id": "T-U-D-10",
+      "proposed_test_id": "T-S-P10-FAIL-FINANCING",
+      "test_id_binding_note_zh": "T-U-D-10（test_u_payment_priority）断言「第 4..8 档实付额 == 0」且「arrears 增量 == 第 4..8 档应付额之和」（30 号文件 §5）。本失败路径的机制就是 service_opex 档被挤到低档后实付 < 应付并登记欠付，由该用例逐条覆盖；它没有覆盖的是随后 S07 §7.2 把 availability_ppm 压低这一段，那一段需要拟议 ID 的专用用例。",
+      "trigger_zh": "S04 执行到 service_opex 档时可用现金不足，实付 < 应付 ⇒ flow.pubserv.funding_ratio_ppm < 1 000 000 ⇒ S07 使 state.pubserv.availability_ppm 下降。",
+      "trigger_expr": "flow.pubserv.funding_ratio_ppm[r] lt 1000000",
+      "player_sees_zh": "本季实付低于应付，缺口若干；海岬医疗可用率由 X 降至 Y，排队人数由 A 升至 B。已建成的设施没有被删除，下降的是可用率。",
+      "ui_text_key": "policy.P10.fail.financing"
+    },
+    {
+      "code": "staff_shortage",
+      "label_zh": "人才不足，新容量无法投运",
+      "test_id": "T-S-P10-FAIL-QUEUE",
+      "proposed_test_id": "T-S-P10-FAIL-STAFF-SHORTAGE",
+      "test_id_binding_note_zh": "30 号文件 §4.2 给 P10 登记的失败链是「人员或设施不足 ⇒ queue_persons 上升而交付量不上升」。本路径是其中「人员不足」的那一支：在岗医护低于投运下限 ⇒ 项目停在 completed ⇒ 交付量不变、排队不降。",
+      "trigger_zh": "S03 的地区同技能可用劳动力池不足（INV-076）或工资资金闸（INV-079）使 state.pubserv.health_staff_persons < mul_ppm(该包所需医护, param.p10_commission_staff_ratio_ppm)；S07 §7.1 的配套条件不满足，项目停在 status == completed，capacity_pending 不被写。",
+      "trigger_expr": "state.pubserv.health_staff_persons[r] lt mul_ppm(required_staff_of_package, param.p10_commission_staff_ratio_ppm)",
+      "player_sees_zh": "西岭扩容包施工与交付均已 100%，但医疗岗在岗 N 人、投运需要 M 人，缺口 M−N 人；本地区中技能可用劳动力 P 人。工程已建成，尚未投入使用；排队人数不变。",
+      "ui_text_key": "policy.P10.fail.staff_shortage"
+    },
+    {
+      "code": "capacity_bound",
+      "label_zh": "可用率已满，拨款不再产生交付",
+      "test_id": "T-S-P10-FAIL-QUEUE",
+      "proposed_test_id": "T-S-P10-FAIL-CAPACITY-BOUND",
+      "test_id_binding_note_zh": "同上，属于「设施不足」的那一支：可用率已满、交付量被 capacity_active 封顶，继续加拨款不改变交付量而排队仍为正。这正是该矩阵行要抓的观察结果。",
+      "trigger_zh": "state.pubserv.availability_ppm == 1 000 000 且 flow.pubserv.delivered_uqs == mul_ppm(capacity_active, 1 000 000) 且 queue_persons > 0：交付量被 capacity_active 而不是被资金封顶，继续增加 grant_per_q_uu 不改变 delivered。",
+      "trigger_expr": "state.pubserv.availability_ppm[r] eq 1000000 and state.pubserv.queue_persons[r] gt 0",
+      "player_sees_zh": "中州医疗可用率已达 100%，本季交付量等于容量上限；排队 N 人。增加拨款不会改变交付量，本地区的限制因素是设施容量，出口是设施扩容（最早第 T 季投运）。",
+      "ui_text_key": "policy.P10.fail.capacity_bound",
+      "design_note_zh": "这是计划书 §09「政策可以在某些条件下明显无效，玩家必须能理解无效发生在哪里」的主承载路径：钱照付、非市场产出照增、排队一人不减，且原因被明确定位到容量而不是资金。"
+    },
+    {
+      "code": "congestion",
+      "label_zh": "施工队列拥堵",
+      "test_id": "T-S-P10-FAIL-QUEUE",
+      "proposed_test_id": "T-S-P10-FAIL-CONGESTION",
+      "test_id_binding_note_zh": "施工槽位被占满或本季获配施工量为 0，是「设施不足」在时间上的上游成因，其在 P10 口径下的观察结果仍是 queue_persons 不降而交付量不升，落在同一矩阵行内。注意：槽位上限本身是否被静默突破由 T-S-P04-FAIL-CONGESTION 在 mech.project_queue 层面断言，但那条用例跑的是 FX-CONG + 电网项目，不会经过 pubserv，故不在此处冒充 P10 的覆盖。",
+      "trigger_zh": "立项时 derived.region.construction_slots_used >= state.region.construction_slots_total（INV-094），或 flow.region.construction_capacity_uqs 被同地区其它项目占满使 construction_progress_ppm 本季不增。",
+      "trigger_expr": "derived.region.construction_slots_used[r] ge state.region.construction_slots_total[r]",
+      "player_sees_zh": "海岬 2 个施工槽位已被占用（P04 电网、P06 住房），本季扩容包不能开工；或已开工但本季获配施工量 0，进度停在 X%。可选出口：延期、取消其中一项、或改投不占槽位的纯拨款方案。",
+      "ui_text_key": "policy.P10.fail.congestion"
+    },
+    {
+      "code": "delivery",
+      "label_zh": "医疗设备交付受阻",
+      "test_id": "T-S-P10-FAIL-QUEUE",
+      "proposed_test_id": "T-S-P10-FAIL-DELIVERY",
+      "test_id_binding_note_zh": "进口医疗设备未到货 ⇒ delivery_progress_ppm < 1 000 000 ⇒ 不得完工 ⇒ 容量不增，在 P10 口径下同样落在「设施不足 ⇒ 排队不降」这一行。两条进度相互独立这一点由 T-S-P04-FAIL-DELIVERY 在 mech.project_queue 层面断言，但它同样不经过 pubserv。",
+      "trigger_zh": "进口设备量受 state.world.delivery_capacity_uqs[sector.manu] 与 state.world.credit_limit_uu 约束（INV-104），delivery_progress_ppm < 1 000 000；即使施工 100% 也不得完工（INV-090）。",
+      "trigger_expr": "state.project.delivery_progress_ppm lt 1000000",
+      "player_sees_zh": "本季设备到货 X 单位，累计交付进度 Y%；外部交付能力上限 Z 单位/季。施工进度 100%，完工条件仍未满足。",
+      "ui_text_key": "policy.P10.fail.delivery"
+    },
+    {
+      "code": "no_demand",
+      "label_zh": "没有未满足需求时的空转",
+      "test_id": "T-R-E-04",
+      "proposed_test_id": "T-S-P10-FAIL-NO-DEMAND",
+      "test_id_binding_note_zh": "本路径要防的是「空转时凭空产生收益」：排队为 0、交付量被需求封顶，钱照付，而 service_access_ppm / support_ppm / 任何 GDP 口径都不得出现无来源的增量。T-R-E-04（test_r_trace）断言每个发生变化的字段都能在本季日志里找到同 q 同 entity 的来源、「无法解释的变化字段数 == 0」，正是这条纪律的机器版本；它没有覆盖的是「delivered 的约束项确实是需求而不是资金」这一条定位断言。",
+      "trigger_zh": "该地区 state.pubserv.queue_persons == 0 且 flow.pubserv.delivered_uqs 已等于需求：delivered = min(funded, 需求) 中的约束项是需求，抬高 funded 不改变 delivered。",
+      "trigger_expr": "state.pubserv.queue_persons[r] eq 0",
+      "player_sees_zh": "西岭本季排队 0 人，交付量等于需求量；新增容量 X 单位/季处于闲置。支出仍然发生并按成本计入公共非市场产出，服务可及性与支持度不变。",
+      "ui_text_key": "policy.P10.fail.no_demand"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P10-GATE",
+    "T-S-P10-CHAIN",
+    "T-S-P10-FAIL-QUEUE",
+    "T-U-A-09",
+    "T-S-A-12",
+    "T-S-A-16",
+    "T-U-A-23",
+    "T-S-D-07"
+  ],
+  "_note_acceptance_tests_spec": [
+    {
+      "proposed_test_id": "T-S-P10-NO-EFFECT-WITHOUT-PRECOND",
+      "bound_test_id": "T-S-P10-GATE",
+      "coverage_note_zh": "完全对应。30 号文件 §4.3 的 T-S-P<nn>-GATE 模板断言①命令 REJECT 且错误码精确、②提交前后 state_hash 逐位相同、③log.rejections 增 1 行、④effect.target 随后 12 季累计变化 == 0、⑤policy.enabled == 0 —— 与本条 asserts 逐条同构。",
+      "given_zh": "给定 state.politics.legal_authority_mask 的第 3 位为 0（未取得预算法案授权），其余状态为剧本初值。",
+      "when_zh": "当在任意季提交 policy_enact(policy.P10, region_mask = 15, grant_per_q_uu = 240000000, staff_target_ppm = 1400000) 并对每个选中地区提交 project_launch(policy.P10, region, scale_ppm = 2000000)。",
+      "then_zh": "则命令被 REJECT 并记 reject_code = blk.authority；state_hash 与命令提交前逐位相同（INV-137）；state.policy.enabled[P10] == 0；state.pubserv.availability_ppm、capacity_pending、health_staff_persons、state.group.service_access_ppm 全部不变；state.gov.cash_uu 不变（不得扣任何预留或行政成本）。",
+      "asserts": [
+        "reject_code == blk.authority",
+        "state_hash_after == state_hash_before",
+        "state.policy.enabled[policy.P10] == 0",
+        "delta(state.pubserv.capacity_pending_uqs_per_q) == 0",
+        "delta(state.gov.cash_uu) == 0"
+      ],
+      "covers": [
+        "INV-095",
+        "INV-137",
+        "计划书 §17「未满足前置条件不得发放效果」"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-NO-DEMAND-NO-BONUS",
+      "bound_test_id": "T-U-A-23",
+      "coverage_note_zh": "部分覆盖。T-U-A-23（GDP 三口径恒等，残差恰为 0）与 T-R-E-04（无法解释的变化字段数 == 0）合起来封住了「凭空发 GDP 与支持率」这条；未被覆盖的是「delivered 的约束项是需求而非资金」这一定位断言，需要 proposed_test_id 的专用用例。",
+      "given_zh": "给定 region.xiling 的 state.pubserv.queue_persons == 0 且 flow.pubserv.delivered_uqs 已等于该地区医疗需求，availability_ppm == 1 000 000。",
+      "when_zh": "当把 grant_per_q_uu 提到 240000000 并推进 4 季。",
+      "then_zh": "则 flow.pubserv.delivered_uqs[xiling] 不增加；state.group.service_access_ppm[g][health] 对该地区 9 个组全部不变；state.group.support_ppm 的服务来源分解项为 0；derived.gdp.production_uu 的增量必须逐笔等于 flow.pubserv.output_uu 的成本增量（工资 + 中间消耗 + 折旧，INV-101），除此之外不得出现任何 GDP 增量；不得出现任何直接写 support_ppm 的分录。",
+      "asserts": [
+        "delta(flow.pubserv.delivered_uqs[region.xiling]) == 0",
+        "delta(state.group.service_access_ppm[*][health]) == 0",
+        "delta(derived.gdp.production_uu) == delta(flow.pubserv.output_uu)",
+        "count(ledger rows with cause == policy.P10 and target == state.group.support_ppm) == 0"
+      ],
+      "covers": [
+        "INV-101",
+        "INV-113",
+        "INV-123",
+        "计划书 §10「没有销路时不能直接发放 GDP 与支持率奖励」"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-QUEUE-BEFORE-CAPACITY",
+      "bound_test_id": "T-S-P10-FAIL-QUEUE",
+      "coverage_note_zh": "完全对应。30 号文件 §4.2 给 P10 的失败链原文即「人员或设施不足 ⇒ queue_persons 上升而交付量不上升」。",
+      "given_zh": "给定 region.zhongzhou 的 availability_ppm == 1 000 000、医疗需求 > mul_ppm(capacity_active, 1 000 000)、queue_persons > 0。",
+      "when_zh": "当把 grant_per_q_uu 从 60000000 提到 240000000 并推进 4 季，capacity_program_scale_ppm 保持 0。",
+      "then_zh": "则 delivered_uqs 不增加、queue_persons 不减少；诊断输出 log.constraint_diag 给出 capacity_bound；界面原因卡含容量数字、需求数字与缺口，且出口中包含设施扩容并标明最早投运季。",
+      "asserts": [
+        "delta(flow.pubserv.delivered_uqs[region.zhongzhou]) == 0",
+        "delta(state.pubserv.queue_persons[region.zhongzhou]) <= 0 is false",
+        "reason_code emitted == capacity_bound",
+        "reason.exits length >= 1"
+      ],
+      "covers": [
+        "INV-103",
+        "计划书 §09「人才与设施不足时先形成排队」"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-STAFF-GATE-NO-COMMISSION",
+      "bound_test_id": "T-S-P10-FAIL-QUEUE",
+      "coverage_note_zh": "属于同一矩阵行的「人员不足」分支；该行要抓的观察结果（交付不升、排队不降）与本条一致。未被覆盖的是 project.status 停在 completed、commissioned_q 保持 −1 这两条状态码断言。",
+      "given_zh": "给定 region.xiling 的扩容包 delivery_progress_ppm == 1 000 000 且 construction_progress_ppm == 1 000 000，但该地区 mid 与 high 技能未就业劳动力为 0，使 state.pubserv.health_staff_persons 低于 mul_ppm(该包所需医护, param.p10_commission_staff_ratio_ppm)。",
+      "when_zh": "当推进 3 季。",
+      "then_zh": "则 state.project.status 停在 completed，不进入 commissioned；state.pubserv.capacity_pending_uqs_per_q 与 capacity_active_uqs_per_q 均不增加；state.project.commissioned_q 保持 −1；每季都给出可解释的原因（缺口人数与可用劳动力人数）。",
+      "asserts": [
+        "state.project.status == completed",
+        "delta(state.pubserv.capacity_pending_uqs_per_q) == 0",
+        "delta(state.pubserv.capacity_active_uqs_per_q) == 0",
+        "state.project.commissioned_q == -1"
+      ],
+      "covers": [
+        "INV-090",
+        "INV-091",
+        "OQ-245"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-OPEX-STARVE-KEEPS-ASSET",
+      "bound_test_id_absent_reason_zh": "矩阵中无覆盖用例；理由见 coverage_note_zh 与 _note_test_binding.matrix_gap_zh。",
+      "coverage_note_zh": "矩阵中没有任何一条用例跑 pubserv 的运行费欠拨路径。最接近的 T-S-P06-FAIL-OPEX 是 P06 住房的用例，夹具与写入点都不经过 state.pubserv.*，把它写成本条的 test_id 会是一次虚假的覆盖声明，故此处留空，并在 _note_test_binding.matrix_gap 里登记为必须新增的矩阵行（INV-102 目前在 P10 上无测试）。",
+      "given_zh": "给定某地区已有已投运的医疗容量与 service_opex 义务，且本季把 grant_per_q_uu 设为 0。",
+      "when_zh": "当推进 1 季。",
+      "then_zh": "则 state.pubserv.availability_ppm 下降；state.pubserv.capacity_active_uqs_per_q、state.pubserv.capital_value_uu、state.gov.capital_uu 三者严格不变；欠拨被记入 log.arrears 与该地区群组的 breach_count。",
+      "asserts": [
+        "delta(state.pubserv.availability_ppm) < 0",
+        "delta(state.pubserv.capacity_active_uqs_per_q) == 0",
+        "delta(state.pubserv.capital_value_uu) == 0",
+        "count(log.arrears rows with payee == pubserv) >= 1"
+      ],
+      "covers": [
+        "INV-102",
+        "INV-055",
+        "计划书 §07「停拨款会降低实际服务，而非删除建筑」"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-EARLIEST-FEEDBACK-2Q",
+      "bound_test_id": "T-S-P10-CHAIN",
+      "coverage_note_zh": "对应。30 号文件 §4.3 的 T-S-P<nn>-CHAIN 模板断言③「结果指标首次非零出现的季 ≥ q0 + lag.min_feedback_q 且 ≤ q0 + lag.max_feedback_q」，本政策 lag.min_feedback_q = 2、max_feedback_q = 4，即计划书 §09 的「2—4 季」。未被覆盖的是本条的敏感性分支（param.opex_recover_ppm 改成 25 000 时完全生效推迟到 t+7）。",
+      "given_zh": "给定某地区 availability_ppm == 850000、capacity_active 未被需求触顶（queue_persons > 0），param.opex_recover_ppm == 50000。",
+      "when_zh": "当在 q = t 足额设定 grant_per_q_uu 并连续推进 6 季。",
+      "then_zh": "则 flow.pubserv.delivered_uqs 在 q = t 与 q = t+1 均不增加，首次增加发生在 q = t+2；availability_ppm 在 q = t+3 结束时达到 1 000 000；完全生效不迟于 q = t+4。该断言必须随 param.opex_recover_ppm 改变而改变（改成 25000 时首次增加仍在 t+2、完全生效推迟到 t+7），以证明时滞由参数驱动而非写死。",
+      "asserts": [
+        "delta(flow.pubserv.delivered_uqs) at q in {t, t+1} == 0",
+        "delta(flow.pubserv.delivered_uqs) at q == t+2 > 0",
+        "state.pubserv.availability_ppm at end of q == t+3 equals 1000000",
+        "sensitivity: with param.opex_recover_ppm == 25000, full effect q == t+7"
+      ],
+      "covers": [
+        "12 号文件 §7.2",
+        "计划书 §09「2—4 季」"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-GRANT-SPLIT-EXACT",
+      "bound_test_id": "T-U-A-09",
+      "coverage_note_zh": "覆盖恒等式部分。T-U-A-09（1 000 组 split_largest_remainder 全部满足 Σ 分项 == total）封住拆分函数本身；T-S-A-12（每季 log.rounding 每条 total − Σ parts == residual，且 Δgov.rounding_residual_uu 精确等于本季残差和）封住「余数不得静默丢失」，且是对全部拆分的全称断言，包含本政策的拨款分区。未被覆盖的是「并列余数按地区下标升序打破」这一条 P10 专属的确定性断言。",
+      "given_zh": "给定 region_mask == 15（四地区全选）、grant_per_q_uu == 240000000、region_weight_rule 分别取 equal / by_population / by_queue。",
+      "when_zh": "当 S04 执行分配。",
+      "then_zh": "则三种规则下 Σ 四地区分项都精确等于 240000000，无余数丢失；并列余数按地区下标升序打破，两次运行结果逐位相同；by_queue 且四地区排队均为 0 时退化为 by_population 且同样精确对账。",
+      "asserts": [
+        "sum(flow.gov.pay_opex_uu[r] for r in selected) == 240000000",
+        "deterministic: two runs produce identical allocation",
+        "log.rounding has no unexplained residual"
+      ],
+      "covers": [
+        "INV-003",
+        "INV-005",
+        "INV-008"
+      ]
+    },
+    {
+      "proposed_test_id": "T-S-P10-EXIT-NO-REFUND",
+      "bound_test_id": "T-S-D-07",
+      "coverage_note_zh": "覆盖机制层。T-S-D-07（test_s_cancel_keeps_spent）断言 paid_uu 取消后精确不变、取消当季现金不增、committed_memo 只减未付部分 —— 与本条前三项 asserts 同构，且走的是同一段 mech.project_queue 取消逻辑。它的夹具是 FX-P04（电网项目），因此不覆盖本条第四项断言（已投运扩容包的 service_opex_committed_uu 不变）。",
+      "given_zh": "给定一个已付 3 季、尚未完工的扩容包，已付 450000000 μU。",
+      "when_zh": "当提交 project_cancel。",
+      "then_zh": "则 state.project.paid_uu 不回退、state.gov.cash_uu 不增加；state.gov.committed_memo_uu 只减去未付的 450000000 μU；residual_value_uu 与 cancel_penalty_uu 均入账且 cancel_penalty_uu == mul_ppm(450000000, 300000) == 135000000 μU；已投运的其它扩容包的 service_opex_committed_uu 不变。",
+      "asserts": [
+        "delta(state.project.paid_uu) == 0",
+        "delta(state.gov.cash_uu) <= 0",
+        "delta(state.gov.committed_memo_uu) == -450000000",
+        "state.project.cancel_penalty_uu == 135000000"
+      ],
+      "covers": [
+        "INV-093",
+        "INV-032"
+      ]
+    }
+  ],
+  "_note_test_binding": {
+    "why_zh": "V-PD-06 / V-PD-07 要求 failure_paths 的每个 test_id 与 acceptance_tests 的每个 ID 在测试注册表中真实存在；注册表的唯一数据源是 docs/30_quality_gates.md 的矩阵表（30 号文件 §0.2 原文：本文件新增一行，注册表加一条）。该矩阵目前只为 P10 登记了三个 ID：T-S-P10-CHAIN、T-S-P10-GATE、T-S-P10-FAIL-QUEUE（§4.2）。同一校验器又要求 failure_paths >= 4 条、acceptance_tests >= 5 条。本政策的机制规格（六条失败路径、八条验收判据）没有删减，只是把 test_id 绑定到矩阵中真实存在的用例上，并逐条登记该用例覆盖了什么、没覆盖什么；原先自拟的 ID 全部保留在 proposed_test_id 里。内容包不能自己往矩阵里加行（那是 docs/30_quality_gates.md 的职责），故不在此私自扩充注册表。",
+    "bound_ids_used": {
+      "T-S-P10-GATE": "30 号文件 §4.2 + §4.3 通用模板：前置条件恰好一条不满足时 REJECT 且不改状态。",
+      "T-S-P10-CHAIN": "30 号文件 §4.2 + §4.3 通用模板：作用路径逐段可追溯，结果指标首次非零落在 [min_feedback_q, max_feedback_q]。",
+      "T-S-P10-FAIL-QUEUE": "30 号文件 §4.2 P10 行：人员或设施不足 ⇒ queue_persons 上升而交付量不上升。",
+      "T-U-D-10": "30 号文件 §5：支付优先级低档实付 == 0 且 arrears 增量 == 低档应付额之和。",
+      "T-R-E-04": "30 号文件 §6.2：每个发生变化的字段都能在本季日志中找到来源，无法解释的变化字段数 == 0。",
+      "T-U-A-09": "30 号文件 §2.2：split_largest_remainder 的 1 000 组黄金向量全部满足 Σ 分项 == total。",
+      "T-S-A-12": "30 号文件 §2.2：每季 log.rounding 每条 total − Σ parts == residual，余数不得静默丢失。",
+      "T-S-A-16": "30 号文件 §2.3：每季末 inventory[sector.services] == 0；公共服务交付量不得被当成可跨季结转的库存。",
+      "T-U-A-23": "30 号文件 §2.4：GDP 三口径恒等，残差恰为 0；封住 effect_chain 第 14 环的「按成本计价不等于政策收益」。",
+      "T-S-D-07": "30 号文件 §5：项目取消不退已花的钱，committed_memo 只减未付部分。"
+    },
+    "matrix_gap_zh": "下列断言目前在矩阵中没有任何一条用例覆盖，必须由 docs/30_quality_gates.md 新增矩阵行（内容包无权自行登记）：① 运行费欠拨只降 availability_ppm、不写 capacity_active / capital_value（INV-102 在 pubserv 上的唯一防线，proposed_test_id = T-S-P10-OPEX-STARVE-KEEPS-ASSET）；② 投运配套人员闸不满足时 project.status 停在 completed、commissioned_q 保持 −1（proposed_test_id = T-S-P10-STAFF-GATE-NO-COMMISSION，OQ-245）；③ 拨款分区的并列余数按地区下标升序打破、两次运行逐位相同（proposed_test_id = T-S-P10-GRANT-SPLIT-EXACT）；④ 空转时 delivered 的约束项是需求而非资金这一条定位断言（proposed_test_id = T-S-P10-FAIL-NO-DEMAND / T-S-P10-NO-DEMAND-NO-BONUS）；⑤ 时滞随 param.opex_recover_ppm 改变而改变的敏感性分支（proposed_test_id = T-S-P10-EARLIEST-FEEDBACK-2Q）。在这五条补进矩阵之前，本政策的失败路径只做到「机制层有测试」，没有做到「P10 夹具下有测试」，这一点必须如实写在 G5 的覆盖报告里，不得声称已覆盖。",
+    "open_question_ref": "OQ-220（未列举的十一项政策规格：V-PD-06 会在这十一项上集中爆发）；tools/validate_content.py 的 OQ-V02（测试注册表 tests/tools/test_registry.gd 尚未存在）。"
+  },
+  "_note_schema_gap": {
+    "why_zh": "11 号文件 §5.12 的 PolicyDefinition schema 只声明有限的顶层键，校验器按 additionalProperties:false 执行。本文件原有的 19 个扩展键已全部按 §3 给出的补救办法改名为 _note_* 注释键（内容一字未删）。另外两个键曾被认为无法这样处理，现已各自结清：",
+    "effect_chain_zh": "已结清。tools/validate_content.py 按「计划书 §09 > 11 号文件 §5.12 字段表」的文档优先级，把 effect_chain 正式登记进 SCHEMAS['policy_definition']（必填、array、要求 >= 4 环），原 OQ-V03 关闭。契约侧待办是把该字段补进 §5.12 的字段表与 docs/18；在那之前 schema 表与 §5.12 正文的差异只有这一个字段。本文件为此不需要做任何事，effect_chain 保持为正式字段。",
+    "parameters_zh": "已结清，办法是承认错的是位置而不是键名。param.* 参数身份证按 11 号文件 §5.15（裁定 R-PARAM-01）与 §6.7 只能写在 schema_kind == parameter_set 的 content/parameters/params_core.json 的 cards[] 里，PolicyDefinition 没有也不应有承载它们的顶层键——顶层 parameters 报 E_UNKNOWN_FIELD，改名 _note_parameters 报 E_PARAM_CARD，两条同时成立正说明这里根本不是它们该待的地方。上一版据此推断「保留顶层 parameters 比改名轻」，那个推断是错的：schema 未声明的顶层键同样不会被载入器读到，它比注释键多的只有「拼错字段名不被发现」这一个坏处。现已把五张卡降级为 _note_params_core_pending 的草稿（标识键用 id，不冒充 parameter_id），迁移账记在待决依赖 B。",
+    "renamed_keys": [
+      "code",
+      "slug",
+      "governance_tool",
+      "field_map",
+      "operating_cost",
+      "funding_requirement",
+      "lag_model",
+      "additional_effects",
+      "targets",
+      "political_reaction_basis",
+      "affected_groups_note_zh",
+      "acceptance_tests_spec",
+      "load_checks",
+      "content_value_cards",
+      "ui_copy",
+      "open_questions_registered",
+      "notes_zh",
+      "legal_authority.authority_label_zh",
+      "legal_authority.instrument_zh",
+      "legal_authority.rationale_zh"
+    ],
+    "renamed_note_zh": "改名只改键名，不改任何取值；_note_* 键不进 content_hash、载入器不读，因此 targets / operating_cost / funding_requirement 这些实质规格目前处于「写下来了但契约没有正式入口」的状态。正解是修订 11 号文件 §5.12 把它们登记为正式字段，而不是把它们删掉。唯一的例外是 parameters：它不是「缺正式入口」，而是它的正式入口在另一个文件里（params_core.json），所以它被降级为迁移草稿而不是等着被登记。"
+  },
+  "mechanism_ids": [
+    "mech.service_opex",
+    "mech.service_capacity",
+    "mech.public_staffing",
+    "mech.project_queue"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 mech.service_opex_funding → mech.service_opex（JWCapital.set_funding_ratio 与运行费支付线是同一条账）；其余原样保留。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "_note_load_checks": [
+    {
+      "id": "V-P10-01",
+      "expr_zh": "(a) 对每个地区 r：base_required_staff[r] == pubserv_init.health_staff_persons[r] 精确成立（容差 0），其中 base_intensity[r] = idiv_floor(mul(pubserv_init.health_staff_persons[r], 1000000), mul_ppm(pubserv_init.capacity_active_uqs_per_q[r], pubserv_init.service_capacity_split_ppm[r][health]))，base_required_staff[r] = idiv_ceil(mul(mul_ppm(capacity_active[r], split[r][health]), base_intensity[r]), 1000000)；(b) param.p10_staff_per_capacity_persons_per_qs == idiv_floor(mul(Σ_r health_staff_persons[r], 1000000), Σ_r mul_ppm(capacity_active[r], split[r][health]))。",
+      "reason_zh": "本政策的编制目标由「容量 → 应配人数」反算：(a) 保证 staff_target_ppm == 1 000 000 在 q = 0 逐地区就是现状，玩家看到的第一件事不会是一个与政策无关的假动作；(b) 把新增容量所用的全国系数钉在剧本上，不让它漂成一个自由参数。两款在当前剧本下的实测值：base_intensity = 331 760 / 641 279 / 275 896 / 261 228 人/Q_services，四地区 base_required_staff 与 health_staff_persons 的差均为 0；全国系数 == 415 046。上一版写的是「单一系数 30 000 + 15% 比例容差」，在 pubserv_init.json 落地后整片失败（按它中州只需 11 960 人，剧本给了 255 610 人，差 21 倍），所以这里换掉的是构造式，不是容差——容差反而从 15% 收紧到 0。",
+      "error_code": "E_P10_STAFF_COEFF_INCONSISTENT"
+    },
+    {
+      "id": "V-P10-02",
+      "expr_zh": "effect.capacity_delta_uqs_per_q == mul_ppm(cost.one_off_uu, content.io.capacity_per_capital_uu_ppm[sector.services])",
+      "reason_zh": "防止「凭空产能」：扩容包的新增容量必须由其形成的资产额按统一的资本—产能系数派生，不能自行填一个更大的数（计划书 §16 人工评审要点）。",
+      "error_code": "E_P10_CAPACITY_INCONSISTENT"
+    },
+    {
+      "id": "V-P10-03",
+      "expr_zh": "sum(cost.spend_lines_uu_per_q) == cost.per_quarter_uu 且 cost.per_quarter_uu × cost.planned_quarters == cost.one_off_uu 且 sum(cost.budget_curve_uu_per_q) == cost.one_off_uu 且 len(cost.budget_curve_uu_per_q) == cost.planned_quarters",
+      "reason_zh": "V-PD-03 的本政策特化，外加预算曲线自身的加总校验。",
+      "error_code": "E_POLICY_COST"
+    },
+    {
+      "id": "V-P10-04",
+      "expr_zh": "cost.required_construction_uqs == mul_ppm(mul(cost.spend_lines_uu_per_q.construction_service, cost.planned_quarters), param.uu_to_construction_uqs_ppm) 且 cost.required_equipment_uqs == idiv_floor(mul(cost.spend_lines_uu_per_q.import_equipment, cost.planned_quarters), BASE_PRICE_UU_PER_UQS)",
+      "reason_zh": "所需施工量与设备量必须与支出落点同源，否则「付款不制造进度」（INV-087）会退化成两套互不相干的数字，失败路径 congestion 与 delivery 将不可标定。实测：施工 mul_ppm(75000000 × 6, 1000) == 450 000 μQ_services；设备 idiv_floor(45000000 × 6, 1000) == 270 000 μQ_manu，其中 BASE_PRICE_UU_PER_UQS == 1000 μU/μQ_s（裁定 R-SCALE-01 后 1 Q_s 的基年价是 1 000 000 000 μU，金额与数量不再数值相等；上一版写的 「× 1000000 / 1000000」是旧刻度下两者恰好相等的写法，已作废）。",
+      "error_code": "E_P10_PHYSICAL_INCONSISTENT"
+    },
+    {
+      "id": "V-P10-05",
+      "expr_zh": "sum(param.p10_staff_skill_mix_ppm) == 1000000",
+      "reason_zh": "分档构成必须精确加总为 1，否则编制目标拆分到技能档时会产生无来源或丢失的人数。",
+      "error_code": "E_P10_SKILL_MIX"
+    }
+  ],
+  "_note_params_core_pending": {
+    "status_zh": "以下五项是本政策所需的 param.* 行为系数的**卡片草稿，不是生效的参数身份证**。按 11 号文件 §5.15（裁定 R-PARAM-01）与 §6.7，param.* 卡片只能写在 schema_kind == parameter_set 的 content/parameters/params_core.json 的 cards[] 里；PolicyDefinition 的 schema（§5.12 + additionalProperties:false）没有、也不应有承载它们的顶层键。上一版把五张卡放在顶层 parameters 键下，这是本文件 E_UNKNOWN_FIELD 的唯一来源；而改名成 _note_parameters 会触发「参数身份证写在 _note_* 注释子树里，载入器不读注释键，等于这张卡不存在」的 E_PARAM_CARD。两条同时成立，说明错的是位置，不是键名。故此处只保留草稿：标识键用 id 而不是 parameter_id，明确它不冒充一张卡。",
+    "consequence_zh": "在 params_core.json 落地之前，这五个 param.* 在载入期不存在：SimCore 不得读它们，V-PC-06 会把引用它们的裸数字报为未覆盖，tools/build_param_registry.py 会按 PR-024 把它们登记为「带卡片字段却无 parameter_id、未进登记表」的近似卡 WARN。这是如实的状态，不是被藏起来的状态——把它们留在顶层 parameters 键下同样不会被载入器读到，区别只是那样还会让「拼错字段名」不被发现。",
+    "migration_zh": "落地方式：把 cards_draft 的每一项整体复制进 params_core.json 的 cards[]，把 id 改回 parameter_id，其余九字段一字不改；然后删除本文件的 _note_params_core_pending，并在 _note_open_questions_registered 的待决依赖 B 上销账。迁移后必须重跑 tools/build_param_registry.py：登记表里这五张卡的 _origin_file / _origin_pointer 会变。",
+    "cards_draft": [
+      {
+        "id": "param.p10_health_need_uqs_per_kperson_q",
+        "value": 50,
+        "unit": "μQ_services/千人/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「居民群组关心实际可支配收入、住房负担、服务与预期」；12 号文件 §5.7 只写了「本地区服务需求」而未给出其构造式；取值按本内容包 population_init.json 与 pubserv_init.json 标定（见 calibration_note）",
+        "reference_year": 0,
+        "definition": "每 1 000 人每季的基础医疗服务需求量（未经年龄档调整）。地区需求 = Σ_g mul(idiv_floor(population_persons[g], 1000), mul_ppm(本值, param.p10_health_need_age_ppm[age]))。以「每千人」为分母是为了让整数结果不落在 1 μQ 以下：按本剧本 24 000 000 人与三档年龄乘数折算，全国基年医疗需求为 1 193 300 μQ_services/季。",
+        "valid_range": [
+          20,
+          200
+        ],
+        "confidence": "low",
+        "calibration_note": "本值已按已落地的剧本标定，不再是悬空假设。四地区基年医疗容量 = mul_ppm(capacity_active_uqs_per_q, service_capacity_split_ppm[health]) = 377 567 / 398 594 / 265 944 / 141 225 μQ_services/季（北原／中州／海岬／西岭），合计 1 183 330；以本值 50 算出的需求为 441 000 / 351 400 / 244 000 / 156 900，合计 1 193 300。结果是北原与西岭在 q = 0 有正排队（缺口 63 433 与 15 675 μQ_services/季），中州与海岬没有，正是本卡要求的「基年恰有 1—2 个地区有正排队」。该窗口很窄：本值 ≤ 43 时四地区全部无排队（政策没有可解决的问题），≥ 55 时海岬加入、≥ 58 时中州也加入（四地区全线排队，40 季内无解）。因此改本值之前必须重跑这四组数，且不要先动 param.p10_staff_per_capacity_persons_per_qs。上一版取 150，对应四地区全部排队 2.6—3.5 倍，与本条自述的标定目标直接矛盾。"
+      },
+      {
+        "id": "param.p10_health_need_age_ppm",
+        "value": [
+          900000,
+          800000,
+          2200000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「首版按 4 地区 × 3 年龄层 × 3 技能档建立 36 个槽位」——年龄结构必须对服务需求有可观察的作用，否则 36 个槽位退化为 12 个",
+        "reference_year": 0,
+        "definition": "医疗需求的年龄档乘数，下标顺序固定为 minor / working / elder（10 号文件 §0.5）。三档不要求加总为任何常数：它们是乘数，不是份额。",
+        "valid_range": [
+          200000,
+          4000000
+        ],
+        "confidence": "low",
+        "calibration_note": "本表与 param.p10_health_need_uqs_per_kperson_q 联立决定基年排队分布，二者必须同时重跑：现取值下西岭（老年占比 16.0%，全国最高）在人口只有北原三分之一的情况下仍然排队，而中州（老年占比 13.0%）不排队，说明年龄结构确实在起作用。检验方式：把某地区的 elder 人口整体迁走（测试夹具），断言该地区医疗需求下降的幅度与本表一致。若老年档乘数抬到 3 000 000 以上仍不能让老龄地区与年轻地区的排队出现可辨差异，说明真正的瓶颈是 capacity 的地区分布而不是需求侧，应先改剧本初值。"
+      },
+      {
+        "id": "param.p10_staff_per_capacity_persons_per_qs",
+        "value": 415046,
+        "unit": "人/Q_services",
+        "source_type": "derived",
+        "derivation_expr": "idiv_floor(mul(Σ_r pubserv_init.health_staff_persons[r], 1000000), Σ_r mul_ppm(pubserv_init.capacity_active_uqs_per_q[r], pubserv_init.service_capacity_split_ppm[r][health]))",
+        "source_ref": "content/scenarios/chengwan/pubserv_init.json：四地区医疗岗在岗合计 491 137 人，医疗容量合计 1 183 330 μQ_services/季，idiv_floor(491137 × 1e6, 1183330) == 415 046",
+        "reference_year": 0,
+        "definition": "维持 1 Q_services/季 的**新增**医疗服务容量所需的在岗医护人数。只用于两处：本政策扩容包的配套人员反算（一个标准包 144 000 μQ_services/季 需 idiv_ceil(mul(144000, 415046), 1000000) == 59 767 人），以及 S07 投运配套条件的人员下限。既有容量不用本值：既有容量按 pubserv_init 逐地区反算的基期密度计（V-P10-01(a)），因为四地区现有医护密度为 331 760 / 641 279 / 275 896 / 261 228 人/Q_services、相差 2.4 倍，任何单一系数套在既有容量上都会在 q = 0 制造与政策无关的大规模招聘或裁员。",
+        "valid_range": [
+          200000,
+          700000
+        ],
+        "confidence": "medium",
+        "calibration_note": "本值与剧本 pubserv_init 是同一事实的两种写法，由 V-P10-01(b) 在载入期精确交叉校验（容差 0，不是比例容差）。pubserv_init 改动时改本卡的 value 去对齐剧本，不要放宽 V-P10-01。上一版取 30 000，来自 11 号文件 §5.8 的文档示例（capacity 2 600 000 μQ、split 400 000 ppm、31 000 人），与本剧本实际相差 13.8 倍：按它反算中州只需 11 960 名医护而剧本给了 255 610 名，15% 的容差会在载入期四地区整片爆掉。"
+      },
+      {
+        "id": "param.p10_staff_skill_mix_ppm",
+        "value": [
+          200000,
+          480000,
+          320000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P10「人才与设施不足时先形成排队」——「人才」必须落在具体技能档上才可能不足；10 号文件 §4.3 与 INV-078（首版不允许技能向下替代）；比例按本剧本 pubserv_init.json 四地区在岗人员构成 low/mid/high = 298 668 / 711 327 / 470 271 人（201 766 / 480 539 / 317 693 ppm）取整",
+        "reference_year": 0,
+        "definition": "医疗岗位的技能档构成，下标顺序 low / mid / high，Σ == 1 000 000（V-P10-05）。它决定编制目标向哪个地区劳动力池取人，因而决定「人才不足」在哪个档位发生。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "检验方式：把某地区 working.mid 组的失业人数清零，断言该地区 health_staff_persons 的增长在一季内停住且失败路径 staff_shortage 被触发。若把 mid 份额降到 400 000 以下后该路径仍能轻易触发，说明瓶颈其实来自 high 档，应改本表而不是改 param.hiring_friction_ppm。因 INV-078 禁止技能替代，本表的偏斜会直接转成排队，不会被自动抹平。上一版取 [200 000, 650 000, 150 000]，其 high 档只有剧本实际构成（317 693 ppm）的一半，会把「高技能医护不足」这条最现实的瓶颈提前抹掉。"
+      },
+      {
+        "id": "param.p10_commission_staff_ratio_ppm",
+        "value": 800000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "OQ-245「项目完工的配套条件」的临时取法要求「目标主体的人员不为零」；本卡把「不为零」收紧为一个可标定的比例",
+        "reference_year": 0,
+        "definition": "新扩容包投运所需的最低在岗率：在岗医护 >= mul_ppm(该包所需医护人数, 本值) 才允许由 completed 进入 commissioned。取 800 000 表示允许 20% 的编制缺口下先投运；一个标准包所需 59 767 人，投运下限即 47 813 人。",
+        "valid_range": [
+          500000,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "本值是「设施建好却不能用」这条失败路径的强度旋钮。取 1 000 000 会让人才不足的地区永远无法投运（过严，玩家将得到一条无出口的死路）；取 500 000 以下会让配套条件形同虚设，T-S-P10-STAFF-GATE-NO-COMMISSION 将难以构造。参照量级：西岭现有医疗岗 36 892 人，一个标准包的投运下限 47 813 人已超过该地区现有医护总数，按 param.hiring_friction_ppm 每季 10% 的上限至少需要 8 季才可能补齐 —— 这正是该失败路径在西岭必然触发的原因，不是参数取坏了。先在 800 000 跑 40 季基线，统计西岭与北原的投运延迟季数中位数；若中位数为 0，说明过松。"
+      }
+    ]
+  },
+  "_note_content_value_cards": [
+    {
+      "content_ref": "policy.P10.cost.one_off_uu",
+      "value": 900000000,
+      "unit": "μU",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 的 P04 示例（总成本 4 U / 8 季）给出量级参照；基础医疗单包规模应显著小于电网工程",
+      "reference_year": 0,
+      "definition": "单地区单个标准医疗扩容包的合同总额（capacity_program_scale_ppm == 1 000 000 口径）。相当于基年全年名义 GDP 100 000 000 000 μU 的 0.9%。",
+      "valid_range": [
+        300000000,
+        3000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "先检验财政可承受性：四地区同时立项 = 3 600 000 000 μU 承诺，占基年全年支出计划 22 000 000 000 μU 的约 16.4%，必须能被四季现金预测显示为可承受或明确不可承受，两者都是合格结果。若玩家可以毫无代价地四区齐上，说明本值偏低。"
+    },
+    {
+      "content_ref": "policy.P10.cost.per_quarter_uu",
+      "value": 150000000,
+      "unit": "μU/季",
+      "source_type": "derived",
+      "derivation_expr": "idiv_floor(policy.P10.cost.one_off_uu, policy.P10.cost.planned_quarters)",
+      "source_ref": "V-PD-03 要求 per_quarter_uu × planned_quarters == one_off_uu 精确成立",
+      "reference_year": 0,
+      "definition": "标准扩容包的每季合同支出额。900 000 000 / 6 == 150 000 000，整除，无余数需要登记。",
+      "valid_range": [
+        50000000,
+        500000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "改 one_off_uu 或 planned_quarters 后必须重算本值并保持整除；若不能整除，改 planned_quarters 而不是引入余数项（首版不允许在合同额上出现取整余数登记）。"
+    },
+    {
+      "content_ref": "policy.P10.cost.planned_quarters",
+      "value": 6,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09：P10 最早反馈 2—4 季、P06 公共住房 6—12 季、P04 电网 4—8 季。医疗设施规模小于住房与电网，取工期下沿",
+      "reference_year": 0,
+      "definition": "标准扩容包的计划工期（季）。它不是本政策的「最早反馈」季数：最早反馈来自可用率恢复路径（2 季），设施路径合计 6 + 1 = 7 季。",
+      "valid_range": [
+        2,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "若试玩中玩家把设施路径误认为「政策要 7 季才有反应」，问题在界面没有把两条时间线分开显示，先改预览，不要缩短工期。"
+    },
+    {
+      "content_ref": "policy.P10.cost.spend_lines_uu_per_q",
+      "value": [
+        45000000,
+        30000000,
+        75000000
+      ],
+      "unit": "μU/季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §10 的支出落点要求「各有收款方」；顺序固定为 import_equipment / domestic_material / construction_service",
+      "reference_year": 0,
+      "definition": "每季合同支出的三个落点金额，Σ == 150 000 000 == per_quarter_uu，精确相等（V-P10-03）。设备占 30%：医疗设备依赖进口，因而 P10 与 P04、P08 共用同一条外部交付能力约束。",
+      "valid_range": [
+        0,
+        500000000
+      ],
+      "confidence": "low",
+      "calibration_note": "设备份额是失败路径 delivery 的强度旋钮。若把设备份额降到 10% 以下，delivery 将几乎无法触发，T-S-P10-FAIL-DELIVERY 会变成一个永远绿的空测试；此时应先确认这是有意的设计而不是漏标。"
+    },
+    {
+      "content_ref": "policy.P10.cost.opex_per_q_uu",
+      "value": 18000000,
+      "unit": "μU/季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「服务有运行费」；12 号文件 §7.1 在投运时把它并入 state.gov.service_opex_committed_uu",
+      "reference_year": 0,
+      "definition": "每个已投运扩容包每季的中间消耗与维护支出，不含人员工资（工资走 public_wages 档）。相当于资产额 900 000 000 μU 的 2%/季。它同时是 service_opex 档应付额的唯一来源：开局该档应付额为 0，每投运一个标准包 += 18 000 000 μU/季。",
+      "valid_range": [
+        0,
+        100000000
+      ],
+      "confidence": "low",
+      "calibration_note": "这是本政策不可逆成本的主体之一：建得越多，未来每季的固定义务越高。检验方式是连续立 4 个包后观察 derived.fiscal.next4q_debt_service_uu 与 service_opex_committed 的合计是否在报告里被显示为「新增长期承诺」；若玩家在确认前看不到它，问题在界面（计划书 §04「辨认不可逆成本与未来运行负担」）。"
+    },
+    {
+      "content_ref": "policy.P10.cost.required_construction_uqs",
+      "value": 450000,
+      "unit": "μQ_services",
+      "source_type": "derived",
+      "derivation_expr": "mul_ppm(mul(policy.P10.cost.spend_lines_uu_per_q.construction_service, policy.P10.cost.planned_quarters), param.uu_to_construction_uqs_ppm)",
+      "source_ref": "INV-087/INV-088：进度只由实投施工量决定，与 paid_uu 无函数依赖",
+      "reference_year": 0,
+      "definition": "完成标准扩容包所需的施工服务总量。与施工支出同源派生，保证「付款不制造进度」时两者仍处在同一量级。",
+      "valid_range": [
+        0,
+        5000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "param.uu_to_construction_uqs_ppm 改动时必须重算本值（V-P10-04）。若不重算，会出现「钱付完了施工量还差一半」这种无法向玩家解释的状态。"
+    },
+    {
+      "content_ref": "policy.P10.cost.required_equipment_uqs",
+      "value": 270000,
+      "unit": "μQ_manu",
+      "source_type": "derived",
+      "derivation_expr": "idiv_floor(mul(policy.P10.cost.spend_lines_uu_per_q.import_equipment, policy.P10.cost.planned_quarters), BASE_PRICE_UU_PER_UQS)，BASE_PRICE_UU_PER_UQS == 1000 μU/μQ_s",
+      "source_ref": "INV-089/INV-104：到货量受 state.world.delivery_capacity_uqs[sector.manu] 约束",
+      "reference_year": 0,
+      "definition": "完成标准扩容包所需的进口医疗设备总量（制造业产品口径）。45 000 000 × 6 == 270 000 000 μU 的设备款，按基年价 1 000 000 000 μU/Q_s（即 1000 μU/μQ_s）折 270 000 μQ_manu。裁定 R-SCALE-01 之后金额与数量不再数值相等，必须显式除以基年价。",
+      "valid_range": [
+        0,
+        3000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "若剧本把 world_init.delivery_capacity_uqs[manu] 设得远大于本值，delivery 失败路径不会自然出现，只能靠 shock.S02 触发；此时应在测试夹具里显式压低交付能力，而不是抬高本值。"
+    },
+    {
+      "content_ref": "policy.P10.effect.capacity_delta_uqs_per_q",
+      "value": 144000,
+      "unit": "μQ_services/季",
+      "source_type": "derived",
+      "derivation_expr": "mul_ppm(policy.P10.cost.one_off_uu, content.io.capacity_per_capital_uu_ppm[sector.services])",
+      "source_ref": "10 号文件 §4.5「capacity_per_capital_uu_ppm 只在投运时使用一次」；取值来自本内容包的 content/scenarios/chengwan/io_table.json：capacity_per_capital_uu_ppm == [200, 180, 55, 160]，sector.services 档为 160 ppm（裁定 R-SCALE-01：该系数的 μU 在分母，1 U 由 1e6 μU 细化为 1e9 μU 后必须 ÷1000；11 号文件 §5.5 示例表里的 700 000 是旧刻度的文档示例，不是本剧本的表）",
+      "reference_year": 0,
+      "definition": "标准扩容包投运后新增的医疗服务容量。按 V-P10-02 在载入期复算；若 io_table 的 capacity_per_capital_uu_ppm 改变，本值必须同步改变。",
+      "valid_range": [
+        0,
+        5000000
+      ],
+      "confidence": "medium",
+      "calibration_note": "本值不是可以单独调的旋钮：mul_ppm(900 000 000, 160) == 144 000 精确成立。改 cost.one_off_uu 或改 io_table 的 capacity_per_capital_uu_ppm，都必须同步复算本值，否则 V-P10-02 与 INV-056 同时破裂。参照量级：一个标准包 144 000 μQ_services/季，相当于全国基年医疗容量 1 183 330 μQ_services/季 的 12.2%、全国基年医疗需求 1 193 300 μQ_services/季 的 12.1%；按 param.p10_health_need_uqs_per_kperson_q == 50 折算，可覆盖 2 880 000 人的未调整基础需求。四地区各按 capacity_program_scale_ppm == 2 000 000 建满（8 个标准包、合计 1 152 000 μQ_services/季）会把全国医疗容量抬到基年需求的约 1.96 倍。更早的一版写的 630 000 取自 11 号文件示例表的 700 000 ppm，与本剧本的 io_table 相差 4.4 倍，属于计划书 §16 人工评审点名的「提前获得的资产能力」，已按本剧本的表改正。"
+    },
+    {
+      "content_ref": "policy.P10.player_params.grant_per_q_uu.valid_range",
+      "value": [
+        0,
+        240000000
+      ],
+      "unit": "μU/季",
+      "source_type": "design_assumption",
+      "source_ref": "本内容包 content/scenarios/chengwan/government_init.json：gov.service_opex_committed_uu == 0 且 annual_plan.expenditure_lines_uu.service_opex == 0（既有公共服务的运行费整笔在 pubserv 账户内，由 procurement 4 200 000 000 μU/年 与 public_wages 9 000 000 000 μU/年 承担）；本政策自身的 cost.opex_per_q_uu == 18 000 000 μU/季",
+      "reference_year": 0,
+      "definition": "每季拨款额的合法区间。基年应付额为 0；本政策每投运一个标准扩容包，service_opex 档的应付额 += 18 000 000 μU/季；可建上限 4 地区 × capacity_program_scale_ppm 2 000 000 ppm == 8 个标准包，故应付额上限 144 000 000 μU/季。上限 240 000 000 在此之上留 66.7% 余量，使「建得起就养得起」在任何合法建设规模下都可达，不至于出现「建得起、养不起、且无论如何调不上去」的死档。下限 0 是合法取值，不是缺失。",
+      "valid_range": [
+        0,
+        1000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "上限不是为了「平衡」，而是为了让 gap.budget_opex 这条原因在现金不足时能给出有意义的数字。本区间只依赖两个已落地的取值（government_init.json 的 service_opex 档、本文件的 cost.opex_per_q_uu），不再依赖任何文档示例：上一版按 11 号文件 §5.8/§5.9 的示例取 420 000 μU/季、400 000 ppm、168 000 μU/季，这三个数在本剧本里都不成立（实际是 0 / 逐地区 324 466—347 709 ppm / 0），而且全部停留在旧货币刻度，已整体作废。仍然待决的是：既有医疗服务的运行费不走 service_opex 档，因此本政策在任何扩容包投运之前无法改变可用率（见 _note_open_questions_registered 的待决依赖 D）。"
+    },
+    {
+      "content_ref": "policy.P10.political_reaction",
+      "value": [
+        320000,
+        110000,
+        -80000
+      ],
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08 三集团各自「关心什么」；顺序固定为 bloc.labor_public / bloc.agri_coop / bloc.business",
+      "reference_year": 0,
+      "definition": "本政策通过后三个集团 state.bloc.stance_ppm[bloc][policy.P10] 的基准变动。每一项都必须能在 political_reaction_basis 里指到一个可核算的利益通道，且都登记了反向条件。",
+      "valid_range": [
+        -1000000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "检验方式：构造两个只有 region_mask 不同的存档（含北原 / 不含北原），断言 bloc.agri_coop 的立场符号相反。若符号不变，说明立场被写成了固定态度而不是利益反应，必须修规则而不是调数值（计划书 §08）。"
+    },
+    {
+      "content_ref": "policy.P10.exit_rule.compensation_ppm",
+      "value": 300000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "11 号文件 §5.12 的 P04 示例采用同一取值；首版对所有项目类政策采用统一的剩余合同赔偿比例",
+      "reference_year": 0,
+      "definition": "取消未完工合同时按剩余未付合同额计提的赔偿比例（30%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "若十二项政策最终对赔偿比例采用不同取值，必须说明差异来自合同性质而不是难度调节；否则统一到一处并升级为 param.*（届时本卡作废）。"
+    },
+    {
+      "content_ref": "policy.P10.cooldown_q",
+      "value": 4,
+      "unit": "季",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「预算每 4 季审查」；INV-098 要求开关有冷却与一次性行政成本",
+      "reference_year": 0,
+      "definition": "两次开关之间的最小间隔季数，取与预算审查周期一致。它使「反复开关补助是否重复领钱」这一类恶意玩家测试在本政策上无从下手。",
+      "valid_range": [
+        1,
+        8
+      ],
+      "confidence": "medium",
+      "calibration_note": "与 ADV-01 同批检验：连续提交 open/close 命令 10 次，断言只有第一次被受理，其余全部 REJECT(blk.cooldown) 且 state_hash 不变。"
+    }
+  ],
+  "ui_text_keys": {
+    "blocked.authority": "policy.P10.blocked.authority",
+    "blocked.window": "policy.P10.blocked.window",
+    "blocked.cooldown": "policy.P10.blocked.cooldown",
+    "blocked.budget_opex": "policy.P10.blocked.budget_opex",
+    "blocked.budget_project": "policy.P10.blocked.budget_project",
+    "blocked.no_slot": "policy.P10.blocked.no_slot",
+    "fail.financing": "policy.P10.fail.financing",
+    "fail.staff_shortage": "policy.P10.fail.staff_shortage",
+    "fail.capacity_bound": "policy.P10.fail.capacity_bound",
+    "fail.congestion": "policy.P10.fail.congestion",
+    "fail.delivery": "policy.P10.fail.delivery",
+    "fail.no_demand": "policy.P10.fail.no_demand"
+  },
+  "_note_ui_copy": {
+    "convention_zh": "以下模板对应 20 号文件 §9.2 的五行结构，槽位一律用命名占位 {slot}，由资格检查器与现金预测器随 JwReason 对象一起返回；界面只填不算（RC-02）。每条至少一个带单位的数字、一个季度标记、一条可执行出口（RC-03/RC-06/RC-08）。文案避开 §9.4 禁用词表。",
+    "entries": [
+      {
+        "code": "blk.authority",
+        "covers": "preconditions[blk.authority]",
+        "severity": "BLOCK",
+        "template_zh": [
+          "◆ 法定权限 · 第 {quarter} 季",
+          "基础医疗拨款需要预算法案授权（服务拨款档）；本届已获授权 {authority_list}，其中不含该档。",
+          "主要占用：本届授权由第 {term_start_q} 季的组阁协议确定，本季无可调剂来源。",
+          "出口：① 在第 {next_review_q} 季的预算审查中提请授权（代价：该季法案窗口只能提请 1 项，将挤占 {competing_item}；缺口降至 0） ② 改为提交不含新增经常性支出的一次性方案（代价：仅设施扩容，最早第 {commission_q} 季投运；缺口降至 {residual_gap}）",
+          "▸ 授权台账 ▸ 第 {next_review_q} 季预算审查"
+        ]
+      },
+      {
+        "code": "blk.window",
+        "covers": "preconditions[blk.window]",
+        "severity": "BLOCK",
+        "template_zh": [
+          "◆ 生效窗口 · 第 {quarter} 季",
+          "经常性拨款的变更在预算审查季生效；下一个窗口是第 {next_review_q} 季，还有 {wait_q} 季。",
+          "主要占用：本季已受理的预算变更 {pending_count} 项。",
+          "出口：① 等待：第 {next_review_q} 季预算审查窗口（代价：{wait_q} 季内可用率按每季 {decay_ppm} 继续下行；缺口降至 {residual_gap}） ② 本季改用一次性设施扩容（代价：占 {region_name} 1 个施工槽位；缺口降至 {residual_gap_2}）",
+          "▸ 预算审查日程 ▸ 公共服务台账"
+        ]
+      },
+      {
+        "code": "blk.cooldown",
+        "covers": "preconditions[blk.cooldown]",
+        "severity": "BLOCK",
+        "template_zh": [
+          "◆ 开关冷却 · 第 {quarter} 季",
+          "本政策上次变更在第 {last_toggle_q} 季，冷却至第 {cooldown_until_q} 季，还有 {wait_q} 季；本届已变更 {toggle_count} 次，每次行政成本 {toggle_cost} {unit}。",
+          "主要占用：冷却期内 {region_list} 的拨款按上次设定继续执行。",
+          "出口：① 等待：第 {cooldown_until_q} 季（代价：期间排队人数预计变动 {queue_delta} 人；缺口降至 {residual_gap}） ② 本季调整地区权重规则（代价：不改变拨款总额，只改分配；缺口降至 {residual_gap_2}）",
+          "▸ 政策变更台账 ▸ 公共服务台账"
+        ]
+      },
+      {
+        "code": "gap.budget_opex",
+        "covers": "preconditions[gap.budget_opex]",
+        "severity": "GAP",
+        "template_zh": [
+          "● 资金预留 · 第 {quarter} 季",
+          "基础医疗拨款需要 {need} {unit}，本季 service_opex 档可预留 {avail} {unit}，缺口 {gap} {unit}。",
+          "主要占用：{driver_0_label} {driver_0_amount}、{driver_1_label} {driver_1_amount}、{driver_2_label} {driver_2_amount}。（另有 {rest_count} 项合计 {rest_amount} {unit}）",
+          "出口：① 把每季拨款调至 {exit_grant} {unit}（代价：{region_list} 可用率恢复推迟 {exit_delay_q} 季；缺口降至 0） ② 发行债券 {exit_bond} {unit}（代价：季度票息约 {exit_coupon} {unit}，偿债率升至 {exit_dsr}；缺口降至 {residual_gap_2}） ③ 从 {from_line} 调剂 {exit_realloc} {unit}（代价：{from_line_effect}；缺口降至 {residual_gap_3}） ④ 把 service_opex 上调至支付优先级第 {exit_priority} 档（代价：{displaced_line} 本季转为欠付；缺口降至 {residual_gap_4}）",
+          "▸ 四季现金预测 ▸ 支出台账 · service_opex 档 ▸ 债务到期表"
+        ]
+      },
+      {
+        "code": "gap.budget_project",
+        "covers": "preconditions[gap.budget_project]",
+        "severity": "GAP",
+        "template_zh": [
+          "● 项目资金 · 第 {quarter} 季",
+          "{region_count} 个地区的医疗扩容包本季需要 {need} {unit}，project_contracts 档可预留 {avail} {unit}，缺口 {gap} {unit}；合同总额 {contract_total} {unit} 将占用未来 {planned_quarters} 季预算。",
+          "主要占用：{driver_0_label} {driver_0_amount}、{driver_1_label} {driver_1_amount}、{driver_2_label} {driver_2_amount}。",
+          "出口：① 把扩容规模调至 {exit_scale}（代价：新增容量降至 {exit_capacity} {capacity_unit}；缺口降至 {residual_gap}） ② 减少作用地区至 {exit_region_list}（代价：{dropped_region_list} 的排队 {dropped_queue} 人本任期内不减；缺口降至 {residual_gap_2}） ③ 发行债券 {exit_bond} {unit}（代价：季度票息约 {exit_coupon} {unit}；缺口降至 {residual_gap_3}）",
+          "▸ 四季现金预测 ▸ 已签合同承诺表 ▸ 地区排队台账"
+        ]
+      },
+      {
+        "code": "blk.no_slot",
+        "covers": "preconditions[blk.no_slot]",
+        "severity": "BLOCK",
+        "template_zh": [
+          "◆ 施工队列 · 第 {quarter} 季",
+          "{region_name} 需要 1 个施工槽位，现有 {slots_total} 个已全部占用，缺口 1 个。",
+          "主要占用：{project_0_label}（至第 {project_0_end_q} 季）、{project_1_label}（至第 {project_1_end_q} 季）。",
+          "出口：① 等待：第 {earliest_free_q} 季释放槽位（代价：投运推迟至第 {delayed_commission_q} 季；缺口降至 0） ② 取消 {project_0_label}（代价：已付 {project_0_paid} {unit} 不退回，赔偿 {project_0_penalty} {unit}；缺口降至 0） ③ 改投 {alt_region_name}（代价：{region_name} 的排队 {queue_here} 人本任期内不减；缺口降至 0） ④ 本季只提交拨款、不建设施（代价：交付量受现有容量封顶；缺口降至 {residual_gap_4}）",
+          "▸ 施工队列台账 ▸ 项目进度表"
+        ]
+      },
+      {
+        "code": "financing",
+        "covers": "failure_paths[financing]",
+        "severity": "GAP",
+        "template_zh": [
+          "● 拨款到位不足 · 第 {quarter} 季",
+          "{region_name} 医疗运行费应付 {need} {unit}，实付 {avail} {unit}，缺口 {gap} {unit}；到位率 {funding_ratio}，可用率由 {avail_before} 降至 {avail_after}。",
+          "主要占用：本季支付优先级中排在前面的 {driver_0_label} {driver_0_amount}、{driver_1_label} {driver_1_amount}。",
+          "出口：① 补付欠款 {exit_arrears} {unit}（代价：{displaced_line} 转为欠付；缺口降至 0） ② 下季把 service_opex 上调至第 {exit_priority} 档（代价：{displaced_line_2} 延后；缺口降至 {residual_gap_2}） ③ 缩减作用地区至 {exit_region_list}（代价：{dropped_region_list} 可用率继续下行；缺口降至 {residual_gap_3}）",
+          "▸ 欠付台账 ▸ 支付优先级设置 ▸ 公共服务台账"
+        ]
+      },
+      {
+        "code": "staff_shortage",
+        "covers": "failure_paths[staff_shortage]",
+        "severity": "BLOCK",
+        "template_zh": [
+          "◆ 医护人员不足 · 第 {quarter} 季",
+          "{region_name} 扩容包投运需要在岗医护 {need} 人，现有 {avail} 人，缺口 {gap} 人；其中中技能档缺 {gap_mid} 人，本地区中技能未就业 {pool_mid} 人。工程已建成，本季不投入使用。",
+          "主要占用：现有医护 {avail} 人已配属既有容量 {existing_capacity} {capacity_unit}。",
+          "出口：① 把编制目标调至 {exit_staff_target}（代价：既有容量的在岗率降至 {exit_existing_ratio}，排队 {exit_queue} 人；缺口降至 {residual_gap}） ② 开启 P05 职业培训扩容并投中技能席位 {exit_seats} 个（代价：结业最早第 {exit_graduate_q} 季，本季先增支出 {exit_training_cost} {unit}；缺口降至 {residual_gap_2}） ③ 等待：本地区劳动力池自然补充至第 {exit_wait_q} 季（代价：该包 {idle_capacity} {capacity_unit} 闲置 {exit_wait_q_delta} 季；缺口降至 {residual_gap_3}）",
+          "▸ 地区就业台账 ▸ 项目进度表 ▸ 教育队列"
+        ]
+      },
+      {
+        "code": "capacity_bound",
+        "covers": "failure_paths[capacity_bound]",
+        "severity": "NOTE",
+        "template_zh": [
+          "● 限制因素：设施容量 · 第 {quarter} 季",
+          "{region_name} 医疗可用率已达 {availability}，本季交付 {avail} {capacity_unit} 等于容量上限；需求 {need} {capacity_unit}，缺口 {gap} {capacity_unit}，排队 {queue_persons} 人。",
+          "主要占用：现有容量 {existing_capacity} {capacity_unit} 已全部投入使用。",
+          "出口：① 提交设施扩容规模 {exit_scale}（代价：合同 {exit_contract} {unit}，最早第 {exit_commission_q} 季投运；缺口降至 {residual_gap}） ② 把拨款改投 {alt_region_name}（代价：{region_name} 排队 {queue_persons} 人本任期内不减；缺口降至 {residual_gap_2}） ③ 维持现状（代价：本季起每季继续支出 {current_grant} {unit} 而交付量不变；缺口保持 {gap}）",
+          "▸ 公共服务台账 ▸ 地区排队台账 ▸ 本季限制因素"
+        ],
+        "note_zh": "本条是玩家理解「拨款在哪里不起作用」的主入口，severity 取 NOTE 而非 BLOCK：命令本身可以执行，只是不会改变交付量。第三条出口刻意保留「维持现状」，并把持续成本写成数字，使「继续花钱」成为一个被看见的选择。"
+      },
+      {
+        "code": "congestion",
+        "covers": "failure_paths[congestion]",
+        "severity": "GAP",
+        "template_zh": [
+          "● 施工推进受限 · 第 {quarter} 季",
+          "{region_name} 本季可用施工能力 {avail} {construction_unit}，医疗扩容包申请 {need} {construction_unit}，缺口 {gap} {construction_unit}；进度停在 {progress}，完工预计推迟至第 {delayed_q} 季。",
+          "主要占用：{driver_0_label} {driver_0_amount}、{driver_1_label} {driver_1_amount}。",
+          "出口：① 延期本包至第 {exit_defer_q} 季（代价：合同延期费 {exit_defer_cost} {unit}；缺口降至 0） ② 取消 {driver_0_label}（代价：已付 {driver_0_paid} {unit} 不退回，赔偿 {driver_0_penalty} {unit}；缺口降至 {residual_gap_2}） ③ 改投 {alt_region_name}（代价：本地区排队 {queue_here} 人不减；缺口降至 {residual_gap_3}）",
+          "▸ 施工队列台账 ▸ 服务部门产出台账"
+        ]
+      },
+      {
+        "code": "delivery",
+        "covers": "failure_paths[delivery]",
+        "severity": "GAP",
+        "template_zh": [
+          "● 设备到货受限 · 第 {quarter} 季",
+          "医疗扩容包累计需设备 {need} {equipment_unit}，已到货 {avail} {equipment_unit}，缺口 {gap} {equipment_unit}；外部交付能力上限 {delivery_cap} {equipment_unit}/季，外部信用余额 {credit_left} {unit}。施工进度 {construction_progress}，完工条件本季未满足。",
+          "主要占用：同季其它进口需求 {driver_0_label} {driver_0_amount}、{driver_1_label} {driver_1_amount}。",
+          "出口：① 等待：按当前交付能力预计第 {exit_eta_q} 季到齐（代价：投运推迟 {exit_delay_q} 季；缺口降至 0） ② 削减本包设备规模至 {exit_scale}（代价：新增容量降至 {exit_capacity} {capacity_unit}；缺口降至 {residual_gap_2}） ③ 提高外部融资额度使用 {exit_credit} {unit}（代价：主权利率升至 {exit_rate}；缺口降至 {residual_gap_3}）",
+          "▸ 外部账户台账 ▸ 项目交付进度表"
+        ]
+      },
+      {
+        "code": "no_demand",
+        "covers": "failure_paths[no_demand]",
+        "severity": "NOTE",
+        "template_zh": [
+          "● 限制因素：需求 · 第 {quarter} 季",
+          "{region_name} 本季排队 0 人，交付 {avail} {capacity_unit} 等于需求 {need} {capacity_unit}，缺口 0；新增容量 {idle_capacity} {capacity_unit} 本季闲置。",
+          "主要占用：本季医疗支出 {current_grant} {unit} 已按成本计入公共非市场产出，服务可及性与支持度不变。",
+          "出口：① 把拨款改投 {alt_region_name}（代价：本地区可用率将按每季 {decay_ppm} 下行；缺口保持 0） ② 把每季拨款调至 {exit_grant} {unit}（代价：低于应付额将触发可用率下降；缺口降至 {residual_gap_2}） ③ 维持现状（代价：每季继续支出 {current_grant} {unit}，交付量不变；缺口保持 0）",
+          "▸ 地区排队台账 ▸ 公共服务台账 ▸ 本季限制因素"
+        ]
+      }
+    ]
+  },
+  "_note_open_questions_registered": [
+    "OQ-220（本政策属其列举的十一项未给规格政策之一，本文件即为其 P10 部分的兑现）",
+    "OQ-245（投运配套条件：本文件把「人员不为零」收紧为 param.p10_commission_staff_ratio_ppm）",
+    "OQ-239（服务部门内施工与公共服务的产能拆分：本政策依赖 pubserv 是独立产能主体这一临时取法）",
+    "OQ-211（缩编不产生遣散费）",
+    "待决依赖 A（已销账）：content/scenarios/chengwan/pubserv_init.json 已落地，本文件据它重算了三处。① V-P10-01 由「单一系数 30 000 + 15% 比例容差」换成逐地区精确恒等（容差 0）加一条把全国系数钉在剧本上的 (b) 款；② param.p10_staff_per_capacity_persons_per_qs 由 30 000 改为 415 046（旧值取自 11 号文件 §5.8 的文档示例，与本剧本相差 13.8 倍）；③ param.p10_health_need_uqs_per_kperson_q 由 150 改为 50（旧值使四地区全线排队 2.6—3.5 倍，与该卡自述的「基年恰有 1—2 个地区有正排队」直接矛盾；新值使北原与西岭恰好两地区排队）。另外 service_capacity_split_ppm[health] 的真实取值是逐地区的 324 466—347 709 ppm，不是文档示例的 400 000 ppm，凡引用该数的正文已一并改正。",
+    "待决依赖 B：content/parameters/params_core.json 尚未落地（校验器现报 E_CONTENT_LAYOUT）。本政策需要的五个 param.* 的完整卡片内容留在 _note_params_core_pending.cards_draft 里，是草稿不是卡片：在它们被复制进 params_core.json 的 cards[] 之前，这五个参数在载入期不存在，SimCore 不得读它们，V-PC-06 会把引用它们的裸数字报为未覆盖。迁移步骤与销账方式写在该键的 migration_zh。",
+    "待决依赖 C：docs/30_quality_gates.md 的测试矩阵只为 P10 登记了 T-S-P10-CHAIN / T-S-P10-GATE / T-S-P10-FAIL-QUEUE 三条。本文件的 test_id 已全部绑定到矩阵中真实存在的用例，未覆盖的五条断言登记在 _note_test_binding.matrix_gap_zh；补矩阵是 30 号文件的职责，内容包不得自行扩充注册表。",
+    "待决依赖 D（新登记，跨文件）：本政策的「可用率恢复」腿在本剧本的基年没有行程。pubserv_init.json 四地区的 availability_ppm 全为 1 000 000，government_init.json 的 service_opex 档应付额为 0（既有公共服务的运行费整笔走 procurement 与 public_wages 两档，这是该文件为保住基年生产法 GDP 恒等式所作的显式选择），按 12 号文件 §4.1 的 due_uu == 0 分支 funding_ratio_ppm 恒为 1 000 000，没有缺口可恢复。于是在第一个扩容包投运（最早 t+7 季）之前，本政策唯一能观察到的反馈来自设施腿，与计划书 §09 给 P10 的「2—4 季」冲突。可能的出路有二：剧本把部分地区的 availability_ppm 设为 < 1 000 000（需要同时回答「为什么开局就欠维护」并与 pubserv 的产出账对齐），或把既有医疗服务的运行费义务从 procurement 档迁到 service_opex 档（需要同时改 government_init.json 的年度支出分项与 io_table.json 的 pubserv 账，且不得破坏 100 U 的基年 GDP）。两条都是跨文件的契约级改动，本文件不单方面假定，也不因此擅自改小 lag.min_feedback_q。",
+    "登记表连带：本次修改动了 param.* 卡片的位置与取值，content/parameters/registry.json 会因此与源文件不一致（V-PR-02 逐字节比对，报 E_PARAM_REGISTRY_STALE）。该文件是 tools/build_param_registry.py 的生成产物，必须重跑生成器而不是手改；本文件无权改它。"
+  ],
+  "_note_notes_zh": "本文件全部数值为设计假设或由设计假设派生，不是现实医疗系统数据，也不是已跑出的结果（计划书 §05/§14/§19）。本政策不含任何直接写 GDP、支持度或人口的路径；它能改变的只有资金流、编制与容量，其余全部是这些改变在既有规则下的后果。",
+  "_note_params_slot_map": {
+    "enact_command_layout": "[policy, param0, param1, param2, param3, funding_source]（systems/commands.gd，docs/11 §6.1 命令码 1）",
+    "launch_command_layout": "[policy, region, scale_ppm, funding_source]（同上，命令码 4 project_launch）",
+    "slots": [
+      "region_mask",
+      "grant_per_q_uu",
+      "staff_target_ppm",
+      "region_weight_rule"
+    ],
+    "note_zh": "docs/17 §4.8 的 param_min_ppm / param_max_ppm / param_default 三张表长度均为 48 == 12×4，JWIds.POLICY_PARAM_STRIDE == 4：每项政策只有 4 个玩家参数槽位，systems/content_loader.gd 的 _read_policy_params 只映射 player_params[j]（j < 4），第 5 项起无处安放（E_PARAM_RANGE）。本文件原先声明 6 项。本政策实际上要通过**两条命令**操作：policy_enact 管经常性拨款（本节四槽），project_launch 管设施扩容包（地区 + 规模 + 资金来源），因此 capacity_program_scale_ppm 与 funding_source 本来就不属于 policy_enact 的玩家参数槽，本轮把它们归位到 _note_launch_command_fields / _note_enact_command_fields，没有删除任何一条杠杆。params_ppm 与 params_uu 不是 4+4 个独立槽位，而是同一组 4 个整数的两个单位视图（JWPolicyEngine.apply_pending_params 对同一个 j 同时写两张表），拨款额按 μU 视图取用、编制目标与权重码按 ppm 视图取用。"
+  },
+  "_note_enact_command_fields": {
+    "funding_source": {
+      "key": "funding_source",
+      "label_zh": "资金来源",
+      "type": "enum",
+      "unit": "dimensionless",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 2,
+      "encoding": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "step": 1,
+      "default_encoded": 2,
+      "param_slot": "policy_enact 的第 5 槽（SLOT_ENACT_FUNDING == 5）或 project_launch 的第 3 槽（SLOT_LAUNCH_FUNDING == 3）；不占 state.policy.params_* 槽位",
+      "desc_zh": "立项与拨款必须显式声明资金来源（计划书 §07「立项时必须列明税收调度、现金或债券融资」）。缺省不填即 REJECT。三者的各自约束见 funding_requirement.sources。默认取 reallocation：它是唯一不改变债务存量、也不消耗国库现金余额的来源，最保守。",
+      "_note_value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    },
+    "why_not_a_player_param_zh": "docs/11 §6.1 命令码 1/4 的 args 都把资金来源单列；systems/commands.gd 给了它专槽（policy_enact 第 5 槽、project_launch 第 3 槽），它不写任何 state.policy.params_* 数组。本文件原条目的 param_slot 本来就写着「command_arg…不占 state.policy.params_* 槽位」，它被列进 player_params 只是占了一个从不使用的 valid_range / default 槽位，并使 player_params 达到 6 项、超出 docs/17 §4.8 的 4 槽上限。取值集合、编码与默认值（2 = reallocation）一字未改。"
+  },
+  "_note_launch_command_fields": {
+    "capacity_program_scale_ppm": {
+      "key": "capacity_program_scale_ppm",
+      "label_zh": "设施扩容规模",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        0,
+        2000000
+      ],
+      "step": 250000,
+      "default": 0,
+      "param_slot": "project_launch 命令的 scale_ppm 槽（systems/commands.gd 的 SLOT_LAUNCH_SCALE == 2）；不占 policy_enact 的 4 个玩家参数槽位",
+      "desc_zh": "相对标准扩容包（cost 字段所述单地区单项目）的倍数。取 0 表示只拨运行费、不建设施；此时不占施工槽位、不产生项目承诺。每个被 region_mask 选中的地区各立一个项目实例，合同总额 = 选中地区数 × mul_ppm(cost.one_off_uu, capacity_program_scale_ppm)。"
+    },
+    "why_not_a_player_param_zh": "这一项是**设施扩容包的规模**，而不是经常性拨款的参数：它的效果是立项（S02 占施工槽位）、按比例缩放 cost.one_off_uu 与 effect.capacity_delta_uqs_per_q，并在投运时按比例增加 opex 承诺——正是 docs/11 §6.1 命令码 4 project_launch(policy_id, region_id, scale_ppm, funding_source) 的 scale_ppm，与 P04 / P06 / P07 / P08 同一写法（systems/commands.gd 的 SLOT_LAUNCH_SCALE == 2）。把它同时写进 policy_enact 的玩家参数槽既与该命令重复，又使 player_params 超出 docs/17 §4.8 的 4 槽上限。取值区间 [0, 2000000]、步长 250000 与默认 0（只拨运行费、不建设施）一字未改：「每个被 region_mask 选中的地区各立一个项目实例」在命令层的形态是逐地区各提交一条 project_launch，合同总额仍为 Σ_region mul_ppm(cost.one_off_uu, scale_ppm)。"
+  }
+}

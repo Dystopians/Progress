@@ -1,0 +1,771 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E04",
+  "label_zh": "西岭环境事故与修复负担",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "state.region.emissions_stock_uqe",
+        "scope": "region.xiling",
+        "op": "ge",
+        "value": 3600000
+      },
+      {
+        "metric": "state.region.env_exposure_ppm",
+        "scope": "region.xiling",
+        "op": "ge",
+        "value": 600000
+      },
+      {
+        "metric": "flow.region.emissions_uqe",
+        "scope": "region.xiling",
+        "op": "gt",
+        "value": 111340
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 6
+      }
+    ],
+    "probability_ppm": 550000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 8,
+    "max_occurrences": 2
+  },
+  "effects": [
+    {
+      "target": "state.group.trust_ppm",
+      "scope": "region.xiling",
+      "delta_ppm": -25000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.xiling",
+      "delta_ppm": -45000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "delta_ppm": 20000
+    }
+  ],
+  "evidence_refs": [
+    "state.region.emissions_stock_uqe",
+    "state.region.env_exposure_ppm",
+    "flow.region.emissions_uqe",
+    "flow.cell.output_actual_uqs",
+    "state.pubserv.queue_persons",
+    "state.group.service_access_ppm",
+    "derived.region.population_persons"
+  ],
+  "report_template_id": "tpl.event.e04_environmental_incident",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的三处结构修复（对应校验器 E_CONTENT_LAYOUT / E_UNKNOWN_FIELD / E_EVENT_EVIDENCE）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）；其余扩展块一律按 §3 改名为 _note_<原键名>，明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) 上一版把「校验器要求顶层 consequences / 契约 §3 禁止顶层 consequences」登记为不可解冲突并留着 ERROR；本轮按文档优先级裁定并修完：计划书 §13（最高位文档）要求的是「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」这份信息，它没有规定键名；11_data_contract.md §5.13 的键集合与 V-EV-01..08 里都没有 consequences，§3 又是 additionalProperties: false。因此内容层的正确做法就是 _note_consequences，错的是 tools/validate_content.py 的 check_event 把承载键名写死成 consequences —— 已同步修正为「consequences 或 _note_consequences」，缺失仍报 ERROR，逐条的解释键要求一字未放宽（详见本轮 summary）。_note_consequences 的字段口径见 _note_consequences_schema_zh。",
+  "_note_spec_ext": "以下字段不在 11_data_contract.md §5.13 的 EventTemplate 键集合内，而 §3 规定 additionalProperties: false。本文件按任务卡（触发、证据、后果、玩家选项、政治反应、文案、验收测试、参数身份证）写全，不私自修改契约；该冲突已登记为本轮返回值中的待决问题，由契约维护者决定是以 schema_version 升级的方式并入 §5.13，还是把这些块移到 docs/。在契约未扩展前，加载器应只读上面的契约字段（schema_kind 到 kind）；下列字段是同一事实的可审计说明，不引入任何新数值来源（凡有数值处一律用 *_ref 指回契约字段或参数卡）。",
+  "_note_spec_ext_version": 1,
+  "_note_code": "E04",
+  "_note_slug": "xiling_environmental_incident_remediation",
+  "_note_category": "environment_and_exposure",
+  "_note_one_line_zh": "西岭累计排放与环境暴露指数同时越线且本季排放仍在上行，环境负担被公开确认为一次事故，修复责任进入议程。",
+  "_note_spec_field_map": {
+    "id": "event_id",
+    "name_zh": "label_zh",
+    "one_line_statement": "_note_one_line_zh",
+    "trigger": "trigger + _note_trigger_rationale",
+    "evidence": "evidence_refs + _note_evidence",
+    "consequences": "effects + _note_consequences（字段口径见 _note_consequences_schema_zh）+ _note_consequences_not_representable_in_v1",
+    "player_options": "_note_player_options + _note_options_rejected_in_v1",
+    "political_reaction": "_note_political_reaction + _note_residents_reaction",
+    "copy": "report_template_id + _note_copy",
+    "acceptance_tests": "_note_acceptance_criteria",
+    "parameters": "_note_parameters（身份证字段见 _note_parameters_zh）"
+  },
+  "_note_scope_semantics_note_zh": "scope 的读法与 11_data_contract.md §5.13 的示例一致：对逐组字段（state.group.*）写 region.<r> 表示「该地区的 9 个群组各自施加同一 delta」，不是对地区做一次加总写入；对 state.bloc.* 写 bloc.<id> 表示该集团本身。",
+  "_note_contract_op_note_zh": "比较运算符按 11_data_contract.md 的 V-EV-03 取值：op ∈ {lt, le, eq, ne, ge, gt}。注意 §5.13 的 EventTemplate 示例里写的是 \"op\": \"gte\"，不在该枚举内——示例与校验规则自相矛盾。本文件按规范性条款（V-EV-03 与错误码 E_EVENT_OP）执行，写 ge；不私自修改契约，该矛盾已登记为本轮返回值中的待决问题，须由契约维护者统一裁定后同步修订全部 12 个事件文件。",
+  "_note_trigger_rationale": {
+    "no_random_popup_zh": "四条条件全部是状态比较，条件成立后才抽一次样（rng.event）。首版没有离散事故抽样机制：排放是一个按 §7.9 逐季累积并衰减的存量，事故一词在这里指的是这个慢变量越过阈值后被公开确认，不是一次随机爆炸。文案必须这样写，否则玩家会去找一个并不存在的随机事故模型。",
+    "conditions_zh": [
+      {
+        "cond": "state.region.emissions_stock_uqe[region.xiling] >= 3600000",
+        "why_zh": "累计排放存量越线。西岭开局为 2 800 000 μQ_e（四地区最高，regions.json），阈值相当于在开局基础上再累积约 29%。存量按 §7.9 每季先加本季排放、再乘 (1 − 3%) 衰减，因此越线本身就意味着排放已经连续多季超过自然消纳，这一条天然带有持续性。"
+      },
+      {
+        "cond": "state.region.env_exposure_ppm[region.xiling] >= 600000",
+        "why_zh": "地区暴露指数越线。该指数 = 排放存量 × 排放暴露增益 × 人口密度（§7.9），它把同样的排放在人口密集地区读成更高的暴露。西岭开局为 380 000 ppm（regions.json），阈值相当于上行约 58%。两条并列的理由：只看存量会忽略人口分布，只看暴露会被迁移导致的密度变化带偏。"
+      },
+      {
+        "cond": "flow.region.emissions_uqe[region.xiling] > 111340",
+        "why_zh": "本季排放仍高于「存量不再上行」的临界流量，即负担仍在恶化。阈值按 12 号文件 §7.9 的实际结算顺序解出，不是按「存量 × 衰减率」的直觉估算：§7.9 先加本季排放、再对和式整体乘 (1 − param.emission_decay_ppm)，即 stock_new = floor((stock_prev + flow) × 970000 / 1e6)。令 stock_new > stock_prev 得 flow > stock_prev × 30000 / 970000；在存量阈值 3 600 000 处即 flow > 111 340（mul_div_floor(3600000, 30000, 970000) = 111340，op 取 gt，故实际下界是 111 341）。曾经写作 108 000（= 3 600 000 × 3%，把衰减只作用于期初存量）是错的：在 108 001…111 340 这一段里存量其实已在回落，按旧值事件会在负担开始缓解的季度里触发，与本条件的表述自相矛盾。这一条排除了存量曾经很高但已在回落的情形，使事件不会在治理见效的季度里反而触发。"
+      },
+      {
+        "cond": "state.time.q >= 6",
+        "why_zh": "第 7 季起。排放是最慢的一条存量，前六季不足以在无冲击基线上累积出越线所需的增量；过早触发只会让玩家在还没有任何工具时承担政治后果。"
+      }
+    ],
+    "persistence_zh": "本事件不需要 condition_streak_q 扩展：三条状态条件里，存量条件与流量条件合起来已经表达出「连续多季排放超过自然消纳」。这是四个事件中持续性表达最完整的一个。",
+    "baseline_consistency_warning_zh": "本事件的两个阈值依赖剧本初值与 §7.9 的公式同时自洽，而目前两者对不上：按 regions.json 的西岭数据（emissions_stock 2 800 000、area_index 1 200 000、人口 3 000 000）与 param.env_exposure_gain_ppm = 200000 代入 §7.9，density_ppm = 2 500 000，合并系数 = floor(200000 × 2500000 / 1e6) = 500000，得到 env_exposure_ppm = 1 400 000，而 regions.json 写的初值是 380 000。两者相差约 3.7 倍。本文件不猜测哪一侧正确，也不为了绕开这个问题而挑一个折中阈值：阈值按剧本初值（380 000）拟合，并配一条 T-S-E04-EXPOSURE-BASELINE-CONSISTENCY 断言，让这处不一致在第一次跑测试时就红掉，由剧本或参数的负责人裁定。已登记为待决问题。"
+  },
+  "_note_evidence": [
+    {
+      "ref": "state.region.emissions_stock_uqe",
+      "scope": "region.xiling",
+      "label_zh": "累计排放存量",
+      "page": "地区页面",
+      "ledger_zh": "排放台账：期末 = (期初 + 本季排放) × (1 − param.emission_decay_ppm)（12 号文件 §7.9）",
+      "how_to_verify_zh": "本季排放按各 cell 实际产量与 content.io.emission_ppm 折出，可逐 cell 下钻。"
+    },
+    {
+      "ref": "state.region.env_exposure_ppm",
+      "scope": "region.xiling",
+      "label_zh": "环境暴露指数",
+      "page": "地区页面",
+      "ledger_zh": "= 排放存量 × param.env_exposure_gain_ppm × 人口密度（合并系数只取整一次，M2）",
+      "how_to_verify_zh": "三个输入（存量、增益、密度）分列可查。该指数首版不反馈到生产约束（INV-057），只进入迁移推力与报告；报告必须写明这一点。"
+    },
+    {
+      "ref": "flow.region.emissions_uqe",
+      "scope": "region.xiling",
+      "label_zh": "本季排放流量",
+      "page": "季度报告",
+      "ledger_zh": "逐 cell 的 output_actual_uqs × emission_ppm 之和",
+      "how_to_verify_zh": "与本季实际自然衰减量 floor((stock_prev + flow) × 30000 / 1e6) 并列显示（§7.9 的衰减作用在「期初存量 + 本季排放」的和式上，不是只作用在期初存量上），玩家可直接看出存量在上行还是回落。"
+    },
+    {
+      "ref": "flow.cell.output_actual_uqs",
+      "scope": "cell.xiling.energy",
+      "label_zh": "西岭能源产量",
+      "page": "地区页面",
+      "ledger_zh": "五项约束台账与最紧项",
+      "how_to_verify_zh": "排放来自产量；产量来自需求与约束。降低排放在首版没有直接开关，只能经需求侧变化实现。"
+    },
+    {
+      "ref": "state.pubserv.queue_persons",
+      "scope": "region.xiling",
+      "label_zh": "公共服务排队人数",
+      "page": "社会页面",
+      "ledger_zh": "交付台账：delivered ≤ capacity_active × availability_ppm（INV-103），未获服务者入队",
+      "how_to_verify_zh": "首版环境暴露不自动转成健康需求（OQ-226），排队变化只反映服务容量与人口，不反映暴露；报告不得暗示两者已经连通。"
+    },
+    {
+      "ref": "state.group.service_access_ppm",
+      "scope": "region.xiling",
+      "label_zh": "服务可及性（医疗／教育／公用）",
+      "page": "社会页面",
+      "ledger_zh": "相对基期的可及性指数（12 号文件 §7.8）",
+      "how_to_verify_zh": "这是相对基准，不冒充国际排名（INV-149）。"
+    },
+    {
+      "ref": "flow.group.migrate_flow_persons",
+      "scope": "region.xiling",
+      "label_zh": "迁出与迁入流",
+      "page": "社会页面",
+      "ledger_zh": "迁移台账：推力项含 env_exposure_ppm，权重 param.migration_w_env_ppm = 300000",
+      "how_to_verify_zh": "环境暴露在首版的唯一实质后果路径就是迁移推力；迁移双边配对且逐组守恒（INV-073）。"
+    }
+  ],
+  "_note_consequences_schema_zh": "逐条后果说明的字段口径。计划书 §13 要求「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」，这正好是 10 号文件登记的 log.explanations 七元组 {entity, cause, amount, qty, q, constraint, kind}。因此下面每条后果都按这七元组写全：log_explanation_row 就是 S08 必须为该条后果发出的那一行结构化复盘记录的内容口径（字段名与 log.explanations 一一对应，不是新变量，也不是第二套事实来源——其中的 amount 必须与 effects[i].delta_ppm 逐位相同，由 T-S-E04-CONSEQUENCE-EXACT-DELTAS 钉死）。counterparty 一栏必须显式填写：首版事件不动账，正确答案是 none 加上「为什么本条不需要对手方」的理由，而不是留空——留空无法区分「想过了，确实没有对手方」和「忘了写」。承载位置：11_data_contract.md §5.13 的 EventTemplate 键集合里没有 consequences，而 §3 是 additionalProperties: false，顶层直接写 consequences 会触发 E_UNKNOWN_FIELD；计划书 §13 要的是这份信息，没有规定键名，因此本文件按 §3 把它放在 _note_consequences 注释键下，并已同步修正校验器的取值位置（见本轮 summary）。",
+  "_note_consequences": [
+    {
+      "consequence_id": "E04.CONS.1",
+      "target": "state.group.trust_ppm",
+      "scope": "region.xiling",
+      "change_expr": "对 scope 内每个 g：trust_ppm[g] = clamp(trust_ppm[g] + (-25000), 0, 1000000)",
+      "applied_at": "S08 §8.4（12 号文件 §8.4 循环体的「应用 effects」一步，在 fire_count 自增之前）",
+      "settlement_step": 8,
+      "counterparty": "none",
+      "counterparty_reason_zh": "本条没有对手方，这是结论不是省略：它改的是 ppm 刻度的态度变量，不是任何实体的资产或负债，因此不存在「谁付给谁」。事件不得动账是结构性禁令（INV-130 / V-EV-06：首版 EventTemplate 的 schema 里根本没有 ledger_effects 字段，11 号文件 §5.13 给的理由是「留着它，迟早会有人用」）。凡是需要对手方的应对——医疗拨款、修复工程、赔偿——只能由玩家经 11_data_contract.md §6.1 命令表提交政策或项目，由 S02 到 S07 按既有规则产生双边入账（见 _note_player_options）。",
+      "accounting_zh": "会计解释：本条不写任何 log.ledger 分录（既不产生 delta_uu，也不产生 qty_uqs），只发出一行 log.explanations 记录，内容见 log_explanation_row。因此触发当季的现金恒等式、国民账户恒等式、库存守恒与人口守恒逐位不变，不需要任何平衡修正项（计划书 §13「禁止后处理补丁」）。两条断言合起来钉死这一点：T-S-E04-NO-PHYSICAL-EFFECT 证明物理与账本字段与对照组逐位相同，T-S-E04-CONSEQUENCE-EXACT-DELTAS 证明态度字段的变动量精确等于 effects 里写的整数，一分不多。",
+      "log_explanation_row": {
+        "entity": [
+          "group.xiling.minor.low",
+          "group.xiling.minor.mid",
+          "group.xiling.minor.high",
+          "group.xiling.working.low",
+          "group.xiling.working.mid",
+          "group.xiling.working.high",
+          "group.xiling.elder.low",
+          "group.xiling.elder.mid",
+          "group.xiling.elder.high"
+        ],
+        "cause": "event.E04（来源操作 = 事件模板 event.E04 的 effects[0]；不经任何命令、政策或项目）",
+        "amount": -25000,
+        "amount_unit": "ppm",
+        "qty": 0,
+        "qty_note_zh": "无关联实物数量：本条不移动任何 μQ_s、μU 或人。9 个实体各写一次 −25000 ppm，共 9 次写入，不做人口加权合并（scope 的读法见 _note_scope_semantics_note_zh）。",
+        "q": "触发季 q；首次触发不早于 q = 6（trigger.all_of[3]），两次触发间隔 ≥ 8（trigger.cooldown_q）",
+        "constraint": "clamp 到 [0, 1000000]；整局最多写入 2 次（trigger.max_occurrences = 2），故单局累计不低于 −50000 ppm",
+        "kind": "inferred"
+      },
+      "timing_zh": "写入时点是触发季的 S08 §8.4，晚于同一步 §8.2 的 support_ppm 合成，因此本季支持度不变；本条经下一季的 §8.1 到 §8.2 才进入 support_ppm，是一个显式的一季时滞（见 _note_effect_timing_note_zh）。报告不得写「事件当季拉低了支持率」。",
+      "constraints_zh": [
+        "clamp 下界 0、上界 1000000（10 号文件的 ppm 区间）；触发季西岭各组 trust_ppm 远高于 25000（剧本 q=0 的最低值是 group.xiling.minor.low 与 group.xiling.working.low 的 460000），clamp 在正常剧本下不生效，由 T-S-E04-CONSEQUENCE-EXACT-DELTAS 的第 ④ 条断言验证",
+        "事件不得写 state.group.support_ppm：否则支持度会出现一处无来源分解的变动（INV-123）",
+        "整局写入次数上限 2（trigger.max_occurrences），冷却 8 季（trigger.cooldown_q）"
+      ],
+      "duration_zh": "一次性水平位移；此后只能按 param.trust_recover_ppm（20000/季）恢复，恢复慢于下降（INV-122，12 号文件 §8 的加载期校验 trust_recover_ppm < trust_drop_ppm）。",
+      "reversible": false,
+      "evidence_refs": [
+        "state.region.emissions_stock_uqe",
+        "state.region.env_exposure_ppm",
+        "flow.region.emissions_uqe"
+      ],
+      "explanation_zh": "这是四个事件中唯一另一处写信任的地方（另一处是 E01）。理由：计划书 §05 把环境修复负担列为西岭的开局主要约束，即政府对该地区负有明示的治理与披露责任；暴露指标越线而未被处置，属于可核查的承诺未兑现。幅度取 E01（−40000）的六成，因为它不像限电那样是一次可直接归因于政府服务的中断。"
+    },
+    {
+      "consequence_id": "E04.CONS.2",
+      "target": "state.group.expectation_ppm",
+      "scope": "region.xiling",
+      "change_expr": "对 scope 内每个 g：expectation_ppm[g] = clamp(expectation_ppm[g] + (-45000), 0, 2000000)",
+      "applied_at": "S08 §8.4（与 CONS.1 在同一次「应用 effects」中，按 effects 数组顺序写入）",
+      "settlement_step": 8,
+      "counterparty": "none",
+      "counterparty_reason_zh": "同 CONS.1：态度变量的位移不是转移支付，没有付款方与收款方。需要指出的是，预期下调确实会在后续季度改变实物流——它经 12 号文件 §7 的迁移拉力项影响人口流向——但那条路径上的每一次人口移动都是迁移台账里的双边配对（迁出与迁入逐组守恒，INV-073），其对手方由 S07 的迁移结算确定，不由本事件预写。",
+      "accounting_zh": "会计解释：不写 log.ledger，只发一行 log.explanations。expectation_ppm 不进入任何会计恒等式，它在下一季经 §8.1 的预期更新式（惯性平滑）与 §8.2 的支持度合成起作用。本条不改 living_index_ppm，因此不会经「预期 → 生活指数」造成第二次计入（见 _note_residents_reaction.not_channel_zh）。",
+      "log_explanation_row": {
+        "entity": [
+          "group.xiling.minor.low",
+          "group.xiling.minor.mid",
+          "group.xiling.minor.high",
+          "group.xiling.working.low",
+          "group.xiling.working.mid",
+          "group.xiling.working.high",
+          "group.xiling.elder.low",
+          "group.xiling.elder.mid",
+          "group.xiling.elder.high"
+        ],
+        "cause": "event.E04（来源操作 = effects[1]）",
+        "amount": -45000,
+        "amount_unit": "ppm",
+        "qty": 0,
+        "qty_note_zh": "无关联实物数量；9 个实体各写一次 −45000 ppm，共 9 次写入。",
+        "q": "触发季 q，与 CONS.1 同季同步",
+        "constraint": "clamp 到 [0, 2000000]；整局最多写入 2 次，累计不低于 −90000 ppm",
+        "kind": "inferred"
+      },
+      "timing_zh": "与 CONS.1 同季同步写入（S08 §8.4），同样晚于 §8.2，故本季支持度不变；下一季起经 §8.1 的惯性平滑进入后续计算。",
+      "constraints_zh": [
+        "clamp 下界 0、上界 2000000（expectation_ppm 允许高于 1000000，表示高于基准的预期）",
+        "触发季西岭各组 expectation_ppm 远高于 45000（剧本 q=0 的最低值是 group.xiling.elder.low 的 740000），clamp 在正常剧本下不生效",
+        "整局写入次数上限 2，冷却 8 季"
+      ],
+      "duration_zh": "一次性位移；按 param.expectation_inertia_ppm = 700000 的惯性平滑，约 2 季衰减一半（0.7² = 0.49）。",
+      "reversible": true,
+      "evidence_refs": [
+        "state.region.env_exposure_ppm",
+        "state.pubserv.queue_persons",
+        "state.group.service_access_ppm"
+      ],
+      "explanation_zh": "四个事件中幅度最大的一次预期下调：环境负担是西岭最难在一个任期内改善的结构问题（产业单一、修复负担集中），而首版根本没有可以降低排放存量或环境暴露的政策落点（见 _note_consequences_not_representable_in_v1），所以「在一个任期内难以改善」在模型里是字面属实的，不是修辞。"
+    },
+    {
+      "consequence_id": "E04.CONS.3",
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.labor_public",
+      "change_expr": "org_power_ppm[bloc.labor_public] = clamp(org_power_ppm[bloc.labor_public] + 20000, 0, 1000000)",
+      "applied_at": "S08 §8.4（在同一步 §8.3 的集团更新之后，故本季的 org_power 已先由惯性式重算，再叠加本增量）",
+      "settlement_step": 8,
+      "counterparty": "none",
+      "counterparty_reason_zh": "没有对手方，也不是零和：本条不从另一个集团转走组织力。三个集团的 org_power_ppm 相互独立，各自由 §8.3 的 mul_ppm(org_power_prev, param.bloc_org_inertia_ppm) + 规模项 + 资源项 决定，不存在「全国组织力总量守恒」这样的恒等式。bloc.business 与 bloc.agri_coop 在本事件中 effect_ref 为 none（见 _note_political_reaction），其取值必须与对照组逐位相同。本条也不动 state.bloc.resource_uu：资源是货币账，事件不得写（INV-130）。",
+      "accounting_zh": "会计解释：不写 log.ledger，只发一行 log.explanations。org_power_ppm 只影响改革可行性与议程，不直接进 support_ppm（12 号文件 §8.3「stance 与 support 是两套变量」），因此本条不会绕过 §8.2 的支持度分解制造无来源的支持度变动。",
+      "log_explanation_row": {
+        "entity": [
+          "bloc.labor_public"
+        ],
+        "cause": "event.E04（来源操作 = effects[2]）",
+        "amount": 20000,
+        "amount_unit": "ppm",
+        "qty": 0,
+        "qty_note_zh": "无关联实物数量；单个实体写一次 +20000 ppm。derived.bloc.membership_persons 不因本条变化。",
+        "q": "触发季 q",
+        "constraint": "clamp 到 [0, 1000000]；整局最多写入 2 次，累计不超过 +40000 ppm；校准检验：E03（同一集团 +25000）与 E04 各触发到上限时的累计增量不得使该集团跨过否决域门槛",
+        "kind": "inferred"
+      },
+      "timing_zh": "写入时点 S08 §8.4，在同一步 §8.3 的集团更新之后。因此本季读到的 org_power_ppm 是「惯性式结果 + 20000」，而下一季 §8.3 会把这个抬高后的值当作 org_power_prev 代入惯性项，增量按 0.7 的比例逐季衰减，不需要额外的「持续季数」字段（见 _note_effect_decay_note_zh）。",
+      "constraints_zh": [
+        "clamp 到 [0, 1000000]",
+        "事件不得写 state.bloc.stance_ppm：stance 由 §8.3 按该集团关心指标的变化率更新，事件预写会制造一处无来源的立场变动",
+        "事件不得写 state.bloc.resource_uu（货币账，INV-130）",
+        "整局写入次数上限 2，冷却 8 季"
+      ],
+      "duration_zh": "一次性位移；按 param.bloc_org_inertia_ppm = 700000 的惯性回归其规模与资源决定的水平（12 号文件 §8.3）。",
+      "reversible": true,
+      "evidence_refs": [
+        "state.region.env_exposure_ppm",
+        "state.pubserv.queue_persons",
+        "state.group.service_access_ppm"
+      ],
+      "explanation_zh": "居住条件与医疗属于劳动与公共服务联盟的关心范围（计划书 §08），环境事故是其动员议题。西岭人口 300 万为四地区最少，可动员规模较小，故幅度取 E03 同一集团 +25000 的八成。"
+    }
+  ],
+  "_note_consequences_not_representable_in_v1": [
+    {
+      "asked_for_zh": "修复支出",
+      "why_not_zh": "事件没有任何账本效应（INV-130）：它不能付钱、不能建工程、不能形成在建工程或负债。而 12 项政策的效果落点白名单（11_data_contract.md §5.12）里也没有任何一个字段可以承载环境修复——白名单只有电网、住房、灌溉、港口、企业产能、公共服务容量、教师医护、政策参数、征收能力、行政能力与教育队列，没有 emissions_stock_uqe 或 env_exposure_ppm。因此首版既不能由事件、也不能由政策直接产生修复支出或降低排放存量。",
+      "what_it_would_require_zh": "需要新增一项修复类政策（project 类，走既有项目队列与施工能力，付款、进度、投运一律照 P04 的模式），并在效果落点白名单中增加一个可降低 emissions_stock_uqe 或 env_exposure_ppm 的目标字段。在此之前，修复负担在首版只能表现为信任与预期的下降，以及迁移推力上升。已登记为待决问题。"
+    },
+    {
+      "asked_for_zh": "能源产出受限",
+      "why_not_zh": "INV-057 明写：排放只累积 emissions_stock 与 env_exposure，首版不反馈到生产约束（静态检查）。§5.3 的五项约束里没有环境项。事件也不得写产能（INV-130），而 INV-102 进一步禁止用把容量写成 0 的方式表达停运。因此任何形式的环保限产在首版都没有合法落点。",
+      "what_it_would_require_zh": "需要在 §5.3 增加第六项约束（环境许可），并同步修改 INV-045 的最紧约束编码与binding_code 的取值域；这是破坏性变更，必须升 schema_version。已登记为待决问题。"
+    }
+  ],
+  "_note_consequence_boundary_zh": "首版事件没有任何账本效应（INV-130 / V-EV-06）：本事件不写现金、库存、产能、人口、GDP。凡涉及花钱或改变物理能力的应对，一律只能由玩家通过 11_data_contract.md §6.1 表中的命令走政策或项目，由 S02 到 S07 按既有规则产生双边入账。此处不存在「凭空增减资源」的通路，也不需要任何平衡修正项（计划书 §13）。",
+  "_note_effect_timing_note_zh": "事件在 S08 §8.4 触发，而 support_ppm 已在同一步的 §8.2 由「生活／预期／信任」三项合成完毕。因此本事件写入的 trust/expectation 增量不改变本季支持度，而是经下一季的 §8.1 到 §8.2 进入支持度：这是一个显式的一季时滞，报告必须这样写，不得宣称「事件当季拉低了支持率」。事件不直接写 support_ppm，避免出现一处无来源分解的支持度变动（INV-123）。",
+  "_note_effect_decay_note_zh": "契约的 EventTemplate 没有「效应持续季数」字段，效应是一次性水平位移，之后由既有规则自行衰减：expectation 按 param.expectation_inertia_ppm=700000 的惯性平滑（约 2 季衰减一半），trust 只能按 param.trust_recover_ppm=20000 的速度恢复且恢复慢于下降（INV-122），org_power 按 param.bloc_org_inertia_ppm=700000 的惯性回归其规模与资源决定的水平（12 号文件 §8.3）。所以「持续季数」在首版是衰减机制的结果，不是内容包里的一个数字；下表的 duration_zh 描述的是这个机制，不是新增字段。",
+  "_note_player_options": [
+    {
+      "option_id": "E04.OPT.A",
+      "label_zh": "向西岭加权基础医疗拨款",
+      "command": "policy_enact",
+      "args_zh": "policy.P10，region_mask 含 region.xiling，服务容量与人员权重由玩家选定",
+      "cost_zh": "按 P10 的一次性与持续成本占用预算；投运后有每季运行费，进入 gov.service_opex_committed_uu。具体金额以 content/policies/P10_*.json 为准（该文件尚未落地）。",
+      "preconditions_zh": [
+        "权限位 1（社会项目权）已持有",
+        "资金来源已声明",
+        "人员与设施不足时先形成排队（计划书 §09），不是立即形成服务"
+      ],
+      "lag_q": 3,
+      "lag_note_zh": "计划书 §09：P10 最早反馈 2 到 4 季。",
+      "failure_modes_zh": [
+        "人才与设施不足：拨款到位但 health_staff_persons 不增加时，交付量不变，只增加排队之外的成本",
+        "运行费欠拨：若后续支付优先级把 service_opex 排在现金之后，availability_ppm 下降（INV-102），拨款形成的容量无法交付",
+        "口径提醒：首版环境暴露不自动产生健康需求（OQ-226），因此这一项缓解的是公共服务承压，不是排放本身。报告不得把它写成治理了污染"
+      ],
+      "political_reaction_zh": "bloc.labor_public 立场上行；bloc.business 若资金来自企业税则转负。"
+    },
+    {
+      "option_id": "E04.OPT.B",
+      "label_zh": "推进采购透明化，为将来的修复工程建立可核查程序",
+      "command": "policy_enact",
+      "args_zh": "policy.P12，披露规则、审核与申诉安排由玩家选定",
+      "cost_zh": "初期为纯流程成本：先增加行政支出，效果依赖执行条件（计划书 §09）。",
+      "preconditions_zh": [
+        "权限位 0 或 2（视 P12 定义）已持有",
+        "资金来源已声明"
+      ],
+      "lag_q": 4,
+      "lag_note_zh": "计划书 §09：P12 最早反馈 2 到 6 季；其效果落点是 state.politics.admin_capacity_ppm。",
+      "failure_modes_zh": [
+        "先增成本后见效：在行政能力提高之前，它只表现为支出与流程负担",
+        "效果依赖执行条件：行政能力低时提升幅度有限",
+        "它不减少任何排放：这是一条治理能力路径，不是环境路径。若玩家期待排放下降，报告必须明确说明首版没有这条通路"
+      ],
+      "political_reaction_zh": "bloc.business 对政策可预期性偏正、对流程成本偏负，方向由实算决定；bloc.labor_public 偏正。"
+    },
+    {
+      "option_id": "E04.OPT.C",
+      "label_zh": "什么都不做：不调整拨款与程序",
+      "command": "advance_quarter",
+      "args_zh": "本季不提交与西岭相关的命令",
+      "cost_zh": "零现金支出。",
+      "preconditions_zh": [
+        "无"
+      ],
+      "lag_q": 0,
+      "lag_note_zh": "后果当季在台账中可见。",
+      "consequences_of_inaction_zh": [
+        "排放存量按 §7.9 继续累积：只要本季排放高于使存量不再上行的临界流量（在存量 3 600 000 处为 111 340 μQ_e，见 param.e04_emissions_flow_threshold_uqe 的 derivation_expr），存量与暴露指数就继续上行",
+        "环境暴露以 30% 的权重进入迁移推力，西岭的迁入被抑制、迁出被鼓励；人口流出会同时带走就业（INV-080 的配对扣减），西岭的产业单一问题因此加重",
+        "trust_ppm 的下降不可由补贴修复（INV-122）；本事件最多触发 2 次，累计 −50000 ppm",
+        "首版排放不反馈到生产（INV-057），因此不会出现产量突然崩塌；环境负担的全部可见后果就是人口、预期与信任三条，报告不得暗示更多"
+      ],
+      "political_reaction_zh": "bloc.labor_public 组织力累积；西岭人口最少（300 万），其支持度变化对全国加权支持度的影响相应较小，这一点必须在社会页面的分布中看得见。"
+    }
+  ],
+  "_note_options_rejected_in_v1": [
+    {
+      "label_zh": "环境修复专项工程（清理与治理支出）",
+      "why_unavailable_zh": "12 项政策中没有修复类工具，效果落点白名单中也没有任何可降低 emissions_stock_uqe 或 env_exposure_ppm 的字段（11_data_contract.md §5.12）。事件更不能动账（INV-130）。在没有落点的情况下提供这个选项，等于凭空销毁一份排放存量。",
+      "what_it_would_require_zh": "新增一项 project 类政策 + 在效果落点白名单中增加环境类目标字段 + 在 §7.9 定义修复量如何折减存量（并保证整数下不出现负存量）。已登记为待决问题。"
+    },
+    {
+      "label_zh": "环保限产：关停或限制西岭高排放产能",
+      "why_unavailable_zh": "命令表中没有限产命令；政策效果落点只能增加 *_pending_* 类容量，不能减少在用容量；INV-102 明确禁止用写 0 的方式表达停运；事件也不得写产能（INV-130）。",
+      "what_it_would_require_zh": "需要一条显式的产能退役机制（含资产残值、就业去向与合同赔偿的完整入账），其复杂度接近一条新的政策线，属计划书 §03 范围闸门要审查的新增功能。已登记为待决问题。"
+    }
+  ],
+  "_note_political_reaction": [
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "mobilize",
+      "effect_ref": "effects[2]",
+      "interest_zh": "劳动与公共服务联盟关心就业保障、工资、教育医疗和居住（计划书 §08）。",
+      "evidence_metrics": [
+        "state.region.env_exposure_ppm[region.xiling]",
+        "state.pubserv.queue_persons[region.xiling]",
+        "state.group.service_access_ppm[region.xiling]"
+      ],
+      "basis_zh": "居住条件恶化与医疗可及性是其直接议题。本事件只加组织力；其 stance 由 §8.3 按关心指标（就业与公共服务可用率的人口加权）的变化率更新。"
+    },
+    {
+      "bloc": "bloc.business",
+      "direction": "oppose_if_restrictions",
+      "effect_ref": "none",
+      "interest_zh": "工商业联盟关心能源、运输、利润与政策可预期性。",
+      "evidence_metrics": [
+        "flow.cell.profit_pretax_uu[cell.xiling.energy]",
+        "derived.region.electricity_availability_ppm"
+      ],
+      "basis_zh": "西岭能源是全国供电的来源之一；任何被读成限产信号的举措都会压低其政策可预期性评价。首版没有限产机制，因此这一反应目前只能经财政与税收路径实现，不由事件预写。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "conditional_support",
+      "effect_ref": "none",
+      "interest_zh": "农业合作联盟关心农户收入、灌溉与地区资源分配。",
+      "evidence_metrics": [
+        "flow.cell.value_added_real_uu[cell.xiling.agri]",
+        "flow.gov.pay_project_uu（按地区分布）"
+      ],
+      "basis_zh": "西岭与北原邻接，环境负担与农业用地相关；但首版排放不反馈到农业产出（INV-057），因此其关心指标不会因排放而变化。这是一处必须对玩家讲清的模型边界，不是被遗忘的联系。"
+    }
+  ],
+  "_note_residents_reaction": {
+    "groups_scope": "region.xiling 的 9 个群组",
+    "channel_zh": "trust_ppm 与 expectation_ppm（各一次性位移）",
+    "not_channel_zh": "不写 living_index_ppm 与 support_ppm：生活指数由实际收入、住房负担与服务可及性算出，环境暴露在首版不进入生活指数（这是一处显式的模型边界，OQ-226），事件不得以补一刀的方式绕过它。"
+  },
+  "_note_copy": {
+    "style_note_zh": "三类措辞严格分栏（计划书 §04、12 号文件 §8.6）。占位符只支持整数与 ID（OQ-235）。本事件的文案必须写明两条边界：排放不反馈到生产；环境暴露不自动产生健康需求。",
+    "accounted": [
+      {
+        "key": "event.E04.accounted.stock",
+        "template_zh": "第 {q_display} 季，西岭累计排放存量 {stock_qe} 单位（上季 {stock_prev_qe}，本季新增排放 {flow_qe}，自然衰减 {decay_qe}），环境暴露指数 {exposure_display}。",
+        "placeholders": [
+          "q_display",
+          "stock_qe",
+          "stock_prev_qe",
+          "flow_qe",
+          "decay_qe",
+          "exposure_display"
+        ],
+        "evidence_refs": [
+          "state.region.emissions_stock_uqe",
+          "flow.region.emissions_uqe",
+          "state.region.env_exposure_ppm"
+        ]
+      },
+      {
+        "key": "event.E04.accounted.sources",
+        "template_zh": "本季西岭排放的来源构成：能源 {emit_energy_qe} 单位、制造 {emit_manu_qe} 单位、农业 {emit_agri_qe} 单位、服务 {emit_services_qe} 单位；四项之和等于本季排放总量。",
+        "placeholders": [
+          "emit_energy_qe",
+          "emit_manu_qe",
+          "emit_agri_qe",
+          "emit_services_qe"
+        ],
+        "evidence_refs": [
+          "flow.region.emissions_uqe",
+          "flow.cell.output_actual_uqs"
+        ]
+      }
+    ],
+    "inferred": [
+      {
+        "key": "event.E04.inferred.accumulation",
+        "template_zh": "模型中，排放存量的限制因素是自然消纳速度：本季新增排放高于本季的自然消纳量，存量因此继续上行。环境暴露指数由存量与人口密度共同决定。",
+        "placeholders": [],
+        "evidence_refs": [
+          "state.region.emissions_stock_uqe",
+          "flow.region.emissions_uqe",
+          "derived.region.population_persons"
+        ]
+      },
+      {
+        "key": "event.E04.inferred.model_boundary",
+        "template_zh": "模型边界：首版不模拟完整气候系统。排放与环境暴露不进入任何生产约束，也不自动转化为医疗需求；它们在模型中的作用是迁移推力（权重 {env_weight_pct}%）与本报告的记录。本版本没有可以直接降低排放存量的政策工具。",
+        "placeholders": [
+          "env_weight_pct"
+        ],
+        "evidence_refs": [
+          "state.region.env_exposure_ppm",
+          "flow.group.migrate_flow_persons"
+        ]
+      }
+    ],
+    "projected": [
+      {
+        "key": "event.E04.projected.no_action",
+        "template_zh": "情景预测（假设：不提交新命令、各部门产量维持当前水平、人口按既有规则演化）：未来四季西岭排放存量继续上行至约 {proj_stock_qe} 单位，净迁出 {proj_net_out_persons} 人。本预测由同一套结算规则空跑四季得到，不宣称识别真实世界因果。",
+        "placeholders": [
+          "proj_stock_qe",
+          "proj_net_out_persons"
+        ],
+        "evidence_refs": [
+          "state.region.emissions_stock_uqe",
+          "flow.group.migrate_flow_persons"
+        ]
+      },
+      {
+        "key": "event.E04.projected.with_p10",
+        "template_zh": "情景预测（假设：本季向西岭加权基础医疗拨款，人员与设施按计划到位）：公共服务排队人数在第 {relief_q_display} 季起下降。该情景不改变排放存量，因为本版本没有把环境暴露与健康需求连通，也没有降低排放的工具。",
+        "placeholders": [
+          "relief_q_display"
+        ],
+        "evidence_refs": [
+          "state.pubserv.queue_persons",
+          "state.pubserv.capacity_pending_uqs_per_q"
+        ]
+      }
+    ]
+  },
+  "_note_acceptance_criteria": [
+    {
+      "test_id": "T-S-E04-NO-FIRE-BELOW-STOCK",
+      "given_zh": "构造西岭排放存量 = 3 000 000（低于阈值 3 600 000），其余三条件全部成立",
+      "when_zh": "推进 30 个季度",
+      "then_zh": "fire_count 恒为 0；rng.event 不因本事件产生任何抽样",
+      "invariants": [
+        "INV-009",
+        "INV-011"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-NO-FIRE-WHEN-IMPROVING",
+      "given_zh": "构造西岭排放存量与暴露指数均已越线（4 000 000 / 700 000 ppm），但本季 flow.region.emissions_uqe = 80000，低于临界流量 111 340（trigger.all_of[2].value）",
+      "when_zh": "推进 20 个季度",
+      "then_zh": "fire_count 恒为 0；且每一季的 state.region.emissions_stock_uqe 都不高于上一季（本断言同时证明 111 340 这个阈值确实是「存量不再上行」的分界，而不是一个凑出来的数）",
+      "invariants": [
+        "INV-009"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-NO-FIRE-AT-BASELINE",
+      "given_zh": "无命令、无冲击的基线剧本",
+      "when_zh": "推进前 8 个季度（q = 0..7）",
+      "then_zh": "fire_count == 0",
+      "invariants": [
+        "INV-118"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-EXPOSURE-BASELINE-CONSISTENCY",
+      "given_zh": "载入剧本并完成 q = 0 的 S07",
+      "when_zh": "按 12 号文件 §7.9 复算 state.region.env_exposure_ppm[region.xiling]",
+      "then_zh": "复算值与 regions.json 给出的初值 380 000 的差不超过 1 ppm。当前按 emissions_stock 2 800 000、area_index 1 200 000、人口 3 000 000 与 param.env_exposure_gain_ppm 200000 复算得 1 400 000，本断言预计会红——这是有意为之：它把剧本初值与公式的不一致暴露给负责人，而不是让本事件的阈值去吸收它",
+      "invariants": [
+        "INV-014",
+        "INV-152"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-FIRE-WHEN-CONDITIONS-MET",
+      "given_zh": "构造存量 4 000 000、暴露 700 000 ppm、本季排放 150 000、q >= 6，固定 root_seed",
+      "when_zh": "连续推进 16 个季度",
+      "then_zh": "fire_count >= 1；两次触发间隔 >= 8；整局不超过 2 次",
+      "invariants": [
+        "INV-130"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-NO-PHYSICAL-EFFECT",
+      "given_zh": "构造一次确定触发与一个除事件外完全相同的对照组",
+      "when_zh": "触发当季结算完成",
+      "then_zh": "emissions_stock_uqe、env_exposure_ppm、capacity_active、cash、inventory 在两组间逐位相同；事件既没有制造污染，也没有清除污染，更没有关停任何产能",
+      "invariants": [
+        "INV-130",
+        "INV-102",
+        "INV-057"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-CONSEQUENCE-EXACT-DELTAS",
+      "given_zh": "载入 chengwan 剧本；构造 state.region.emissions_stock_uqe[region.xiling] = 4000000、state.region.env_exposure_ppm[region.xiling] = 700000、flow.region.emissions_uqe[region.xiling] = 150000、state.time.q = 8，并固定 root_seed 使 draw_ppm(STREAM_EVENT, 8) < 550000（本季必触发）；同时跑一个只把 event.E04 从事件表中移除、其余逐位相同的对照组",
+      "when_zh": "两组各推进该季，在 S08 §8.4 结束、§8.5 开始之前读取状态与日志",
+      "then_zh": "① 西岭 9 个群组 group.xiling.{minor,working,elder}.{low,mid,high} 的 state.group.trust_ppm 各自 == 对照组同组值 − 25000（9 次精确）；② 同 9 组的 state.group.expectation_ppm 各自 == 对照组同组值 − 45000（9 次精确）；③ state.bloc.org_power_ppm[bloc.labor_public] == 对照组值 + 20000（1 次精确）；④ 这 19 个写入点均未触发 clamp：本季 log.clamp 中与这 19 个字段相关的条目数 == 0；⑤ 其余 27 个群组的 trust_ppm 与 expectation_ppm、以及 bloc.business 与 bloc.agri_coop 的 org_power_ppm 与对照组逐位相同；⑥ 全部 36 组的 state.group.support_ppm 与对照组逐位相同（事件不写支持度，一季时滞，INV-123）；⑦ 本季 log.ledger 的分录条数、每条的 delta_uu 与 qty_uqs 与对照组逐位相同（事件不动账，INV-130）；⑧ log.explanations 中 cause 指向 event.E04 的条目恰好 3 条，kind 全为 inferred，其 amount 依次 == −25000 / −45000 / +20000，与 effects[0..2].delta_ppm 以及 _note_consequences[0..2].log_explanation_row.amount 三者逐位相同",
+      "invariants": [
+        "INV-130",
+        "INV-123",
+        "INV-140",
+        "INV-122"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-EMISSIONS-NOT-FED-BACK",
+      "given_zh": "把西岭排放存量人为设为上限附近（暴露指数触及 3 000 000 的 clamp 上界）",
+      "when_zh": "推进一季",
+      "then_zh": "全部 16 个 cell 的 bound_capacity、bound_labor、bound_energy、bound_materials 与 binding_code与对照组完全相同：首版排放不反馈到生产约束",
+      "invariants": [
+        "INV-057"
+      ]
+    },
+    {
+      "test_id": "T-S-E04-NO-REDRAW-ON-RELOAD",
+      "given_zh": "在事件已确定触发的那一季之前存档",
+      "when_zh": "save 到 load 再 advance，与直接 advance 各跑一次",
+      "then_zh": "state_hash 逐位相同，log.rng 完全一致，fire_count 与 last_fire_q 一致",
+      "invariants": [
+        "INV-131",
+        "INV-133",
+        "ADV-06"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e04_emissions_stock_threshold_uqe",
+      "binds_to": "trigger.all_of[0].value",
+      "value": 3600000,
+      "unit": "μQ_e",
+      "source_type": "design_assumption",
+      "source_ref": "content/scenarios/chengwan/regions.json：西岭 emissions_stock_uqe 初值 2 800 000（四地区最高）",
+      "reference_year": 0,
+      "definition": "触发所需的西岭累计排放存量下界，相当于在开局基础上再累积约 29%。",
+      "valid_range": [
+        2900000,
+        8000000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.emission_decay_ppm = 30000 联动：存量在无新增排放时每季衰减 3%，因此越线必然意味着排放连续多季超过自然消纳。若剧本调整西岭排放初值或 io_table 的 emission_ppm，本值必须重算。排放当量单位 μQ_e 与部门产品单位的关系尚未定清（OQ-227），该问题关闭前本卡的 confidence 不得改为 medium。"
+    },
+    {
+      "value_id": "param.e04_env_exposure_threshold_ppm",
+      "binds_to": "trigger.all_of[1].value",
+      "value": 600000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "content/scenarios/chengwan/regions.json：西岭 env_exposure_ppm 初值 380 000（四地区最高）",
+      "reference_year": 0,
+      "definition": "触发所需的西岭环境暴露指数下界，相当于在开局基础上上行约 58%。",
+      "valid_range": [
+        400000,
+        3000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值按剧本初值拟合。警告：按 12 号文件 §7.9 的公式与当前剧本数据复算得到的是 1 400 000，与剧本初值 380 000 相差约 3.7 倍。T-S-E04-EXPOSURE-BASELINE-CONSISTENCY 会让这处不一致红掉。该断言转绿之后，本值必须按最终口径重新拟合，并把变更理由写进本卡。"
+    },
+    {
+      "value_id": "param.e04_emissions_flow_threshold_uqe",
+      "binds_to": "trigger.all_of[2].value",
+      "value": 111340,
+      "unit": "μQ_e",
+      "source_type": "derived",
+      "source_ref": "12_simulation_contract.md §7.9 的排放存量更新式；param.emission_decay_ppm = 30000",
+      "reference_year": 0,
+      "definition": "触发所需的本季排放流量下界：使累计排放存量在本季结算后仍然上行的临界流量。低于该值时存量在自然消纳下自行回落，排放负担正在缓解，不应记为一次环境事故。",
+      "derivation_expr": "12 号文件 §7.9 的结算顺序是「先加本季排放、再对和式整体衰减」：stock_new = mul_ppm(stock_prev + flow, 1e6 − param.emission_decay_ppm)。令 stock_new > stock_prev 解得 flow > stock_prev × param.emission_decay_ppm / (1e6 − param.emission_decay_ppm)。代入 stock_prev = param.e04_emissions_stock_threshold_uqe = 3600000、param.emission_decay_ppm = 30000：param.e04_emissions_flow_threshold_uqe = mul_div_floor(3600000, 30000, 970000) = floor(108000000000 / 970000) = 111340；trigger 用 op = gt，故实际下界是 111341。",
+      "valid_range": [
+        10000,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值由另外两个参数派生，不得单独调整：改动 param.e04_emissions_stock_threshold_uqe 或 param.emission_decay_ppm 后必须按 derivation_expr 重算。更正记录：上一版写的是 108000（= mul_ppm(3600000, 30000)，把衰减只作用在期初存量上），与 §7.9 的实际结算顺序不符——在 108001…111340 这一段里存量其实已经在回落，旧值会让事件在负担开始缓解的季度里触发，与本条件「排放仍在恶化」的表述自相矛盾。本轮按 §7.9 重新解出临界流量并改为 111340。该更正不影响任何验收断言的判定方向：T-S-E04-NO-FIRE-WHEN-IMPROVING 用 80000（两个口径下都不触发），T-S-E04-FIRE-WHEN-CONDITIONS-MET 用 150000（两个口径下都触发）。"
+    },
+    {
+      "value_id": "param.e04_min_q",
+      "binds_to": "trigger.all_of[3].value",
+      "value": 6,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：排放是四项状态中最慢的一条存量",
+      "reference_year": 0,
+      "definition": "本事件允许触发的最早季度索引（q 从 0 起，故为第 7 季）。",
+      "valid_range": [
+        0,
+        20
+      ],
+      "confidence": "low",
+      "calibration_note": "在无冲击基线上，前六季的累积不足以越过存量阈值；该门槛主要用于防止构造性测试之外的早期误触发。"
+    },
+    {
+      "value_id": "param.e04_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 550000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：四个事件中最低",
+      "reference_year": 0,
+      "definition": "四条条件全部成立后本季触发的概率。抽样走 rng.event。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取值最低的理由：环境负担是长期累积过程，它被公开确认为一次事故的时点最不确定。若试玩记录显示玩家完全没有注意到环境这条线，提高到 800000。"
+    },
+    {
+      "value_id": "param.e04_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 8,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：四个事件中最长，两年",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        1,
+        24
+      ],
+      "confidence": "low",
+      "calibration_note": "排放存量的变化以年为尺度，冷却过短会把同一轮累积记成多次事故。"
+    },
+    {
+      "value_id": "param.e04_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 2,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：四个事件中最少",
+      "reference_year": 0,
+      "definition": "整局中本事件最多触发次数。",
+      "valid_range": [
+        1,
+        6
+      ],
+      "confidence": "low",
+      "calibration_note": "首版没有降低排放的工具（见 consequences_not_representable_in_v1）。在玩家无从应对的情况下反复施加信任惩罚，是把不可解的结构问题当成惩罚机制，违反计划书 §09「政策可以在某些条件下明显无效，玩家应能理解无效发生在哪里」的精神。因此上限取 2。修复类工具落地后可重新评估。"
+    },
+    {
+      "value_id": "param.e04_trust_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：取 E01（−40000）的六成",
+      "reference_year": 0,
+      "definition": "触发时对西岭各群组程序信任的一次性下调（−2.5 个百分点）。",
+      "valid_range": [
+        -100000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "与 max_occurrences = 2 联动：整局累计最多 −50000 ppm。若压测显示西岭信任被此机制单独压到 0，先降 max_occurrences 再降本值。"
+    },
+    {
+      "value_id": "param.e04_expectation_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": -45000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：四个事件中幅度最大",
+      "reference_year": 0,
+      "definition": "触发时对西岭各群组未来预期的一次性下调（−4.5 个百分点）。",
+      "valid_range": [
+        -150000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "预期下调会经迁移的服务与工资拉力间接影响人口流动方向；若校准中发现西岭出现不合理的人口塌陷，先检查 param.migration_w_env_ppm 与本值的叠加。"
+    },
+    {
+      "value_id": "param.e04_labor_org_power_delta_ppm",
+      "binds_to": "effects[2].delta_ppm",
+      "value": 20000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：取 E03 同一集团 +25000 的八成",
+      "reference_year": 0,
+      "definition": "触发时劳动与公共服务联盟组织力的一次性上调（+2.0 个百分点）。",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "幅度低于 E03 的理由：西岭人口 300 万为四地区最少，可动员规模较小。校准检验：E03 与 E04 累计不应使该集团跨过否决域门槛。"
+    }
+  ],
+  "_note_notes_zh": "全部数值为设计假设与测试夹具（计划书 §14、§19）。本文件登记了三处结构性缺口，均未在文件内自行填补：(1) 首版没有任何可以降低排放存量或环境暴露的政策落点，因此任务卡中的修复支出无法表达；(2) INV-057 明确排放不反馈生产，因此任务卡中的能源产出受限无法表达；(3) 剧本的 env_exposure_ppm 初值与 §7.9 公式的复算结果相差约 3.7 倍，已写成 T-S-E04-EXPOSURE-BASELINE-CONSISTENCY 断言交给剧本与参数的负责人裁定。在这三处未解决前，本事件是四个事件中玩家可用应对手段最少的一个，故 max_occurrences 取最小值 2，避免把不可解的结构问题变成反复惩罚。"
+}

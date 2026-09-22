@@ -1,0 +1,638 @@
+{
+  "schema_kind": "politics_init",
+  "schema_version": 1,
+  "_note_disclaimer_zh": "本文件定义的选举、席位、否决与联盟规则是游戏抽象。它不模拟真实选区、不代表任何现实国家的选举制度，也不是世界银行 WDR 2017 给出的模型——WDR 2017 只用于「权力分配、可信承诺、协调与合作会影响政策采纳与实施」这一机制方向。本文件中的组织划分、投票映射与全部阈值均为设计假设，尚未经任何数据校准。报告与界面引用本规则时必须原样附带这句声明（计划书 §08、§14）。",
+  "_note_abstraction_scope_zh": "不建模：政党、选区、竞选活动、议员个体、游说支出、媒体。建模：全国居民支持度→席位的固定转换、三个利益集团的组织影响力与否决域、执政团队的行政执行能力，三者分开计算（INV-125）。",
+  "_note_schema_deviation_zh": "本文件原有 18 个顶层扩展键（membership_rule、stance_rule、resident_support、authority_bits、reform_domains、veto_rule、separation_of_three、budget_review、election、termination_triggers、settlement_dimensions、validation_extensions、parameter_cards 及五条散文）。11 号文件 §5.10 的 politics_init schema 只声明十个键，§3 又规定 additionalProperties:false，故这些键一律按 §3 给的两条出路中的第二条处理：改名为 _note_<field> 注释键。这不是纯粹的排版动作，必须看清它的代价：注释键不进 SimCore 的加载器、不进 content_hash（§1.5、§6.4），所以这些规则从「内容包数据」降级成了「文档」。降级是可以接受的，因为它们的权威出处本来就在别处——成员规模、立场、支持度、集团反应在 12_simulation_contract.md §8.1–8.3；预算审查、选举、终局在 §8.5；席位转换在 OQ-221；结算五类展示在 20_ui_spec.md；阈值在 param.* 卡。真正只在本文件里有权威值的东西仍然留在已声明键内：seats_total / seats_gov / next_election_q / next_budget_review_q / admin_capacity_ppm / legal_authority_mask / blocs / stance_ppm。唯一没有被降级安置的是 authority_bits 与 reform_domains 这两张表——它们描述的是「哪一位授权对应哪一类政策」与「哪一域需要哪些集团」，而契约把这层信息切成了三处：政策侧 legal_authority.authority_bit（§5.12）、集团侧 veto_domains（§5.10）、政府侧 legal_authority_mask（本文件）。§5.12 的 PolicyDefinition 里并没有一个 domain 字段，而 12_simulation_contract.md §2.1 的否决判据写的是「policy_def[p] 的 domain ∈ bloc.veto_domains[b]」——这条判据目前没有数据可读。登记为 OQ-252，本文件不自行补字段。",
+  "seats_total": 101,
+  "_note_seats_total": "奇数，使「过半」无歧义（V-POL-02）。101 是规模标记，不对应任何现实议会。",
+  "seats_gov": 56,
+  "_note_seats_gov": "开局席位来自基年之前的上一届选举，与基年初始居民支持度不必相等，也不由 seat_rule 在载入期反算——执政团队正是在「上届授权与当下民意已经分叉」的处境里开局。首次用 seat_rule 重算发生在 q = 15。",
+  "next_election_q": 15,
+  "next_budget_review_q": 3,
+  "_note_next_election_q": "计划书 §08 的第 16、32 季；q 从 0 起，故为 15 与 31（INV-127，10 号文件裁定 R-05）。",
+  "admin_capacity_ppm": 600000,
+  "_note_admin_capacity_ppm": "行政执行能力 60.0%。与选票、组织影响力互不引用（INV-125）。",
+  "legal_authority_mask": 7,
+  "_note_legal_authority_mask": "= 位 0|1|2，即开局持有财税法权、社会项目权、建设与采购权；位 3（重大改革权）未持有，只能由选举中的三分之二多数授予。",
+  "blocs": [
+    {
+      "bloc_id": "bloc.agri_coop",
+      "label_zh": "农业合作联盟",
+      "org_power_ppm": 300000,
+      "_note_org_power_ppm": "三者中最低：成员分散在北原与西岭的乡村，动员成本高。",
+      "resource_uu": 400000000,
+      "_note_resource_uu": "0.4 U",
+      "veto_domains": [
+        "land_reform"
+      ],
+      "_note_care_metric_id": "care.agri_value_added_real",
+      "_note_care_metric_formula": "care[agri_coop] = Σ_{r} flow.cell.value_added_real_uu[cell.<r>.agri]",
+      "_note_care_metric_zh": "用基年价增加值而不是名义值：农产品价格上涨带来的名义增长不应被读成农户处境改善。",
+      "_note_cares_about_refs": [
+        {
+          "ref": "flow.cell.value_added_real_uu",
+          "scope": "sector.agri",
+          "label_zh": "农户实际经营成果"
+        },
+        {
+          "ref": "state.region.irrigation_index_ppm",
+          "scope": "region.beiyuan",
+          "label_zh": "灌溉设施"
+        },
+        {
+          "ref": "content.region.logistics_cost_ppm",
+          "scope": "national",
+          "label_zh": "农产品外运成本"
+        },
+        {
+          "ref": "flow.gov.pay_subsidies_uu",
+          "scope": "sector.agri",
+          "label_zh": "地区资源分配中分到农业的份额"
+        }
+      ],
+      "_note_representation_zh": "能组织协商与支持，但不等同全部农村居民：它的成员规模是加权人数，居民支持度另按人口权重单独计算（计划书 §08）。"
+    },
+    {
+      "bloc_id": "bloc.business",
+      "label_zh": "工商业联盟",
+      "org_power_ppm": 400000,
+      "_note_org_power_ppm": "三者中最高：成员数量最少但集中在海岬与中州，协调成本最低。",
+      "resource_uu": 900000000,
+      "_note_resource_uu": "0.9 U",
+      "veto_domains": [
+        "tax_law"
+      ],
+      "_note_care_metric_id": "care.total_profit_pretax",
+      "_note_care_metric_formula": "care[business] = Σ_{c} flow.cell.profit_pretax_uu[c]",
+      "_note_care_metric_zh": "税前利润，不含补助的重复计入（INV-113）；亏损为负，按绝对值分母做变化率（12 号文件 §8.3）。",
+      "_note_cares_about_refs": [
+        {
+          "ref": "flow.cell.profit_pretax_uu",
+          "scope": "national",
+          "label_zh": "利润"
+        },
+        {
+          "ref": "derived.region.electricity_availability_ppm",
+          "scope": "region.haijia",
+          "label_zh": "供电可靠性"
+        },
+        {
+          "ref": "state.region.port_capacity_uqs_per_q",
+          "scope": "region.haijia",
+          "label_zh": "港口与运输能力"
+        },
+        {
+          "ref": "state.policy.toggle_count",
+          "scope": "national",
+          "label_zh": "政策可预期性（开关次数越多越不可预期）"
+        }
+      ],
+      "_note_representation_zh": "影响投资意愿与改革阻力，但不能直接代表任何选票：stance 不进入 support（计划书 §08）。"
+    },
+    {
+      "bloc_id": "bloc.labor_public",
+      "label_zh": "劳动与公共服务联盟",
+      "org_power_ppm": 350000,
+      "_note_org_power_ppm": "成员规模最大但跨部门跨地区，内部诉求不完全一致，动员效率居中。",
+      "resource_uu": 500000000,
+      "_note_resource_uu": "0.5 U",
+      "veto_domains": [
+        "public_employment"
+      ],
+      "_note_care_metric_id": "care.employment_and_service",
+      "_note_care_metric_formula": "care[labor_public] = Σ_{c,k} state.cell.employment_persons[c][k] + Σ_{r,k} state.pubserv.employment_persons[r][k] + idiv_floor(Σ_r (state.pubserv.availability_ppm[r] * derived.region.population_persons[r]), 1000000)",
+      "_note_care_metric_zh": "就业人数与公共服务可用率的人口加权合并成一个整数指标；两项都是「人」的量纲，相加只作为同一集团的关心度量，不进入任何国民账户加总。",
+      "_note_cares_about_refs": [
+        {
+          "ref": "state.cell.employment_persons",
+          "scope": "national",
+          "label_zh": "就业保障"
+        },
+        {
+          "ref": "state.price.wage_uu_per_person_q",
+          "scope": "national",
+          "label_zh": "工资率"
+        },
+        {
+          "ref": "state.group.service_access_ppm",
+          "scope": "national",
+          "label_zh": "教育与医疗可及性"
+        },
+        {
+          "ref": "derived.group.housing_burden_ppm",
+          "scope": "region.zhongzhou",
+          "label_zh": "居住负担"
+        }
+      ],
+      "_note_representation_zh": "通过组织影响议程；成员可同时属于其他利益网络（与 bloc.business 的成员在制造与能源部门重叠），故 Σ 成员规模可以大于总人口（OQ-223）。"
+    }
+  ],
+  "_note_membership_rule": {
+    "runtime_formula": "derived.bloc.membership_persons[b] = Σ_g mul_ppm(state.group.population_persons[g], content.bloc_affiliation_ppm[g][b])",
+    "runtime_formula_source": "12_simulation_contract.md §8.3（权威，本文件不得另立）",
+    "unit_note_zh": "结果是「加权人数」，不是人头。展示层必须标注这一点，且不得与「人数」字样并列（OQ-223、INV-129）。允许 Σ_b affiliation > 1 000 000。",
+    "affiliation_source_file": "population_init.json",
+    "affiliation_field": "bloc_affiliation_ppm",
+    "affiliation_derivation_note_zh": "population_init.json 中 36×3 的 bloc_affiliation_ppm 不是手写的固定人数，必须由下列规则从基年就业分配逐组算出；剧本作者只提供就业分配，隶属权重是派生结果。载入期由 V-POL-EXT-01 复算比对。",
+    "affiliation_derivation": {
+      "working_groups": {
+        "emp_g": "Σ_{s∈{agri,manu,energy,services}} employed_persons[g][s] + employed_persons[g][\"pubserv\"]",
+        "labor_g": "idiv_floor(population_persons[g] * participation_ppm[g], 1000000)",
+        "unemployed_g": "labor_g - emp_g",
+        "base_g": "max(labor_g, 1)",
+        "agri_coop_ppm": "idiv_floor(employed_persons[g][\"sector.agri\"] * 1000000, base_g)",
+        "business_ppm": "idiv_floor((employed_persons[g][\"sector.manu\"] + employed_persons[g][\"sector.energy\"] + employed_persons[g][\"sector.services\"]) * 1000000, base_g)",
+        "labor_public_ppm": "idiv_floor((employed_persons[g][\"sector.manu\"] + employed_persons[g][\"sector.energy\"] + employed_persons[g][\"sector.services\"] + employed_persons[g][\"pubserv\"] + unemployed_g) * 1000000, base_g)",
+        "overlap_note_zh": "制造／能源／服务的雇员同时计入 business（部门利益）与 labor_public（雇佣关系），这是重叠成员的来源，也是两集团在同一政策上可能同时有强立场的原因。农业自雇不计入 labor_public。"
+      },
+      "non_working_groups": {
+        "formula": "aff[g][b] = mul_ppm(region_working_average_ppm[region(g)][b], param.bloc_dependent_attachment_ppm)",
+        "region_working_average_ppm": "split_largest_remainder 加权(aff[g'][b], 权重 = labor_g', g' ∈ 同地区的 working 组)",
+        "note_zh": "未成年与老年组没有就业，只有家庭附着；attachment 系数把它压到劳动年龄平均值的一半，避免「全体人口都是某集团成员」。minor 档的 skill 表示教育准备程度，不表示劳动技能，不参与隶属推导（计划书 §08）。"
+      },
+      "rounding": "全部 idiv_floor；隶属权重是换算（§0.9 换算类），余数写 log.rounding，不产生任何债权债务。"
+    },
+    "dynamics_note_zh": "首版运行期的成员规模只随 state.group.population_persons（出生、死亡、成年、退休、迁移）变化；隶属权重本身在载入期固定，不随每季就业结构重算——因为 content.* 在运行期只读，S08 的可写子集不含内容包（12 号文件 §8）。这是首版的显式简化，登记为 OQ-249。"
+  },
+  "_note_stance_rule": {
+    "principle_note_zh": "立场是利益变化的函数，不是好感度计数器。SimCore 内不存在「对政府好感 +N」这类每季加减；stance 只有两个来源：(a) 集团关心指标的实际变化率，(b) 某项政策生效当季由 PolicyDefinition.political_reaction 给出的一次性冲量。",
+    "formula": "stance_ppm[b][p] = clamp(stance_prev[b][p] + (本季 p 刚生效 ? policy_def[p].political_reaction[b] : 0) + mul_ppm(care_delta_ppm[b], param.bloc_care_gain_ppm), -1000000, 1000000)",
+    "care_delta_formula": "care_delta_ppm[b] = clamp(idiv_floor((care[b] - care_prev[b]) * 1000000, max(absi(care_prev[b]), 1)), -1000000, 1000000)",
+    "formula_source": "12_simulation_contract.md §8.3（权威）",
+    "separation_note_zh": "stance 只影响改革可行性与议程（否决、联盟条件），不直接进入 support：反对某项政策不等同于反对政府的一切（计划书 §08）。静态检查：support 的计算式中不得出现 stance_ppm。",
+    "care_delta_note_zh": "care_delta 是全集团共用的一个标量，对该集团的全部 12 项政策同向移动——首版不区分「哪项政策造成了这次利益变化」，因为归因需要反事实，而计划书 §13 禁止冒充因果识别。政策各自的差异只由一次性 political_reaction 体现。"
+  },
+  "_note_resident_support": {
+    "principle_note_zh": "居民支持按人口权重计算，且必须保留受益者与受损者的分布；任何只展示一个全国平均数的界面都违反计划书 §18 的「玩家只看一条综合分数」风险处理原则。",
+    "group_formula": "support_ppm[g] = clamp(idiv_floor(param.support_weight_ppm[0]*living_index_ppm[g] + param.support_weight_ppm[1]*expectation_ppm[g] + param.support_weight_ppm[2]*trust_ppm[g], 1000000), 0, 1000000)",
+    "national_formula": "derived.politics.support_national_ppm = split_largest_remainder 加权(state.group.support_ppm, 权重 = state.group.population_persons where age != minor)",
+    "regional_formula": "derived.politics.support_region_ppm[r] = split_largest_remainder 加权(state.group.support_ppm[g∈r], 权重 = state.group.population_persons[g] where age != minor)",
+    "weight_note_zh": "分母是未成年以外的人口，不是总人口，也不是劳动力——与失业率的分母（劳动力）是两个口径，报告必须分别注明分母（计划书 §11）。",
+    "retain_distribution": {
+      "must_retain_per_group": true,
+      "forbid_national_only": true,
+      "distribution_metric": "delta_living_ppm[g] = state.group.living_index_ppm[g] - living_index_ppm_4q_ago[g]",
+      "buckets": [
+        {
+          "bucket_id": "gainer",
+          "label_zh": "受益",
+          "test": "delta_living_ppm >= param.support_gainer_threshold_ppm"
+        },
+        {
+          "bucket_id": "neutral",
+          "label_zh": "基本持平",
+          "test": "param.support_loser_threshold_ppm < delta_living_ppm < param.support_gainer_threshold_ppm"
+        },
+        {
+          "bucket_id": "loser",
+          "label_zh": "受损",
+          "test": "delta_living_ppm <= param.support_loser_threshold_ppm"
+        }
+      ],
+      "bucket_population_formula": "bucket_persons[k] = Σ_{g∈k} state.group.population_persons[g]；Σ_k bucket_persons == Σ_g population_persons（精确，无余数）",
+      "report_dimensions": [
+        "group",
+        "region",
+        "age",
+        "skill"
+      ],
+      "report_note_zh": "同一季必须能同时回答「谁的生活变好了」「谁变差了」「各有多少人」。首版只报告群组间差距与收入分位近似，不输出基尼系数（计划书 §14）。",
+      "window_q": 4,
+      "window_note_zh": "用 4 季同比而不是环比：季节系数会让环比在农业地区产生纯季节性的假受损。"
+    }
+  },
+  "_note_authority_bits": [
+    {
+      "bit": 0,
+      "domain_id": "tax_law",
+      "label_zh": "财税法权",
+      "held_at_start": true,
+      "scope_note_zh": "税率、免征额、征收能力类政策（P01、P02、P11）。"
+    },
+    {
+      "bit": 1,
+      "domain_id": "social_program",
+      "label_zh": "社会项目权",
+      "held_at_start": true,
+      "scope_note_zh": "转移支付与人力／健康服务类政策（P03、P05、P10）。"
+    },
+    {
+      "bit": 2,
+      "domain_id": "capital_project",
+      "label_zh": "建设与采购权",
+      "held_at_start": true,
+      "scope_note_zh": "立项、建设、补助与采购规则类政策（P04、P06、P07、P08、P09、P12）。"
+    },
+    {
+      "bit": 3,
+      "domain_id": "structural_reform",
+      "label_zh": "重大改革权",
+      "held_at_start": false,
+      "scope_note_zh": "土地与公共部门用工的结构性改革。首版 12 项政策没有一项落在此位——它存在的意义是让「有些事这一届做不了」成为一个可观察的事实，而不是一个隐藏的禁止。"
+    }
+  ],
+  "_note_reform_domains": [
+    {
+      "domain_id": "tax_law",
+      "label_zh": "财税法",
+      "required_authority_bit": 0,
+      "required_min_seats_ppm": 500000,
+      "required_supporting_blocs": [],
+      "coalition_mode": "none",
+      "veto_capable_blocs": [
+        "bloc.business"
+      ]
+    },
+    {
+      "domain_id": "social_program",
+      "label_zh": "社会项目",
+      "required_authority_bit": 1,
+      "required_min_seats_ppm": 500000,
+      "required_supporting_blocs": [],
+      "coalition_mode": "none",
+      "veto_capable_blocs": []
+    },
+    {
+      "domain_id": "capital_project",
+      "label_zh": "建设与采购",
+      "required_authority_bit": 2,
+      "required_min_seats_ppm": 500000,
+      "required_supporting_blocs": [],
+      "coalition_mode": "none",
+      "veto_capable_blocs": []
+    },
+    {
+      "domain_id": "land_reform",
+      "label_zh": "土地与农业资源改革",
+      "required_authority_bit": 3,
+      "required_min_seats_ppm": 666667,
+      "required_supporting_blocs": [
+        "bloc.agri_coop"
+      ],
+      "coalition_mode": "all_of",
+      "veto_capable_blocs": [
+        "bloc.agri_coop"
+      ]
+    },
+    {
+      "domain_id": "public_employment",
+      "label_zh": "公共部门用工改革",
+      "required_authority_bit": 3,
+      "required_min_seats_ppm": 666667,
+      "required_supporting_blocs": [
+        "bloc.labor_public"
+      ],
+      "coalition_mode": "all_of",
+      "veto_capable_blocs": [
+        "bloc.labor_public"
+      ]
+    }
+  ],
+  "_note_coalition_matrix_zh": "coalition_mode ∈ {none, any_of, all_of}。all_of 要求列出的每个集团 stance_ppm[b][p] >= param.bloc_coalition_support_min_ppm；any_of 只要求其中之一。首版三个普通域不设联盟条件——重大改革才需要联盟，这样「联盟条件」不会退化成每条政策都要凑的例行手续（计划书 §09 的伪深度警告）。",
+  "_note_veto_rule": {
+    "check_point": "S02 命令受理的资格检查链第 1 档（12 号文件 §2.1）",
+    "condition": "policy_def[p] 的 domain ∈ bloc.veto_domains[b] 且 state.bloc.stance_ppm[b][p] < param.bloc_veto_stance_threshold_ppm",
+    "result": "REJECT(E_BLOC_VETO)，状态完全不变，命令仍入档并记原因码（INV-137）",
+    "threshold_note_zh": "阈值取 −600000 而不是 −300000：开局 bloc.business 对 P02 的立场是 −400000，落在阈值之上，因此基年不存在任何预先生效的否决——玩家不会在第 1 季就撞上一堵没有来由的墙。否决只有在企业利润持续下滑把立场推过 −600000 之后才出现，那时它是一个有账可查的后果。",
+    "org_power_gate_note_zh": "曾考虑追加「组织力低于某值的集团不具备否决能力」的闸门，但 12 号文件 §2.1 只写了 stance 一个条件，追加闸门会让否决更难触发（对玩家更宽松），故不采纳，登记为 OQ-250。"
+  },
+  "_note_separation_of_three": {
+    "principle_note_zh": "选票、组织影响力、行政能力由三个不同函数计算，互不引用对方的量（INV-125，由 tools/check_politics_separation.gd 静态检查）。三者也有三种不同的失效方式：支持度高但席位不过半仍然下台；席位足够但集团否决仍然做不成改革；两者都有但行政能力不足仍然做得很慢。",
+    "votes": {
+      "output": "state.politics.seats_gov",
+      "formula": "seats_gov = split_largest_remainder(seats_total, [1000000 - support_national_ppm, support_national_ppm], [0, 1])[1]",
+      "allowed_inputs": [
+        "derived.politics.support_national_ppm",
+        "state.politics.seats_total"
+      ],
+      "forbidden_inputs": [
+        "state.bloc.org_power_ppm",
+        "state.bloc.stance_ppm",
+        "state.bloc.resource_uu",
+        "state.politics.admin_capacity_ppm"
+      ],
+      "purity_note_zh": "纯函数，整数，最大余数法，无门槛、无席位红利、不模拟选区（OQ-221）。",
+      "tiebreak_note_zh": "权重数组把反对方放在下标 0、执政方放在下标 1，于是余数并列时那 1 席归反对方。这是为了让「支持度恰好 50%」判定为失去执政资格——OQ-221 的验收测试 T-S-ELECTION 要求 seats_gov*2 <= seats_total 在 50% 时成立，而 OQ-221 正文写的参数顺序（执政在前）会让并列的 1 席归执政方、得出 51 席并保住执政，与它自己的测试相矛盾。此处取较严的一侧，并把该矛盾登记为 OQ-246。"
+    },
+    "organizational_influence": {
+      "output": "state.bloc.org_power_ppm, derived.bloc.agenda_influence_ppm",
+      "org_power_formula": "org_power_ppm[b] = clamp(mul_ppm(org_power_prev[b], param.bloc_org_inertia_ppm) + mul_ppm(size_ppm[b], param.bloc_w_size_ppm) + mul_ppm(res_ppm[b], param.bloc_w_resource_ppm), 0, 1000000)",
+      "size_formula": "size_ppm[b] = clamp(idiv_floor(derived.bloc.membership_persons[b] * 1000000, max(Σ_g state.group.population_persons[g], 1)), 0, 1000000)",
+      "resource_formula": "res_ppm[b] = clamp(idiv_floor(state.bloc.resource_uu[b] * 1000000, max(param.bloc_resource_ref_uu, 1)), 0, 1000000)",
+      "agenda_formula": "derived.bloc.agenda_influence_ppm = split_largest_remainder(1000000, [org_power_ppm[0], org_power_ppm[1], org_power_ppm[2]], [0, 1, 2])",
+      "agenda_note_zh": "议程影响力是组织力的相对份额，三项精确加总为 1 000 000。它只决定报告中集团意见的排序与否决资格的展示，不进入席位，也不进入生产、价格或任何账本。",
+      "allowed_inputs": [
+        "derived.bloc.membership_persons",
+        "state.bloc.resource_uu",
+        "state.group.population_persons"
+      ],
+      "forbidden_inputs": [
+        "derived.politics.support_national_ppm",
+        "state.group.support_ppm",
+        "state.politics.seats_gov",
+        "state.politics.admin_capacity_ppm"
+      ],
+      "resource_update_rule": "none_v1",
+      "resource_update_note_zh": "state.bloc.resource_uu 在首版恒定不变。10 号文件把它的写入者标为 S08，但三份契约都没有给出更新公式；而它是一个不在复式账本里的类货币数字，任何「每季按经营规模计提」的写法都等于表外造钱（计划书 §13）。故首版不写，登记为 OQ-248。"
+    },
+    "administrative_capacity": {
+      "output": "state.politics.admin_capacity_ppm",
+      "writer": "S07",
+      "sources": [
+        "policy.P11 税务能力建设",
+        "policy.P12 采购透明化",
+        "事件白名单增量（INV-130）"
+      ],
+      "allowed_inputs": [
+        "state.policy.*（P11/P12 的生效状态与参数）"
+      ],
+      "forbidden_inputs": [
+        "derived.politics.support_national_ppm",
+        "state.bloc.org_power_ppm",
+        "state.politics.seats_gov"
+      ],
+      "intended_consumers": [
+        "项目施工进度推进速度（S05）",
+        "公共服务交付效率（S05）"
+      ],
+      "consumer_gap_note_zh": "12 号文件的静态检查项写明「实施速度函数只引用 admin_capacity_ppm」，但八步结算里目前没有任何一步读取这个字段——行政能力现在只能被写、不能起作用。落点必须由 12 号文件补写，本文件不越界定义结算行为，登记为 OQ-247。"
+    }
+  },
+  "_note_budget_review": {
+    "period_q": 4,
+    "first_review_q": 3,
+    "schedule_note_zh": "每年第 4 季（q ≡ 3 mod 4），由 S02 置 flow.politics.budget_review_due，判定在 S08（INV-127）。计划书 §04 的新手第 4 季「完成首次年度审查」对应 q = 3。",
+    "window_q": 4,
+    "measures": {
+      "receipts_4q_uu": "Σ_{k=q-3..q} (flow.gov.receipts_income_tax_uu + flow.gov.receipts_profit_tax_uu + flow.gov.receipts_other_uu)",
+      "outlays_4q_uu": "Σ_{k=q-3..q} (flow.gov.primary_paid_uu + flow.gov.interest_paid_uu)",
+      "deficit_4q_uu": "outlays_4q_uu - receipts_4q_uu",
+      "arrears_uu": "state.gov.arrears_uu",
+      "exclusion_note_zh": "新增借款与偿还本金都不进这两个口径：借款不是收入，还本不是支出（计划书 §07、INV-029）。赤字口径含利息、不含本金，与计划书 §05 的基线年计划同口径。"
+    },
+    "fail_conditions": {
+      "mode": "any_of",
+      "deficit": "deficit_4q_uu * 1000000 > param.budget_review_deficit_limit_ppm * receipts_4q_uu",
+      "arrears": "arrears_uu > param.budget_review_arrears_limit_uu",
+      "zero_receipts": "receipts_4q_uu <= 0 视为失败（不做除法，直接判定）",
+      "integer_note_zh": "赤字条件用交叉相乘而不是求比值，避免一次除法与它的余数。"
+    },
+    "baseline_note_zh": "基线年计划赤字 2 U / 收入 20 U = 100 000 ppm，正好在限额 150 000 ppm 之下：按计划走不会在第一次审查就失败，但没有留下第二年继续恶化的余地。这是剧本的张力来源，不是安全垫。",
+    "consequences": {
+      "on_fail": [
+        "consecutive_fail_count += 1",
+        "consecutive_fail_count == 1 且 mandate_status == ok -> mandate_status = at_risk",
+        "consecutive_fail_count >= param.budget_review_fail_to_lost_count -> mandate_status = lost",
+        "三个集团对全部 12 项政策的 stance_ppm 各加 param.budget_review_stance_penalty_ppm 后 clamp 到 [-1000000, 1000000]",
+        "若 legal_authority_mask 持有位 3，则清除位 3（审查失败即失去重大改革授权）",
+        "写 log.explanations(kind=accounted)，含 receipts_4q_uu、outlays_4q_uu、deficit_4q_uu、arrears_uu 四个输入值与判定结果"
+      ],
+      "on_pass": [
+        "consecutive_fail_count = 0",
+        "consecutive_pass_count += 1",
+        "mandate_status == at_risk 且 consecutive_pass_count >= param.budget_review_recovery_reviews -> mandate_status = ok",
+        "mandate_status == lost 不因审查通过恢复"
+      ],
+      "asymmetry_note_zh": "一次失败即进入 at_risk，两次连续失败即 lost；而从 at_risk 回到 ok 需要连续两次通过。恢复慢于恶化，与信任更新的不对称同一原则（INV-122 的精神）。",
+      "other_at_risk_source_note_zh": "S02 的债务违约分支也会直接把 mandate_status 置为 at_risk（12 号文件 §2.1），那条路径不经过预算审查，也不受本节的恢复规则豁免。"
+    }
+  },
+  "_note_election": {
+    "election_q": [
+      15,
+      31
+    ],
+    "procedure": [
+      "1. 取本季 S08 已算出的 derived.politics.support_national_ppm（不重算、不引用集团量）",
+      "2. seats_gov = seat_rule(support_national_ppm, seats_total)",
+      "3. state.politics.term_index += 1",
+      "4. 留任判定：seats_gov * 2 > seats_total 为留任；seats_gov * 2 <= seats_total 为失去执政资格",
+      "5. 留任且 seats_gov * 1000000 >= param.supermajority_authority_min_seats_ppm * seats_total -> legal_authority_mask |= (1 << 3)；否则 legal_authority_mask &= ~(1 << 3)",
+      "6. 失去执政资格 -> state.meta.run_terminated = true，state.meta.termination_reason = lost_election",
+      "7. 写 log.explanations(kind=accounted)，含 support_national_ppm、seats_total、seats_gov、判定结果与逐地区支持度"
+    ],
+    "retention_test": "seats_gov * 2 > seats_total",
+    "boundary_note_zh": "seats_total 是奇数，所以「恰好过半」不可能出现在席位上；边界出现在支持度恰好 500 000 ppm 时，此时余数并列的 1 席归反对方，seats_gov = 50，50*2 = 100 <= 101，判定为失去执政资格。",
+    "mandate_status_note_zh": "选举留任不清除 at_risk：财政问题不会因为赢得选举而消失。mandate_status 只由预算审查与债务违约路径改变。",
+    "no_midterm_dissolution_note_zh": "首版没有提前解散、不信任动议投票、组阁谈判或补选。集团不能发起倒阁——它们的权力只有否决与议程。"
+  },
+  "_note_termination_triggers": {
+    "exhaustive": true,
+    "no_gdp_clause_note_zh": "下列条件式中不出现任何 GDP、增加值或产出项：经济下滑本身不是失败（计划书 §04、INV-128，静态检查）。",
+    "triggers": [
+      {
+        "reason": "lost_election",
+        "early": true,
+        "condition": "q ∈ {15, 31} 且 seats_gov * 2 <= seats_total",
+        "evaluated_at": "S08",
+        "note_zh": "唯一由居民支持度直接导致的终局。"
+      },
+      {
+        "reason": "lost_confidence",
+        "early": true,
+        "condition": "state.politics.mandate_status == lost 已连续 param.no_confidence_q 季",
+        "evaluated_at": "S08",
+        "note_zh": "来源是连续两次预算审查失败，或债务违约后未能在宽限期内处置。"
+      },
+      {
+        "reason": "fiscal_restructuring_failed",
+        "early": true,
+        "condition": "连续 param.default_grace_q 季无法支付支付优先级第 1 档 debt_service",
+        "evaluated_at": "S08（计数在 S02 累加）",
+        "note_zh": "重组必须由玩家用 debt_restructure 命令选择延期／减记／违约；不允许自动展期（INV-038）。宽限期内什么都不做，等于选择了这条终局。"
+      },
+      {
+        "reason": "horizon",
+        "early": false,
+        "condition": "q == state.time.horizon_q - 1",
+        "evaluated_at": "S08",
+        "note_zh": "正常结束，不是失败。首版 horizon_q = 40，即 q = 39。"
+      }
+    ],
+    "post_termination": {
+      "advance_quarter": "REJECT(E_RUN_TERMINATED)，状态哈希逐位不变（INV-128、OQ-224）",
+      "observer_mode": false,
+      "observer_mode_note_zh": "「失去执政后继续推进世界但不可操作」的观察模式首版不做（计划书 §08 列为后续功能）。"
+    }
+  },
+  "_note_settlement_dimensions": {
+    "forbid_composite_score": true,
+    "forbid_composite_note_zh": "结算页展示下列五类结果，各自独立呈现，禁止加权合成任何单一「国力」「治理」「综合评分」。计划书 §04、§18 与 OQ-224：玩家只看一条综合分数是被明确登记的风险信号，不是可选的展示风格。五类之间没有换算关系，也不排名。",
+    "dimensions": [
+      {
+        "dimension_id": "living",
+        "label_zh": "生活",
+        "metrics": [
+          "state.group.living_index_ppm",
+          "state.group.consumption_index_ppm",
+          "derived.group.housing_burden_ppm",
+          "state.group.service_access_ppm"
+        ],
+        "presentation_note_zh": "指数基期 = 100 表示相对变化，是相对基准；禁止出现「国际排名」「世界第 N」措辞（INV-149）。必须同时给出分布，不只给全国加权值。"
+      },
+      {
+        "dimension_id": "distribution",
+        "label_zh": "分配",
+        "metrics": [
+          "derived.group.disposable_income_uu",
+          "state.group.population_persons",
+          "derived.politics.support_region_ppm",
+          "_note_resident_support.retain_distribution.buckets"
+        ],
+        "presentation_note_zh": "报告群组间差距与收入分位近似，并标明没有模拟组内差异；不输出基尼系数（计划书 §14）。受益／持平／受损三桶的人数之和必须精确等于总人口。"
+      },
+      {
+        "dimension_id": "capability",
+        "label_zh": "能力",
+        "metrics": [
+          "state.cell.capacity_active_uqs_per_q",
+          "state.pubserv.capacity_active_uqs_per_q",
+          "state.region.grid_capacity_uqs_per_q",
+          "state.gov.tax_capacity_ppm",
+          "state.politics.admin_capacity_ppm"
+        ],
+        "presentation_note_zh": "能力是「能做成什么」的存量，与「这一季产出多少」分开展示；不同部门的产能单位不可相加（10 号文件 §0.1）。"
+      },
+      {
+        "dimension_id": "resilience",
+        "label_zh": "韧性",
+        "metrics": [
+          "state.gov.cash_uu",
+          "derived.gov.debt_uu",
+          "state.gov.arrears_uu",
+          "state.gov.committed_memo_uu",
+          "state.gov.service_opex_committed_uu",
+          "state.world.credit_limit_uu",
+          "state.region.env_exposure_ppm"
+        ],
+        "presentation_note_zh": "债务/GDP 单独展示并注明不能替代偿付能力分析（计划书 §07）。承诺与运行费是表外备查量，不得并入任何资产负债恒等式。"
+      },
+      {
+        "dimension_id": "politics",
+        "label_zh": "政治",
+        "metrics": [
+          "derived.politics.support_national_ppm",
+          "derived.politics.support_region_ppm",
+          "state.politics.seats_gov",
+          "state.politics.mandate_status",
+          "state.politics.legal_authority_mask",
+          "state.bloc.org_power_ppm",
+          "state.bloc.stance_ppm",
+          "derived.bloc.agenda_influence_ppm",
+          "derived.bloc.membership_persons"
+        ],
+        "presentation_note_zh": "支持度、组织影响力、行政能力三栏分列，不合并成「政治资本」一个数。集团成员规模标注为加权人数。整页附带本文件的 disclaimer_note_zh。"
+      }
+    ]
+  },
+  "stance_ppm": {
+    "bloc.agri_coop": {
+      "policy.P01": -150000,
+      "policy.P02": -50000,
+      "policy.P03": 50000,
+      "policy.P04": 50000,
+      "policy.P05": 100000,
+      "policy.P06": 0,
+      "policy.P07": 600000,
+      "policy.P08": 200000,
+      "policy.P09": 150000,
+      "policy.P10": 200000,
+      "policy.P11": -200000,
+      "policy.P12": 100000
+    },
+    "bloc.business": {
+      "policy.P01": -50000,
+      "policy.P02": -400000,
+      "policy.P03": -100000,
+      "policy.P04": 500000,
+      "policy.P05": 250000,
+      "policy.P06": 50000,
+      "policy.P07": 100000,
+      "policy.P08": 550000,
+      "policy.P09": 450000,
+      "policy.P10": 50000,
+      "policy.P11": -250000,
+      "policy.P12": -100000
+    },
+    "bloc.labor_public": {
+      "policy.P01": -100000,
+      "policy.P02": 100000,
+      "policy.P03": 550000,
+      "policy.P04": 100000,
+      "policy.P05": 400000,
+      "policy.P06": 500000,
+      "policy.P07": 100000,
+      "policy.P08": 100000,
+      "policy.P09": -50000,
+      "policy.P10": 550000,
+      "policy.P11": 150000,
+      "policy.P12": 250000
+    }
+  },
+  "_note_stance_ppm": "开局立场是先验倾向，不是已经发生的利益变化；q=0 起就由 stance_rule 接管。三列都刻意不对称：没有哪个集团对全部政策都反对，也没有哪项政策被三方一致支持，否则联盟条件会退化成摆设。bloc.business 对 P02 的 −400000 是全表最负值，但仍在否决阈值 −600000 之上（见 _note_veto_rule），因此基年不存在预先生效的否决（V-POL-EXT-05）。",
+  "_note_parameter_cards": {
+    "placement_note_zh": "11 号文件 §5.15 规定 ParameterCard 只出现在 content/parameters/params_core.json，而本节记录的十一项（原稿的说明文字误写为「九项」，实际卡片数是 11，此处一并订正）都是行为参数（param.* 命名空间），不是剧本存量初值，按规定必须建卡。原稿把机读卡片直接写在本文件顶层，同时撞上两条硬规则：顶层未声明键（E_UNKNOWN_FIELD，§3 additionalProperties:false），以及「参数卡不得藏在 _note_* 注释子树里」（E_PARAM_CARD，载入器不读注释键 = 这张卡不存在）。两条都不允许本文件私自放宽。因此这里只保留逐字转写的散文记录（九字段一字不减，供 params_core.json 的作者原样建卡），权威的机读卡片必须建在 content/parameters/params_core.json 中，本文件不是它们的事实来源。在 params_core.json 建成之前，这十一项参数不会被 tools/build_param_registry.py 扫到，docs/14_parameter_registry.md 里它们的来源列会消失——这是一个必须被看见的缺口，不是修好了。登记为 OQ-251。本文件里的席位、组织力、资源、行政能力等剧本初值按 §5.15 的分界线不建卡，由 V-POL-* 与 assertions.json 负责。",
+    "authoritative_home": "content/parameters/params_core.json",
+    "card_count": 11,
+    "cards_verbatim_zh": [
+      "param.bloc_veto_stance_threshold_ppm ｜ value = -600000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [-1000000, 0] ｜ confidence = low ｜ source_ref：计划书 §08「重大改革还要满足法定权限与联盟条件」；12_simulation_contract.md §2.1 资格检查链第 1 档 ｜ definition：集团对某政策的立场低于此值时，若该政策所属改革域命中该集团的 veto_domains，则命令被拒（E_BLOC_VETO）。立场区间为 [-1000000, 1000000]。 ｜ calibration_note：检验方式：40 季基线跑完统计 E_BLOC_VETO 次数。若为 0，说明否决从不发生、机制形同虚设；若超过 8 次，说明玩家被频繁封锁。先调本值，再考虑调 param.bloc_care_gain_ppm。",
+      "param.bloc_coalition_support_min_ppm ｜ value = 200000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [0, 1000000] ｜ confidence = low ｜ source_ref：计划书 §08「重大改革还要满足法定权限与联盟条件」 ｜ definition：reform_domains 中 required_supporting_blocs 所要求的最低立场值；低于此值视为未满足联盟条件。 ｜ calibration_note：首版无政策落在需要联盟的两个域上，本值暂时没有运行期消费者，只在扩展重大改革时生效。引入首个 structural_reform 政策时必须重测。",
+      "param.supermajority_authority_min_seats_ppm ｜ value = 666667 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [500001, 900000] ｜ confidence = low ｜ source_ref：计划书 §08「重大改革还要满足法定权限」 ｜ definition：选举后授予 legal_authority 位 3（重大改革权）所需的最低席位占比，判定式为 seats_gov * 1000000 >= 本值 * seats_total（交叉相乘，不做除法）。 ｜ calibration_note：三分之二向上取整为 666667 ppm；101 席对应 68 席。若试玩中从未达到，说明它只是装饰，应连同 structural_reform 域一起重新设计而不是单纯降低门槛。",
+      "param.budget_review_deficit_limit_ppm ｜ value = 150000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [50000, 400000] ｜ confidence = low ｜ source_ref：计划书 §08「预算每 4 季审查」；§05 基线年收入 20 U / 赤字 2 U ｜ definition：滚动 4 季赤字（含利息、不含本金）占同期收入的上限比例，超过即本次审查失败。 ｜ calibration_note：基线年实际为 100000 ppm。检验方式：无冲击基线 40 季应至多失败 1 次；若基线年第一次审查就失败，说明与计划书 §05 的开局设定冲突，必须先查账再调参。",
+      "param.budget_review_arrears_limit_uu ｜ value = 1000000 ｜ unit = μU ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [200000, 5000000] ｜ confidence = low ｜ source_ref：计划书 §07「短缺先显露」「欠付另记」 ｜ definition：审查时政府累计欠付（state.gov.arrears_uu）的上限，超过即本次审查失败。1 U，相当于基线年收入的 5%。 ｜ calibration_note：与支付优先级测试联动：若玩家可以靠长期挂账（把支出推到 arrears）绕开赤字条件而不触发本条，说明本值过高。",
+      "param.budget_review_fail_to_lost_count ｜ value = 2 ｜ unit = dimensionless ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [1, 4] ｜ confidence = low ｜ source_ref：计划书 §04「失去留任资格或财政重组失败时，执政提前结束」 ｜ definition：连续审查失败达到此次数时 mandate_status 置为 lost；随后再经 param.no_confidence_q 季即终局 lost_confidence。 ｜ calibration_note：取 2 意味着从第一次失败到终局最短需要 4 + 2 = 6 季，玩家有一整年可以纠正。若试玩者反馈「突然就结束了」，先查是否走的是债务违约路径而非本路径。",
+      "param.budget_review_recovery_reviews ｜ value = 2 ｜ unit = dimensionless ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [1, 4] ｜ confidence = low ｜ source_ref：计划书 §08「短期补贴能缓解生活压力，却不能自动修复长期失信」 ｜ definition：mandate_status 从 at_risk 恢复到 ok 所需的连续通过审查次数。 ｜ calibration_note：必须 >= 进入 at_risk 所需的失败次数（1），保证恢复慢于恶化。若改为 1，本规则的不对称性消失，须同时说明理由。",
+      "param.budget_review_stance_penalty_ppm ｜ value = -80000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [-300000, 0] ｜ confidence = low ｜ source_ref：12_simulation_contract.md §8.5「预算审查……集团 stance 惩罚」 ｜ definition：审查失败时对三个集团全部 12 项政策立场施加的一次性增量，施加后 clamp 到 [-1000000, 1000000]。 ｜ calibration_note：这是 stance 的第三个来源，与 stance_rule 的两个来源并列，必须在 12 号文件的 stance 公式中显式登记为一项，否则 INV-123 的来源分解会缺项。检验：单次失败不应把任何集团直接推过否决阈值。",
+      "param.bloc_dependent_attachment_ppm ｜ value = 500000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [0, 1000000] ｜ confidence = low ｜ source_ref：计划书 §08「成员可同时属于其他利益网络」；OQ-223 ｜ definition：未成年与老年群组的集团隶属权重相对同地区劳动年龄组加权平均值的折减系数，用于生成 population_init.json 的 bloc_affiliation_ppm。 ｜ calibration_note：取 0 等于「只有在职者属于集团」，取 1000000 等于「全家都属于集团」。先用 0 与 1000000 各跑一次 40 季，看 org_power 轨迹是否对它敏感；若敏感度极高，说明组织力公式过度依赖人口规模。",
+      "param.support_gainer_threshold_ppm ｜ value = 10000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [1000, 100000] ｜ confidence = low ｜ source_ref：计划书 §08「按人口权重计算支持；保留受益和受损的分布」 ｜ definition：群组生活指数 4 季同比变化达到或超过此值时归入「受益」桶。10000 ppm = 1.0 个指数点。 ｜ calibration_note：与 param.support_loser_threshold_ppm 必须关于 0 对称，否则受益与受损的口径不可比。检验：基线 40 季中「基本持平」桶不应长期占到 90% 以上，否则分布展示没有信息量。",
+      "param.support_loser_threshold_ppm ｜ value = -10000 ｜ unit = ppm ｜ source_type = design_assumption ｜ reference_year = 0 ｜ valid_range = [-100000, -1000] ｜ confidence = low ｜ source_ref：计划书 §08「保留受益和受损的分布」 ｜ definition：群组生活指数 4 季同比变化达到或低于此值时归入「受损」桶。 ｜ calibration_note：载入期校验 param.support_gainer_threshold_ppm + param.support_loser_threshold_ppm == 0。"
+    ]
+  },
+  "_note_validation_extensions": {
+    "note_zh": "11 号文件 §5.10 只给出 V-POL-01..03。下列检查是本文件新增结构所需，必须与 §5.10 的 schema 扩展同时写入校验器。",
+    "checks": [
+      {
+        "id": "V-POL-EXT-01",
+        "rule": "population_init.json 的 bloc_affiliation_ppm 逐组复算 == membership_rule.affiliation_derivation 的结果（容差 0）",
+        "error_code": "E_BLOC_AFFILIATION_MISMATCH"
+      },
+      {
+        "id": "V-POL-EXT-02",
+        "rule": "每个 bloc.veto_domains 中的 domain_id 都在 reform_domains 中存在，且该域的 veto_capable_blocs 包含该集团（双向一致）",
+        "error_code": "E_VETO_DOMAIN_UNKNOWN"
+      },
+      {
+        "id": "V-POL-EXT-03",
+        "rule": "authority_bits 的 held_at_start 位集合按位或 == legal_authority_mask",
+        "error_code": "E_AUTHORITY_MASK_MISMATCH"
+      },
+      {
+        "id": "V-POL-EXT-04",
+        "rule": "stance_ppm 覆盖 3 个集团 × 12 项政策共 36 项，无缺无多，每项 ∈ [-1000000, 1000000]",
+        "error_code": "E_STANCE_SET"
+      },
+      {
+        "id": "V-POL-EXT-05",
+        "rule": "每个开局立场不得已经低于 param.bloc_veto_stance_threshold_ppm（开局不存在预先生效的否决）",
+        "error_code": "E_PRE_VETOED"
+      },
+      {
+        "id": "V-POL-EXT-06",
+        "rule": "param.support_gainer_threshold_ppm + param.support_loser_threshold_ppm == 0",
+        "error_code": "E_BUCKET_ASYMMETRIC"
+      },
+      {
+        "id": "V-POL-EXT-07",
+        "rule": "settlement_dimensions.dimensions 恰好 5 项且 forbid_composite_score == true；metrics 中的每个 ID 在 10 号文件中真实存在",
+        "error_code": "E_SETTLEMENT_DIMENSIONS"
+      },
+      {
+        "id": "V-POL-EXT-08",
+        "rule": "separation_of_three 的三个 allowed_inputs 集合两两不相交，且各自的 forbidden_inputs 与另两者的 output 一致（INV-125 的数据层防线）",
+        "error_code": "E_POLITICS_COUPLING"
+      }
+    ]
+  },
+  "_note_file_zh": "全部数值为设计假设，尚未经任何数据校准；本文件不含 observed 类参数（11 号文件 V-PC-04），现在也不含任何机读 ParameterCard —— 十一张卡的九字段已逐字转写进 _note_parameter_cards.cards_verbatim_zh，权威卡片必须由 content/parameters/params_core.json 建立（OQ-251）。本文件的事实来源只有八个已声明键：seats_total、seats_gov、next_election_q、next_budget_review_q、admin_capacity_ppm、legal_authority_mask、blocs、stance_ppm；其余全部是 _note_* 文档。"
+}

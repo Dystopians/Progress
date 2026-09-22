@@ -1,0 +1,836 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "_note_schema_extension": "本文件的键分两类：(1) 11_data_contract.md §5.13 已定义的键（schema_kind、schema_version、event_id、label_zh、trigger、effects、evidence_refs、report_template_id、kind），名称与语义逐字照搬；(2) 本任务与计划书 §04/§09/§13/§14 要求、但 §5.13 尚未定义的键（code、slug、name_zh、one_line_zh、trigger_detail、evidence、consequences、player_options、political_reaction、copy、acceptance_tests、parameters、design_notes_zh、open_questions_local 及各 _note_*）。第 (2) 类在 §3「对象键必须是 schema 已声明的键（additionalProperties: false）」下会被 E_UNKNOWN_FIELD 拒绝加载，必须先修订契约 §5.13 再启用。本文件不私自改契约：全部降级为 §3 自己给出的出路——_note_<原键名> 注释键，内容不删、不改口径，只是明确标记为「不进逻辑、不进 content_hash」。",
+  "event_id": "event.E08",
+  "_note_code": "E08",
+  "_note_slug": "tax_coverage_backlash",
+  "label_zh": "征收覆盖扩大引发争议",
+  "_note_name_zh": "name_zh 必须与 label_zh 逐字相同；校验器应断言二者相等，防止两处文案漂移。",
+  "_note_one_line_zh": "P11 的人员与信息系统投入开始兑现，征收能力越过阈值、企业利润税实收回到基年季度计划之上——钱真的收上来了，同时工商业联盟第一次把「征收方式」本身变成政治议题。",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的两处结构修复（对应校验器 E_CONTENT_LAYOUT 与 E_UNKNOWN_FIELD）：(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键（schema_kind / schema_version / event_id / label_zh / trigger / effects / evidence_refs / report_template_id / kind）；其余扩展块一律按 §3 改名为 _note_<原键名>，内容一字未删、一字未改，只是明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) 曾登记的契约／校验器冲突已解决，结论记在这里以免后人再踩：tools/validate_content.py 的 check_event 原先只认顶层 consequences 键（缺失即 E_EVENT_EVIDENCE），而 11_data_contract.md §5.13 的键集合与 V-EV-01..08 都没有这个字段、§3 的 additionalProperties: false 又禁止它出现——写与不写都必然报错，两条规则不可能同时满足。裁决方向是「按契约摆位置，按任务书查内容」：校验器现在同时认 consequences 与 _note_consequences 两个位置，逐条断言不变（每条后果必须给出对手方或会计解释）。本文件按契约把后果说明放在 _note_consequences，逐条补齐了计划书 §13 要求的五件事：实体 ID（entity_ids）、来源操作（source_op / written_by / settlement_step）、金额或数量（magnitude_ppm / amount_zh / affected_population_persons）、时间（applied_at / duration_q / decay_zh）、约束（constraint_zh）。若将来 §5.13 正式声明 consequences，只需把这一块整体改名回顶层键，内容不必动。",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "state.policy.enabled",
+        "scope": "policy.P11",
+        "op": "eq",
+        "value": 1
+      },
+      {
+        "metric": "state.gov.tax_capacity_ppm",
+        "op": "ge",
+        "value": 850000
+      },
+      {
+        "metric": "flow.gov.receipts_profit_tax_uu",
+        "op": "ge",
+        "value": 1980000000
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 5
+      }
+    ],
+    "probability_ppm": 750000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 6,
+    "max_occurrences": 3
+  },
+  "_note_op_vocabulary": "本文件一律使用 11_data_contract.md V-EV-03 的规范集合 op ∈ {lt, le, eq, ne, ge, gt}。§5.13 的示例 JSON 里写的是 \"gte\"，与 V-EV-03 不一致；规范条款优先于示例，冲突已上报。",
+  "_note_scope_semantics": "本事件只用两种 scope：policy.P11（在 12 长的政策数组中取唯一下标）与省略 scope 的全局标量（state.gov.tax_capacity_ppm、flow.gov.receipts_profit_tax_uu、state.time.q 都是全国单值）。两种都不需要求和或量词。effects 一侧用到 region.<r> 与 bloc 的二维 scope，见 consequences 与 open_questions_local。",
+  "_note_trigger_detail": {
+    "jump_encoding_zh": "任务要求的判据是「P11 生效后征收覆盖率跳升」。触发器只有 metric-op-常量 比较，没有差分算子、没有对上一季取值的引用，因此「跳升」（Δ）在首版无法直接表达。本文件退化为可证明的三段式：(a) P11 已生效；(b) 征收能力越过一个明显高于剧本基年值的水平线（基年 760 000 ppm → 阈值 850 000 ppm）；(c) 企业利润税实收达到基年季度计划水平（年度计划 7 200 000 000 μU 按 scenario.json 的 season_factor_ppm.gov_receipts 拆出的**最大**一季，即第 4 季的 1 980 000 000 μU，推导见 param.e08_profit_tax_quarterly_threshold_uu）。三条合起来的含义是「P11 这条通路已经确实改变了收上来的钱」，比「某一季跳了多少」更稳健：它不会因为分季波动而误报，也不会因为能力是分季缓升而漏报。代价是无法区分「缓慢爬升到 85%」与「一季从 76% 跳到 85%」；max_occurrences = 3 与 cooldown_q = 6 保证它不会因为长期停留在阈值之上而每季重复。正确的长期解法是新增一个上季值引用或差分算子，已上报。",
+    "conditions": [
+      {
+        "ref": "c1",
+        "metric": "state.policy.enabled",
+        "scope": "policy.P11",
+        "op": "eq",
+        "value": 1,
+        "why_zh": "归属判定：这件事必须可以被追到 P11 这条政策上，而不是靠文案声称。任何政策效应函数在 q < effective_from_q 或 enabled == 0 时返回零效应（INV-095），所以 P11 未生效时征收能力不会因它上升。"
+      },
+      {
+        "ref": "c2",
+        "metric": "state.gov.tax_capacity_ppm",
+        "op": "ge",
+        "value": 850000,
+        "param_ref": "param.e08_tax_capacity_threshold_ppm",
+        "why_zh": "剧本基年 tax_capacity_ppm = 760 000（government_init.json）。阈值取 850 000，即比基年高 9 个百分点。tax_capacity_ppm 是 S07 的写入项、P11 的唯一效果落点，它直接乘在 S06 的 collected 与 tax 上（12 号 §6.5/§6.6），因此它就是「征收覆盖」这四个字在模型里的本体，不需要再造一个覆盖率指标。"
+      },
+      {
+        "ref": "c3",
+        "metric": "flow.gov.receipts_profit_tax_uu",
+        "op": "ge",
+        "value": 1980000000,
+        "param_ref": "param.e08_profit_tax_quarterly_threshold_uu",
+        "why_zh": "剧本年度收入计划中企业利润税为 7 200 000 000 μU（7.2 U，R-SCALE-01 新刻度；government_init.json annual_plan.receipt_lines_uu.profit_tax）。gov_receipts 的季节系数不是均匀的——scenario.json 给的是 [230000, 245000, 250000, 275000]，按最大余数法拆出的四季计划额为 1 656 000 000 / 1 764 000 000 / 1 800 000 000 / 1 980 000 000 μU（四项合计精确等于 7 200 000 000，无余数）。触发器只能写一个常量，因此取**四季中最大的一季**：这样「实收已达到当季计划水平」这句话在任何一个季度都为真，不会在淡季误报。代价是在第 1—3 季会漏报（第 1 季要多收 19.6% 才够线），这是刻意选的方向——宁可漏一次争议，也不要在钱没真收到时先弹一次政治后果。这一条同时排除另一种误报：若企业普遍亏损、税基本身塌了，能力再高也收不到钱，那时争议的对象不是征收覆盖。"
+      },
+      {
+        "ref": "c4",
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 5,
+        "why_zh": "结构性下限：计划书 §09 给 P11 的最早反馈是 4—8 季（先增加成本，再改变征收覆盖）。加上 enact_to_effect 的时滞，最早的能力提升不会早于第 5 季。把它写成硬条件，使「拨款当季就提高征收覆盖」这类实现缺陷会直接表现为事件在不该出现的季度出现。"
+      }
+    ],
+    "randomness_zh": "四条件全部成立后才抽样一次，用 rng.event（V-EV-04），写一条 log.rng。抽样只能让条件已成立的事件不发生，永远不能让条件不成立的事件发生。计数器式抽样与季度绑定、可从任意季重算，读档不会重抽出不同结果。",
+    "cooldown_and_cap_zh": "cooldown_q = 6、max_occurrences = 3。征收能力一旦提上去就会长期停留在阈值之上，条件会连续多季成立；没有冷却与上限，这件事会每季重复出现，把一次真实的政治转折变成噪音。三次的节奏对应「争议出现 → 争议扩散 → 争议定型」，之后该分歧仍然活在 bloc.stance 里，只是不再弹窗。"
+  },
+  "effects": [
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.business.policy.P11",
+      "delta_ppm": -120000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.business",
+      "delta_ppm": 30000
+    },
+    {
+      "target": "state.bloc.stance_ppm",
+      "scope": "bloc.labor_public.policy.P11",
+      "delta_ppm": 70000
+    },
+    {
+      "target": "state.politics.admin_capacity_ppm",
+      "delta_ppm": -15000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.haijia",
+      "delta_ppm": -15000
+    },
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.zhongzhou",
+      "delta_ppm": -15000
+    }
+  ],
+  "_note_effects_no_trust": "本事件刻意不写 state.group.trust_ppm，而且方向上也不该写正号。程序信任只由「承诺兑现与否」驱动（12 号 §8）：征收覆盖扩大既没有违背承诺，也不构成兑现某项承诺，它是一次执行能力的提升。把它写成信任上升，等于给玩家一个「加强征收 = 更可信」的错误规则；写成信任下降，则需要一个「征收方式不公」的失信事件定义，而首版没有这个定义。留白是唯一诚实的选项。两个工商业密集地区的预期下降，表达的是企业主家庭对未来净收入的判断，不是对政府操守的判断。",
+  "_note_admin_capacity": "state.politics.admin_capacity_ppm 在事件可写白名单内（§5.13）。写它的理由是：争议会占用行政资源（听证、申诉、复核）。INV-125 要求票、组织影响力、行政能力由三个互不引用的函数计算——本条是一个外部一次性增量，不是让某个函数去读另一个量，因此不违反 INV-125。但这一点必须在实现时复核：若 admin_capacity 的更新函数被写成引用 bloc.stance，那才是违规，与本 effect 无关。",
+  "evidence_refs": [
+    "state.gov.tax_capacity_ppm",
+    "flow.gov.receipts_profit_tax_uu",
+    "flow.gov.receipts_income_tax_uu",
+    "state.gov.tax_receivable_uu",
+    "flow.cell.tax_profit_paid_uu",
+    "flow.group.income_tax_paid_uu",
+    "state.cell.loss_carryforward_uu",
+    "state.policy.budget_spent_uu",
+    "state.policy.effective_from_q",
+    "state.bloc.stance_ppm",
+    "state.bloc.org_power_ppm",
+    "state.politics.admin_capacity_ppm",
+    "state.group.expectation_ppm",
+    "state.cell.cash_uu",
+    "state.group.cash_uu",
+    "state.gov.cash_uu"
+  ],
+  "_note_evidence": [
+    {
+      "label_zh": "征收能力与其来源",
+      "metric": "state.gov.tax_capacity_ppm",
+      "stable_id": "state.gov.tax_capacity_ppm",
+      "page": "财政页 → 收入 → 征收能力 / 政策工作台 → P11",
+      "read_zh": "当前征收能力、它在 P11 生效前后的逐季轨迹，以及 P11 至今的累计支出。",
+      "check_zh": "tax_capacity_ppm 是 P11 的唯一效果落点，写入者只有 S07（10 号 §3.1）。计划书 §09：先增加成本，再改变征收覆盖——支出轨迹必然早于能力轨迹。"
+    },
+    {
+      "label_zh": "本季税收实收与应收",
+      "metric": "flow.gov.receipts_profit_tax_uu",
+      "stable_id": "flow.gov.receipts_profit_tax_uu",
+      "page": "财政页 → 收入 / 季度报告 → 已经发生",
+      "read_zh": "个人所得税与企业利润税的本季实收额，以及应收未收税余额的变化。",
+      "check_zh": "tax_receivable_end == start + (应计税 − 实收税) − 追征 − 核销（INV-031）。差额显式登记，不消失；首版不加滞纳金、不设追缴机制（OQ-240）。"
+    },
+    {
+      "label_zh": "逐纳税人明细",
+      "metric": "flow.cell.tax_profit_paid_uu",
+      "stable_id": "flow.cell.tax_profit_paid_uu",
+      "page": "地区页面 → 生产单元 / 社会页面 → 群组",
+      "read_zh": "16 个生产单元各自缴了多少利润税、36 个群组各自缴了多少个税，以及谁的结转亏损被用掉了。",
+      "check_zh": "税额受现金约束：paid = min(tax, cell.cash)，差额进应收而不是核销（12 号 §6.6）。利润与现金严格分开。"
+    },
+    {
+      "label_zh": "税基侵蚀",
+      "metric": "flow.group.income_tax_paid_uu",
+      "stable_id": "flow.group.income_tax_paid_uu",
+      "page": "财政页 → 收入 → 税基",
+      "read_zh": "各组的税基、按平均税率算出的侵蚀比例、侵蚀后的有效税基与实缴额。base_eff 与 collected 分别可观测。",
+      "check_zh": "恶意玩家防线 ADV-05：税基只来自已过账的收入分录，不存在独立的「税收系数」字段，因此税率从 10% 提到 60% 的收入曲线是非线性且有拐点的（12 号 §6.5）。"
+    },
+    {
+      "label_zh": "集团立场与组织力",
+      "metric": "state.bloc.stance_ppm",
+      "stable_id": "state.bloc.stance_ppm",
+      "page": "社会页面 → 利益集团",
+      "read_zh": "三个集团对 12 项政策的立场矩阵，以及各自的组织力与资源。本事件改动的是 business 与 labor_public 对 P11 的两格。",
+      "check_zh": "stance 与 support 是两套变量，stance 只影响改革可行性与议程，不直接进 support（12 号 §8.3）。成员规模是加权人数，不是人头（OQ-223）。"
+    },
+    {
+      "label_zh": "行政执行能力",
+      "metric": "state.politics.admin_capacity_ppm",
+      "stable_id": "state.politics.admin_capacity_ppm",
+      "page": "社会页面 → 制度与执行",
+      "read_zh": "当前行政执行能力及其本季变动来源。",
+      "check_zh": "票、组织影响力、行政能力由三个不同函数计算，互不引用对方的量（INV-125）。本事件写的是一次性外部增量，不是函数间的引用。"
+    },
+    {
+      "label_zh": "对手方现金：谁的钱少了",
+      "metric": "state.cell.cash_uu",
+      "stable_id": "state.cell.cash_uu",
+      "page": "地区页面 → 生产单元 → 现金 / 社会页面 → 群组 → 现金 / 财政页 → 国库现金",
+      "read_zh": "16 个生产单元与 36 个群组本季缴税前后的现金余额，以及政府国库现金的对应增加。这三列是「税收改善」这句话的对手方，展开后每一笔都能点到具体主体。",
+      "check_zh": "全经济现金总量恒等于 scenario.total_cash_uu（INV-018）：S06 只搬钱不造钱，政府多收的每一分钱都等于某个 cell 或某个群组少掉的一分钱。缴税受现金约束（paid = min(tax, cash)），差额进应收而不是核销。"
+    },
+    {
+      "label_zh": "两区群组的未来预期",
+      "metric": "state.group.expectation_ppm",
+      "stable_id": "state.group.expectation_ppm",
+      "page": "社会页面 → 群组 → 主观量",
+      "read_zh": "海岬与中州各 9 组、共 18 组（12 000 000 人）的预期水平及其本季变动来源；北原与西岭不在本事件的作用域内，两者的对比本身就是证据。",
+      "check_zh": "预期由 S08 按 param.expectation_inertia_ppm = 700000 向生活指数平滑，事件增量逐季衰减；区间 [0, 2 000 000]，18 组的剧本基值都在区间内部，因此本事件的位移不会被 clamp 截断（见 _note_consequences 的 E08.C5）。"
+    }
+  ],
+  "_note_consequences": [
+    {
+      "consequence_id": "E08.C1",
+      "written_by": "event",
+      "settlement_step": "S08",
+      "applied_at": "触发当季 S08（12 号 §8.4：事件在 S08 内应用 effects，先于本季报告生成）",
+      "source_op": "event.E08 触发后应用 effects[0]",
+      "entity_ids": [
+        "state.bloc.stance_ppm",
+        "bloc.business",
+        "policy.P11"
+      ],
+      "counterparty": "none（主观量，不是账本科目；没有任何主体因这一条多得或少得一分钱）",
+      "accounting_zh": "stance_ppm 是 3×12 的 ppm 存量，不在任何会计恒等式里，也不进 INV-015 的双边分录。它唯一的去向是改革可行性判定（legal_authority.requires_bloc_support 与 content.bloc.veto_domains）。因此本条的「对手方」栏必须是 none 而不是留空——留空意味着没查过，写 none 意味着查过且确认这是主观量。",
+      "formula": "stance_ppm[bloc.business][policy.P11] = clamp(stance_prev + (-120000), -1000000, 1000000)",
+      "magnitude_ppm": -120000,
+      "param_ref": "param.e08_business_stance_delta_ppm",
+      "value_path_zh": "剧本基值 -250 000（politics_init.json stance_ppm[bloc.business][policy.P11]）→ 第 1 次触发后 -370 000 → 第 3 次（上限）触发后 -610 000。clamp 下界 -1 000 000 在三次触发内不会被撞到。",
+      "duration_q": "一次性写入存量，无自然衰减项",
+      "decay_zh": "12 号 §8.3 的 stance 递推式是 stance_prev + 生效当季的 political_reaction + mul_ppm(care_delta_ppm, param.bloc_care_gain_ppm = 300000)。式中没有向基值回归的项，因此本条是永久性的水平位移，只能被后续的 care_delta（工商业的关心指标是 Σ_c flow.cell.profit_pretax_uu）反向推回。",
+      "constraint_zh": "clamp 到 [-1 000 000, 1 000 000]；INV-130 的事件白名单包含 state.bloc.stance_ppm；stance 不进 support（12 号 §8.3），因此这一条不减一张选票。",
+      "reversible": true,
+      "reversal_zh": "利润改善使 care_delta_ppm 为正时，按 mul_ppm(care_delta_ppm, 300000) 逐季回升；政策可预期性（state.policy.toggle_count 反复开关）恶化则继续下压。",
+      "evidence_ref": "state.bloc.stance_ppm",
+      "note_zh": "这是本事件最大的一笔增量：工商业联盟的核心关心项里就有「政策可预期性」，而征收覆盖扩大恰恰改变了它们已经习惯的执行尺度。"
+    },
+    {
+      "consequence_id": "E08.C2",
+      "written_by": "event",
+      "settlement_step": "S08",
+      "applied_at": "触发当季 S08",
+      "source_op": "event.E08 触发后应用 effects[1]",
+      "entity_ids": [
+        "state.bloc.org_power_ppm",
+        "bloc.business"
+      ],
+      "counterparty": "none（组织力存量，无账本对手方；它不消耗 state.bloc.resource_uu——两者是 12 号 §8.3 递推式里的两个独立输入）",
+      "accounting_zh": "org_power_ppm 每季由 S08 整式重算：mul_ppm(org_power_prev, param.bloc_org_inertia_ppm) + mul_ppm(size_ppm, param.bloc_w_size_ppm) + mul_ppm(res_ppm, param.bloc_w_resource_ppm)，三项权重合计 1 000 000（700000 / 200000 / 100000，11 号 §5.15）。事件增量进入 org_power_prev，因此它按惯性系数逐季衰减，不是一笔永久加成。",
+      "formula": "org_power_ppm[bloc.business] = clamp(org_power_prev + 30000, 0, 1000000)",
+      "magnitude_ppm": 30000,
+      "param_ref": "param.e08_org_power_delta_ppm",
+      "value_path_zh": "剧本基值 400 000（politics_init.json blocs[bloc.business].org_power_ppm）→ 触发当季 430 000。",
+      "duration_q": "一次性写入存量；此后每季按 param.bloc_org_inertia_ppm = 700000 衰减",
+      "decay_zh": "增量相对「未触发基线」的残值逐季为 30 000 → 21 000 → 14 700 → 10 290 → 7 203 → 5 042 → 3 529 → 2 470（mul_ppm 向下取整；前四步整除无余数，第五步起每步舍去不足 1 ppm 的尾数）。约 4 季后只剩三分之一，8 季后不足十分之一；cooldown_q = 6 恰好让第二次触发落在残值约 3 500 的位置，不会累积成失控的组织力。取整发生在整条更新式上而不是单独作用于残值，逐位复核以整式为准。",
+      "constraint_zh": "clamp 到 [0, 1 000 000]；三项权重之和 == 1 000 000 在载入期校验；INV-125：org_power 的计算式不引用 support 与 admin_capacity——本条是外部一次性增量，不是函数间引用。",
+      "reversible": true,
+      "evidence_ref": "state.bloc.org_power_ppm"
+    },
+    {
+      "consequence_id": "E08.C3",
+      "written_by": "event",
+      "settlement_step": "S08",
+      "applied_at": "触发当季 S08",
+      "source_op": "event.E08 触发后应用 effects[2]",
+      "entity_ids": [
+        "state.bloc.stance_ppm",
+        "bloc.labor_public",
+        "policy.P11"
+      ],
+      "counterparty": "none（主观量；劳动与公共服务联盟这一季并没有拿到任何一笔钱——钱只进了国库，见 E08.C6 与 E08.C7）",
+      "accounting_zh": "与 E08.C1 是同一张 3×12 表的另一格、同一条递推式。两者之间不存在任何守恒关系：立场不是可转移的存量，一方降不等于另一方升，两个数各自独立成立。",
+      "formula": "stance_ppm[bloc.labor_public][policy.P11] = clamp(stance_prev + 70000, -1000000, 1000000)",
+      "magnitude_ppm": 70000,
+      "param_ref": "param.e08_labor_stance_delta_ppm",
+      "value_path_zh": "剧本基值 +150 000 → 第 1 次触发后 +220 000 → 第 3 次触发后 +360 000。",
+      "duration_q": "一次性写入存量，无自然衰减项",
+      "constraint_zh": "clamp 到 [-1 000 000, 1 000 000]；同样不进 support。",
+      "reversible": true,
+      "note_zh": "幅度小于工商业侧的 120 000，不是为了「利弊对称」，而是因为受益是间接的（钱进国库后还要经过预算分配才可能变成工资与服务），而受损是直接的。计划书 §09 明确反对强行让每项政策利弊对称。",
+      "evidence_ref": "state.bloc.stance_ppm"
+    },
+    {
+      "consequence_id": "E08.C4",
+      "written_by": "event",
+      "settlement_step": "S08",
+      "applied_at": "触发当季 S08",
+      "source_op": "event.E08 触发后应用 effects[3]",
+      "entity_ids": [
+        "state.politics.admin_capacity_ppm"
+      ],
+      "counterparty": "none（能力存量；争议处理占用的是人的时间，首版不把它折成一笔 μU 支出——折成支出就必须有一条政策拨款做对手方，而那正是 INV-130 禁止事件做的事）",
+      "accounting_zh": "admin_capacity_ppm 的登记写入者是 S07（10 号文件变量表），事件按 INV-130 白名单写一次性增量。它不进任何账本，因此本季 log.ledger 的行数与内容不因这一条改变（由 T-S-E08-NO-LEDGER-EFFECT 钉死）。",
+      "formula": "admin_capacity_ppm = clamp(admin_capacity_prev + (-15000), 0, 1000000)",
+      "magnitude_ppm": -15000,
+      "param_ref": "param.e08_admin_capacity_delta_ppm",
+      "value_path_zh": "剧本基值 600 000（politics_init.json admin_capacity_ppm）→ 第 1 次触发后 585 000 → 第 3 次触发后 555 000（相对基值 −7.5%）。",
+      "duration_q": "一次性写入存量；首版没有回归项，是永久性水平位移",
+      "decay_zh": "更正本文件上一版的说法：12 号文件全文没有给出 admin_capacity_ppm 的更新式，S07 只在「可写子集」里列了这个字段。因此不存在「由 S07 的行政能力更新式自行回归」这回事——在该更新式写出来之前，这 −15 000 不会自己长回来。已登记为 OQ-LOCAL-E08-05，并与 param.e08_admin_capacity_delta_ppm 的 calibration_note（「不要给 admin_capacity 加恢复项」）一致：要么接受永久位移并把取值压到足够小，要么由契约补出更新式，不许本文件自己发明一个。",
+      "constraint_zh": "clamp 到 [0, 1 000 000]；INV-125：票、组织影响力、行政能力由三个互不引用的函数计算——本条是外部一次性增量，不是让某个函数去读另一个量。实现时若 admin_capacity 的更新式被写成引用 bloc.stance，那才是违规，与本条无关。",
+      "reversible": true,
+      "note_zh": "争议占用行政资源：听证、申诉与复核都要人。这条让「加强征收」不是一个纯收益动作——它会挤占同一批执行能力，从而影响其它政策的实施效果。",
+      "evidence_ref": "state.politics.admin_capacity_ppm"
+    },
+    {
+      "consequence_id": "E08.C5",
+      "written_by": "event",
+      "settlement_step": "S08",
+      "applied_at": "触发当季 S08",
+      "source_op": "event.E08 触发后应用 effects[4] 与 effects[5]（两条 region 级 scope 各自展开为该区的 9 个群组）",
+      "entity_ids": [
+        "state.group.expectation_ppm",
+        "group.haijia.minor.low",
+        "group.haijia.minor.mid",
+        "group.haijia.minor.high",
+        "group.haijia.working.low",
+        "group.haijia.working.mid",
+        "group.haijia.working.high",
+        "group.haijia.elder.low",
+        "group.haijia.elder.mid",
+        "group.haijia.elder.high",
+        "group.zhongzhou.minor.low",
+        "group.zhongzhou.minor.mid",
+        "group.zhongzhou.minor.high",
+        "group.zhongzhou.working.low",
+        "group.zhongzhou.working.mid",
+        "group.zhongzhou.working.high",
+        "group.zhongzhou.elder.low",
+        "group.zhongzhou.elder.mid",
+        "group.zhongzhou.elder.high"
+      ],
+      "counterparty": "none（预期是对未来的判断，不是收入；本条不改变任何一个群组的 state.group.cash_uu。真正改变群组现金的是 E08.C7 的个税分录，两者必须分开读）",
+      "accounting_zh": "expectation_ppm 由 S08 按 mul_ppm(expectation_prev, param.expectation_inertia_ppm = 700000) + mul_ppm(living_index_ppm, 300000) 逐季平滑，事件增量进入 expectation_prev。18 个群组每组一律 −15 000，不做人口加权——加权会让同一条政治反应在大组与小组之间产生不同强度，而本条的依据（企业主家庭对未来净收入的判断）在组内是同质的。",
+      "formula": "对 g ∈ region.haijia ∪ region.zhongzhou 的 18 个群组：expectation_ppm[g] = clamp(expectation_prev[g] + (-15000), 0, 2000000)",
+      "magnitude_ppm": -15000,
+      "affected_groups_count": 18,
+      "affected_population_persons": 12000000,
+      "param_ref": "param.e08_expectation_delta_ppm",
+      "value_path_zh": "剧本基值逐组不同，区间 900 000（group.zhongzhou.elder.low）…1 210 000（group.haijia.minor.high），全部落在 clamp 区间 [0, 2 000 000] 的内部，触发后仍然全部在内部——本条不会被 clamp 截断，因此 18 组的位移严格相等，不会出现「一部分组被截断、另一部分没有」的隐形不一致。受影响人口 5 000 000（海岬 9 组）+ 7 000 000（中州 9 组）= 12 000 000 人，占全国 24 000 000 人的一半。",
+      "duration_q": "一次性写入存量；此后按预期惯性逐季衰减",
+      "decay_zh": "增量相对「未触发基线」的残值逐季按惯性系数收缩：-15 000 → -10 500 → -7 350 → -5 145 → -3 602 → -2 522 → -1 766（mul_ppm 走 mul_div_floor，负数向 −∞ 取整，故第 4 步起每步比精确值多 1 个单位的下压）。约 6 季后不足 -2 600，与 cooldown_q = 6 同量级；取整发生在整条更新式上而不是单独作用于残值，实现中逐位结果可能相差 1 ppm，验收测试按整式复算而不是按本序列对数。",
+      "constraint_zh": "clamp 到 [0, 2 000 000]（10 号文件的预期区间）；事件只能写 delta_ppm（V-EV-05）。",
+      "reversible": true,
+      "scope_choice_zh": "只写海岬（港口与制造业区位）与中州（行政、教育与综合服务），因为企业与工商业从业家庭集中在这两区（计划书 §05）。不写北原与西岭，是因为没有依据说农业与能源区的家庭会因企业税征收面扩大而下调预期；给全国统一写一个数会更省事，但那是编的。",
+      "evidence_ref": "state.group.expectation_ppm"
+    },
+    {
+      "consequence_id": "E08.C6",
+      "written_by": "mechanism",
+      "mechanism_step": "S06",
+      "settlement_step": "S06",
+      "applied_at": "每季 S06，自 state.policy.effective_from_q[P11] 起持续；与本事件是否触发无关",
+      "event_writes": false,
+      "source_op": "policy.P11 抬高 state.gov.tax_capacity_ppm（写入者 S07）→ S06 的两条乘法",
+      "entity_ids": [
+        "state.gov.tax_capacity_ppm",
+        "flow.gov.receipts_profit_tax_uu",
+        "flow.gov.receipts_income_tax_uu",
+        "state.gov.tax_receivable_uu",
+        "state.cell.loss_carryforward_uu"
+      ],
+      "counterparty": "16 个 cell.<region>.<sector> 与 36 个 group.<region>.<age>.<skill> → gov（逐笔具名，不是「企业部门」这种合并口径）",
+      "accounting_zh": "任务描述里「同时税收改善」那半句的真实落点在这里，不在事件里。事件不写任何一笔税款、不写征收能力、不写应收余额（INV-130、V-EV-06）。政府多收的每一分钱都精确对应某个 cell 或某个群组少掉的一分钱——没有凭空增加的资源。",
+      "formula": "个税（12 号 §6.5）：collected = mul_ppm(liability, min(state.gov.tax_capacity_ppm, 1000000))；企业利润税（§6.6）：tax = mul_ppm(taxable, policy.P02.rate_ppm)，再 tax = mul_ppm(tax, min(tax_capacity_ppm, 1000000))",
+      "amount_zh": "非常量，逐季由税基与税率决定。量级参照（R-SCALE-01 新刻度）：剧本基年年度计划 receipt_lines_uu.profit_tax = 7 200 000 000 μU、income_tax = 10 400 000 000 μU；基年 tax_capacity_ppm = 760 000，即约四分之一的应计税收征不上来。能力从 760 000 升到触发阈值 850 000，在税基不变时使实收上升 mul_ppm(liability, 90000)，约为应计额的 9%。",
+      "duration_q": "持续到征收能力变化",
+      "constraint_zh": "paid = min(tax, state.cell.cash_uu[i])、collected = min(collected, state.group.cash_uu[g])——利润与现金严格分开，没现金也要记欠；差额进 state.gov.tax_receivable_uu，不核销。INV-031：tax_receivable_end == start + (应计税 − 实收税) − 追征 − 核销。首版不加滞纳金、不设追缴机制（OQ-240）。tax_capacity_ppm 参与乘法前先 min 到 1 000 000，防止「能力 > 100%」征出比应计额更多的税。",
+      "reversible": true,
+      "evidence_ref": "flow.gov.receipts_profit_tax_uu"
+    },
+    {
+      "consequence_id": "E08.C7",
+      "written_by": "mechanism",
+      "mechanism_step": "S06",
+      "settlement_step": "S06",
+      "applied_at": "每季 S06，逐笔过账",
+      "event_writes": false,
+      "source_op": "S06 的 post(...) 调用",
+      "entity_ids": [
+        "state.group.cash_uu",
+        "state.cell.cash_uu",
+        "state.gov.cash_uu",
+        "flow.cell.tax_profit_paid_uu",
+        "flow.group.income_tax_paid_uu"
+      ],
+      "payer": "group.<region>.<age>.<skill>（个税）／cell.<region>.<sector>（企业利润税）",
+      "payee": "gov",
+      "counterparty": "payer → payee 逐笔具名；每笔 txn 的有符号行之和为 0（INV-015）",
+      "accounting_zh": "税是再分配：kind ∈ {income_tax, profit_tax} 在生产法、支出法、收入法三种口径下全部为 none（11 号 §5.3、INV-114），不进任何 GDP 口径。收上来的钱变成政府现金，可用于支付，但它不是新增产出——derived.gdp.production_uu 不因征收能力变化而变化（由 T-S-E08-TAX-IS-REDISTRIBUTION 钉死）。",
+      "formula": "post(kind=income_tax, group -> gov, collected)；post(kind=profit_tax, cell -> gov, paid)",
+      "amount_zh": "Σ flow.cell.tax_profit_paid_uu + Σ flow.group.income_tax_paid_uu == flow.gov.receipts_profit_tax_uu + flow.gov.receipts_income_tax_uu，精确相等，不留舍入尾差。",
+      "duration_q": "持续",
+      "constraint_zh": "全经济现金总量恒等于 scenario.total_cash_uu（INV-018）：这一步只搬钱，不造钱。单笔金额受 AMOUNT_MAX = 4×10^15 μU 约束（R-SCALE-01）。",
+      "reversible": false,
+      "evidence_ref": "flow.cell.tax_profit_paid_uu"
+    },
+    {
+      "consequence_id": "E08.C8",
+      "written_by": "mechanism",
+      "mechanism_step": "S06",
+      "settlement_step": "S06",
+      "applied_at": "每季 S06，在计算 liability 之前",
+      "event_writes": false,
+      "source_op": "S06 §6.5 的税基侵蚀段",
+      "entity_ids": [
+        "flow.group.income_tax_paid_uu",
+        "state.gov.tax_capacity_ppm"
+      ],
+      "counterparty": "none（侵蚀不是一笔转账，而是应税基数的缩小；被侵蚀的部分不出现在任何一方的账上——这正是它与「欠税」的区别：欠税进 state.gov.tax_receivable_uu，侵蚀不进）",
+      "accounting_zh": "征收能力与税基侵蚀是两个独立通道（裁定 R-30，10 号文件裁定表）：能力提高不会减少侵蚀，税率提高则同时抬高侵蚀。恶意玩家防线 ADV-05：base 只来自已过账的收入分录，不存在独立的「税收系数」字段，因此税率从 10% 提到 60% 的收入曲线非线性且有拐点。",
+      "formula": "avg_rate_ppm = mul_div_floor(gross_tax_at(base), 1000000, max(base, 1))；evasion_ppm = mul_ppm(param.tax_evasion_slope_ppm, max(0, avg_rate_ppm − param.tax_base_rate_ppm))；base_eff = base − mul_ppm(base, evasion_ppm)",
+      "amount_zh": "非常量。当 avg_rate_ppm ≤ param.tax_base_rate_ppm 时 evasion_ppm 恒为 0、base_eff == base。",
+      "duration_q": "持续",
+      "constraint_zh": "必须走 mul_div_floor：新刻度下 AMOUNT_MAX × PPM = 4×10^21 真的溢出 int64（R-SCALE-01 连带要求 1）。base_eff 与 collected 分别可观测，不许合并成一个「税收努力指数」。",
+      "reversible": true,
+      "note_zh": "这就是玩家选项 E08.O3（以降税率换合规）之所以可能有效、又不保证有效的原因。",
+      "evidence_ref": "flow.group.income_tax_paid_uu"
+    },
+    {
+      "consequence_id": "E08.C9",
+      "written_by": "none",
+      "settlement_step": "—",
+      "applied_at": "—",
+      "event_writes": false,
+      "source_op": "无",
+      "entity_ids": [
+        "log.ledger"
+      ],
+      "counterparty": "none",
+      "accounting_zh": "首版事件没有任何账本效应（INV-130）：不存在任何 cause == event.E08 的账本行，因此本事件不改变账本科目、产能、库存与人口。这一条是刻意登记的「零」，不是漏写——T-S-E08-NO-LEDGER-EFFECT 用「允许触发 / probability_ppm 置 0 两次运行的 log.ledger 逐行相同」把它钉死。",
+      "formula": "无",
+      "amount_zh": "0",
+      "duration_q": "—",
+      "constraint_zh": "V-EV-06：首版 schema 中不存在 ledger_effects 字段。",
+      "reversible": "—"
+    }
+  ],
+  "_note_player_options": [
+    {
+      "option_id": "E08.O0",
+      "label_zh": "什么都不做",
+      "implemented_as": "不发任何命令",
+      "cost_zh": "直接成本 0；P11 的持续运行费按政策定义继续发生。",
+      "preconditions_zh": "无。这个选项永远可用。",
+      "lag_q": 0,
+      "failure_modes_zh": "没有失败路径，只有后果：征收能力保持在高位，税收改善保留；工商业联盟对 P11 的立场停在低位，并作为改革阻力进入后续所有需要其支持的政策判定（legal_authority.requires_bloc_support），税收域（tax_law）恰好就在 bloc.business 的 veto_domains 里，因此后续与税有关的改动可能被否决。行政能力的一次性损失不会自己补回：12 号文件没有给出 admin_capacity_ppm 的更新式（OQ-LOCAL-E08-05），三次触发后它停在 555 000 并一直停在那里。冷却结束后本事件可再触发（最多 3 次）。",
+      "political_reaction_zh": "工商业联盟组织力持续偏高；两个工商业密集地区的预期偏低。劳动与公共服务联盟立场偏高，若玩家随后用这笔钱做服务或转移，会进一步巩固。",
+      "consequence_zh": "在四个选项里，这一个的财政结果最好。它的代价不在账上，而在后续可用的政治空间上——这正是计划书 §08「成功的发展，也会带来新的反对者」那句话的具体形态。"
+    },
+    {
+      "option_id": "E08.O1",
+      "label_zh": "回退征收强度",
+      "implemented_as": "policy_set_params { policy_id: policy.P11, params: {...} } 或 policy_repeal { policy_id: policy.P11 }",
+      "cost_zh": "toggle_cost_uu（一次性行政成本，kind = policy_toggle_cost）；冷却 cooldown_q 内不得再开（INV-098）；toggle_count 单调递增，反复开关会被记录并各自计一次成本。",
+      "preconditions_zh": "q ≥ state.policy.cooldown_until_q[P11]；退出规则可执行。",
+      "lag_q": 1,
+      "failure_modes_zh": "最容易被误解的一条：回退不退还已经形成的能力。state.gov.tax_capacity_ppm 是一个存量，由 S07 写入；停掉 P11 只是不再推高它，不会把它按下去，除非 P11 的退出规则明确定义了衰减。已经发生的争议也不会因为撤回而消失——立场与组织力是存量。因此这一步很可能同时失去未来的收入改善与已经付出的政治代价。另外，关停再开启不补发历史季（INV-097）。",
+      "political_reaction_zh": "工商业联盟立场部分回升；劳动与公共服务联盟立场下降，且若同期财政吃紧，会与 event.E07 的分歧线叠加。",
+      "consequence_zh": "这是一个「两头落空」风险最高的选项，但它必须存在：玩家有权撤回自己的政策，代价必须被如实展示，而不是用一个更好的结果来奖励犹豫。"
+    },
+    {
+      "option_id": "E08.O2",
+      "label_zh": "用采购透明化对冲争议（P12）",
+      "implemented_as": "policy_enact { policy_id: policy.P12, ... }",
+      "cost_zh": "按 P12 的 cost 计。计划书 §09 明写 P12「初期流程成本，效果依赖执行条件」——它先让事情变慢变贵。",
+      "preconditions_zh": "法定权限位已获得；预算可预留；若政策定义要求预算审查，需等到 q ≡ 3 (mod 4) 的窗口。",
+      "lag_q": 3,
+      "lag_note_zh": "P12 的最早反馈是 2—6 季。",
+      "failure_modes_zh": "(a) 行政能力已被本事件压低，而 P12 的效果依赖执行条件——在 admin_capacity 偏低时开 P12，可能只拿到成本拿不到效果；(b) P12 改善的是采购与披露的程序，不直接回应「征收方式」的争议，对冲是间接的；(c) 与 P11 同时推进会争夺同一批执行能力。",
+      "political_reaction_zh": "工商业联盟对政策可预期性的评价改善，立场部分回升；程序信任的改善（若有）来自承诺被兑现这条通道，而不是来自本选项本身。",
+      "consequence_zh": "这是「用制度回应制度争议」的路子。它慢、不确定，而且要在行政能力已经被占用的时候再占用一次——但如果玩家想同时保住税收和政治空间，这是唯一的方向。"
+    },
+    {
+      "option_id": "E08.O3",
+      "label_zh": "以降税率换合规",
+      "implemented_as": "policy_set_params { policy_id: policy.P02, params: { rate_ppm } }（或 policy.P01 的级距与税率）",
+      "cost_zh": "无一次性支出，但直接减少每季税收流量。",
+      "preconditions_zh": "新税率落在政策定义的 valid_range 内；在允许修改的窗口内，否则 REJECT(E_PARAM_RANGE)。",
+      "lag_q": 1,
+      "failure_modes_zh": "净效果非线性且不保证为正。S06 的公式里，降税率同时做两件相反的事：liability 下降（收得少），evasion_ppm 下降甚至归零（税基变大）。只有当 avg_rate_ppm 明显高于 param.tax_base_rate_ppm 时，后者才足以补偿前者；税率本来就在参照线附近时，降税率纯粹是送钱。玩家在提交前可以用四季只读副本预览两种情形，但预览带假设，不是承诺。",
+      "political_reaction_zh": "工商业联盟立场明显回升、组织力回落；劳动与公共服务联盟立场下降，尤其在同期存在欠付或服务可用率下降时反应更强。",
+      "consequence_zh": "这条选项的价值在于它把「提高税率后税收是否绕过实际税基」（计划书 §17 的恶意玩家测试之一）翻了个面：降低税率有时候真的能收到更多的钱，有时候不能，而玩家可以在台账上看清是哪一种。"
+    }
+  ],
+  "_note_political_reaction": {
+    "blocs": [
+      {
+        "bloc_id": "bloc.business",
+        "label_zh": "工商业联盟",
+        "direction": "组织力上升、对 P11 的立场显著下降",
+        "magnitude_ppm": {
+          "org_power": 30000,
+          "stance_on_p11": -120000
+        },
+        "basis_zh": "计划书 §08：该联盟关心「能源、运输、利润与政策可预期性」，并「影响投资意愿与改革阻力，但不能直接代表所有选票」。征收覆盖扩大同时命中利润与可预期性两项，是它最有动机也最有能力组织协商的议题。本事件给它的组织力增量是四个事件中最大的一笔，因为受损是直接的、可计量的、且集中在少数主体身上——集中的损失最容易组织。",
+        "evidence_used_zh": "state.gov.tax_capacity_ppm 的轨迹；flow.cell.tax_profit_paid_uu 的逐单元明细；state.cell.cash_uu 的变化。"
+      },
+      {
+        "bloc_id": "bloc.labor_public",
+        "label_zh": "劳动与公共服务联盟",
+        "direction": "对 P11 的立场上升；组织力本事件不改变",
+        "magnitude_ppm": {
+          "org_power": 0,
+          "stance_on_p11": 70000
+        },
+        "basis_zh": "计划书 §08：该联盟关心就业保障、工资、教育医疗和居住——这些都靠财政拨款。征收改善扩大了可分配的钱，因此它支持。但支持幅度小于工商业的反对幅度，因为受益是间接的：钱进国库之后还要经过预算分配才可能变成工资与服务，而分配是玩家的另一个决定。组织力不给增量，是因为它此刻没有需要动员的既成损失。",
+        "evidence_used_zh": "flow.gov.receipts_profit_tax_uu 与 flow.gov.receipts_income_tax_uu 的合计；state.gov.cash_uu 的改善。"
+      },
+      {
+        "bloc_id": "bloc.agri_coop",
+        "label_zh": "农业合作联盟",
+        "direction": "本事件不改变其组织力与立场",
+        "magnitude_ppm": {
+          "org_power": 0
+        },
+        "basis_zh": "计划书 §08：该联盟关心农户收入、灌溉与地区资源分配。征收覆盖扩大对 cell.*.agri 同样生效，但农业单元的利润规模与税基在剧本里远小于制造与服务，且该联盟的议题重心在灌溉与地区分配上。给它编一个反应会让三个集团看起来「都有戏份」，那正是计划书 §09 说的伪深度。若玩家把新增税收全部投向非农地区，反应会由那条预算路径产生。",
+        "evidence_used_zh": "无。"
+      }
+    ],
+    "groups": [
+      {
+        "scope": "group.haijia.* 与 group.zhongzhou.* 共 18 组",
+        "direction": "未来预期下降",
+        "basis_zh": "企业与工商业从业家庭集中在这两区（计划书 §05：海岬为港口与制造业区位，中州为行政、教育与综合服务）。预期下降表达的是对未来净收入的判断。不写北原与西岭，因为没有依据。"
+      },
+      {
+        "scope": "低收入群组（各区 working.low 与 elder）",
+        "direction": "本事件不写入；其生活指数的改善（若有）来自后续的转移支付与服务拨款",
+        "basis_zh": "税收改善本身不改善任何人的生活；只有当政府把钱花出去，S04 的转移支付与 S05 的服务交付才会进入生活指数。把「国库收入增加」直接写成「低收入群组更满意」，是把财政流量当成了福利结果。"
+      }
+    ],
+    "no_trust_write_zh": "本事件不写 trust_ppm，理由见 _note_effects_no_trust。"
+  },
+  "_note_copy": {
+    "headline_zh": "税收上来了，争议也上来了",
+    "accounted_zh": "本季企业利润税实收 {receipts_profit_tax_uu}，个人所得税实收 {receipts_income_tax_uu}；应收未收税余额 {tax_receivable_uu}。当前征收能力 {tax_capacity_ppm}。P11 自第 {effective_from_q} 季生效，至今累计支出 {budget_spent_uu}。逐单元与逐群组的缴税明细、被使用的结转亏损、以及每一笔税款的双边分录均可展开。以上为本季账目的精确加总。",
+    "inferred_zh": "模型中的限制因素与规则推断：征收能力作为一个乘数直接作用在应纳税额上，因此实收额的变化可以分解为「税基变化」「税率变化」「征收能力变化」三项，报告分三行列出，不合并成一个「税收努力指数」。税基侵蚀是另一条独立通道：它只对平均税率高于参照线的部分起作用，与征收能力无关。工商业联盟对 P11 的立场已下调至 {business_stance_ppm}，该立场进入后续需要其支持的政策的可行性判定；立场不等于选票，也不直接进入支持度。",
+    "projected_zh": "情景预测（假设：税率与征收能力维持本季水平、企业利润按本季结构延续、不追加任何命令）：给出未来四季的税收与国库现金基线预览；另给一条不利条件预览（企业利润下滑或结转亏损被大量使用时的实收额）。若玩家考虑调整税率，确认前会分别给出「税率下调」情形下 liability 与 base_eff 两个方向的粗略对比。两条预览均由同一套结算规则跑四季只读副本得出，标注了假设，不宣称识别真实世界的因果关系。",
+    "wording_rules_zh": "第一段只报本季已发生的税款与账；第二段只用「作为乘数作用在」「可以分解为」「进入……的可行性判定」，禁止「导致企业逃税」「引发抵制」这类因果断言，也禁止把立场变动说成民意变动；第三段先列假设。全文禁止出现「税收努力指数」「营商环境评分」这类合成指标，也禁止任何国际比较措辞（INV-149）。",
+    "placeholders": [
+      {
+        "key": "receipts_profit_tax_uu",
+        "source": "flow.gov.receipts_profit_tax_uu",
+        "type": "int"
+      },
+      {
+        "key": "receipts_income_tax_uu",
+        "source": "flow.gov.receipts_income_tax_uu",
+        "type": "int"
+      },
+      {
+        "key": "tax_receivable_uu",
+        "source": "state.gov.tax_receivable_uu",
+        "type": "int"
+      },
+      {
+        "key": "tax_capacity_ppm",
+        "source": "state.gov.tax_capacity_ppm",
+        "type": "int"
+      },
+      {
+        "key": "effective_from_q",
+        "source": "state.policy.effective_from_q",
+        "type": "int"
+      },
+      {
+        "key": "budget_spent_uu",
+        "source": "state.policy.budget_spent_uu",
+        "type": "int"
+      },
+      {
+        "key": "business_stance_ppm",
+        "source": "state.bloc.stance_ppm",
+        "type": "int"
+      }
+    ],
+    "_note_placeholders": "模板只支持整数与 ID 两种插值（OQ-235）；ppm → 百分比的格式化在 Presentation 完成，不回写状态。每个占位符都能在 evidence_refs 中找到来源（T-U-TEMPLATE-PLACEHOLDER）。"
+  },
+  "_note_acceptance_tests": [
+    {
+      "test_id": "T-S-E08-NO-FIRE-WHEN-COND-FALSE",
+      "kind": "scenario",
+      "purpose_zh": "条件不满足时绝不触发。",
+      "given_zh": "构造四个夹具，每个只让一条条件不成立：(1) P11 未生效（enabled = 0）；(2) tax_capacity_ppm = 849 999；(3) 本季企业利润税实收 = 1 979 999 999 μU（比阈值 1 980 000 000 少 1 μU）；(4) q = 4。",
+      "when_zh": "各跑 16 季，probability_ppm 临时置 1 000 000。",
+      "then_zh": "四个夹具中 fire_count[E08] 恒为 0；bloc.stance_ppm、bloc.org_power_ppm、politics.admin_capacity_ppm、group.expectation_ppm 相对空跑基线逐位不变。夹具 (3) 特别重要：它证明「能力指标好看但钱没收上来」时事件不响，争议必须有真实的征收结果做前提。"
+    },
+    {
+      "test_id": "T-S-E08-NO-EFFECT-BEFORE-P11-EFFECTIVE",
+      "kind": "scenario",
+      "purpose_zh": "政策时滞必须真实存在（计划书 §09 P11「先增加成本，再改变征收覆盖」）。",
+      "given_zh": "在 q = 0 提交并通过 P11。",
+      "when_zh": "跑到 q = 4。",
+      "then_zh": "state.gov.tax_capacity_ppm 在 q < effective_from_q 的每一季都与剧本初值 760 000 逐位相同（INV-095）；P11 的 budget_spent_uu 在此期间已经增加（成本先发生）；fire_count[E08] == 0。若能力在拨款当季就上升，判为缺陷。"
+    },
+    {
+      "test_id": "T-S-E08-RELOAD-NO-REDRAW",
+      "kind": "scenario",
+      "purpose_zh": "重载存档不得重抽已确定事件。",
+      "given_zh": "固定命令流跑到某季 q*，该季 E08 条件全部成立。",
+      "when_zh": "路径 A：直接 advance 到 q*+3；路径 B：q* 前存档、读档，再 advance 到 q*+3。",
+      "then_zh": "两条路径逐季 state_hash 逐位相同；log.rng 中 rng.event 流的 {draw_index, raw_u64, mapped_value} 完全一致；fire_count[E08]、last_fire_q[E08] 相同（INV-133、ADV-06）。"
+    },
+    {
+      "test_id": "T-S-E08-NO-LEDGER-EFFECT",
+      "kind": "scenario",
+      "purpose_zh": "事件不得凭空增减资源，尤其不得自己去改税收。",
+      "given_zh": "同一命令流两次运行：一次允许 E08 触发，一次 probability_ppm 置 0。",
+      "when_zh": "跑满 40 季。",
+      "then_zh": "两次运行的 log.ledger 行数与内容完全相同；flow.gov.receipts_profit_tax_uu、flow.gov.receipts_income_tax_uu、state.gov.tax_capacity_ppm、state.gov.tax_receivable_uu 逐季相同；全经济现金总量恒等于 scenario.total_cash_uu（INV-018）；不存在任何 cause == event.E08 的账本行。这条测试的含义是：税收改善完全由 P11 与 S06 产生，事件只改主观量。"
+    },
+    {
+      "test_id": "T-S-E08-TAX-IS-REDISTRIBUTION",
+      "kind": "scenario",
+      "purpose_zh": "多收的每一分钱都有对手方，且不进 GDP。",
+      "given_zh": "触发所在季。",
+      "when_zh": "结算该季 S06。",
+      "then_zh": "Σ flow.cell.tax_profit_paid_uu + Σ flow.group.income_tax_paid_uu == flow.gov.receipts_profit_tax_uu + flow.gov.receipts_income_tax_uu，精确相等；每笔 txn 的有符号行之和为 0（INV-015）；kind ∈ {income_tax, profit_tax} 的行在 prod_class / exp_class / inc_class 三种口径下全部为 none（11 号 §5.3、INV-114）；derived.gdp.production_uu 不因征收能力变化而变化。"
+    },
+    {
+      "test_id": "T-S-E08-COOLDOWN-AND-CAP",
+      "kind": "scenario",
+      "purpose_zh": "条件长期成立时事件不刷屏。",
+      "given_zh": "P11 生效并把征收能力长期维持在阈值之上，条件连续 24 季成立，probability_ppm 置 1 000 000。",
+      "when_zh": "跑满 24 季。",
+      "then_zh": "fire_count[E08] == 3；任意两次间隔 ≥ 6；第 3 次之后不再触发。第 24 季末（取 param.bloc_care_gain_ppm 传导为 0 的隔离夹具）：state.bloc.stance_ppm[bloc.business][policy.P11] == -610000（剧本基值 -250000 减三次 120000）、state.bloc.stance_ppm[bloc.labor_public][policy.P11] == 360000（基值 150000 加三次 70000）、state.politics.admin_capacity_ppm == 555000（基值 600000 减三次 15000）。社会页仍可查看该分歧。"
+    },
+    {
+      "test_id": "T-S-E08-EFFECT-MAGNITUDES-EXACT",
+      "kind": "scenario",
+      "purpose_zh": "六条 effects 的落点与幅度逐位可复核，_note_consequences 里写的数不是文案。",
+      "given_zh": "隔离夹具：从剧本初值起，state.bloc.stance_ppm[bloc.business][policy.P11] = -250000、[bloc.labor_public][policy.P11] = 150000、state.bloc.org_power_ppm[bloc.business] = 400000、state.politics.admin_capacity_ppm = 600000、18 个海岬与中州群组的 state.group.expectation_ppm 取 population_init.json 的原值；把 S08 中一切其它来源的传导置零（param.bloc_care_gain_ppm = 0、param.expectation_inertia_ppm = 1000000），使本季的变动只可能来自 E08。",
+      "when_zh": "在某季 q* 让四条触发条件同时成立并把 probability_ppm 置 1 000 000，只触发一次。",
+      "then_zh": "q* 季末逐位相等：stance_ppm[bloc.business][policy.P11] == -370000；stance_ppm[bloc.labor_public][policy.P11] == 220000；org_power_ppm[bloc.business] == 430000；admin_capacity_ppm == 585000；18 个群组的 expectation_ppm 各等于其剧本初值减 15000（例如 group.haijia.working.mid 1080000 → 1065000，group.zhongzhou.elder.low 900000 → 885000），无一被 clamp 到 [0, 2000000] 的边界；bloc.agri_coop 的 org_power_ppm 与 12 格 stance 逐位不变；state.group.trust_ppm 与 state.group.support_ppm 全 36 组逐位不变。"
+    },
+    {
+      "test_id": "T-S-E08-EXPECTATION-SCOPE-IS-TWO-REGIONS",
+      "kind": "scenario",
+      "purpose_zh": "作用域是两个工商业密集地区，不是全国——scope 写错会被这条测试抓住。",
+      "given_zh": "同 T-S-E08-EFFECT-MAGNITUDES-EXACT 的隔离夹具。",
+      "when_zh": "触发一次 E08。",
+      "then_zh": "恰好 18 个群组的 expectation_ppm 发生变化，且集合精确等于 {group.haijia.*, group.zhongzhou.*}（各 9 组，合计人口 5 000 000 + 7 000 000 == 12 000 000 人）；group.beiyuan.* 与 group.xiling.* 共 18 组逐位不变（合计人口 24 000 000 − 12 000 000 == 12 000 000 人）。若某次改动把 scope 写成 national，本条会立刻变红。"
+    },
+    {
+      "test_id": "T-S-E08-THRESHOLD-MATCHES-SEASONAL-PLAN",
+      "kind": "scenario",
+      "purpose_zh": "触发阈值必须与剧本的年度计划和季节系数对得上，防止刻度迁移或剧本改数后静默过期。",
+      "given_zh": "读取 content/scenarios/chengwan/government_init.json 的 annual_plan.receipt_lines_uu.profit_tax 与 content/scenarios/chengwan/scenario.json 的 season_factor_ppm.gov_receipts。",
+      "when_zh": "按 11 号文件 §5.2 的最大余数法拆季。",
+      "then_zh": "拆分结果逐位等于 [1656000000, 1764000000, 1800000000, 1980000000]，四项之和 == 7200000000；trigger.all_of 中 metric == flow.gov.receipts_profit_tax_uu 的那条的 value 逐位等于该数组的最大值 1980000000。任一侧改动而另一侧未改，本条变红——这正是 OQ-LOCAL-E08-04 所说的静默过期。"
+    },
+    {
+      "test_id": "T-U-E08-METRIC-IDS-EXIST",
+      "kind": "unit",
+      "purpose_zh": "触发与证据引用的 ID 真实存在，效果落在白名单内。",
+      "given_zh": "加载内容包。",
+      "when_zh": "运行内容校验器。",
+      "then_zh": "trigger.all_of[*].metric 与 evidence_refs[*] 全部可解析（V-EV-02）；evidence_refs 非空（V-EV-08）；effects[*].target 全部在事件可写白名单内（含 state.politics.admin_capacity_ppm）且只用 delta_ppm（V-EV-05）；不存在 ledger_effects 字段（V-EV-06）；rng_stream == rng.event（V-EV-04）。"
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e08_tax_capacity_threshold_ppm",
+      "value": 850000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "剧本 content/scenarios/chengwan/government_init.json：gov.tax_capacity_ppm = 760000；计划书 §09 P11「4—8 季；先增加成本，再改变征收覆盖」",
+      "reference_year": 0,
+      "definition": "触发所需的征收能力水平线（85%）。高于剧本基年值 9 个百分点。",
+      "valid_range": [
+        760001,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "必须严格大于剧本基年值，否则事件从第一季起就成立、与 P11 无关。P11 的 effect 定稿后（其效果落点是 state.gov.tax_capacity_ppm），本值应设为「一次完整的 P11 建设周期刚好能跨过」的水平：跨不过则政策白做，远远跨过则事件与政策规模脱钩。校准顺序：先看 P11 的能力增量曲线，再定本值；不要反过来要求 P11 迁就本值。"
+    },
+    {
+      "value_id": "param.e08_profit_tax_quarterly_threshold_uu",
+      "value": 1980000000,
+      "unit": "μU",
+      "source_type": "derived",
+      "derivation_expr": "split_largest_remainder(annual_plan.receipt_lines_uu.profit_tax, season_factor_ppm.gov_receipts) = split_largest_remainder(7200000000, [230000, 245000, 250000, 275000]) = [1656000000, 1764000000, 1800000000, 1980000000]（四项合计精确等于 7 200 000 000，无余数）；取 max(...) = 1980000000",
+      "source_ref": "剧本 government_init.json 的 annual_plan.receipt_lines_uu.profit_tax = 7 200 000 000 μU（R-SCALE-01 新刻度）；scenario.json 的 season_factor_ppm.gov_receipts = [230000, 245000, 250000, 275000]；计划书 §05 基年收入计划 20 U",
+      "reference_year": 0,
+      "definition": "触发所需的本季企业利润税实收下限，取基年年度计划按季节系数拆出的四季额度中的最大者（第 4 季）。含义是「本季实收已达到基年任一季度的计划水平」。",
+      "valid_range": [
+        1,
+        20000000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本值是派生量，由 V-PC-05 复算：必须等于 max(split_largest_remainder(年度 profit_tax 计划, season_factor_ppm.gov_receipts))。剧本改动 profit_tax 年度计划或 gov_receipts 季节系数时本值必须同步重算——这是本卡最容易静默过期的地方。为什么取最大值而不是四等分：触发器只能写一个常量，而 gov_receipts 的季节系数并不均匀（第 1 季 230 000 ppm、第 4 季 275 000 ppm，相差 19.6%）。取最大值使「实收已达到当季计划水平」这句话在四个季度里都为真，方向是宁可漏报不误报；取四等分或最小值都会让事件在淡季对着一笔低于当季计划的实收宣布「钱收上来了」，那是假话。上一版本卡写的是「季节系数在剧本里是均匀的 [250000×4]」并据此四等分，与 scenario.json 实际取值不符，已更正。另注：本值曾按旧刻度写作 1 800 000 μU，R-SCALE-01（1 U = 10⁹ μU）后同步重算。"
+    },
+    {
+      "value_id": "param.e08_business_stance_delta_ppm",
+      "value": -120000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「工商业联盟关心能源、运输、利润与政策可预期性，影响投资意愿与改革阻力」；§09 P11",
+      "reference_year": 0,
+      "definition": "触发时写入 state.bloc.stance_ppm[bloc.business][policy.P11] 的一次性增量。",
+      "valid_range": [
+        -500000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "本批四个事件里最大的一笔立场增量，因为受损直接、可计量且集中在少数主体上。三次触发累计 −360 000 ppm，足以把一个中性立场推到明确反对，但不足以从上限打到下限。注意一个已核实的事实：politics_init.json 里 bloc.business 的 veto_domains 就是 [\"tax_law\"]，即税收域的否决权确实在工商业联盟手上。因此本值不是一个纯文案参数——它与否决权叠加后可能让 P11 在第三次触发后变得不可改。若试玩显示玩家没有回旋余地，优先的调整对象是否决判定的阈值（12 号 §8 的 requires_bloc_support 口径），其次才是下调本值；不要靠把 stance 增量调小来绕开一个否决权设计问题。"
+    },
+    {
+      "value_id": "param.e08_labor_stance_delta_ppm",
+      "value": 70000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「劳动与公共服务联盟关心就业保障、工资、教育医疗和居住」；§09「不要求每项政策都强行利弊对称」",
+      "reference_year": 0,
+      "definition": "触发时写入 state.bloc.stance_ppm[bloc.labor_public][policy.P11] 的一次性增量。",
+      "valid_range": [
+        0,
+        500000
+      ],
+      "confidence": "low",
+      "calibration_note": "刻意不等于工商业侧的绝对值：受益是间接的（钱要经过预算分配才变成工资与服务），受损是直接的。这处不对称是设计意图，不是遗漏；若有人为了「看起来公平」把两者调成相等，会同时违反计划书 §09 的反伪对称与本事件的机制叙述。"
+    },
+    {
+      "value_id": "param.e08_org_power_delta_ppm",
+      "value": 30000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「集团的成员规模和组织资源可以随经济结构变化」；世界银行 WDR 2017 关于权力分配的讨论 [4]",
+      "reference_year": 0,
+      "definition": "触发时写入 bloc.business 的 state.bloc.org_power_ppm 一次性增量。",
+      "valid_range": [
+        0,
+        200000
+      ],
+      "confidence": "low",
+      "calibration_note": "本批四个事件里最大（E05 18 000 / E06 25 000 / E07 20 000 / E08 30 000）：集中的损失最容易组织。S08 的惯性项 param.bloc_org_inertia_ppm = 700000 会在 3—4 季内拉回。若三次触发把组织力推到接近 1 000 000 并长期停留，先查惯性项与 param.bloc_w_resource_ppm 的配平。"
+    },
+    {
+      "value_id": "param.e08_admin_capacity_delta_ppm",
+      "value": -15000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §08「选票、组织影响力、行政能力分开计算」；§09 P12「初期流程成本，效果依赖执行条件」",
+      "reference_year": 0,
+      "definition": "触发时写入 state.politics.admin_capacity_ppm 的一次性增量（−1.5 个百分点），表示争议处理（听证、申诉、复核）占用行政资源。",
+      "valid_range": [
+        -200000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "这是让「加强征收」不成为纯收益动作的唯一通道，因此不宜为 0；但它会影响所有依赖执行能力的政策，取值过大会让一次征收争议瘫痪整个执政团队。校准方式：在 G3 跑一条「只做 P11」的路线，检查 40 季末 admin_capacity 的水平是否仍能支撑其它政策；若明显不能，先下调本值，不要给 admin_capacity 加恢复项。实现时必须复核 INV-125：本条是外部增量，不是函数间引用。"
+    },
+    {
+      "value_id": "param.e08_expectation_delta_ppm",
+      "value": -15000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 地区分工（海岬：港口与制造业区位；中州：行政、教育与综合服务）；§08 三分主观量",
+      "reference_year": 0,
+      "definition": "触发时写入 region.haijia 与 region.zhongzhou 各群组 state.group.expectation_ppm 的一次性增量（−1.5 个百分点）。北原与西岭不写。",
+      "valid_range": [
+        -200000,
+        0
+      ],
+      "confidence": "low",
+      "calibration_note": "本批四个事件里最小的预期增量：征收覆盖扩大影响的是企业主家庭的净收入判断，不是全民生活。只写两个工商业密集地区是一个有依据的选择；若试玩显示玩家认为北原与西岭也该有反应，必须先给出依据（例如跨区持股矩阵 OQ-205 定稿后的财产收入分布），再改 scope，不得凭印象铺开。"
+    },
+    {
+      "value_id": "param.e08_probability_ppm",
+      "value": 750000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §12「事件由状态条件触发」；11 号 §5.13 V-EV-07",
+      "reference_year": 0,
+      "definition": "四条触发条件全部成立后本季实际触发的概率（75%）。",
+      "valid_range": [
+        0,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "抽样只能让条件已成立的事件不发生。取 75% 而非 100%，是因为「争议是否公开化」本身有偶然成分（不像债券到期那样是合同确定量），这是本事件与 E07 的关键差别。若试玩显示玩家常常在不知情的情况下失去工商业联盟的支持，直接上调至 1 000 000，不要改触发条件门槛。"
+    },
+    {
+      "value_id": "param.e08_cooldown_q",
+      "value": 6,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P11「4—8 季」；§17「被忽视的警告」",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        0,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "征收能力越过阈值后条件会连续成立，冷却是防刷屏的主要手段。六季略长于一次预算审查周期（4 季），使玩家在被再次提醒之前至少有一次完整的预算窗口可以回应。若玩家已经用 O1/O2/O3 之一作出回应却仍被提醒，应把「本季已有回应命令」加进触发条件，而不是继续拉长冷却。"
+    },
+    {
+      "value_id": "param.e08_max_occurrences",
+      "value": 3,
+      "unit": "dimensionless",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §04「每季推荐处理 2—3 件重要事项」；§17 试玩记录中的被忽视的警告",
+      "reference_year": 0,
+      "definition": "整局中本事件的最大触发次数。",
+      "valid_range": [
+        1,
+        40
+      ],
+      "confidence": "low",
+      "calibration_note": "三次对应「争议出现 → 争议扩散 → 争议定型」。次数用尽后分歧仍活在 bloc.stance_ppm 里并持续进入改革可行性判定，社会页可查——政治后果不依赖弹窗次数。与 E07 的 6 次不同：到期墙是反复出现的新事实，征收争议是一次性定型的立场转变。"
+    }
+  ],
+  "report_template_id": "tpl.event.e08_tax_coverage_backlash",
+  "_note_design_notes_zh": "这张卡的设计要害有两处。第一，任务描述的后半句是「同时税收改善」，但本事件一分钱也没有收。税收改善由 P11 抬高的 tax_capacity_ppm 经 S06 的两条乘法产生，每一笔都是 cell 或 group 到 gov 的双边分录——政府多收的每一分钱，都精确对应某个主体少掉的一分钱。如果让事件去写税收，那就是凭空造钱，是计划书 §13 禁止的后处理补丁。事件能做的只有一件事：让政治对这个已经发生的事实作出反应。第二，本事件是四个事件里唯一一个「政策成功之后才会发生」的。计划书 §08 的标题写的是「成功的发展，也会带来新的反对者」——P11 做成了，钱收上来了，然后工商业联盟第一次把「征收方式」本身变成议题，行政能力被争议占用，两个工商业密集地区的预期下调。玩家在这里学到的不是「不该做 P11」，而是「做成一件事之后，可用的政治空间会变，需要重新计算下一步」。这就是为什么四个选项里财政结果最好的那个（什么都不做）恰恰政治代价最高。",
+  "_note_open_questions_local": [
+    {
+      "ref": "OQ-LOCAL-E08-01",
+      "question_zh": "触发器没有差分算子，也没有对上一季取值的引用，因此「跳升」无法直接表达，只能退化为水平线穿越加上冷却与次数上限。",
+      "conservative_take_zh": "用「P11 已生效 + 能力越过明显高于基年的水平线 + 实收达到基年季度计划」三条合取代替，宁可对「缓升」与「跳升」不加区分，也不引入触发器无法求值的表达式。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E08-02",
+      "question_zh": "state.bloc.stance_ppm 是 3×12 二维量，scope 需同时指定集团与政策；契约未给写法。本文件用点号拼接 bloc.business.policy.P11。",
+      "conservative_take_zh": "若契约拒绝二维 scope，则删除两条 stance effect，只保留 org_power、admin_capacity 与群组预期，而不是改用别的字段替代。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E08-03",
+      "question_zh": "P11 的政策定义文件尚未写出（content/policies 中缺 P11），其 effect 的能力增量曲线、退出规则（撤回后 tax_capacity_ppm 是否衰减）都未定。本事件的阈值与 player_options E08.O1 的失败路径都依赖这两项。",
+      "conservative_take_zh": "阈值先按剧本基年值 + 9 个百分点设定并标注必须在 P11 定稿后重新校准；E08.O1 按「回退不退还已形成的能力」这一最保守假设描述后果。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E08-04",
+      "question_zh": "触发器只能写一个常量阈值，而 scenario.json 的 season_factor_ppm.gov_receipts 并不均匀（[230000, 245000, 250000, 275000]），因此不存在一个「对四个季度都恰好等于当季计划」的常量。本文件上一版声称该系数均匀并据此四等分，是一处事实错误，已更正为按最大一季取值（1 980 000 000 μU）。遗留的真实缺口是：只要季节性存在，单常量阈值就必然在某些季度偏严。",
+      "conservative_take_zh": "取四季拆分额度的最大者，使「实收已达到当季计划水平」在任一季度都为真，方向为宁可漏报不误报；依赖关系写进参数卡 calibration_note。长期解法是让触发条件支持「按当季季节系数求出的计划额」这一派生 metric，或由校验器增加一条：该派生卡的 value 必须等于 max(split_largest_remainder(年度计划, 季节系数))，不等即报 E_PARAM_STALE。另需注意 scenario.json 自己登记的 _note_season_factor_ppm_unread：目前没有任何结算步读取 gov_receipts 季节系数，所以实收流量实际上并不按这条季节性走——这使阈值在实现补齐前偏严，方向仍然是保守的。",
+      "escalated": true
+    },
+    {
+      "ref": "OQ-LOCAL-E08-05",
+      "question_zh": "12_simulation_contract.md 没有给出 state.politics.admin_capacity_ppm 的更新式：S07 的「可写子集」列了这个字段，但全文没有任何一条计算它的公式。本事件的 −15 000 因此是一个永久性水平位移，而不是会自行回归的扰动；本文件上一版把它描述为「由 S07 的行政能力更新式自行回归」，是对一个不存在的公式的引用，已更正。",
+      "conservative_take_zh": "按「不会自行回归」的最保守假设描述后果（见 _note_consequences 的 E08.C4），并把 param.e08_admin_capacity_delta_ppm 保持在 −15 000 这一足以被三次触发累计后仍不致瘫痪执政团队的量级（600 000 → 555 000）。不在本文件里发明恢复项：那属于 12 号文件 S07 的职责。",
+      "escalated": true
+    }
+  ]
+}

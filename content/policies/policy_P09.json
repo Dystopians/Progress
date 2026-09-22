@@ -1,0 +1,1192 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P09",
+  "label_zh": "设备投资补助",
+  "problem_statement_zh": "合格部门的 cell 已经有扩产意愿，却因自有现金不足而无法在 S05 完成设备购入，产能约束长期不解除。",
+  "kind": "subsidy",
+  "legal_authority": {
+    "authority_bit": 2,
+    "requires_budget_review": false,
+    "requires_bloc_support": [],
+    "min_seats_ppm": 500000,
+    "_note_authority_kind_zh": "预算法案（新增一条基线年计划中不存在的支出线，必须经议会预算程序）",
+    "_note_political_condition_zh": "基年 annual_plan.expenditure_lines_uu.subsidies == 0，本政策是新增支出线，因此不能用行政令开启；需要 state.politics.legal_authority_mask 的第 2 位（建设与采购权）已获得，且 seats_gov / seats_total >= 500000 ppm。集团否决域不含本政策（capital_project 域没有集团持有否决资格），故不需要任何集团的支持票。",
+    "_note_authority_bit_zh": "第 2 位 = 建设与采购权（politics_init `_note_authority_bits` 把补助类 P09 列在该域；docs/18 R-AUTHORITY-01 定表）。"
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "label_zh": "资格·地区范围",
+      "type": "mask",
+      "unit": "dimensionless",
+      "valid_range": [
+        1,
+        15
+      ],
+      "step": 1,
+      "default": 15,
+      "store": "policy_enact 命令槽 j=0 → state.policy.region_mask",
+      "definition": "位掩码，位序同 10 号文件 §0.5 的地区稠密下标（0 北原 / 1 中州 / 2 海岬 / 3 西岭）。只有所在地区被选中的 cell 才可申领。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09「玩家直接改变：资格、配套出资与到期规则」",
+      "reference_year": 0,
+      "confidence": "medium",
+      "calibration_note": "若试玩中玩家总是全选 15，说明地区选择没有产生取舍，应先检查 param.p09_budget_ceiling_uu_per_q 是否过宽，而不是削弱本参数。"
+    },
+    {
+      "key": "min_investment_ratio_ppm",
+      "label_zh": "资格·单季投资门槛",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "step": 1000,
+      "default": 10000,
+      "store": "policy_enact 命令槽 j=1 → state.policy.params_ppm[policy.P09][1]",
+      "definition": "合格门槛：该 cell 在合格季的 flow.cell.investment_uu 必须不低于 mul_ppm(该季期初 state.cell.capital_value_uu, 本值)，否则不予受理。用于挡住把一次投资拆成若干笔小额反复申领的玩法。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P09「需要企业实际投资，防止重复领取」；§17 恶意玩家测试 ADV-01",
+      "reference_year": 0,
+      "confidence": "low",
+      "calibration_note": "下限受 param.p09_min_investment_ratio_floor_ppm 约束。若 ADV-01 中出现拆单规避，先提高本值下限，再考虑改 claim_key 结构。"
+    },
+    {
+      "key": "subsidy_rate_ppm",
+      "label_zh": "配套出资·政府补助比例",
+      "type": "ppm",
+      "unit": "ppm",
+      "valid_range": [
+        100000,
+        500000
+      ],
+      "step": 10000,
+      "default": 300000,
+      "store": "policy_enact 命令槽 j=2 → state.policy.params_ppm[policy.P09][2]",
+      "definition": "政府对合格投资额的补助比例。企业配套出资比例 = 1000000 − 本值，恒不低于 param.p09_min_self_funding_ppm。补助额 = mul_ppm(合格投资额, 本值)，floor 取整。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P09「配套出资」；§07「支出效果会受经济闲置、进口漏出、融资条件和实施时滞影响」",
+      "reference_year": 0,
+      "confidence": "low",
+      "calibration_note": "上限 500000 是硬约束：企业自筹不得低于一半，否则补助本身成为投资的主要资金来源，会退化成『政府替企业买设备』。若要放宽，须先改 param.p09_subsidy_rate_max_ppm 的卡并说明理由。"
+    },
+    {
+      "key": "cap_per_cell_per_q_uu",
+      "label_zh": "配套出资·单户单季补助上限",
+      "type": "uu",
+      "unit": "μU",
+      "valid_range": [
+        10000000,
+        190000000
+      ],
+      "step": 10000000,
+      "default": 60000000,
+      "store": "policy_enact 命令槽 j=3 → state.policy.params_uu[policy.P09][3]",
+      "definition": "单个 cell 单季可获补助的绝对上限（μU）。entitlement_i = min(mul_ppm(合格投资额_i, subsidy_rate_ppm), 本值)。上限 190000000 μU（0.19 U）等于 param.p09_budget_ceiling_uu_per_q，即允许但不建议一户吃满全季预算；默认 60000000 μU（0.06 U）约为封顶的 31.6%，保证常规情形下至少三户可同时足额受助。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「预算不是资产」；§13「禁止后处理补丁」",
+      "reference_year": 0,
+      "confidence": "low",
+      "calibration_note": "本值与季度封顶共同决定配给失败路径是否可达。若 T-S-P09-CEILING-RATIONING 从不触发，说明封顶过宽，先降 param.p09_budget_ceiling_uu_per_q。｜刻度校对（R-SCALE-01）：本条 unit 为 μU，而迁移器只按「键名含 uu 词元」的子树迁移，本条的 uu 词元写在 key 的**值**里（\"key\": \"cap_per_cell_per_q_uu\"）而不是键名上，因此 valid_range / step / default 三项在 1 U = 1e9 μU 之后仍停留在旧刻度，本轮已 ×1000 补齐：[10000, 190000] → [10000000, 190000000]，step 10000 → 10000000，default 60000 → 60000000。"
+    }
+  ],
+  "cost": {
+    "one_off_uu": 2400000000,
+    "_note_one_off_uu": "2.4 U",
+    "per_quarter_uu": 200000000,
+    "_note_per_quarter_uu": "0.2 U",
+    "planned_quarters": 12,
+    "spend_lines_uu_per_q": {
+      "subsidy_to_firms": 190000000,
+      "verification_admin": 10000000
+    },
+    "opex_per_q_uu": 10000000,
+    "required_construction_uqs": 0,
+    "required_equipment_uqs": 0,
+    "_note_cost_semantics_zh": "本政策没有合同总额。one_off_uu 是承诺封顶（12 季 × 每季 0.2 U），per_quarter_uu 是每季在 S02 预留的额度上限，不是必然支出。实际支出由合格投资额内生决定，恒不超过 spend_lines_uu_per_q.subsidy_to_firms。当季未用完的预留在季末按 INV-033 归零释放，不结转、不累积。",
+    "_note_budget_curve_uu_per_q": [
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000,
+      200000000
+    ],
+    "_note_budget_curve_rule_zh": "预算曲线是常数封顶曲线，长度 == planned_quarters == 12，与 _note_sunset_rule.sunset_after_q 同值，因此 one_off_uu 不随任何玩家取值重算。曲线不得因某季少支出而在后续季提高。（原文的「玩家把 sunset_after_q 调大时按同一封顶外推」一支随该杠杆降级为固定内容规则而不可达，见 _note_sunset_rule。）",
+    "_note_spend_targets": [
+      {
+        "line": "subsidy_to_firms",
+        "amount_uu_per_q": 190000000,
+        "payee_kind": "cell",
+        "payee_ref": "agent.cell.<region>.<sector>（当季合格 cell，按 targets.allocation_rule 逐季确定）",
+        "ledger_kind": "subsidy",
+        "priority_class": "subsidies",
+        "external_zh": "全部落在国内企业主体；不涉及 agent.row。",
+        "note_zh": "该行是上限。当季实付 = Σ paid_i ≤ 190000000 μU（0.19 U）；差额不形成欠付、不形成债权。"
+      },
+      {
+        "line": "verification_admin",
+        "amount_uu_per_q": 10000000,
+        "payee_kind": "pubserv",
+        "payee_ref": "agent.pubserv.<region>（region_mask 内各地区，按合格 cell 数用最大余数法拆分；当季无合格 cell 时按地区下标升序等分）",
+        "ledger_kind": "service_opex",
+        "priority_class": "service_opex",
+        "external_zh": "不涉及 agent.row。",
+        "note_zh": "agent.pubserv 不持有现金（10 号文件 §2.1），实际现金流按 12 号文件 §04.2 由 agent.gov 代付；本行决定 flow.pubserv.funding_ratio_ppm 的分母。"
+      }
+    ],
+    "_note_spend_sum_check_zh": "Σ spend_lines_uu_per_q == per_quarter_uu == 200000000 μU（0.2 U）（V-PD-03，加载器不做归一化补偿）；per_quarter_uu × planned_quarters == one_off_uu == 2400000000 μU（2.4 U）。"
+  },
+  "preconditions": [
+    {
+      "id": "p09.pre.authority",
+      "at": "enact",
+      "kind": "legal_authority",
+      "bit": 1,
+      "min_seats_ppm": 500000,
+      "blocked_reason": "authority",
+      "ui_text_key": "policy.P09.blocked.authority"
+    },
+    {
+      "id": "p09.pre.budget_reservation",
+      "at": "enact",
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu",
+      "blocked_reason": "budget",
+      "ui_text_key": "policy.P09.blocked.budget"
+    },
+    {
+      "id": "p09.pre.opex_funded",
+      "at": "enact",
+      "kind": "state_compare",
+      "metric": "state.gov.deferral_flag",
+      "scope": "service_opex",
+      "op": "eq",
+      "value": 0,
+      "blocked_reason": "budget",
+      "ui_text_key": "policy.P09.blocked.opex_deferred",
+      "rationale_zh": "上季 service_opex 档已被推迟，说明政府连既有服务运行费都付不出，此时不得新增一条同档运行费义务。"
+    },
+    {
+      "id": "p09.pre.effective",
+      "at": "payment",
+      "kind": "state_compare",
+      "metric": "state.time.q",
+      "op": "ge",
+      "value_ref": "state.policy.effective_from_q",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.not_effective",
+      "rationale_zh": "INV-095：q < effective_from_q 时本政策的效应函数返回零效应，不发放任何补助。"
+    },
+    {
+      "id": "p09.pre.not_expired",
+      "at": "payment",
+      "kind": "state_compare",
+      "metric": "state.policy.exit_pending_q",
+      "op": "gt",
+      "value_ref": "state.time.q",
+      "blocked_reason": "exited",
+      "ui_text_key": "policy.P09.blocked.expired"
+    },
+    {
+      "id": "p09.pre.eligible_cell",
+      "at": "payment",
+      "kind": "membership",
+      "metric": "cell.<region>.<sector>",
+      "region_ref": "param:region_mask",
+      "sector_ref": "param.p09_eligible_sector_mask",
+      "op": "eq",
+      "value": 1,
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.not_eligible_cell"
+    },
+    {
+      "id": "p09.pre.actual_investment",
+      "at": "payment",
+      "kind": "state_compare",
+      "metric": "flow.cell.investment_uu",
+      "scope": "qualifying_quarter",
+      "op": "gt",
+      "value": 0,
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.no_investment",
+      "rationale_zh": "12 号文件 §04.3：补助以『已发生的实际投资』为前置，不是以『政策开启』为前置。该笔投资必须已经过账（log.ledger 中存在对应的 capital_purchase 行且买方现金已减少）。"
+    },
+    {
+      "id": "p09.pre.investment_threshold",
+      "at": "payment",
+      "kind": "ratio_compare",
+      "metric": "flow.cell.investment_uu",
+      "denominator": "state.cell.capital_value_uu",
+      "op": "ge",
+      "value_ref": "param:min_investment_ratio_ppm",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.below_threshold"
+    },
+    {
+      "id": "p09.pre.investment_after_effective",
+      "at": "payment",
+      "kind": "state_compare",
+      "metric": "qualifying_investment_q",
+      "op": "ge",
+      "value_ref": "state.policy.effective_from_q",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.investment_before_policy",
+      "rationale_zh": "政策生效之前已经发生的投资不得申领，否则等于对已经发生、与政策无因果关系的行为发钱（计划书 §13 禁止凭空补贴）。关停后重新开启同理：历史季永不补发。"
+    },
+    {
+      "id": "p09.pre.no_duplicate_claim",
+      "at": "payment",
+      "kind": "claim_ledger",
+      "claim_key_expr": "hash64(policy.P09, beneficiary_cell, q, qualifying_investment_id)",
+      "op": "eq",
+      "value": 0,
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P09.blocked.duplicate_claim",
+      "rationale_zh": "INV-097：同键至多一条、至多付一次；state.policy.claim_ledger 只增不减，政策退出也不清零。"
+    },
+    {
+      "id": "p09.pre.cash_available",
+      "at": "payment",
+      "kind": "state_compare",
+      "metric": "state.gov.cash_uu",
+      "op": "gt",
+      "value": 0,
+      "blocked_reason": "budget",
+      "ui_text_key": "policy.P09.blocked.cash_shortfall",
+      "rationale_zh": "S04 §04.2 按 8 档优先级只在可用现金内支付；subsidies 是第 7 档，付不出的部分登记为欠付（state.gov.arrears_by_payee_uu），不静默改账。"
+    }
+  ],
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 2,
+    "max_feedback_q": 4,
+    "commission_delay_q": 1
+  },
+  "effect": {
+    "kind": "subsidy_rate",
+    "target": "state.policy.params_ppm",
+    "param_slot": 1,
+    "rate_ref": "player_params:subsidy_rate_ppm",
+    "payment_mechanism": "mech.investment_subsidy",
+    "unit_note_zh": "效应落点是本政策自身的 ppm 参数槽（与 P01 税率、P03 替代率同一类落点，见 11 号文件 §5.12 的效果落点白名单）。真正的资金移动由 S04 的 mech.investment_subsidy 执行，逐笔 post(kind=subsidy, gov -> cell)，不写任何产能字段。本政策不直接写 *_pending_* 与 *_active_* 的任何容量字段（V-PD-11）。"
+  },
+  "effect_chain": [
+    {
+      "ring": 1,
+      "step": "S04",
+      "from": "flow.cell.investment_uu",
+      "rule_zh": "mech.investment_subsidy：先按 preconditions 中 at == payment 的八条逐 cell 求值确定合格集合，再算 entitlement_i = min(mul_ppm(合格投资额_i, state.policy.params_ppm[P09,1]), state.policy.params_uu[P09,0])，最后按 targets.allocation_rule 用 split_largest_remainder 在季度封顶内配给（12 号文件 §04.3）。",
+      "to": "flow.gov.pay_subsidies_uu",
+      "mechanism": "mech.investment_subsidy",
+      "invariants": [
+        "INV-097",
+        "INV-003",
+        "INV-096",
+        "INV-095"
+      ],
+      "note_zh": "输入是上一季『已经发生并已过账』的实际投资，不是意愿、不是申报。"
+    },
+    {
+      "ring": 2,
+      "step": "S04",
+      "from": "flow.gov.pay_subsidies_uu",
+      "rule_zh": "post(kind=subsidy, payer=agent.gov.cash, payee=agent.cell.<r>.<s>.cash)，双边有符号过账，三重分类码全部为 none（补助不进任何 GDP 口径）。",
+      "to": "state.cell.cash_uu",
+      "mechanism": "mech.investment_subsidy",
+      "invariants": [
+        "INV-015",
+        "INV-016",
+        "INV-017",
+        "INV-113",
+        "INV-114"
+      ],
+      "note_zh": "同一笔过账使 state.gov.cash_uu 等额减少；现金总量恒定（INV-018）。补助只增加企业现金与净值，不增加 flow.cell.gross_output_uu。"
+    },
+    {
+      "ring": 3,
+      "step": "S05",
+      "from": "state.cell.cash_uu",
+      "rule_zh": "mech.firm_investment：实际投资 = min(flow.cell.invest_intent_uu, 可用现金, 设备可得量)（OQ-213 的临时取法：只能购买 sector.manu 产品，国内或进口，均按现价成交，现价入 capital，不入库存故不产生价差）。",
+      "to": "flow.cell.investment_uu",
+      "mechanism": "mech.firm_investment",
+      "invariants": [
+        "INV-059",
+        "INV-060",
+        "INV-062",
+        "INV-104"
+      ],
+      "note_zh": "这是本政策唯一真正放松的那一项：现金闸。若紧的是 invest_intent（上季无利润或上季瓶颈不是产能）或设备可得量（交付能力为 0），补助进了企业账户也不会变成投资——失败路径 delivery 与 no_qualifying_investment 由此产生。"
+    },
+    {
+      "ring": 4,
+      "step": "S07",
+      "from": "flow.cell.investment_uu",
+      "rule_zh": "资本形成：state.cell.capital_value_uu += 已形成资产；产能按 content.io.capacity_per_capital_uu_ppm[sector] 换算一次（只在投运时使用一次），写入待投运轨。",
+      "to": "state.cell.capacity_pending_uqs_per_q",
+      "mechanism": "mech.capacity_commissioning",
+      "invariants": [
+        "INV-054",
+        "INV-056",
+        "INV-091",
+        "INV-020"
+      ],
+      "note_zh": "本季投资对本季产量毫无影响，这是数据流层面的保证：S07 只能写 pending。"
+    },
+    {
+      "ring": 5,
+      "step": "S01",
+      "from": "state.cell.capacity_pending_uqs_per_q",
+      "rule_zh": "capacity_active += capacity_pending；capacity_pending = 0。这是 capacity_active 的全局唯一增量写入点。",
+      "to": "state.cell.capacity_active_uqs_per_q",
+      "mechanism": "mech.capacity_commissioning",
+      "invariants": [
+        "INV-054",
+        "INV-091"
+      ],
+      "note_zh": "发生在下一季季初，构成 commission_delay_q = 1。"
+    },
+    {
+      "ring": 6,
+      "step": "S05",
+      "from": "state.cell.capacity_active_uqs_per_q",
+      "rule_zh": "五项约束取 min：output_actual = min(plan, capacity, labor, energy, materials)，系数为 0 的项不产生候选值；并列时按 plan<capacity<labor<energy<materials 取最小序号。",
+      "to": "flow.cell.output_actual_uqs",
+      "mechanism": "mech.production_constraints",
+      "invariants": [
+        "INV-043",
+        "INV-044",
+        "INV-045"
+      ],
+      "note_zh": "只有当 flow.cell.binding_code == 1（capacity）时产量才上升；否则 flow.cell.bound_capacity_uqs 的 slack 变大而产量不变。政策的无效区间就发生在这一环，log.constraint_diag 逐 cell 记录是哪一项更紧。"
+    },
+    {
+      "ring": 7,
+      "step": "S06",
+      "from": "flow.cell.output_actual_uqs",
+      "rule_zh": "增加值 = 总产出 − 中间投入（逐 cell），再汇总为生产法 GDP；补助本身不出现在总产出中。",
+      "to": "derived.gdp.production_uu",
+      "mechanism": "mech.national_accounts",
+      "invariants": [
+        "INV-111",
+        "INV-112",
+        "INV-113",
+        "INV-115"
+      ],
+      "note_zh": "GDP 是核算结果，不是政策奖励。若产量没变，本环的增量恰为 0。"
+    },
+    {
+      "ring": 8,
+      "step": "S03,S04,S07,S08",
+      "from": "flow.cell.output_plan_uqs",
+      "rule_zh": "产量上升带动招工（受 param.hiring_friction_ppm 限制）→ state.cell.employment_persons ↑ → S04 支付工资 → flow.group.wage_income_uu ↑ → S07 更新 state.group.consumption_index_ppm 与 living_index_ppm → S08 由生活／预期／信任三项分别更新 state.group.support_ppm。",
+      "to": "state.group.support_ppm",
+      "mechanism": "mech.labor_market",
+      "invariants": [
+        "INV-076",
+        "INV-079",
+        "INV-121",
+        "INV-123",
+        "INV-124"
+      ],
+      "note_zh": "支持度只能走这一条完整链路到达，任何『政策通过即加支持度』的捷径都被 INV-123（来源分解）与验收测试 T-S-P09-NO-DEMAND-NO-BONUS 挡住。"
+    }
+  ],
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "none",
+    "compensation_rule": "accrued_claims_only",
+    "compensation_ppm": 0,
+    "triggers_zh": [
+      "玩家主动 policy_repeal",
+      "到期（q >= state.policy.exit_pending_q）",
+      "预算审查未通过导致的取消"
+    ],
+    "incurred_cost_zh": "已支付的补助一律不追回。state.policy.budget_spent_uu 不回退，state.gov.cash_uu 不因退出而增加（与 INV-093 同一纪律：取消不释放已经实际花掉的钱）。",
+    "delivered_assets_zh": "企业用补助购入的设备是企业的资产，已计入 state.cell.capital_value_uu 与产能轨，退出不回收、不减记。已经投运的产能继续存在，后续的折旧与维护由企业自行承担。",
+    "residual_zh": "本政策不产生在建工程，state.cell.wip_uu 与 state.gov.wip_uu 均不因退出而变动，因此没有残值登记项（unfinished_work = none）。",
+    "accrued_claims_zh": "退出季之前已经受理但因现金不足未付的申领，已登记为 state.gov.arrears_by_payee_uu 的欠付，退出不消灭该欠付；它继续按 payment_priority 的 subsidies 档在后续季清偿，直至清零。这是与『取消即赖账』的明确区分。",
+    "pending_claims_zh": "退出季当季及之后发生的投资一律不再产生申领资格，即使其投资决策是在政策存续期内做出的。首版不设过渡期条款——这是最保守的一侧，代价是玩家可能感到『说停就停』，该代价在 ui_copy.exit_warning 中事前告知。",
+    "commitment_release_zh": "state.gov.committed_memo_uu 减去剩余未支出的承诺额（one_off_uu − budget_spent_uu），state.policy.exit_pending_q 置 −1，claim_ledger 不清零（重开后历史季永不补发，INV-097）。",
+    "no_compensation_rationale_zh": "compensation_ppm = 0 且 compensation_rule = accrued_claims_only：本政策与企业之间没有合同关系（补助是单方给付，不是采购合同），因此不存在合同赔偿，只存在已受理债权的清偿义务。这与 P04 的 remaining_contract_ppm 是不同的退出形态，不应混用。"
+  },
+  "political_reaction": {
+    "bloc.business": 300000,
+    "bloc.labor_public": -60000,
+    "bloc.agri_coop": -40000
+  },
+  "failure_paths": [
+    {
+      "code": "no_qualifying_investment",
+      "test_id": "T-S-P09-FAIL-NOINVEST",
+      "trigger_zh": "合格集合内全部 cell 在合格季的 flow.cell.investment_uu == 0（通常因为上季 binding_code 不是 capacity，或上季 profit_pretax_prev ≤ 0，导致 invest_intent_uu == 0）。",
+      "observable_zh": "flow.gov.pay_subsidies_uu == 0，state.policy.budget_spent_uu 当季不增，预留额度在季末释放。",
+      "player_explanation_key": "policy.P09.fail.no_investment",
+      "player_explanation_zh": "本季没有任何企业发生合格的设备投资，因此没有发放补助。补助以已经发生并已付款的投资为前提，不是政策开启就会自动支出。",
+      "_note_test_binding_zh": "30 号文件 §4.3 的 P09 行直接指定：无实际投资季发放额 == 0。本路径与该用例的断言完全同一，无缺口。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-NO-INVESTMENT"
+    },
+    {
+      "code": "duplicate_claim",
+      "test_id": "T-S-P09-CHAIN",
+      "trigger_zh": "同一 claim_key（政策、cell、季度、合格投资交易号）再次出现，典型玩法是反复 policy_repeal / policy_enact 试图对同一笔投资二次领取。",
+      "observable_zh": "log.explanations 出现 duplicate_claim_blocked 条目；state.policy.claim_ledger 不新增；state.policy.toggle_count 增加并逐次产生 toggle_cost_uu 的行政成本；cooldown_q = 4 使反复开关本身有代价。",
+      "player_explanation_key": "policy.P09.fail.duplicate_claim",
+      "player_explanation_zh": "这笔投资已经领取过补助。领取登记只增不减，关停再开启不会补发历史季度，重复申领会被拦截并记录。",
+      "_note_test_binding_zh": "缺口：30 号文件 §4.3 的 P09 行把本路径指派给 ADV-01，但 ADV-01 不在注册表加载器所采集的 T- 命名空间内（tools/validate_content.py 的 load_doc_ids 只采集 T-[A-Z]- 开头的 ID），因此不能作为 test_id 使用。现绑到 T-S-P09-CHAIN：它是 P09 唯一一条在 §4.3 中被明文写入 claim_key 幂等的注册用例。待 30 号文件为 ADV-A01 登记一个 T- 形 ID（或把 ADV-* 纳入采集正则）后，应改绑回去。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-DUPLICATE-CLAIM"
+    },
+    {
+      "code": "budget_ceiling",
+      "test_id": "T-U-A-08",
+      "trigger_zh": "Σ entitlement > min(param.p09_budget_ceiling_uu_per_q, one_off_uu − budget_spent_uu)。",
+      "observable_zh": "flow.gov.pay_subsidies_uu 恰好等于封顶；各 cell 实付按最大余数法削减，Σ paid 精确等于封顶；被削减额写 log.explanations 的 subsidy_rationed，不形成欠付。",
+      "player_explanation_key": "policy.P09.fail.budget_ceiling",
+      "player_explanation_zh": "本季合格申领总额超过预算封顶，按各自合格投资额比例分配。未获部分不会结转到下季，也不会形成政府欠款。要么提高封顶（需要新的资金来源），要么收紧资格。",
+      "_note_test_binding_zh": "缺口：注册表没有 P09 专属的封顶配给用例。T-U-A-08（test_u_split_sum）断言的正是本路径的算术内核——最大余数法拆分后各分项之和精确等于被拆总额（INV-003），其失败后果列点名了配给。未被覆盖的部分是 P09 专属语义：被削减额不结转、不形成欠付。待 §4.3 补登 P09 封顶用例后改绑。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-BUDGET-CEILING"
+    },
+    {
+      "code": "financing",
+      "test_id": "T-U-D-10",
+      "trigger_zh": "S04 走到第 7 档 subsidies 时 state.gov.cash_uu 已被前六档耗尽（或 funding_source == bond 且 §02.6 的国内外额度都不足，REJECT(E_CREDIT_LIMIT)）。",
+      "observable_zh": "已受理的申领形成 state.gov.arrears_by_payee_uu 欠付并写 log.arrears；state.gov.deferral_flag[subsidies] = 1；企业本季拿不到现金，其 S05 投资闸不放松。",
+      "player_explanation_key": "policy.P09.fail.financing",
+      "player_explanation_zh": "政府现金不足，补助排在支付顺序第 7 位，本季未能支付，已登记为欠款。欠款不会消失，会在后续季度按同一顺序清偿；在此之前企业不会因为『政策还开着』而得到任何东西。",
+      "_note_test_binding_zh": "T-U-D-10（test_u_payment_priority）断言第 4 至 8 档实付额 == 0、arrears 增量 == 第 4 至 8 档应付额之和。补助位于第 7 档，本路径的观察量与该用例逐条同一，无缺口。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-FINANCING"
+    },
+    {
+      "code": "delivery",
+      "test_id": "T-U-A-18",
+      "trigger_zh": "state.world.delivery_capacity_uqs[sector.manu] == 0 且国内 sector.manu 的可售供给被更高优先级买方吃光（flow.market.rationing_rule[manu] == priority）。",
+      "observable_zh": "企业 state.cell.cash_uu 因补助上升，但 flow.cell.investment_uu 仍为 0，flow.market.unmet_demand_uqs[manu] 上升；产能轨完全不动。",
+      "player_explanation_key": "policy.P09.fail.delivery",
+      "player_explanation_zh": "企业拿到了钱，但买不到设备：本季制造业产品的可售供给不足，进口交付能力也为零。补助此时只是增加了企业现金，不会变成产能。",
+      "_note_test_binding_zh": "缺口：注册表没有 P09 专属的交付失败用例。T-U-A-18（test_u_market_clearing）断言成交量与未满足量之和恒等于需求（INV-059/060/064），即企业出得起钱但买不到设备必须表现为 unmet_demand 上升，而不是需求静默消失——这正是本路径可被观察到的前提。未覆盖：delivery_capacity 为 0 时 investment_uu 仍为 0 而 cash 已上升这一组合。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-DELIVERY"
+    },
+    {
+      "code": "capacity_not_binding",
+      "test_id": "T-S-P04-CONSTRAINT-ORDER",
+      "trigger_zh": "新增产能投运后，flow.cell.binding_code ∈ {2 labor, 3 energy, 4 materials}——真正的紧约束不是产能。",
+      "observable_zh": "state.cell.capacity_active_uqs_per_q 上升，flow.cell.bound_capacity_uqs 的 slack 上升，flow.cell.output_actual_uqs 不变；log.constraint_diag 逐季记录哪一项更紧。",
+      "player_explanation_key": "policy.P09.fail.not_binding",
+      "player_explanation_zh": "新增产能已经投运，但本季限制产量的是另一项：请查看诊断中标出的最紧约束（用工、电力或材料）。在解除那一项之前，继续补助设备不会提高产量。",
+      "_note_test_binding_zh": "缺口：该用例用 FX-P04 夹具，但它断言的是本路径依赖的同一条机制——投运后 binding_code 转到其它约束且 slack > 0，并列时按 plan<capacity<labor<energy<materials 取最小序号（INV-045）。P09 专属变体（补助→设备购入→产能投运→binding_code 落在 labor/energy/materials）尚未登记。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-NOT-BINDING"
+    },
+    {
+      "code": "no_demand",
+      "test_id": "T-S-P04-NO-DEMAND-NO-BONUS",
+      "trigger_zh": "flow.cell.binding_code == 0（plan）——计划产量本身就低于产能，通常因为 state.cell.demand_expect_uqs 低、出口需求 state.world.export_demand_ppm 下降或居民可支配收入不足。",
+      "observable_zh": "产能闲置，flow.cell.inventory_output_uqs 上升或 output_plan 下降；derived.gdp.production_uu 不因投运而变化；state.group.support_ppm 不因投运而变化。",
+      "player_explanation_key": "policy.P09.fail.no_demand",
+      "player_explanation_zh": "没有销路。新增产能没有对应的需求，产量不会上升，也不会因此产生任何经济增长或支持率。需要先解决需求侧的问题。",
+      "_note_test_binding_zh": "缺口：该用例用 FX-NODEMAND 夹具，断言 log.explanations 中 cause == policy_bonus 的条数 == 0、支持度来源分解中 cause == commission 的条数 == 0——即没有销路就没有 GDP 与支持率奖励这条计划书 §10 规则的注册实例。P09 专属变体（补助已发放、设备已购入、产能已投运但 binding_code == 0）尚未登记。",
+      "_note_dedicated_test_id_proposed": "T-S-P09-FAIL-NO-DEMAND"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P09-GATE",
+    "T-S-P09-CHAIN",
+    "T-S-P09-FAIL-NOINVEST",
+    "T-U-C-00",
+    "T-U-C-01",
+    "T-U-C-02",
+    "T-U-A-26",
+    "T-U-A-08",
+    "T-U-D-10",
+    "T-S-D-09",
+    "T-S-D-07"
+  ],
+  "mechanism_ids": [
+    "mech.investment_subsidy",
+    "mech.claim_ledger",
+    "mech.budget_reservation",
+    "mech.firm_investment",
+    "mech.asset_commissioning"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 五项均已注册，mech.capacity_commissioning 按实现名改为 mech.asset_commissioning（JWAssetCommissioning.commission_ready）。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "ui_text_keys": {
+    "blocked.authority": "policy.P09.blocked.authority",
+    "blocked.budget": "policy.P09.blocked.budget",
+    "blocked.opex_deferred": "policy.P09.blocked.opex_deferred",
+    "blocked.cooldown": "policy.P09.blocked.cooldown",
+    "blocked.not_effective": "policy.P09.blocked.not_effective",
+    "blocked.expired": "policy.P09.blocked.expired",
+    "blocked.not_eligible_cell": "policy.P09.blocked.not_eligible_cell",
+    "blocked.no_investment": "policy.P09.blocked.no_investment",
+    "blocked.below_threshold": "policy.P09.blocked.below_threshold",
+    "blocked.investment_before_policy": "policy.P09.blocked.investment_before_policy",
+    "blocked.duplicate_claim": "policy.P09.blocked.duplicate_claim",
+    "blocked.cash_shortfall": "policy.P09.blocked.cash_shortfall",
+    "fail.no_investment": "policy.P09.fail.no_investment",
+    "fail.duplicate_claim": "policy.P09.fail.duplicate_claim",
+    "fail.budget_ceiling": "policy.P09.fail.budget_ceiling",
+    "fail.financing": "policy.P09.fail.financing",
+    "fail.delivery": "policy.P09.fail.delivery",
+    "fail.not_binding": "policy.P09.fail.not_binding",
+    "fail.no_demand": "policy.P09.fail.no_demand",
+    "exit.warning": "policy.P09.exit.warning"
+  },
+  "_note_calibration_and_param_cards": {
+    "single_source_rule_zh": "本节是「补充说明」，不是数据。原先顶层有一个 parameters 数组，里面 8 张 param.* 身份证卡与 schema 正式字段构成双份事实来源：其中 5 张（budget_ceiling / verification_opex / subsidy_rate_max / min_investment_ratio_floor / sunset_max）的 value 逐个等于 /cost 与 /player_params 里已有的正式字段，另外 3 张（min_self_funding / claim_window_q / eligible_sector_mask）在本文件没有任何正式字段承载。11 号文件 §5.12 没有声明 parameters 键，additionalProperties:false 下它必然触发 E_UNKNOWN_FIELD；而 §5.15 与 docs/18 R-PARAM-01 明确规定 param.* 只在 parameter_set 文件建卡。两条一致指向同一个结论：本文件不是建卡处。因此本轮把 parameters 数组整体撤下，正式字段成为唯一事实来源，全部标定理由与建卡口径降级到本节，交给 content/parameters/params_core.json 的建卡人。本节刻意不写 parameter_id / value 两个键名：写在 _note_* 注释子树里的参数卡在载入期等于不存在（11 号文件 §1.5、§6.4；校验器的 E_PARAM_CARD 硬错误正是为此而设），把卡改个键名藏进注释是自欺，不是修复。每条 formal_value 必须逐位等于 formal_field 指向的字段，凡两者不符一律以正式字段为准。",
+    "card_creation_handoff_zh": "下列 8 个 parameter_id 目前在内容层没有任何一张卡。content/parameters/params_core.json 尚未建立（校验器已对此单独报 E_CONTENT_LAYOUT），content/parameters/registry.json 是 tools/build_param_registry.py 的生成索引、按 R-SCHEMA-01 不是任何参数的事实来源，不能顶替。该文件建成后，应把本节每条按九字段（parameter_id / value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note，derived 型另加 derivation_expr）抄成正式卡片，并逐条与 formal_field 指向的值做一次逐位对账。在建卡之前，本政策的 3 个无正式字段承载的参数（min_self_funding / claim_window_q / eligible_sector_mask）在内容层就是「尚未建卡」，不得假装已有，也不得把它们的数值另行写进正式字段来制造第二个事实来源。",
+    "scale_check_zh": "R-SCALE-01（1 U = 1e9 μU）复核：本节两张 μU 卡与 /cost 同刻度——budget_ceiling 190000000 μU = 0.19 U，verification_opex 10000000 μU = 0.01 U，两者之和 200000000 μU == /cost/per_quarter_uu，× /cost/planned_quarters 12 == /cost/one_off_uu 2400000000 μU。ppm 与 q 两类卡不随货币刻度变化（R-SCALE-01 第 3 条：_ppm / _q 一律不动）。分母带 μU 的系数本政策没有直接持有——它引用的 content.io.capacity_per_capital_uu_ppm 属于 io_table，其方向与金额相反（μU 变细 1000 倍则系数 ÷1000），本文件只读不写，不在此处复制该系数的任何数值。",
+    "entries": [
+      {
+        "params_core_card_to_create": "param.p09_budget_ceiling_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/spend_lines_uu_per_q/subsidy_to_firms（同值亦见 /cost/spend_targets/0/amount_uu_per_q）",
+        "formal_value": 190000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「预算不是资产」「短缺先显露」；本政策 cost.spend_lines_uu_per_q.subsidy_to_firms",
+        "reference_year": 0,
+        "valid_range": [
+          50000000,
+          500000000
+        ],
+        "confidence": "low",
+        "definition_zh": "每季可用于向企业支付补助的金额上限（不含 verification_admin 行）。超出部分按最大余数法配给，不形成欠付、不结转。",
+        "calibration_note_zh": "基年季度名义 GDP 约 25 U，季度财政收入约 5 U，本值 0.19 U 约占季度收入的 3.8%。校准判据：T-S-P09-CEILING-RATIONING 必须可达（若从不触发说明过宽），同时连续 12 季满额支出不得使 derived.fiscal.debt_service_ratio_ppm 单调越过 ADV-02 的拐点。先调本值，再考虑动 subsidy_rate_ppm 的上限。",
+        "single_source_zh": "本卡与 /cost 的两处正式字段同值（190000000 μU）。唯一事实来源是 /cost：结算读 cost，不读本注释。params_core.json 建卡后，卡的 value 必须逐位等于 /cost/spend_lines_uu_per_q/subsidy_to_firms，不符即 E_PARAM_STALE。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_verification_opex_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/opex_per_q_uu（同值亦见 /cost/spend_lines_uu_per_q/verification_admin 与 /cost/spend_targets/1/amount_uu_per_q）",
+        "formal_value": 10000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「服务有运行费」；§09 P09「防止重复领取」",
+        "reference_year": 0,
+        "valid_range": [
+          1000000,
+          50000000
+        ],
+        "confidence": "low",
+        "definition_zh": "补助核查与领取登记的每季人员支出，付给 agent.pubserv.<region>，走 payment_priority 的 service_opex 档。",
+        "calibration_note_zh": "取值必须 > 0：若为 0，则『核查』成了零成本的免费假设，断供失败路径不可达，operating_cost 一节退化为文案。因此下界取 1000000 μU（0.001 U）而不是 0——原先写的 [0, 50000000] 与本句直接冲突，等于允许一个被本卡自己禁止的取值，本轮已收紧。校准时先验证断供确实能降低 state.pubserv.availability_ppm，再调整绝对值。",
+        "single_source_zh": "本卡与 /cost/opex_per_q_uu 同值（10000000 μU）。唯一事实来源是 /cost/opex_per_q_uu；_note_spec_ext.operating_cost.opex_per_q_uu 是它的注释副本，两者已核对一致。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_subsidy_rate_max_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/2/valid_range/1",
+        "formal_value": 500000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P09「配套出资」；§06「扩产由预计销路、资金和瓶颈决定」",
+        "reference_year": 0,
+        "valid_range": [
+          200000,
+          700000
+        ],
+        "confidence": "low",
+        "definition_zh": "player_params.subsidy_rate_ppm 的硬上限，即政府补助占合格投资额比例的最大值。",
+        "calibration_note_zh": "上限决定企业自筹比例的下限。若压力测试中出现『企业靠补助滚动扩产、自有利润无关紧要』的路径，说明本值过高，应下调而不是给补助额外加条件。检验办法：比较 Σ flow.cell.investment_uu 中由 subsidy 支撑的份额，超过一半即判过高。",
+        "single_source_zh": "本卡就是 /player_params/2/valid_range/1 这个数（500000 ppm）。玩家杠杆的区间是内容数据、由 V-PD-09 校验，卡片只是给出它的来源与推翻条件，不构成第二个可被结算读取的上限。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_min_self_funding_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件无正式字段：它是 /player_params/2/valid_range/1 的补数，由 derivation_expr 复算）",
+        "formal_value": 500000,
+        "unit": "ppm",
+        "source_type": "derived",
+        "source_ref": "由 param.p09_subsidy_rate_max_ppm 推出",
+        "derivation_expr": "1000000 - param.p09_subsidy_rate_max_ppm",
+        "reference_year": 0,
+        "valid_range": [
+          300000,
+          800000
+        ],
+        "confidence": "low",
+        "definition_zh": "企业必须自筹的最低出资比例。加载期复算并与 param.p09_subsidy_rate_max_ppm 交叉校验，不符即 E_PARAM_DERIVE。",
+        "calibration_note_zh": "本卡存在的唯一目的是让『配套出资』这个玩家可见概念有一个可被断言的数，而不是散落在文案里。与来源卡同步变更，不得单独调整。",
+        "single_source_zh": "derived 卡：加载期按 derivation_expr 复算，不符即 E_PARAM_DERIVE。它不得与来源卡分别调整。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_claim_window_q",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件无正式字段：回溯窗口只出现在 /preconditions/p09.pre.investment_after_effective 的语义里，没有承载它的数值键）",
+        "formal_value": 1,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "12 号文件 §04.3 的 claim_key 定义；计划书 §17「反复开关补助是否重复领钱」",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          1
+        ],
+        "confidence": "medium",
+        "definition_zh": "合格投资的回溯窗口：只有第 q−1 季发生并已付款的投资可在第 q 季申领。",
+        "calibration_note_zh": "本值在首版被锁定为 1，因为 claim_key 含 q 分量：窗口若大于 1，同一笔 qualifying_investment_id 会在不同 q 得到不同的 claim_key，从而可被重复领取。要放宽窗口，必须先把 q 从 claim_key 中去掉，那是协议层改动，见 open_question_refs。",
+        "single_source_zh": "本文件没有承载它的正式字段：它是 mech.investment_subsidy 的机制常量，只能在 params_core.json 建卡。在建卡之前，S04 不得从任何地方读到窗口值——把 1 写死在代码里同样违反 R-PARAM-01。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_eligible_sector_mask",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件无正式字段：/preconditions/6/sector_ref 以字符串引用该卡，引用不是声明）",
+        "formal_value": 6,
+        "unit": "dimensionless",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P09「资格」；10 号文件 §0.5 部门稠密下标",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          15
+        ],
+        "confidence": "low",
+        "definition_zh": "合格部门位掩码，位序为 0 agri / 1 manu / 2 energy / 3 services。值 6 = 位 1 与位 2 = sector.manu + sector.energy。非玩家杠杆，改它要改本卡。",
+        "calibration_note_zh": "扩大到含 agri（值 7）会使 bloc.agri_coop 的反对依据消失，属于设计层面的取舍而非数值微调；若要改，必须同时更新 political_reaction_basis 与相应的 scenario 测试期望。",
+        "single_source_zh": "/preconditions/6/sector_ref 只是以字符串引用本卡的 ID，引用不等于声明：在 params_core.json 建卡之前，该 sector_ref 在载入期解析不到任何值，这是本政策当前最实的一个阻塞点，不能靠把 6 写进 preconditions 绕过——那会让『合格部门』同时有两个事实来源。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_min_investment_ratio_floor_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/1/valid_range/0",
+        "formal_value": 5000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §17 恶意玩家测试「反复开关补助是否重复领钱」",
+        "reference_year": 0,
+        "valid_range": [
+          1000,
+          50000
+        ],
+        "confidence": "low",
+        "definition_zh": "player_params.min_investment_ratio_ppm 的允许下限，即合格投资相对期初资本的最低门槛不得低于 0.5%。",
+        "calibration_note_zh": "门槛太低会让每季的零星维护性购置都变成合格申领，使 claim_ledger 膨胀且核查成本失真。检验办法：统计单季合格申领笔数，若长期接近合格 cell 总数，说明门槛失效。",
+        "single_source_zh": "本卡就是 /player_params/1/valid_range/0 这个数（5000 ppm）。"
+      },
+      {
+        "params_core_card_to_create": "param.p09_sunset_max_q",
+        "card_status": "withdrawn_with_lever",
+        "formal_field": "（本文件无正式字段；本轮该杠杆降级为固定内容规则，见 /_note_sunset_rule）",
+        "formal_value": 24,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §03「10 年 / 40 季度」；§07「签约即占用未来预算承诺」",
+        "reference_year": 0,
+        "valid_range": [
+          8,
+          40
+        ],
+        "confidence": "low",
+        "definition_zh": "原为 player_params.sunset_after_q 的允许上限（24 季）。该玩家杠杆已因 4 槽上限降级为固定内容规则（存续期恒为 12 季），本卡在首版没有可指向的正式字段，不应建卡；若将来恢复该杠杆，本条规格原样可用。",
+        "calibration_note_zh": "上限的作用是强迫玩家在任期内至少重新审视一次这条支出线（对应 §08 每 4 季的预算审查与第 16、32 季的选举）。若玩家总是取满 24 季且从不重估，说明到期规则没有形成决策，应下调。",
+        "single_source_zh": "原文指向 /player_params/4/valid_range/1。该下标在本轮已不存在：首版的存续期是 /_note_sunset_rule/sunset_after_q == 12 这个固定值，与 /cost/planned_quarters == 12 同口径，不存在「取满 24 季时 one_off_uu 重算」的分支。"
+      }
+    ]
+  },
+  "_note_parameters_referenced": [
+    "param.p09_budget_ceiling_uu_per_q",
+    "param.p09_verification_opex_uu_per_q",
+    "param.p09_subsidy_rate_max_ppm",
+    "param.p09_min_self_funding_ppm",
+    "param.p09_claim_window_q",
+    "param.p09_eligible_sector_mask",
+    "param.p09_min_investment_ratio_floor_ppm",
+    "param.p09_sunset_max_q",
+    "param.hiring_friction_ppm",
+    "param.opex_recover_ppm",
+    "param.maintenance_backlog_recover_ppm",
+    "param.household_bond_appetite_ppm",
+    "param.bloc_care_gain_ppm"
+  ],
+  "_note_parameters_referenced_zh": "上列 parameter_id 由 content/parameters/params_core.json 统一建卡（11 号文件 §5.15 与 docs/18 R-PARAM-01）。本文件只引用、不建卡：parameter_id 全集唯一，同一个参数在两个文件各写一张卡会直接违反 V-PC-01 的唯一性前提。前 8 个 param.p09_* 原先以 parameters 数组写在本文件顶层，本轮已按契约撤下，建卡规格见 _note_calibration_and_param_cards；后 5 个是本政策读取、由其它机制拥有的参数（招工摩擦、运行费恢复、维护欠账消化、居民认购债券的意愿、集团关心度增益），本文件从不写它们。",
+  "_note_spec_ext": {
+    "_note_why_zh": "11 号文件 §3 对 policy_definition 施加 additionalProperties: false，§5.12 只声明了 20 个顶层键。本政策的规格明显多于这 20 个键，契约给出的唯一合法出口是改名为 _note_<field> 注释键，因此原先散落在顶层的 21 个扩展键中，19 个收进本对象。另外两个已各自结案：effect_chain 按文档优先级（计划书 §09 > §5.12）正式登记进 tools/validate_content.py 的 policy_definition schema，仍为必填且仍要求 >= 4 环，留在顶层即为合法，见 _note_effect_chain_zh；parameters 已按 §5.15 与 R-PARAM-01 整体撤下，标定理由降级为顶层的 _note_calibration_and_param_cards，见 _note_parameter_spec_source_zh。至此顶层不再有任何 schema 未声明的实数据键。注意后果：注释键不进 SimCore 加载器、不进 content_hash（§1.5、§6.4），本对象内的一切只是规格说明与待办，不是权威数据；任何需要被结算读到的值都必须在声明键之内。",
+    "spec_ext_version": 1,
+    "code": "P09",
+    "slug": "equipment_investment_subsidy",
+    "name_zh": "设备投资补助",
+    "category": "industrial_capacity",
+    "category_zh": "产业与产能",
+    "governance_tool": "transfer_payment",
+    "governance_tool_zh": "转移支付（企业补助子类；不是资本项目，本政策不生成任何 project 实例，不占用施工队列）",
+    "creates_project": false,
+    "problem_statement_detail": {
+      "observable_gap_zh": "模型里可直接观察到的缺口是：flow.cell.invest_intent_uu > 0，但 S05 的实际投资闸取 min(意愿, 可用现金, 设备可得量)（OQ-213），现金项成为最紧的一项，于是 flow.cell.investment_uu 远小于 flow.cell.invest_intent_uu，而该 cell 的 flow.cell.binding_code 长期停在 1（capacity）。",
+      "evidence_refs": [
+        "flow.cell.invest_intent_uu",
+        "flow.cell.investment_uu",
+        "state.cell.cash_uu",
+        "flow.cell.binding_code",
+        "flow.cell.bound_capacity_uqs",
+        "log.constraint_diag"
+      ],
+      "why_not_other_policy_zh": "P04 增加的是公共电网容量（解 energy 约束），P05 增加的是技能队列（解 labor 约束），两者都不改变企业购置设备的现金闸。本政策是唯一直接作用于 state.cell.cash_uu → flow.cell.investment_uu 这一环的工具。",
+      "known_ineffective_conditions_zh": "当 flow.cell.binding_code 不是 1（capacity）时，本政策形成的新增产能只会增大 flow.cell.bound_capacity_uqs 的 slack，产量一步不动。这不是缺陷，是政策的真实无效区间，必须在界面中指名道姓地显示是哪一项约束更紧。"
+    },
+    "funding_requirement": {
+      "funding_source_ref": "player_params:funding_source",
+      "default_rationale_zh": "默认取 reallocation：基线年赤字已是 2 U，而 invpool 认购能力受 param.household_bond_appetite_ppm 约束（V-FIN-08），把一条新增的经常性支出线直接挂到发债上，会在 12 季内把偿债率推高并反噬 P09 自身（见 failure_paths.financing）。默认调剂是最保守的一侧。",
+      "reservation_zh": "S02 §02.2 每季预留 per_quarter_uu = 200000000 μU（0.2 U）到 state.gov.reserved_memo_uu；预留只减少可用额度，不产生任何现金移动（计划书 §07「预算不是资产」）。",
+      "commitment_zh": "受理时 state.gov.committed_memo_uu += one_off_uu，state.policy.budget_committed_uu += one_off_uu；每季实付计入 state.policy.budget_spent_uu，恒满足 budget_spent ≤ budget_committed（INV-096）。committed_memo 是表外备查（_memo_uu），禁止进入任何资产负债恒等式。",
+      "queues": {
+        "construction_project_queue": "不占用。本政策不生成 project 实例，state.region.construction_slots_total 与 flow.region.construction_capacity_uqs 均不被本政策消耗。",
+        "payment_priority_slot": "subsidies（默认第 7 档）",
+        "payment_priority_consequence_zh": "第 7 档意味着：debt_service、public_wages、statutory_transfers、service_opex、project_contracts、procurement 六档付完之后才轮到本政策。现金紧张的季度，本政策是最早被推迟的支出之一，这一点必须在政策页事前显示。",
+        "service_opex_slot": "verification_admin 行走第 4 档 service_opex，与其它已投运服务的运行费同档竞争。"
+      },
+      "external_financing_zh": "本政策不产生任何对外支付；state.world.credit_limit_uu 只在 funding_source == bond 且 S02 把需求路由到外部债权人时被占用（state.world.credit_used_uu 增加），由 §02.6 统一处理，本政策不另设通道。"
+    },
+    "lag_model": {
+      "earliest_feedback_q": 2,
+      "full_effect_q": 4,
+      "timeline_zh": [
+        "q = t：玩家提交 policy_enact。S02 做资格链检查，通过则 effective_from_q = t + 1，并预留 t+1 季的额度。本季不发生任何补助支出。",
+        "q = t+1：政策生效。S04 检查的合格投资是 q = t 季的 flow.cell.investment_uu，但该季早于 effective_from_q，被 p09.pre.investment_after_effective 挡住，因此本季通常仍为零支出。企业在本季 S05 发生的投资成为第一批合格投资。",
+        "q = t+2：S04 首次发放补助（依据 q = t+1 的合格投资）。企业 state.cell.cash_uu 当季即增加，可在同季 S05 的投资闸中动用。这是玩家可观察到的最早反馈：flow.gov.pay_subsidies_uu、flow.cell.subsidy_received_uu、state.policy.budget_spent_uu 三者同时非零。",
+        "q = t+3：q = t+2 的增量投资在 S07 写入 state.cell.capacity_pending_uqs_per_q，本季 S01 转入 capacity_active。产量是否上升取决于 S05 的五项约束取 min 的结果。",
+        "q = t+4：经过一轮利润与产能利用率反馈（S03 §3.6），flow.cell.invest_intent_uu 才把新条件计入；招工受 param.hiring_friction_ppm 限制也需要一季补齐。至此视为完整生效。"
+      ],
+      "lag_drivers_zh": "时滞不是写死的常数，由五个可观察量共同决定：(1) lag.enact_to_effect_q = 1 的行政生效滞后；(2) 合格投资的回溯窗口 param.p09_claim_window_q = 1，即只认上一季且必须晚于生效季；(3) 设备可得量——state.world.delivery_capacity_uqs[sector.manu] 与 sector.manu 的市场配给结果（flow.market.rationing_rule），交付不上就没有投资可申领；(4) 完工投运滞后 commission_delay_q = 1，由 S07 写 pending、S01 转 active 的数据流强制（INV-054/091）；(5) 招工摩擦 param.hiring_friction_ppm，新增产能需要配齐用工才可能成为非紧约束。以上任一环变慢，整条链就变慢，玩家在季度报告中能逐环看到卡在哪里。",
+      "lag_is_not_guarantee_zh": "计划书 §09：所有时滞为可调整的设计参数；它们说明过程，不保证收益。2—4 季是本政策『可能出现反馈』的最早窗口，不是『必然见效』的承诺。"
+    },
+    "targets": {
+      "regions_rule_zh": "由玩家的 region_mask 决定；未选中地区的 cell 一律不合格，并在界面上显示具体原因，而不是不显示。",
+      "eligible_sectors": [
+        "sector.manu",
+        "sector.energy"
+      ],
+      "eligible_sectors_ref": "param.p09_eligible_sector_mask",
+      "eligible_sectors_rationale_zh": "设备投资补助只面向以 sector.manu 产品作为资本品的工业部门。sector.agri 与 sector.services 的资本形成在首版同样购买 manu 产品（OQ-213），把它们排除是一项显式的内容选择，不是模型限制：它给 bloc.agri_coop 一个基于利益的真实反对理由，也让『扩大资格』成为将来可讨论的设计空间。该选择登记在 param.p09_eligible_sector_mask，改它要改参数卡。",
+      "beneficiary_unit": "cell",
+      "groups_rule_zh": "本政策不直接作用于任何 group.*。对居民的影响只能经 ring 8 的就业与工资链、以及 S06 的 flow.cell.distributed_uu（企业利润分配，按 equity_share_ppm 回到持股群组）间接发生，全部经账本，不得直接写 state.group.* 的任何字段。",
+      "allocation_rule": {
+        "step_1_eligibility_zh": "合格集合 E(q) = 满足 preconditions 中全部 at == payment 条目的 cell，按 cell 下标升序遍历（INV-008）。",
+        "step_2_entitlement_zh": "entitlement_i = min(mul_ppm(flow.cell.investment_uu[i](合格季), subsidy_rate_ppm), cap_per_cell_per_q_uu)，rounding: floor, reason=少给优于多给。",
+        "step_3_ceiling_zh": "ceiling = min(param.p09_budget_ceiling_uu_per_q, one_off_uu − state.policy.budget_spent_uu)。",
+        "step_4_rationing_zh": "若 Σ entitlement ≤ ceiling，逐笔全额支付；否则 paid = split_largest_remainder(ceiling, entitlement 数组, cell 下标)，Σ paid 精确等于 ceiling（INV-003）。未获部分写 log.explanations 的 subsidy_rationed，不形成欠付、不结转下季、不产生任何债权。",
+        "step_5_ledger_zh": "逐笔 post(kind=subsidy)，并写 state.policy.claim_ledger[claim_key] = paid_i（只增不减）。",
+        "tiebreak_zh": "split_largest_remainder 的余数并列时按 cell 下标升序，与 10 号文件 §0.5 的稠密下标一致，保证重放逐位相同。"
+      },
+      "distribution_visibility_zh": "报告必须逐 cell 列出：合格投资额、entitlement、实付、被配给削减额、被拦截原因码。计划书 §08 要求保留受益与受损的分布，本政策的受益方是可点名的 16 个 cell 之一。"
+    },
+    "operating_cost": {
+      "opex_per_q_uu": 10000000,
+      "_note_opex_per_q_uu": "0.01 U",
+      "starts_at_zh": "自 state.policy.effective_from_q 起每季发生，直至到期或撤回后的清算季结束。S02 在受理时把本值计入 state.gov.service_opex_committed_uu。",
+      "composition_zh": "核查与登记人员：验证申领所依据的 capital_purchase 过账确实存在、金额与 claim 相符、claim_key 未被使用过。这是一笔真实的行政人力支出，不是抽象的『管理费』。",
+      "payee_zh": "agent.pubserv.<region>（region_mask 内），走 payment_priority 的第 4 档 service_opex。",
+      "starvation_consequence_zh": "断供（当季 service_opex 档未足额支付）的后果有二，且都不删除任何资产：(1) flow.pubserv.funding_ratio_ppm < 1000000，S07 据此降低 state.pubserv.availability_ppm 并累积 state.pubserv.maintenance_backlog_ppm（12 号文件 §7.2）；(2) 前置条件 p09.pre.opex_funded 在下季失败，本政策当季不受理任何新申领，derived.policy.blocked_reason = budget。",
+      "starvation_forbidden_zh": "禁止用『写 0』表达停运：state.pubserv.capacity_active_uqs_per_q、state.region.grid_capacity_uqs_per_q、state.region.housing_stock_units 在断供路径下不得被写（INV-102）。",
+      "recovery_zh": "恢复按 param.opex_recover_ppm 逐季回升，慢于下降速度；维护欠账按 param.maintenance_backlog_recover_ppm 消化。补拨当季不会让可用率一步回到 1000000。"
+    },
+    "political_reaction_basis": [
+      {
+        "actor": "bloc.business",
+        "direction": "support",
+        "intensity_ppm": 300000,
+        "interest_channel_zh": "成员企业是唯一的直接收款方。受益经 state.cell.cash_uu → flow.cell.investment_uu → state.cell.capital_value_uu 三个可观察量落到成员自身的资产负债表上。",
+        "conditionality_zh": "强度随 region_mask 与 eligible_sectors 覆盖到的 cell 的 state.cell.capital_value_uu 占全部工商业成员的份额变化：若 region_mask 只选一个地区，其它地区的成员企业得不到任何东西，支持强度按份额折算。",
+        "not_affinity_zh": "这不是『企业喜欢亲商政府』，而是钱进了成员的账户。若 subsidy_rate_ppm 调到下限且封顶被配给削减，实际到账很小，立场变动同样很小。"
+      },
+      {
+        "actor": "bloc.labor_public",
+        "direction": "oppose",
+        "intensity_ppm": -60000,
+        "interest_channel_zh": "本政策的两条支出线与该集团成员的两项直接利益抢同一笔 state.gov.cash_uu：subsidies 档（第 7）排在 statutory_transfers（第 3）与 service_opex（第 4）之后，看似无害；但 verification_admin 行本身就在第 4 档，会挤压既有服务的运行费，直接影响 flow.pubserv.funding_ratio_ppm 与成员的 state.group.service_access_ppm。",
+        "conditionality_zh": "当 ring 8 成立（产量上升→招工上升→flow.group.wage_income_uu 上升）时，成员中受雇于合格 cell 的部分转为受益方，反对强度应下降。首版的立场增量是静态模板值，动态部分由 S08 的集团规则按 param.bloc_care_gain_ppm 从成员实际关心的指标变化中重算，不在本文件写死。",
+        "not_affinity_zh": "反对的依据是支付优先级与拨款竞争这两个可核验的机制事实，不是『工会反对企业补贴』的立场标签。"
+      },
+      {
+        "actor": "bloc.agri_coop",
+        "direction": "oppose",
+        "intensity_ppm": -40000,
+        "interest_channel_zh": "默认 eligible_sectors 不含 sector.agri，农业 cell 的实际投资无论多大都不可申领；同一笔财政资源被用于其它部门。受损是机会成本，可由报告直接列示（农业 cell 的 flow.cell.investment_uu 与获补助为零并列显示）。",
+        "conditionality_zh": "若将来把 sector.agri 纳入 param.p09_eligible_sector_mask，本项立场应转正；这正是该参数被单独建卡而不是硬编码的原因。",
+        "not_affinity_zh": "反对的依据是资格边界把成员排除在外，不是对工业政策的一般态度。"
+      },
+      {
+        "actor": "group.<region>.working.mid 与 group.<region>.working.high（合格 cell 所在地区）",
+        "direction": "conditional_support",
+        "intensity_ppm": 0,
+        "interest_channel_zh": "只有当新增产能成为非紧约束并带动 flow.cell.hires_persons 时，才经 flow.group.wage_income_uu → state.group.living_index_ppm 受益。首版不给任何静态增量（intensity_ppm = 0），全部由 S08 的三项主观量更新规则内生产生。",
+        "conditionality_zh": "若 binding_code 一直不是 capacity，这些群组什么也得不到，而其它群组仍承担了机会成本——这是本政策最重要的分配后果，必须在社会页面显示。",
+        "not_affinity_zh": "群组的支持度不接受任何来自政策模板的直接写入（INV-121/123/124）。"
+      },
+      {
+        "actor": "全部群组（财政机会成本承担方）",
+        "direction": "conditional_oppose",
+        "intensity_ppm": 0,
+        "interest_channel_zh": "当 funding_source == bond 时，新增借款推高 derived.fiscal.debt_service_ratio_ppm，进而按 §02.6 推高后续批次票息；当 funding_source == reallocation 时，被调剂走的支出线对应的服务或转移减少，直接体现在 flow.group.transfer_income_uu 或 state.group.service_access_ppm 上。两条路径都可逐笔追溯。",
+        "conditionality_zh": "在现金充裕且经济闲置的季度，机会成本接近于零；在偿债压力大的季度，同样的补助会显著加重后果。计划书 §07：不设『公共投资每 1 U 必然带来 1.5 U 增长』的通用奖励。",
+        "not_affinity_zh": "同上，不做直接写入。"
+      }
+    ],
+    "acceptance_tests_spec": [
+      {
+        "given_zh": "给定 state.politics.legal_authority_mask 的第 1 位未置位（或 seats_gov / seats_total < 500000 ppm，或上季 state.gov.deferral_flag[service_opex] == 1）。",
+        "when_zh": "当玩家在第 q 季提交 policy_enact(policy.P09) 并连续推进 8 季。",
+        "then_zh": "则命令被 REJECT 并记 reject_code，state.policy.enabled[P09] 恒为 0，全程 Σ flow.gov.pay_subsidies_uu == 0、Σ flow.cell.subsidy_received_uu == 0、state.policy.claim_ledger 为空、state.gov.committed_memo_uu 不增加，且被拒命令前后的 state_hash 逐位相同（INV-137）。",
+        "covers": [
+          "preconditions.p09.pre.authority",
+          "preconditions.p09.pre.budget_reservation",
+          "preconditions.p09.pre.opex_funded",
+          "INV-095",
+          "INV-137"
+        ],
+        "proposed_test_id": "T-S-P09-NO-PRECONDITION-NO-EFFECT"
+      },
+      {
+        "given_zh": "给定政策已在 q = t 通过并于 t+1 生效，但把全部合格 cell 的 flow.cell.invest_intent_uu 压到 0（构造：上季 profit_pretax_prev ≤ 0）。",
+        "when_zh": "当推进到 q = t+6。",
+        "then_zh": "则每季 flow.gov.pay_subsidies_uu == 0，state.policy.budget_spent_uu 恒为 0，state.gov.reserved_memo_uu 每季末归零（INV-033），且 state.cell.capacity_pending_uqs_per_q 全程为 0。",
+        "covers": [
+          "preconditions.p09.pre.actual_investment",
+          "failure_paths.no_qualifying_investment",
+          "INV-033"
+        ],
+        "proposed_test_id": "T-S-P09-INVESTMENT-REQUIRED"
+      },
+      {
+        "given_zh": "给定一个合格 cell 在 q = t+1 发生一笔合格投资，且玩家在随后 20 季内每 4 季（冷却期满即刻）交替 repeal / enact 本政策。",
+        "when_zh": "当推进满 20 季。",
+        "then_zh": "则 Σ flow.cell.subsidy_received_uu 精确等于各合格投资额按各自受理季的 subsidy_rate_ppm 计算并经封顶削减后的金额之和，同一 qualifying_investment_id 至多被登记一次，log 中 duplicate_claim_blocked > 0，state.policy.toggle_count 每次开关 +1 且各产生一次 toggle_cost_uu 支出，state.gov.cash_uu 逐季可由账本复算（ADV-01）。",
+        "covers": [
+          "INV-097",
+          "INV-098",
+          "failure_paths.duplicate_claim",
+          "ADV-01"
+        ],
+        "proposed_test_id": "T-S-P09-NO-DOUBLE-CLAIM"
+      },
+      {
+        "given_zh": "给定 param.p09_budget_ceiling_uu_per_q == 190000000 μU、player_params.subsidy_rate_ppm == 300000、player_params.cap_per_cell_per_q_uu 取满 190000000 μU（使单户上限不成为本用例的约束），且该季恰有三个合格 cell 在合格季完成已过账的设备购入：cell.zhongzhou.manu 的 flow.cell.investment_uu == 400000000，cell.haijia.manu == 300000000，cell.beiyuan.energy == 166666667；三者的 flow.cell.investment_uu / 期初 state.cell.capital_value_uu 均 ≥ player_params.min_investment_ratio_ppm，claim_ledger 中三个 claim_key 均未出现过。",
+        "when_zh": "当推进该季的 S04，走 mech.investment_subsidy 的 step_2 至 step_5。",
+        "then_zh": "则 entitlement 逐笔为 mul_ppm(investment, 300000) 的 floor 值：cell.zhongzhou.manu == 120000000、cell.haijia.manu == 90000000、cell.beiyuan.energy == 50000000，Σ entitlement == 260000000 > ceiling == 190000000；split_largest_remainder(190000000, [120000000, 90000000, 50000000], 按 cell 下标升序) 给出 paid == [87692308, 65769231, 36538461]（地板值 [87692307, 65769230, 36538461] 之和为 189999998，余额 2 按余数 20/26 > 18/26 > 14/26 依次补给 cell.haijia.manu 与 cell.zhongzhou.manu），Σ paid 精确等于 190000000（INV-003）且每笔 paid_i ≤ entitlement_i；flow.gov.pay_subsidies_uu == 190000000，state.policy.budget_spent_uu 当季增量 == 190000000；被削减额逐笔为 [32307692, 24230769, 13461539]、合计 70000000，全部写 log.explanations 的 subsidy_rationed，state.gov.arrears_by_payee_uu 增量 == 0，且下一季 flow.gov.pay_subsidies_uu 不含任何来自本季的补发。",
+        "covers": [
+          "INV-003",
+          "INV-060",
+          "failure_paths.budget_ceiling"
+        ],
+        "proposed_test_id": "T-S-P09-CEILING-RATIONING"
+      },
+      {
+        "given_zh": "给定一个合格 cell 在 q 季收到补助并于同季 S05 完成设备购入。",
+        "when_zh": "当结算 q 季与 q+1 季。",
+        "then_zh": "则 q 季末 state.cell.capacity_pending_uqs_per_q > 0 而 state.cell.capacity_active_uqs_per_q 与 q 季初完全相同（扣除折旧后逐位可复算），q+1 季 S01 后 pending == 0 且 active 增加同一数值；q 季的 flow.cell.output_actual_uqs 不受该笔投资影响。",
+        "covers": [
+          "INV-054",
+          "INV-091",
+          "lag.commission_delay_q"
+        ],
+        "proposed_test_id": "T-S-P09-COMMISSION-LAG"
+      },
+      {
+        "given_zh": "给定某季发生了非零补助支出。",
+        "when_zh": "当 S06 计算三种 GDP 口径。",
+        "then_zh": "则该笔 kind == subsidy 的账本行的 prod_class、exp_class、inc_class 三码全为 none，derived.gdp.production_uu 不含补助额，INV-115 的残差仍精确为 0，且企业 flow.cell.gross_output_uu 不因补助上升。",
+        "covers": [
+          "INV-113",
+          "INV-114",
+          "INV-115"
+        ],
+        "proposed_test_id": "T-S-P09-SUBSIDY-NOT-IN-GDP"
+      },
+      {
+        "given_zh": "给定补助已发放、设备已购入、产能已在 q+1 投运，同时把 state.world.export_demand_ppm 与居民可支配收入压低，使 flow.cell.binding_code == 0（plan）。",
+        "when_zh": "当推进到 q+4。",
+        "then_zh": "则 flow.cell.output_actual_uqs 相对基准情景无上升，derived.gdp.production_uu 不因投运本身上升，state.group.support_ppm 与 state.bloc.stance_ppm 的变动可被 INV-123 的来源分解完全解释为生活／预期／信任三项的常规更新，其中不存在任何以『政策已实施』为来源的项。",
+        "covers": [
+          "INV-043",
+          "INV-121",
+          "INV-123",
+          "failure_paths.no_demand",
+          "failure_paths.capacity_not_binding"
+        ],
+        "proposed_test_id": "T-S-P09-NO-DEMAND-NO-BONUS"
+      },
+      {
+        "given_zh": "给定某季已受理的申领因现金不足形成欠付，随后政策在 state.policy.exit_pending_q 到期。",
+        "when_zh": "当推进到期后 4 季且期间政府现金恢复。",
+        "then_zh": "则该笔 state.gov.arrears_by_payee_uu 仍按 subsidies 档被清偿至零并写 arrears_cleared（INV-030），而到期后新发生的投资一律不产生新的申领（claim_ledger 不新增），state.gov.committed_memo_uu 减去未支出的剩余承诺额且已支出部分不回退（INV-032）。",
+        "covers": [
+          "INV-030",
+          "INV-032",
+          "exit_rule.accrued_claims_zh"
+        ],
+        "proposed_test_id": "T-S-P09-SUNSET-ARREARS-SURVIVE"
+      }
+    ],
+    "ui_copy": [
+      {
+        "key": "policy.P09.blocked.authority",
+        "template_zh": "无法执行：本政策需要预算法案授权。当前执政席位 {seats_gov}/{seats_total}（{seats_ppm} ppm），低于所需的 500000 ppm；或第 1 号授权尚未取得。",
+        "fields": [
+          "state.politics.seats_gov",
+          "state.politics.seats_total",
+          "derived.politics.seats_ppm",
+          "state.politics.legal_authority_mask"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.budget",
+        "template_zh": "无法执行：本季需预留 {need_uu}，当前可用额度为 {avail_uu}（国库现金 {cash_uu} 减去已预留 {reserved_uu}）。可改用发债或从其它支出线调剂。",
+        "fields": [
+          "cost.per_quarter_uu",
+          "state.gov.cash_uu",
+          "state.gov.reserved_memo_uu"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.opex_deferred",
+        "template_zh": "无法执行：上季已投运服务的运行费未能足额支付（service_opex 档被推迟）。在既有服务运行费恢复足额之前，不能新增一条同档的核查运行费。",
+        "fields": [
+          "state.gov.deferral_flag",
+          "flow.pubserv.funding_ratio_ppm"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.cooldown",
+        "template_zh": "无法执行：本政策处于冷却期，第 {cooldown_until_q} 季之后才能再次开关。已开关 {toggle_count} 次，每次开关产生 {toggle_cost_uu} 的行政成本。",
+        "fields": [
+          "state.policy.cooldown_until_q",
+          "state.policy.toggle_count",
+          "toggle_cost_uu"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.not_effective",
+        "template_zh": "尚未生效：本政策自第 {effective_from_q} 季起生效，当前是第 {q} 季。生效前不发放任何补助。",
+        "fields": [
+          "state.policy.effective_from_q",
+          "state.time.q"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.expired",
+        "template_zh": "已到期：本政策于第 {exit_pending_q} 季到期，不再受理新的申领。到期前已受理未付的款项仍会按支付顺序清偿。",
+        "fields": [
+          "state.policy.exit_pending_q"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.not_eligible_cell",
+        "template_zh": "{cell_label} 不在资格范围：当前资格为 {region_list} 的 {sector_list}。修改资格地区可在政策页调整，资格部门由内容设定，本局不可更改。",
+        "fields": [
+          "state.policy.region_mask",
+          "param.p09_eligible_sector_mask"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.no_investment",
+        "template_zh": "{cell_label} 上季（第 {q_prev} 季）的实际设备投资为 0，不产生申领资格。补助以已经发生并已付款的投资为前提。",
+        "fields": [
+          "flow.cell.investment_uu",
+          "state.time.q"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.below_threshold",
+        "template_zh": "{cell_label} 上季投资 {investment_uu} 未达门槛：需不低于其期初资本 {capital_uu} 的 {ratio_ppm} ppm，即 {threshold_uu}。",
+        "fields": [
+          "flow.cell.investment_uu",
+          "state.cell.capital_value_uu",
+          "state.policy.params_ppm"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.investment_before_policy",
+        "template_zh": "{cell_label} 的这笔投资发生在第 {invest_q} 季，早于政策生效季第 {effective_from_q} 季，不可申领。政策不对生效前已经发生的投资付款。",
+        "fields": [
+          "state.policy.effective_from_q"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.duplicate_claim",
+        "template_zh": "{cell_label} 的这笔投资（交易号 {txn_id}）已在第 {claimed_q} 季领取 {claimed_uu}，不可重复领取。领取登记只增不减，关停再开启也不会补发历史季度。",
+        "fields": [
+          "state.policy.claim_ledger"
+        ]
+      },
+      {
+        "key": "policy.P09.blocked.cash_shortfall",
+        "template_zh": "本季国库现金已被前六档支出用尽，补助排在第 7 位。已受理的 {due_uu} 登记为欠款，会在后续季度清偿；本季企业不会收到这笔钱。",
+        "fields": [
+          "state.gov.cash_uu",
+          "state.gov.arrears_by_payee_uu",
+          "state.gov.payment_priority"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.no_investment",
+        "template_zh": "本季无合格投资，未发放补助。合格部门的企业上季没有发生设备投资——通常是因为它们的瓶颈不是产能，或上季没有利润。预留的 {reserved_uu} 已在季末释放。",
+        "fields": [
+          "flow.cell.invest_intent_uu",
+          "flow.cell.binding_code",
+          "flow.cell.profit_pretax_uu"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.duplicate_claim",
+        "template_zh": "本季拦截重复申领 {blocked_count} 笔，涉及金额 {blocked_uu}。这些投资已经领取过补助。",
+        "fields": [
+          "state.policy.claim_ledger"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.budget_ceiling",
+        "template_zh": "本季合格申领合计 {entitlement_uu}，超过预算封顶 {ceiling_uu}，按各自合格投资额比例分配。被削减的 {rationed_uu} 不结转下季，也不形成政府欠款。",
+        "fields": [
+          "param.p09_budget_ceiling_uu_per_q",
+          "state.policy.budget_spent_uu"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.financing",
+        "template_zh": "本季应付补助 {due_uu}，实付 {paid_uu}，欠付 {arrears_uu}。原因是现金不足且补助位于支付顺序第 7 位。欠款不会消失，也不会因为政策继续开着而自动补上。",
+        "fields": [
+          "state.gov.arrears_by_payee_uu",
+          "flow.gov.arrears_added_uu"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.delivery",
+        "template_zh": "{cell_label} 已收到补助 {paid_uu}，但本季买不到设备：制造业可售供给不足，进口交付能力为 {delivery_capacity}。补助暂时只是企业的现金，不会变成产能。",
+        "fields": [
+          "state.world.delivery_capacity_uqs",
+          "flow.market.unmet_demand_uqs",
+          "flow.market.rationing_rule"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.not_binding",
+        "template_zh": "{cell_label} 的新增产能已投运（+{capacity_delta}），但本季限制产量的是 {binding_name}。在解除该约束之前，继续补助设备不会提高产量。",
+        "fields": [
+          "flow.cell.binding_code",
+          "flow.cell.bound_capacity_uqs",
+          "log.constraint_diag"
+        ]
+      },
+      {
+        "key": "policy.P09.fail.no_demand",
+        "template_zh": "{cell_label} 的产能闲置：计划产量低于产能，没有销路。新增产能不会带来产出、增长或支持率。",
+        "fields": [
+          "flow.cell.binding_code",
+          "state.cell.demand_expect_uqs",
+          "state.world.export_demand_ppm"
+        ]
+      },
+      {
+        "key": "policy.P09.exit.warning",
+        "template_zh": "撤回或到期后：已支付的补助不追回，企业已购设备保留；已受理未付的 {arrears_uu} 仍须清偿；退出当季及之后发生的投资一律不再产生申领资格，没有过渡期。",
+        "fields": [
+          "state.gov.arrears_by_payee_uu",
+          "state.policy.exit_pending_q"
+        ]
+      }
+    ],
+    "open_question_refs": [
+      "OQ-213",
+      "OQ-218",
+      "OQ-220"
+    ],
+    "notes_zh": "数值为测试夹具，不是现实工程估算或已跑出的结果。本政策刻意不与任何其它政策共享机制参数：它是 12 项中唯一直接作用于 state.cell.cash_uu → flow.cell.investment_uu 这一环的工具，其余政策都不改变企业购置设备的现金闸。计划书 §09 的两条戒律在本文件中的落点是：不复制效果（mechanism_ids 中的 mech.investment_subsidy 与 mech.firm_investment 不被其它政策引用），不强求利弊对称（failure_paths 中有三条是『政策完全无效』而非『有代价』，且每条都指名道姓地说明无效发生在哪一环）。",
+    "_note_acceptance_tests_spec_zh": "本数组是 8 条 P09 专属验收用例的 given/when/then 规格，它们目前都不在 docs/30_quality_gates.md 的测试矩阵里，因此不能作为 acceptance_tests 的 test_id（V-PD-07 与 T-U-C-00 会判为 P0 缺陷）。顶层 acceptance_tests 现在绑定的是注册表里真实存在、且确实断言了对应机制的用例；本数组保留下来，是为了在 30 号文件 §4.3 补登 P09 专属用例时可以直接照抄断言，而不是重写一遍。每条的 proposed_test_id 就是建议登记的 ID。",
+    "_note_parameter_spec_source_zh": "本文件的 8 个 param.p09_* 参数原先以顶层 /parameters 数组登记为身份证卡，本轮已撤下。理由是两条契约指向同一侧：11 号文件 §5.12 没有声明 parameters 键（留在顶层必报 E_UNKNOWN_FIELD），§5.15 与 docs/18 R-PARAM-01 又规定 param.* 只在 content/parameters/params_core.json 建卡（本文件不是建卡处）。原先留在顶层的理由是「params_core.json 尚未建立，撤下等于丢数据」——本轮的解法不是丢数据，而是把 9 项标定字段完整搬进顶层的 _note_calibration_and_param_cards，并刻意去掉 parameter_id / value 两个键名，使它诚实地表达「这是给建卡人看的规格，不是一张卡」。player_params 的 valid_range / step / default 属于内容数据，由 V-PD-09 校验，并在各自条目中内联携带同样的九项身份证字段，不另建 param.* 卡，以免同一个数字出现两个权威来源。params_core.json 建成之前，本政策有 3 个参数（min_self_funding / claim_window_q / eligible_sector_mask）在内容层确实无卡可读，这一阻塞点登记在 new_open_questions_proposed，不得靠写进正式字段绕过。",
+    "new_open_questions_proposed": [
+      {
+        "title_zh": "测试注册表缺口：12 项政策的失败路径与验收用例都超出 §4.3 已登记的 3 个 ID",
+        "detail_zh": "11 号文件 V-PD-06/07 要求 failure_paths 至少 4 条、acceptance_tests 至少 5 条，且每个 test_id 都在注册表中存在；但 docs/30_quality_gates.md §4.3 每项政策只登记了 CHAIN / GATE / 1 至 2 条 FAIL，共 3 个 T- 形 ID。这不是内容文件的缺陷，是测试矩阵尚未展开；建议在 30 号文件补登各政策的专属用例，本文件已把建议 ID 与完整断言留在 acceptance_tests_spec 与 failure_paths 的 _note_dedicated_test_id_proposed。"
+      },
+      {
+        "title_zh": "ADV-* 命名空间不被注册表加载器采集",
+        "detail_zh": "docs/30_quality_gates.md §4.3 的 P09 行把重复领取失败路径指派给 ADV-01，但 tools/validate_content.py 的 load_doc_ids 正则只采集 T-[A-Z]- 开头的 ID，于是 §4.3 自己指派的 ID 无法作为 test_id 使用。两条出路二选一：为 ADV-A01 登记一个 T- 形别名，或把 ADV-* 纳入采集正则。"
+      },
+      {
+        "title_zh": "OQ-V03：effect_chain 应正式登记进 §5.12 的 PolicyDefinition schema（校验器侧已落实，契约侧待补）",
+        "detail_zh": "计划书 §09 要求每项政策至少 1 条完整反馈链、验收口径要求 >= 4 环，校验器据此在缺失时报 ERROR；而 §5.12 的 schema 没有声明该键，留在顶层又必然触发 additionalProperties: false。按文档优先级，缺字段的一侧是 §5.12，tools/validate_content.py 已把 effect_chain 登记为必填 array，12 个政策文件不再撞在这条上。剩下的是文档侧：11 号文件 §5.12 与 docs/18 应补上该字段，使契约文本与校验器一致，否则下一个只读契约的实现者会再犯一次同样的判断。"
+      },
+      {
+        "title_zh": "content/parameters/params_core.json 缺失，本政策 8 张 param.p09_* 卡没有权威注册处",
+        "detail_zh": "11 号文件 §2 的 REQUIRED_FILES 含 parameters/params_core.json，仓库中实际只有工具生成的 registry.json（按 R-SCHEMA-01 它是生成产物，不是事实来源）。本轮已把 8 张卡从本政策顶层撤下、规格移交 _note_calibration_and_param_cards，因此本文件不再有未声明顶层键；代价是其中 3 个在本文件没有正式字段承载的参数（param.p09_min_self_funding_ppm、param.p09_claim_window_q、param.p09_eligible_sector_mask）在 params_core.json 建成之前，载入期确实取不到值——/preconditions/6/sector_ref 就解析不到。这是一个诚实的阻塞点，优于「把卡塞在政策文件里假装已建卡」。建卡时直接照抄本文件 _note_calibration_and_param_cards.entries 的九项字段即可。"
+      }
+    ],
+    "_note_effect_chain_zh": "effect_chain 留在顶层，且这一侧已经结案：11 号文件 §5.12 的 schema 没有声明该键，但计划书 §09 要求每项政策至少 1 条完整反馈链、验收口径 >= 4 环，校验器在缺失时报 E_POLICY_FIELDS。两条规则在 additionalProperties:false 下不可能同时满足，这是校验器头部登记的 OQ-V03。按文档优先级「计划书 > docs/18 > 12 > 11 > 10」，缺字段的一侧是 §5.12 而不是计划书，因此 effect_chain 已被正式登记进 tools/validate_content.py 的 policy_definition schema（必填、array），两条检查方向一致后本字段留在顶层即为合法。这不是放水：字段仍为必填、仍要求 >= 4 环，本文件的 8 环逐环写清了 step / from / to / mechanism / invariants。契约侧待办：§5.12 与 docs/18 应同步补上该字段，届时本段可删。"
+  },
+  "_note_params_slot_map": {
+    "enact_command_layout": "[policy, param0, param1, param2, param3, funding_source]（systems/commands.gd 的槽位布局，docs/11 §6.1 命令码 1）",
+    "slots": [
+      "region_mask",
+      "min_investment_ratio_ppm",
+      "subsidy_rate_ppm",
+      "cap_per_cell_per_q_uu"
+    ],
+    "note_zh": "docs/17 §4.8 的 param_min_ppm / param_max_ppm / param_default 三张表长度均为 48 == 12×4，JWIds.POLICY_PARAM_STRIDE == 4：每项政策只有 4 个玩家参数槽位，systems/content_loader.gd 的 _read_policy_params 只映射 j < 4，第 5 项起无处安放（E_PARAM_RANGE）。本文件原先声明 6 项，本轮撤下两项非槽位参数后恰好占满。这四槽的次序与 tests/scenario/adversarial_money_test.gd 已写死的 P09_J_REGION_MASK=0 / P09_J_MIN_INVEST=1 / P09_J_RATE=2 / P09_J_CAP=3 逐位一致。params_ppm 与 params_uu 不是 4+4 个独立槽位，而是同一组 4 个整数的两个单位视图（JWPolicyEngine.apply_pending_params 对同一个 j 同时写两张表），消费方按自己的量纲取用。"
+  },
+  "_note_enact_command_fields": {
+    "funding_source": {
+      "key": "funding_source",
+      "label_zh": "资金来源",
+      "type": "enum",
+      "unit": "dimensionless",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 2,
+      "step": 1,
+      "store": "命令参数，不进状态；S02 §02.2 据此选择预留路径，选择结果写 log.ledger 的预留记录与 commands.jsonl",
+      "definition": "cash = 在 state.gov.cash_uu 减去 state.gov.reserved_memo_uu 的可用额度内预留；bond = 进入 S02 §02.6 的发债需求队列，票息由规则给出，玩家不能设；reallocation = 从 annual_plan.expenditure_lines_uu 的其它支出线调剂，需另一条 budget_reallocate 命令，源额度不足即 REJECT(E_BUDGET_INSUFFICIENT)。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §07「融资必须有对手方」；11 号文件 §5.12 的 funding_source 字段",
+      "reference_year": 0,
+      "confidence": "medium",
+      "calibration_note": "valid_range 的 [0,2] 是 values 数组的下标区间，供 V-PD-09 做区间校验；语义值以 values 为准。若将来增加第四种来源，必须同时改 values 与 valid_range。",
+      "_note_value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "_note_default_encoding_zh": "V-PD-09 要求每个 player_params 项都有 valid_range 与整数 default，且 default 属于 valid_range；docs/17 §命令缓冲又明确 funding_source 等一律是整数、「命令流里没有字符串状态值」，state.policy.params_ppm / params_uu 也是 PackedInt64Array，承载不了字符串。因此枚举默认值一律写成 values 数组的下标（与 policy.P01 同一写法），原先的字符串取值保留在 values 里，语义一字未改。docs/11 §5.12 的 P04 示例（字符串 default、无 valid_range）与 V-PD-09 自相矛盾，按文档优先级取 V-PD-09 的口径，该矛盾已由 tools/validate_content.py 登记为 OQ-V04。"
+    },
+    "why_not_a_player_param_zh": "docs/11 §6.1 命令码 1 的 args 是「policy_id + 各 player_params + 资金来源」，systems/commands.gd 把它落成六槽 [policy, param0..param3, funding_source]：资金来源**另有其槽**（SLOT_ENACT_FUNDING == 5），不占 4 个玩家参数槽位。本文件原条目的 store 字段本来就写着「命令参数，不进状态」，与这一点完全一致；它被列进 player_params 只是占了一个它从不使用的 valid_range / default 槽位，并使本政策的 player_params 达到 6 项、超出 docs/17 §4.8 的 4 槽上限。取值集合、编码与默认值（2 = reallocation）一字未改，funding_requirement 一节继续按它求值。"
+  },
+  "_note_sunset_rule": {
+    "status": "fixed_content_rule_v1",
+    "sunset_after_q": 12,
+    "rule_zh": "S02 受理时写 state.policy.exit_pending_q = state.policy.effective_from_q + 12；到期后不再受理新的申领，已受理未付的债权仍须清偿（见 exit_rule.accrued_claims_zh）。12 季与 cost.planned_quarters == 12 同口径，因此 cost.one_off_uu == per_quarter_uu × planned_quarters（V-PD-03）与实际存续期不再需要按玩家取值重算，_note_budget_curve_rule_zh 的外推分支在首版不可达。",
+    "previous_spec": {
+      "key": "sunset_after_q",
+      "label_zh": "到期规则·自动到期季数",
+      "type": "q",
+      "unit": "q",
+      "valid_range": [
+        4,
+        24
+      ],
+      "step": 1,
+      "default": 12,
+      "store": "state.policy.exit_pending_q",
+      "definition": "自 state.policy.effective_from_q 起经过本值个季度后自动到期。S02 在受理时写 state.policy.exit_pending_q = effective_from_q + 本值。到期后不再受理新的申领，已受理未付的债权仍须清偿（见 exit_rule）。",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §09 P09「到期规则」；§07「签约即占用未来预算承诺」",
+      "reference_year": 0,
+      "confidence": "medium",
+      "calibration_note": "默认 12 季与 cost.planned_quarters 一致，使 cost.one_off_uu 的承诺口径与实际存续期同口径。玩家把本值调大时，budget_curve 必须按同一封顶外推，见 cost.budget_curve_rule_zh。"
+    },
+    "why_not_a_player_param_zh": "四个玩家参数槽位已被「资格（region_mask、min_investment_ratio_ppm）+ 配套出资（subsidy_rate_ppm、cap_per_cell_per_q_uu）」占满，而 sunset_after_q 既不落在 params_ppm / params_uu（它写 state.policy.exit_pending_q），也没有属于自己的命令槽：docs/11 §6.1 的 policy_enact 只有六槽，第 5 槽是资金来源。计划书 §09 给 P09 列的「到期规则」因此在首版降级为**固定内容规则**（12 季），规则本身仍然存在、仍然会到期，失去的只是玩家调节它的能力。这是一条真实的设计损失，不是等价改写，已登记为待决问题：要恢复它必须先扩宽 JWIds.POLICY_PARAM_STRIDE 或给 policy_enact 增加一个命令槽，两者都会改变 replay_hash，属于 sim/ 与 systems/ 的契约变更，内容层不能单方面做。"
+  }
+}

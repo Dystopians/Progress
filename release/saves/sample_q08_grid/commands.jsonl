@@ -1,0 +1,10 @@
+{"command_id":1,"issued_q":0,"kind":"project_launch","args":{"policy_id":3,"region_id":2,"scale_ppm":1000000,"funding_source":1},"accepted":1,"reject_code":0}
+{"command_id":2,"issued_q":0,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":3,"issued_q":1,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":4,"issued_q":2,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":5,"issued_q":3,"kind":"policy_set_params","args":{"policy_id":0,"param_0":400000,"param_1":250000,"param_2":1200000,"param_3":220000},"accepted":1,"reject_code":0}
+{"command_id":6,"issued_q":3,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":7,"issued_q":4,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":8,"issued_q":5,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":9,"issued_q":6,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}
+{"command_id":10,"issued_q":7,"kind":"advance_quarter","args":{},"accepted":1,"reject_code":0}

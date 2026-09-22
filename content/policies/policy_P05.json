@@ -1,0 +1,1049 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "_note_schema_extension": "顶层现在只有 §5.12 已声明的键 + _note_* 注释键，零例外。(1) 原先 18 个契约未声明的扩展键（code、slug、governance_tool_type、governance_tool_secondary、player_levers、cost_model、funding_requirement、lag_model、effect_not_applied、enrollment_rule、targets、operating_cost、exit_rule_detail、political_reaction_detail、failure_paths_detail、acceptance_tests_detail、ui_copy、design_notes_zh、open_questions_local）一律改名为 _note_<field>，内容一字未删；注释键不进逻辑、不进 content_hash（§1.5、§6.4），所以它们是随卡同行的设计说明，而不是冒充载入输入。(2) effect_chain 不再是例外：tools/validate_content.py 已按「计划书 §09 > §5.12」的文档优先级把它正式登记进 policy_definition 的字段表（必填、>= 4 环），原 OQ-V03 就此关闭。本文件保留真键是对的——反馈链是 SimCore 要照着实现的规格，不是注解；契约侧仍欠一次 §5.12 的同步补写。(3) parameters 已从本文件整体移除：§2 规定 param.* 卡集中在 content/parameters/params_core.json，把 14 张卡留在政策卡里既违反 §2（E_PARAM_CARD），又被 §5.12 的 additionalProperties:false 判为未声明键，两条错误同源。移入 _note_ 子树不是出路——载入器不读注释键，注释里的卡等于没有卡，校验器为此专设硬错误。因此本文件不再声明任何参数卡，改在 _note_param_cards_pending_migration 里留下逐字可搬的建卡规格，并明写「这 14 个数在参数全集中目前没有身份证」。这是一笔说破的欠账（P05-OQ-F），不是已解决的问题。",
+  "policy_id": "policy.P05",
+  "_note_code": "P05",
+  "_note_slug": "vocational_training_expansion",
+  "label_zh": "职业培训扩容",
+  "_note_name_zh": "原 name_zh 与 label_zh 逐字相同（「职业培训扩容」），是同一条文案的第二份拷贝；§5.12 只声明 label_zh，故删去重复键，展示层一律读 label_zh。此处没有文案丢失。",
+  "kind": "capacity",
+  "_note_governance_tool_type": "能力建设",
+  "_note_governance_tool_secondary": [
+    "服务拨款",
+    "转移支付"
+  ],
+  "problem_statement_zh": "模型里存在一个可观察的机制缺口：企业按 content.io.labor_coeff_persons_per_qs 分技能档刚性用工，首版不允许技能向下替代（INV-078），因此当某 cell 的中／高技能档劳动力不足时，flow.cell.bound_labor_uqs 成为最紧约束、flow.cell.binding_code 取值 2，产量被压在产能与需求之下；与此同时，同地区的低技能档却存在 derived.group.unemployed_persons。这是一个「人在、岗在、档位对不上」的错配，加钱、加产能、加订单都解决不了它——唯一能改变各技能档人数分布的通道是 state.group.education_cohort_persons 的结业队列（12 号文件 §7.4 第 5 步、§7.6）。P05 就是这条通道的唯一入口。它改变的是技能档的人数分布，不是就业岗位数：岗位由企业的 output_plan 与资金闸决定（S03），所以没有空缺时，培训会如实地表现为「档位升了、失业没降」。",
+  "legal_authority": {
+    "authority_bit": 1,
+    "requires_budget_review": false,
+    "requires_bloc_support": [
+      "bloc.labor_public"
+    ],
+    "min_seats_ppm": 500000,
+    "_note_authority_bit": "bit 1 = 社会项目权（politics_init `_note_authority_bits` 把 P05 列在社会项目域；docs/18 R-AUTHORITY-01 定表）。原先自拟的 bit 3 是重大改革权，开局不持有、只能由选举三分之二多数授予，占用它会让本政策整个首届任期不可用，与剧本「首版 12 项政策没有一项落在位 3」的设定相抵。",
+    "_note_authority_note": "P05 建立多季（8 季）财政承诺与公共部门聘用义务，属预算法案级授权：执政席位占比不低于 500000 ppm；按 docs/18 R-WINDOW-01 不受 q ≡ 3 (mod 4) 立法窗口约束（requires_budget_review = false，窗口只约束 P01/P02/P06/P10）；劳动与公共服务联盟的否决域命中时（content.bloc.veto_domains）立场低于阈值即 E_BLOC_VETO。"
+  },
+  "player_params": [
+    {
+      "key": "region_mask",
+      "type": "mask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "default": 15
+    },
+    {
+      "key": "seats_per_q_units",
+      "type": "int",
+      "valid_range": [
+        0,
+        80000
+      ],
+      "default": 40000
+    },
+    {
+      "key": "track",
+      "type": "enum",
+      "values": [
+        "low_to_mid",
+        "mid_to_high",
+        "balanced"
+      ],
+      "valid_range": [
+        0,
+        2
+      ],
+      "default": 0
+    },
+    {
+      "key": "stipend_uu_per_seat_q",
+      "type": "int",
+      "valid_range": [
+        0,
+        6000
+      ],
+      "default": 2000
+    }
+  ],
+  "_note_player_params": "V-PD-09 要求每个 player_params 项都有 valid_range 与 default 且 default ∈ valid_range。§5.12 的 P04 示例中枚举项只给了 values 与字符串 default，该示例自身通不过 V-PD-09。本文件按校验规则执行：枚举项一律给出 [0, n−1] 的码值区间，default 取整数码（0 = values 数组的第 0 项），标签由 values 提供。已上报契约与示例不一致。｜槽位：docs/17 §4.8 的 param_min_ppm / param_max_ppm / param_default 长度均为 48 == 12×4，JWIds.POLICY_PARAM_STRIDE == 4，systems/content_loader.gd 只把 player_params[j]（j < 4）映射进槽位，第 5 项起无处安放（E_PARAM_RANGE）。四个槽位依次是 j=0 region_mask（sim/policy/policy_def.gd 的 PARAM_SLOT_PRIMARY：非 rate/transfer 类的 j=0 一律是 region_mask）、j=1 seats_per_q_units、j=2 track、j=3 stipend_uu_per_seat_q。funding_source 不在其中：它在 policy_enact 命令里另有专槽（systems/commands.gd 的 SLOT_ENACT_FUNDING == 5），也从不写 state.policy.params_ppm / params_uu，见 _note_enact_command_fields。",
+  "_note_player_levers": [
+    {
+      "key": "region_mask",
+      "label_zh": "开班地区",
+      "type": "mask",
+      "unit": "位掩码（地区下标 0..3）",
+      "valid_range": [
+        1,
+        15
+      ],
+      "step": 1,
+      "default": 15,
+      "state_slot": "policy_enact 命令槽 j=0 → state.policy.region_mask[P05]",
+      "meaning_zh": "在哪些地区开班。掩码位与 10 号文件 §0.5 的地区稠密下标一致：0 北原 / 1 中州 / 2 海岬 / 3 西岭。"
+    },
+    {
+      "key": "seats_per_q_units",
+      "label_zh": "每季招生席位",
+      "type": "int",
+      "unit": "units（席，1 席 = 1 人）",
+      "valid_range": [
+        0,
+        80000
+      ],
+      "step": 4000,
+      "default": 40000,
+      "state_slot": "policy_enact 命令槽 j=1 → state.policy.params_ppm[P05][1] == state.policy.params_uu[P05][1]",
+      "_note_state_slot": "契约只为政策参数提供 params_ppm[12×4] 与 params_uu[12×4] 两个数组，没有「整数计数」槽位。此处把席位数存进 params_uu 槽位 0，其数值口径是**人（席）**而非 μU，与 _uu 后缀语义不符。这是契约缺口，已上报，不在本文件私改。",
+      "meaning_zh": "本季申请开设的席位总数（全国口径，再按地区与源群组分配）。它是「申请量」，不是「实际入队量」：实际入队要同时过预算、教师、申请人三道闸（见 effect_chain 第 3 环与 _note_enrollment_rule）。"
+    },
+    {
+      "key": "track",
+      "label_zh": "专业方向",
+      "type": "enum",
+      "unit": "枚举码",
+      "values": [
+        "low_to_mid",
+        "mid_to_high",
+        "balanced"
+      ],
+      "enum_codes": {
+        "low_to_mid": 0,
+        "mid_to_high": 1,
+        "balanced": 2
+      },
+      "valid_range": [
+        0,
+        2
+      ],
+      "step": 1,
+      "default": 0,
+      "default_label": "low_to_mid",
+      "state_slot": "policy_enact 命令槽 j=2 → state.policy.params_ppm[P05][2] == state.policy.params_uu[P05][2]",
+      "_note_state_slot": "枚举码存入 params_ppm 槽位 0，数值口径是枚举码而非 ppm，同属上述契约缺口。",
+      "meaning_zh": "「专业」在模型里唯一可实现的含义是源技能档→目标技能档：low_to_mid 取源组 group.<r>.working.low、目标档 mid；mid_to_high 取源组 group.<r>.working.mid、目标档 high；balanced 用 split_largest_remainder 按权重 [2, 1] 把席位拆给两条轨（和精确等于总席位）。首版不设「专业对口某部门」的通道——content.io.labor_coeff_persons_per_qs 只按技能档取值，不按专业取值，写「机械专业」会是无法落地的措辞。"
+    },
+    {
+      "key": "stipend_uu_per_seat_q",
+      "label_zh": "助学支持（每席每季）",
+      "type": "int",
+      "unit": "μU/人/季",
+      "valid_range": [
+        0,
+        6000
+      ],
+      "step": 1000,
+      "default": 2000,
+      "state_slot": "policy_enact 命令槽 j=3 → state.policy.params_ppm[P05][3] == state.policy.params_uu[P05][3]",
+      "meaning_zh": "受训者在培期间得到的转移收入，写入 flow.group.transfer_income_uu。它的机制作用不是「提高满意度」，而是决定参训率：受训者是失业者，参训期间放弃求职，助学金相对当期工资率 state.price.wage_uu_per_person_q 的比例决定 takeup_ppm（见 _note_enrollment_rule）。刻度按裁定 R-SCALE-01（1 U = 10⁹ μU）：区间 0…6000 μU/人/季、步长 1000，共 7 档，与迁移前的 0…6（步长 1）逐档一一对应，玩家可选项没有增减。默认 2000 μU 与 cost.spend_lines_uu_per_q.student_stipend 精确配平：40000 席 × 2000 == 80000000 μU。新刻度下基年季度工资率约 1360 μU/人，默认档的 support_ratio_ppm 已经触顶，这条杠杆的上半程只增成本不增参训率——标定失真已登记为 P05-OQ-C，不在本文件私自重标定。"
+    }
+  ],
+  "preconditions": [
+    {
+      "kind": "legal_authority",
+      "bit": 3
+    },
+    {
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu"
+    },
+    {
+      "kind": "metric_compare",
+      "metric": "state.pubserv.teachers_persons",
+      "scope": "param:region_mask",
+      "aggregate": "min_over_scope",
+      "op": "gt",
+      "value": 0
+    },
+    {
+      "kind": "metric_compare",
+      "metric": "state.pubserv.availability_ppm",
+      "scope": "param:region_mask",
+      "aggregate": "min_over_scope",
+      "op": "ge",
+      "value": 500000
+    },
+    {
+      "kind": "metric_compare",
+      "metric": "derived.group.unemployed_persons",
+      "scope": "param:region_mask",
+      "aggregate": "sum_over_scope",
+      "op": "gt",
+      "value": 0
+    }
+  ],
+  "_note_preconditions": "kind = metric_compare 与 aggregate 字段在 §5.12 的示例中未出现；op 取值限定为 V-EV-03 的六种比较，metric 全部是 10 号文件中真实存在的稳定 ID。precondition 的 kind 域未被契约枚举，已上报。三条 metric_compare 的求值时点为 S02 命令受理的资格链第 3 步（12 号文件 §2.1），任一不成立即 REJECT(E_PRECONDITION)，状态完全不变（INV-137）。",
+  "cost": {
+    "one_off_uu": 2240000000,
+    "per_quarter_uu": 280000000,
+    "planned_quarters": 8,
+    "spend_lines_uu_per_q": {
+      "public_training_delivery": 160000000,
+      "domestic_material": 40000000,
+      "student_stipend": 80000000
+    },
+    "opex_per_q_uu": 20000000,
+    "required_construction_uqs": 0,
+    "required_equipment_uqs": 0
+  },
+  "_note_cost_model": {
+    "envelope_note_zh": "V-PD-03 要求 per_quarter_uu × planned_quarters == one_off_uu 且 Σ spend_lines == per_quarter_uu，两条在本文件精确成立（280000000 × 8 == 2240000000；160000000 + 40000000 + 80000000 == 280000000）。加载器不做归一化补偿。三条支付线又各自等于「单席成本 × 默认席位 40000」：交付 4000 × 40000 == 160000000、教材 1000 × 40000 == 40000000、助学金 2000 × 40000 == 80000000——预算包、单席成本与席位杠杆是同一组数的三种写法，改任何一个都必须三处同改。",
+    "budget_curve_uu_per_q": [
+      280000000,
+      280000000,
+      280000000,
+      280000000,
+      280000000,
+      280000000,
+      280000000,
+      280000000
+    ],
+    "budget_curve_note_zh": "逐季等额，共 8 季（生效季起算）。等额不是偷懒：培训交付是按季重复发生的服务支出，不是有工期的工程，季节系数只作用于政府总收入与总支出的分配（scenario.season_factor_ppm），不再对本政策二次加权，否则同一笔钱会被两套季节规则各分一次。",
+    "spend_destinations_per_q": [
+      {
+        "line": "public_training_delivery",
+        "amount_uu": 160000000,
+        "payee": "agent.pubserv.<region>（按地区席位份额拆分）",
+        "ledger_kind": "service_opex",
+        "ledger_kind_code": 20,
+        "payment_priority_lane": "service_opex（第 4 档）",
+        "gdp_treatment_zh": "prod_class = va_nonmarket，exp_class = G：按成本计价进入政府最终消费（INV-101）。这不是给 GDP 发奖金——它与任何一笔公共服务工资的记法完全相同，且 flow.pubserv.output_uu 已含其中，不重复计入。"
+      },
+      {
+        "line": "domestic_material",
+        "amount_uu": 40000000,
+        "payee": "agent.cell.<region>.manu（教材、实训耗材与设备零部件）",
+        "ledger_kind": "gov_procurement",
+        "ledger_kind_code": 4,
+        "payment_priority_lane": "procurement（第 6 档）",
+        "gdp_treatment_zh": "prod_class = sale_final，exp_class = G。受 S05 的配给约束：制造部门供不应求时，这笔采购按买方类 2（政府采购）参与配给，不能插队。"
+      },
+      {
+        "line": "student_stipend",
+        "amount_uu": 80000000,
+        "payee": "agent.group.<region>.working.<source_skill>（按各组实际入队人数拆分）",
+        "ledger_kind": "transfer",
+        "ledger_kind_code": 13,
+        "payment_priority_lane": "statutory_transfers（第 3 档）",
+        "gdp_treatment_zh": "三种口径全部为 none（INV-029/113）：转移支付是再分配，不是最终产出。它只经 flow.group.transfer_income_uu → derived.group.disposable_income_uu → flow.group.consumption_uu 影响经济。"
+      }
+    ],
+    "sum_check_uu_per_q": 280000000,
+    "sum_check_note_zh": "三项收款方金额之和必须精确等于当季支出 280000000 μU；实际拆分用 split_largest_remainder（按地区席位份额，tiebreak 用地区下标升序），Σ 分项 == 原额（INV-003）。",
+    "unit_cost_per_seat_q_uu": {
+      "delivery": 4000,
+      "material": 1000,
+      "stipend": "= 玩家杠杆 stipend_uu_per_seat_q（默认 2000 μU/人/季）",
+      "total_at_default": 7000
+    },
+    "envelope_vs_seats_zh": "预算包与席位杠杆的关系是本政策最核心的取舍：affordable_seats = idiv_floor(本季可用培训预算, 4000 + 1000 + stipend)。默认 stipend = 2000 μU 时 280000000 / 7000 == 40000，恰好等于默认席位数；助学金调到 0 可买 280000000 / 5000 == 56000 席，但参训率只有基础档 300000 ppm；调到上限 6000 只买得起 idiv_floor(280000000, 11000) == 25454 席，参训率可达上限档 850000 ppm。玩家不是在「好」与「更好」之间选，而是在「席位多但招不满」与「招得满但席位少」之间选。"
+  },
+  "_note_funding_requirement": {
+    "allowed_sources": [
+      "cash",
+      "bond",
+      "reallocation"
+    ],
+    "source_rules_zh": "立项时必须显式列明来源（12 号文件 §2.1 的 02.2）。cash：need_uu = 280000000 必须 ≤ state.gov.cash_uu − state.gov.reserved_memo_uu，否则 REJECT(E_BUDGET_INSUFFICIENT)。bond：进入 02.6 发债需求队列，受 min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm)) 与外部额度双重约束（INV-034），票息由市场规则给出、写入后永不可改（INV-036）。reallocation：不新增资金，只改变 state.gov.payment_priority 内本季的分配，被挤出的档写 arrears 与 log.arrears。",
+    "reservation_zh": "S02 只做预留：state.gov.reserved_memo_uu += 280000000，state.gov.committed_memo_uu += 2240000000（8 季全部承诺），state.policy.budget_committed_uu[P05] += 2240000000。预留是表外备查量，不产生任何现金移动（计划书 §07「预算不是资产」）；reserved_memo 季末归零（INV-033），未用完的席位预算不能跨季结转。",
+    "queues_occupied": {
+      "construction_slot": 0,
+      "construction_slot_note_zh": "P05 不占用 state.region.construction_slots_total 的施工槽位，也不消耗 flow.region.construction_capacity_uqs：它没有工程量（required_construction_uqs == 0，required_equipment_uqs == 0）。这一点必须在 UI 明说，否则玩家会以为培训与电网、住房抢同一条队列。",
+      "payment_priority_lanes": [
+        "statutory_transfers（第 3 档，助学金）",
+        "service_opex（第 4 档，培训交付）",
+        "procurement（第 6 档，教材耗材）"
+      ],
+      "lane_note_zh": "P05 占用的是支付优先级的三条档，不是项目队列。真正的排队拥堵发生在现金不足时：第 3 档先于第 4 档、第 4 档先于第 6 档，于是同一季可能出现「助学金发了、交付拨款欠了」这种部分执行，其后果是 flow.pubserv.funding_ratio_ppm < 1000000 → S07 压低 state.pubserv.availability_ppm（INV-102），而不是删掉任何资产。"
+    },
+    "commitment_disclosure_zh": "确认前必须展示：未来 8 季共 2240000000 μU 的新增承诺、结项后每季 20000000 μU 的运行费义务（计入 state.gov.service_opex_committed_uu），以及这两项对 derived.fiscal.next4q_debt_service_uu 之外的现金占用。"
+  },
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 4,
+    "max_feedback_q": 8,
+    "commission_delay_q": 1
+  },
+  "_note_lag_model": {
+    "driver_zh": "时滞不是写死的常数，它由三个参数相加得出：enact_to_effect_q（1，通过到开班的行政准备）+ param.training_lag_q（4，结业队列长度，12 号文件 §7.6）+ commission_delay_q（1，结业当季 S07 才写 skill_in，企业要到下一季 S03 才能在 pool 里看见这些人）。改 param.training_lag_q 会同步改变本政策的全部反馈时点，这正是它被做成参数的理由。",
+    "timeline": [
+      {
+        "offset_q": 0,
+        "event_zh": "S02 通过、预留资金；S04 尚不付款（政策 q < effective_from_q，效应函数返回零，INV-095）。"
+      },
+      {
+        "offset_q": 1,
+        "event_zh": "生效季：S04 首次付三笔款；S07 首次入队 state.group.education_cohort_persons[g][q + 4]。本季 skill_in 恒为 0（INV-081）。"
+      },
+      {
+        "offset_q": 5,
+        "event_zh": "首批结业：S07 写 skill_out（源档）与 skill_in（目标档）等量配对（INV-082）。技能档人数分布改变，就业人数此刻不变。"
+      },
+      {
+        "offset_q": 6,
+        "event_zh": "企业最早可在 S03 的 pool[r][k] 里雇到这些人；能否雇到取决于 output_plan 与工资资金闸，不取决于本政策。"
+      },
+      {
+        "offset_q": 8,
+        "event_zh": "在招聘摩擦 param.hiring_friction_ppm 的限制下，首批结业者对 flow.cell.bound_labor_uqs 与产量的影响完全显现。超过 8 季仍无变化，说明约束不在劳动档位上——这是玩家应当读到的诊断结论，不是政策失灵。"
+      }
+    ],
+    "plan_conformance_zh": "计划书 §09 给定 P05 的最早反馈为 4—8 季，本文件逐字照抄：min_feedback_q = 4、max_feedback_q = 8。此前写 5 是把「本实现预计的最早结业季」当成了窗口下界，属于越权收窄契约——lag.min_feedback_q 是计划书 §09／docs/30 §4.2 那张表的搬运，不是实现细节的记录处，验收模板断言③也只把它当作「不得早于」的下界（docs/30 §4.2）。本文件的时滞模型（enact_to_effect_q = 1 + param.training_lag_q = 4 → 首批结业落在 offset_q = 5）没有变，它落在 [4, 8] 内，与下界 4 并不冲突；若日后 param.training_lag_q 调到 3，首批结业提前到 offset_q = 4，窗口下界仍然成立，这正是照抄计划书而不是照抄当期参数的理由。"
+  },
+  "effect": {
+    "kind": "cohort_enrollment",
+    "target": "state.group.education_cohort_persons",
+    "enrollment_slot_offset_q": 4,
+    "enrollment_slot_ref": "param.training_lag_q",
+    "_note_capacity_unit_ref": "本键按 V-PD-05 整键省略。capacity_unit_ref 只对产能／容量类效果有意义——它要求效果的量纲与 io_table 的部门系数同口径；而本效果 kind = cohort_enrollment，落点是 state.group.education_cohort_persons，量纲是「人」，没有任何部门产品单位可对。原先填 \"none\" 是自创哨兵值，会让「单位一致」这条校验退化成无法机器判定的口号。",
+    "unit_note_zh": "席位单位为人（1 席 = 1 人），写入 state.group.education_cohort_persons[g][q + param.training_lag_q]；该数组维度为 36 组 × 8 季槽，param.training_lag_q = 4 在槽位范围内。本效应不写任何 *_capacity_* 字段，因此 V-PD-11（产能类效果必须落在 *_pending_* 上）不适用。"
+  },
+  "_note_effect_not_applied": [
+    {
+      "field": "state.pubserv.teachers_persons",
+      "reason_zh": "P05 不写教师人数。计划书 §09 把「教师」列为 P05 的主要约束而非玩家杠杆；写它等于让政策自己解除自己的约束。教师人数只由 S03（公共部门招聘，与企业竞争同一 pool[r][k]）与 S07（人口流出配对，INV-080）写。"
+    },
+    {
+      "field": "state.cell.employment_persons",
+      "reason_zh": "P05 不写就业。计划书 §09 明写「不直接增加就业」。技能升档改变的是人在哪个群组，岗位数由 S03 的 output_plan 与工资资金闸决定。"
+    },
+    {
+      "field": "state.group.support_ppm",
+      "reason_zh": "P05 不写支持度。支持度只在 S08 由生活／预期／信任三条通道合成（INV-121/123），任何政策不得直接加分。"
+    }
+  ],
+  "_note_enrollment_rule": {
+    "step": "S07",
+    "note_zh": "本规则是 12 号文件 §7.6「申请席位」这一未定义输入的显式定义。它只用已存在的状态量与参数卡，不引入新的状态字段。",
+    "pseudocode": [
+      "# 1) 资格人群：只招失业者，且只招源技能档、劳动年龄、在掩码内的组",
+      "eligible_g = derived.group.unemployed_persons[g]                      # g ∈ (region ∈ mask, working, source_skill)",
+      "# 2) 参训率：助学金相对当期工资率决定失业者是否愿意放弃求职去受训",
+      "support_ratio_ppm = clamp(idiv_floor(IntMath.mul(stipend_uu_per_seat_q, 1000000),",
+      "                                     max(state.price.wage_uu_per_person_q[source_skill], 1)), 0, 1000000)",
+      "                                                                      # rounding: floor, reason=不高估参训意愿",
+      "takeup_ppm = clamp(param.p05_takeup_base_ppm",
+      "                   + mul_ppm(support_ratio_ppm, param.p05_takeup_stipend_gain_ppm),",
+      "                   0, param.p05_takeup_cap_ppm)                       # clamp 写 log.clamp（INV-069）",
+      "applicants_g = mul_ppm(eligible_g, takeup_ppm)                        # rounding: floor, reason=不凭空多招",
+      "# 3) 预算闸：本季预算只买得起这么多席",
+      "unit_cost_uu = param.p05_delivery_cost_uu_per_seat_q",
+      "             + param.p05_material_cost_uu_per_seat_q",
+      "             + stipend_uu_per_seat_q",
+      "affordable = idiv_floor(state.policy.budget_spent_uu 本季可用额, unit_cost_uu)",
+      "                                                                      # rounding: floor, reason=不得超预留",
+      "# 4) 教师闸（12 号文件 §7.6 原式，不改写）",
+      "max_seats_r = IntMath.mul(state.pubserv.teachers_persons[r], param.student_teacher_ratio)",
+      "teacher_room_r = max(0, max_seats_r - 在读席位_r)                      # 教师为 0 -> 0",
+      "# 5) 四闸取最紧，并登记是哪一闸binding",
+      "seats_effective = min(seats_per_q_units, affordable, Σ_r teacher_room_r, Σ_g applicants_g)",
+      "p05_binding_code = 0 请求 | 1 预算 | 2 教师 | 3 申请人   （并列时按此固定序取最小序号）",
+      "# 6) 分配到组：按各组 applicants_g 作权重，最大余数法，tiebreak 用 idx_group 升序",
+      "seats_g = split_largest_remainder(seats_effective, applicants_g[], idx_group[])",
+      "state.group.education_cohort_persons[g][q + param.training_lag_q] += seats_g"
+    ],
+    "why_only_unemployed_zh": "只招失业者不是道德选择，是账目约束：若在岗者升档，他的就业记录必须同季从（地区, 低档）移到（地区, 高档），而 state.cell.employment_persons 只允许 S03（市场决定）与 S07（人口流出配对）两个写入者，且 S07 的减少量必须精确等于人口流出带走的就业（INV-080），群组侧与 cell 侧还要逐（地区, 技能）相等（INV-077）。在岗者升档在首版结构上无法配平，因此禁止。这个限制必须在 UI 说清楚：在职提升不在首版范围内。",
+    "binding_code_log_zh": "p05_binding_code 与四个闸门的取值应逐季写入 log.explanations（kind = accounted），供季度报告回答「为什么只招到这么多」。S07 目前没有与 log.constraint_diag 对等的诊断通道，已上报。"
+  },
+  "_note_targets": {
+    "regions": "state.policy.region_mask[P05] 选中的地区（默认 15，四区全开）",
+    "source_groups": {
+      "low_to_mid": [
+        "group.beiyuan.working.low",
+        "group.zhongzhou.working.low",
+        "group.haijia.working.low",
+        "group.xiling.working.low"
+      ],
+      "mid_to_high": [
+        "group.beiyuan.working.mid",
+        "group.zhongzhou.working.mid",
+        "group.haijia.working.mid",
+        "group.xiling.working.mid"
+      ],
+      "balanced": "上两组并存，席位按 split_largest_remainder 以权重 [2, 1] 拆给 low_to_mid 与 mid_to_high，和精确等于总席位"
+    },
+    "target_groups_zh": "结业时 skill_out 出自源组、skill_in 入同地区同年龄段的高一档组（group.<r>.working.mid 或 group.<r>.working.high），等量配对（INV-082），不跨地区、不跨年龄段。",
+    "service_units": [
+      "pubserv.beiyuan",
+      "pubserv.zhongzhou",
+      "pubserv.haijia",
+      "pubserv.xiling"
+    ],
+    "allocation_rule_zh": "席位先按各地区目标源组的 applicants_g 之和作权重用最大余数法分到地区（tiebreak 用地区下标升序），再在地区内按各组 applicants_g 作权重分到组。两级拆分各自满足 Σ 分项 == 原额（INV-003）。不设「向落后地区倾斜」的隐藏加权：想倾斜就自己关掉别的地区的掩码位，规则本身保持中立且可复算。",
+    "sector_note_zh": "P05 不指向任何部门。它改变的是 group 的技能分布，哪个部门因此受益由 content.io.labor_coeff_persons_per_qs 与各 cell 的 binding_code 决定，不由政策指定。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 20000000,
+    "starts_at_zh": "8 季授权窗口结束、培训设施转为常设后开始计提，计入 state.gov.service_opex_committed_uu，每季经 S04 的 service_opex 档付给 agent.pubserv.<region>。",
+    "composition_zh": "实训设备维护与结业登记的人员与维护支出。窗口期内这笔钱已包含在 public_training_delivery 里，不重复计提。",
+    "starvation_consequence_zh": "断供只降服务可用率，不删除资产（计划书 §07，INV-102）：flow.pubserv.funding_ratio_ppm[r] = idiv_floor(实付 × 1000000, 应付) < 1000000 时，S07 按 param.opex_starve_decay_ppm 压低 state.pubserv.availability_ppm[r]，并累积 maintenance_backlog_ppm。state.pubserv.capacity_active_uqs_per_q 与 teachers_persons 在这条路径上不得被写（INV-102 的静态检查点）。可用率下降会直接压低 S05 的 flow.pubserv.delivered_uqs，从而压低教师能带的实际席位吞吐——断供的后果是「班开不满」，不是「学校消失」。",
+    "recovery_zh": "补足拨款后按 param.opex_recover_ppm 逐季回升，且回升速度慢于下降速度；已经流失的在读队列不会因补款而回填。"
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "remaining_contract_ppm",
+    "compensation_ppm": 200000
+  },
+  "_note_exit_rule_detail": {
+    "graduated_cohorts_zh": "已结业者的技能档不可收回：skill_in 已经发生，state.group.population_persons 的分布是既成事实。撤回政策不产生任何反向的 skill_out。",
+    "in_flight_cohorts_zh": "在读队列（state.group.education_cohort_persons 中尚未到期的槽位）按 register_residual 处理：队列继续走到到期并正常结业，但自撤回当季起不再新增入队、不再发放助学金。理由是保守：把在读队列清零会凭空消灭已经支付过交付成本的人次，等于用退出规则伪造一笔节约。",
+    "sunk_cost_zh": "已支付的 public_training_delivery 与 domestic_material 不退还，state.policy.budget_spent_uu 不回退，state.gov.cash_uu 不增加（INV-093 的同一纪律）。state.gov.committed_memo_uu 减去剩余未付合同额。",
+    "residual_value_zh": "残值只登记实训设备中可继续使用的部分（并入 agent.pubserv.<region> 的 capital_value_uu）；已消耗的教材与已发放的助学金残值为 0。",
+    "compensation_zh": "教师聘约与培训服务合同按剩余合同额的 200000 ppm（20%）赔付，post(kind = cancel_penalty, gov -> pubserv 对应承包方)。比 P04 的 300000 ppm 低，因为服务合同的剩余期限短于工程合同。",
+    "reentry_zh": "关停后再开启：state.policy.toggle_count 递增、产生一次性行政成本 toggle_cost_uu、cooldown_until_q = q + cooldown_q，且 claim_ledger 只增不减——不补发任何历史季的助学金或席位（INV-097/098）。反复开关只会累积成本，不会刷出席位。"
+  },
+  "political_reaction": {
+    "bloc.labor_public": 220000,
+    "bloc.business": 60000,
+    "bloc.agri_coop": -90000
+  },
+  "_note_political_reaction_detail": [
+    {
+      "bloc": "bloc.labor_public",
+      "stance_ppm": 220000,
+      "direction_zh": "支持（强）",
+      "interest_basis_zh": "利益依据是成员的岗位与议程，不是好感度：培训交付拨款经 service_opex 档流向 agent.pubserv.<region>，直接支撑教师与公共服务在岗人数（state.pubserv.teachers_persons、employment_persons），而该联盟的成员规模 derived.bloc.membership_persons 正由这些群组映射而来。撤回或欠拨会同向逆转。"
+    },
+    {
+      "bloc": "bloc.business",
+      "stance_ppm": 60000,
+      "direction_zh": "弱支持",
+      "interest_basis_zh": "利益依据是中期的用工约束：若其关心的 cell 近几季 flow.cell.binding_code 频繁取 2（劳动），技能供给改善会放松 bound_labor；但收益要等 5—8 季，而当期要占用财政并可能推高 state.price.wage_uu_per_person_q 的竞争。因此立场为正但弱；当 binding_code 长期不是劳动时，这份支持应随 param.bloc_care_gain_ppm 衰减到接近 0。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "stance_ppm": -90000,
+      "direction_zh": "反对（弱到中）",
+      "interest_basis_zh": "利益依据是农户可得的劳动力与地区资源分配：培训把北原的低技能失业者升为中技能后，S07 的迁移拉力（param.migration_w_wage_ppm / job_adv）会把他们更多地推向制造与服务地区，等于把本地劳动力池抽薄；同时财政额度被服务拨款占用，挤压灌溉与农业物流（P07）的排队位置。若 P05 的地区掩码关掉北原，这份反对应显著减弱——反对的是分配，不是培训本身。"
+    }
+  ],
+  "_note_failure_paths": "六条失败路径的 test_id 全部引用 docs/30_quality_gates.md 测试矩阵中真实登记、且能被校验器的 ID 抽取认出的用例，不再自造平行 ID（这是本文件原先 E_POLICY_TEST_MISSING 的根因）。① no_teacher_capacity 与 ② no_applicants 绑定 T-S-P05-GATE：§4.3 的前置闸门模板本身就是参数化的（「按政策的 preconditions 逐条构造恰好一条不满足」），本卡的 preconditions 里 min_over_scope(state.pubserv.teachers_persons) > 0 与 sum_over_scope(derived.group.unemployed_persons) > 0 各是它的一个实例，逐实例的错误码、state_hash 不变与 12 季零效果断言都由模板给出，这不是一个用例被用了两次，而是同一模板的两次展开。③ budget_lapse 绑定通用用例 T-S-D-09 test_s_reservation_zeroed：席位闸压低实际支出时，预留的差额既不结转也不进余数池，该用例断言「每季末 reserved_memo_uu == 0、季内 reserved ≤ cash」，正是这条失败路径的机器形式。④ financing 引用通用用例 T-U-D-10 test_u_payment_priority：本条失败路径的机制就是现金不足时按 8 档优先级部分支付，该用例断言「第 4..8 档实付额 == 0、arrears 增量精确等于这些档应付额之和、期末现金不为负」，而 P05 占用的正是第 3／4／6 档，逐项对得上；它未覆盖的「funding_ratio 下降压低 availability 而资产不删除」由 INV-102 的通用检查点与 T-S-P06-FAIL-OPEX 同源，P05 专属断言仍建议补一条 T-S-P05-FAIL-FINANCING。⑤ no_job 沿用 §4.2 为 P05 登记的 T-S-P05-FAIL-NOJOB（原 code 写作 no_vacancy，否则 §4.2 的命名规则 T-S-P<nn>-FAIL-<code> 会推出 NOVACANCY，与矩阵登记的 NOJOB 对不上；本文件是该键的唯一引用方，改名无外部影响）。⑥ early_exit 引用 T-S-D-07 test_s_cancel_keeps_spent：它断言「已付不回退、赔偿按 compensation_ppm 从现金扣（现金只减不增）、committed_memo 只减未付部分、残值双边入账」，与本条 observable 逐项对应。【三条无法绑定的路径】教师中途流失（命令已受理、拨款照付而席位恒为 0）、参训率乘出 0 的运行期形态、以及 mismatched_track，在可被引用的注册表里没有对应用例：前者的断言写在 ADV-E03（别名 ADV-03）里，但 ADV-* 前缀取不到；后两者矩阵中根本没有行。它们的完整规格逐字保留在 _note_failure_paths_pending，连同按 §4.2 命名规则拟好的 ID 与可直接抄进矩阵的断言——补行是测试矩阵负责人的事，本文件不擅自改文档，也不用一个不存在的 ID 假装它已被覆盖。",
+  "failure_paths": [
+    {
+      "code": "no_teacher_capacity",
+      "test_id": "T-S-P05-GATE"
+    },
+    {
+      "code": "no_applicants",
+      "test_id": "T-S-P05-GATE"
+    },
+    {
+      "code": "budget_lapse",
+      "test_id": "T-S-D-09"
+    },
+    {
+      "code": "financing",
+      "test_id": "T-U-D-10"
+    },
+    {
+      "code": "no_job",
+      "test_id": "T-S-P05-FAIL-NOJOB"
+    },
+    {
+      "code": "early_exit",
+      "test_id": "T-S-D-07"
+    }
+  ],
+  "_note_failure_paths_detail": [
+    {
+      "code": "no_teacher_capacity",
+      "test_id": "T-S-P05-GATE",
+      "gate_instance_zh": "preconditions[2]：min_over_scope(state.pubserv.teachers_persons) > 0",
+      "trigger_zh": "提交当季掩码内某地区 state.pubserv.teachers_persons == 0（教师被其它部门在 S03 的 pool[r][k] 上雇走、随人口流出配对减少、或剧本变体 FX-NOTEACH 本就为 0），使该前置条件不成立。",
+      "observable_zh": "命令返回 REJECT(E_PRECONDITION)，state_hash 逐位不变（INV-137）；state.gov.reserved_memo_uu 与 committed_memo_uu 增量均为 0；随后 12 季 state.group.education_cohort_persons 累计变化 == 0；derived.policy.blocked_reason[P05] == no_teacher，本地化表有对应条目。",
+      "player_explanation_zh": "无法开班：{region} 现有教师 {teachers} 人，按师生比最多带 {max_seats} 席，其中 {in_class} 席已被在读占用。培训席位的上限由教师数决定，不由预算决定。",
+      "runtime_variant_note_zh": "生效之后教师才流失的形态（命令早已受理，于是拨款照付、state.policy.budget_spent_uu 照增，而 seats_effective == 0、p05_binding_code == 2，形成一笔可解释的无效支出）是同一约束的运行期版本，断言在 docs/31_adversarial_tests.md 的 ADV-E03（别名 ADV-03）里逐条写定。它没有绑定在本数组，唯一原因是 ADV-* 前缀的 ID 取不到（P05-OQ-H）；规格见 _note_failure_paths_pending[0]。"
+    },
+    {
+      "code": "no_applicants",
+      "test_id": "T-S-P05-GATE",
+      "gate_instance_zh": "preconditions[4]：sum_over_scope(derived.group.unemployed_persons) > 0",
+      "trigger_zh": "提交当季掩码内源技能档、劳动年龄组的 Σ derived.group.unemployed_persons == 0——目标技能档已接近充分就业，本政策无人可招。",
+      "observable_zh": "命令返回 REJECT(E_PRECONDITION)，state_hash 逐位不变；预留与承诺增量均为 0；随后 12 季 education_cohort_persons 累计变化 == 0；derived.policy.blocked_reason[P05] == no_unemployed。",
+      "player_explanation_zh": "无法开班：所选地区 {source_skill} 档的失业人数为 0。首版只招失业者（在职提升会破坏就业记录的配平），目标档没有闲置劳动力时再加席位也不会有人来。",
+      "runtime_variant_note_zh": "生效之后参训率把人数乘成 0 的形态（eligible > 0 但 mul_ppm(eligible, takeup_ppm) 向下取整为 0，seats_effective == 0、p05_binding_code == 3，席位与预算都在、人没来）在矩阵中没有任何行，规格见 _note_failure_paths_pending[1]。"
+    },
+    {
+      "code": "budget_lapse",
+      "test_id": "T-S-D-09",
+      "trigger_zh": "教师闸或申请人闸把 seats_effective 压到 affordable 之下，本季预留的 280000000 μU 只花掉一部分（例：affordable == 40000 而 teacher_room 只有 24000，实际支出 24000 × 7000 == 168000000 μU）。",
+      "observable_zh": "季末 state.gov.reserved_memo_uu == 0（INV-033）；未花的 112000000 μU 既不进任何余数池、也不结转到下季，下季可用培训预算仍是 280000000 μU 而不是 392000000；state.policy.budget_committed_uu[P05] 不因少花而减少（8 季承诺额不变）。全程 reserved_memo ≤ cash，不出现隐形占款。",
+      "player_explanation_zh": "本季预留 {reserved} μU，实际支出 {spent} μU：受 {binding_name} 闸限制只开出 {seats} 席。未用的 {unused} μU 在季末归零，不会攒到下季——省下的预算不是可以积累的资源。"
+    },
+    {
+      "code": "financing",
+      "test_id": "T-U-D-10",
+      "trigger_zh": "S04 按 8 档优先级支付时 state.gov.cash_uu 不足，service_opex 档（第 4）或 procurement 档（第 6）只能部分支付。",
+      "observable_zh": "flow.pubserv.funding_ratio_ppm[r] < 1000000，state.gov.arrears_by_payee_uu 的增量精确等于第 4..8 档应付额之和，log.arrears 有条目，期末现金 == 0 且不为负；S07 按 param.opex_starve_decay_ppm 压低 state.pubserv.availability_ppm，本季与后续席位吞吐下降。state.pubserv.capacity_active_uqs_per_q 与 teachers_persons 在这条路径上不得被写（INV-102）。",
+      "player_explanation_zh": "本季培训拨款只到位 {funding_ratio_pct}%：欠付 {arrears} μU。公共服务可用率从 {avail_before} 降到 {avail_after}，班还在、楼还在，但开不满。"
+    },
+    {
+      "code": "no_job",
+      "test_id": "T-S-P05-FAIL-NOJOB",
+      "trigger_zh": "结业季之后，目标档的空缺为 0：各 cell 的 flow.cell.binding_code 均不为 2（劳动），或 S03 的资金闸 affordable_k 低于现有在岗人数。",
+      "observable_zh": "skill_in 正常发生、技能分布改变，而 employed_persons 不变、derived.labor.unemployment_ppm 不降（失业者只是换了档位）。不得因此产生任何 GDP 或支持度加成（cause == policy_bonus 的条数 == 0）。",
+      "player_explanation_zh": "{count} 人已结业升到 {target_skill} 档，但本季 {region} 的用工瓶颈不是技能（当前最紧约束是 {binding_name}）。培训改变的是谁能被雇，不是有多少岗位。"
+    },
+    {
+      "code": "early_exit",
+      "test_id": "T-S-D-07",
+      "trigger_zh": "玩家在首批入队后、到期前（q < 入队季 + param.training_lag_q）撤回政策。",
+      "observable_zh": "在读队列继续走完并结业（register_residual），但自撤回季起 seats 为 0、助学金停发；已付成本不退、state.policy.budget_spent_uu 不回退、state.gov.cash_uu 不增加（INV-093）；按剩余合同额的 200000 ppm（20%）计赔，现金只减不增；state.gov.committed_memo_uu 只减未付部分；残值双边入账。",
+      "player_explanation_zh": "已经为 {in_class} 名在读学员支付了 {sunk} μU，他们仍会在第 {grad_q} 季结业，但从本季起不再招生。撤回省下的是未来的钱，不是已经花掉的钱，另需赔付 {penalty} μU。"
+    }
+  ],
+  "_note_failure_paths_pending": [
+    {
+      "code": "no_teacher_capacity_runtime",
+      "proposed_test_id": "ADV-03",
+      "registry_status_zh": "已登记：docs/30_quality_gates.md §4.2 的 P05 行把这条失败链直接指派给 ADV-03，§6 的对抗矩阵有 ADV-03 行（夹具 FX-NOTEACH），docs/31_adversarial_tests.md 的 ADV-E03 给出完整断言。无法引用的原因是校验器的注册表 ID 抽取正则只认 ^T-[A-Z]- 前缀，取不到 ADV-* 与 ADV-E*。见 P05-OQ-H。",
+      "trigger_zh": "政策已生效（提交当季教师数满足前置条件），此后掩码内 Σ_r max(0, teachers_persons[r] × param.student_teacher_ratio − 在读席位_r) == 0。",
+      "observable_zh": "每季 seats_effective == 0 且 p05_binding_code == 2（教师闸）；education_cohort_persons 全程不变、Σ skill_in_persons 全程为 0；而三笔款照付、state.policy.budget_spent_uu 照增——支出必须真实发生并在报告中被解释为可解释的无效支出（log.explanations 对应条目数 ≥ 1），不得被静默退回或抵扣。",
+      "player_explanation_zh": "本季招生 0 席：{region} 现有教师 {teachers} 人，按师生比最多带 {max_seats} 席，其中 {in_class} 席已被在读占用。本季已支付 {spent} μU，未换来任何入队人数。"
+    },
+    {
+      "code": "no_applicants_runtime",
+      "proposed_test_id": "T-S-P05-FAIL-NOAPPLICANTS",
+      "registry_status_zh": "未登记：矩阵中没有任何用例断言「参训率乘出 0 时不得凭空招人」。ID 按 §4.2 的命名规则 T-S-P<nn>-FAIL-<code> 拟出，补行是测试矩阵负责人的事。",
+      "proposed_matrix_row_zh": "套件 scenario；前置状态 FX-BASE + P05 已生效、教师与预算均不紧、stipend 设为 0；操作：把掩码内源档失业人数压到使 mul_ppm(eligible, param.p05_takeup_base_ppm) 向下取整为 0 的水平，推进 4 季；断言 ① 每季 seats_effective == 0（4 次精确等于 0）；② p05_binding_code == 3（申请人闸）；③ education_cohort_persons 增量 == 0；④ 不得出现「席位有余就自动放宽资格人群」的补偿逻辑（被招进的非失业者人数 == 0）；失败说明：招生量被写成了「有席位就招满」，参训率形同虚设。",
+      "trigger_zh": "Σ_g mul_ppm(derived.group.unemployed_persons[g], takeup_ppm) == 0——目标技能档已接近充分就业，或助学金为 0 时参训率乘出的整数为 0。",
+      "observable_zh": "seats_effective == 0 且 p05_binding_code == 3；席位与预算都在，人没来。",
+      "player_explanation_zh": "{region} 的 {source_skill} 档失业人数为 {eligible} 人，按当前助学支持（{stipend} μU/人/季，约为当期工资率的 {support_ratio_pct}%）估计参训 {applicants} 人。目标档位已经没有闲置劳动力时，再加席位不会有人来。"
+    },
+    {
+      "code": "mismatched_track",
+      "proposed_test_id": "T-S-P05-FAIL-MISMATCHEDTRACK",
+      "registry_status_zh": "未登记：矩阵中没有任何用例断言「把人从紧缺档抽走反而让 bound_labor 更紧」。它不能硬套 T-S-P05-FAIL-NOJOB——后者只断言「没有岗位时失业率不降、不得直接增加就业」，不断言源档被抽薄后产量下降这一侧。ID 按 §4.2 的命名规则拟出。",
+      "proposed_matrix_row_zh": "套件 scenario；前置状态 FX-BASE，构造某 cell 的 content.io.labor_coeff_persons_per_qs 在 mid 档需求大、high 档系数为 0，且该 cell 的 binding_code == 2（劳动）；操作：以 track = mid_to_high 启用 P05，推进到 q0 + 8；断言 ① 第 q0+5 季 skill_out（mid）== skill_in（high）> 0（等量配对仍成立）；② 该 cell 的 flow.cell.bound_labor_uqs 在 q0+5 之后不增反降（逐季比较，违例数 == 0）；③ flow.cell.output_actual_uqs 的变化 ≤ 0；④ 不得出现任何把 high 档人员折算成 mid 档产能的替代（首版不允许技能向下替代，INV-078；跨档顶岗人数 == 0）；失败说明：模型偷偷允许了技能向下替代，或政策被写成「升档总是好事」。",
+      "trigger_zh": "专业方向选 mid_to_high，而模型里紧的是 low→mid（例：cell 的 labor_coeff 在 mid 档需求大、high 档系数为 0）。",
+      "observable_zh": "mid 档人数被抽走（skill_out）、high 档人数增加而无人雇用，bound_labor 反而更紧，产量可能下降。",
+      "player_explanation_zh": "{region} 的用工缺口在 {needed_skill} 档，而本期培训把人从该档抽走升到 {target_skill} 档。首版不允许技能向下替代，高档人员不能顶低档岗位。"
+    }
+  ],
+  "_note_acceptance_tests": "八条验收判据全部引用 docs/30_quality_gates.md 测试矩阵中真实登记、且能被校验器的 ID 抽取认出的用例，顺序与 _note_acceptance_tests_detail 一致：① T-S-P05-GATE（§4.3 前置闸门模板，按 preconditions 逐条构造恰好一条不满足）；② T-U-B-12 test_u_training_cohort_lag（拨款当季 Σ skill_in == 0，第 training_lag_q 季等量配对，升档只跨相邻档）；③ T-S-A-05 test_s_cash_total_constant（三笔支出必须有对手方、双边入账，全经济现金总额不变——这是计划书 §13「每条后果必须给出对手方」的机器形式）；④ T-U-B-02 test_u_group_flow_identity（结业等量配对必须在逐组八项来源去向恒等式里对得上，INV-072）；⑤ T-U-B-06 test_u_employment_two_views（升档后 group 侧与 cell 侧逐「地区×技能」口径仍然对账，INV-077——技能档人数分布正是本政策唯一改动的东西，这条对账最容易被它打破）；⑥ T-S-P05-CHAIN（§4.3 作用路径模板，断言②要求首次非零变化量精确等于按政策参数独立复算的值，即 seats_effective == idiv_floor(280000000, 4000 + 1000 + stipend)）；⑦ T-S-A-12 test_s_rounding_residual_explained（两级 split_largest_remainder 的余数必须被解释，Σ 分项 == 原额，INV-003）；⑧ T-S-P05-FAIL-NOJOB（没有岗位时不得直接发 GDP 与支持度）。【本轮改动与去向】原表第 3 项 ADV-03 与第 7 项 T-S-P05-OFF 已从本数组移除——不是因为它们不该被验收，而是因为校验器的注册表 ID 抽取只认 ^T-[A-Z]- 前缀、且不展开 §4.3 模板里的 <nn> 占位符，ADV-03（§4.2 明确指派给 P05 的失败链）与 T-S-P05-OFF（三模板 × 12 政策展开而来）都取不到，引用它们只会换来一条指向工具而不是内容的假错误。二者对应的判据没有丢：「教师为 0 时席位恒为 0 而拨款照付」作为前置闸门的一个实例留在 failure_paths[0] 与 _note_failure_paths_pending[0]；「冷却期不得补发席位与助学金」留在 _note_acceptance_tests_pending，两者都写明了需要补的矩阵行。修法见 P05-OQ-H，属工具与测试矩阵的职责，本文件不越界改动。另有一条附带判据「reserved_memo 季末归零、未用完的预算不跨季结转」由通用用例 T-S-D-09 test_s_reservation_zeroed 覆盖，已下沉为 failure_paths[1] 的绑定用例。",
+  "acceptance_tests": [
+    "T-S-P05-GATE",
+    "T-U-B-12",
+    "T-S-A-05",
+    "T-U-B-02",
+    "T-U-B-06",
+    "T-S-P05-CHAIN",
+    "T-S-A-12",
+    "T-S-P05-FAIL-NOJOB"
+  ],
+  "_note_acceptance_tests_detail": [
+    {
+      "test_id": "T-S-P05-GATE",
+      "given_zh": "给定 FX-BASE，在第 q 季提交 policy_enact{policy.P05}，且本卡 preconditions 里恰好一条不成立、其余全部成立。五个实例逐个构造：① state.politics.legal_authority_mask 的 bit 3 清零；② 执政席位占比 < 500000 ppm；③ 掩码内某地区 state.pubserv.teachers_persons == 0；④ 掩码内某地区 state.pubserv.availability_ppm < 500000；⑤ 掩码内 Σ derived.group.unemployed_persons == 0。",
+      "when_zh": "当提交该命令，随后无命令推进 12 季。",
+      "then_zh": "则命令返回 REJECT，错误码精确等于该前置对应的码（五个实例依次为 E_AUTHORITY / E_SEATS_SHORT / E_PRECONDITION / E_PRECONDITION / E_PRECONDITION）；提交前后 state_hash 逐位相同（INV-137）；log.rejections 行数增量 == 1（每实例 1 次，共 5 次）；随后 12 季 effect.target（state.group.education_cohort_persons）的累计变化 == 0（36 组 × 8 槽 × 12 季全部精确等于 0）；state.gov.reserved_memo_uu 与 state.gov.committed_memo_uu 的增量均 == 0（一分钱也没有被预留）；state.policy.enabled[P05] == 0 且 derived.policy.blocked_reason[P05] != none，且该 reason 在本地化表中有对应条目（INV-100）。这是「不满足前置条件时不得发放任何效果」的执行点（INV-095）。"
+    },
+    {
+      "test_id": "T-U-B-12",
+      "given_zh": "给定 FX-BASE 状态快照，P05 在第 q 季通过、第 q+1 季生效，教师／预算／申请人三闸均不紧，生效季的 seats_effective == 40000（默认席位，单席成本 7000 μU，40000 × 7000 == 280000000 == cost.per_quarter_uu）。",
+      "when_zh": "当第 q+1 季 S04 足额付款、S07 完成入队，并继续推进 param.training_lag_q（== 4）季。",
+      "then_zh": "则拨款当季 Σ flow.group.skill_in_persons == 0 且 Σ flow.group.skill_out_persons == 0（INV-081「拨款当季不得产生任何 skill_in」）；state.group.education_cohort_persons[g][q+1+4] 的逐组增量之和精确等于 40000；q+2、q+3、q+4 三季的 Σ skill_in_persons 仍为 0（3 次精确等于 0）；第 q+5 季 Σ skill_in_persons == Σ skill_out_persons == 40000（等量配对，INV-082），且跨档次数 == 0（只在相邻档之间升一档）。"
+    },
+    {
+      "test_id": "T-S-A-05",
+      "given_zh": "给定 FX-BASE，P05 生效且三闸不紧，每季应付 280000000 μU：交付 160000000 → agent.pubserv.<region>、助学金 80000000 → agent.group.<r>.working.<source_skill>、教材 40000000 → agent.cell.<r>.manu。",
+      "when_zh": "当无其他命令推进 8 个授权季。",
+      "then_zh": "则每季末 Σ 全部主体 cash_uu == scenario.total_cash_uu（8 次精确相等）且每季 Σ Δcash == 0（8 次精确等于 0）；每季 state.gov.cash_uu 的减少量精确等于三类收款方现金增加量之和（160000000 + 80000000 + 40000000 == 280000000，8 次精确相等）；log 中不存在没有对手方账户 ID 的 P05 支出条目（条数 == 0，计划书 §13）；8 季累计 state.policy.budget_spent_uu[P05] == 2240000000 μU，与 cost.one_off_uu 精确相等。"
+    },
+    {
+      "test_id": "T-U-B-02",
+      "given_zh": "给定首批 40000 人于第 q+1 季入队 state.group.education_cohort_persons[g][q+5]。",
+      "when_zh": "当推进到第 q+5 季 S07 结业。",
+      "then_zh": "则对 36 组逐组：pop_g − (pop_g_prev + 出生 − 死亡 + 成年入 − 成年出 + 技能入 − 技能出 + 迁入 − 迁出) == 0（36 次，残差恰为 0，INV-072）；逐组 skill_out_persons == skill_in_persons（等量配对，INV-082）；全国 Σ pop(q+5) == Σ pop(q+4) + Σ births − Σ deaths（INV-071）；education_cohort_persons 的到期槽位归零（精确等于 0）；且 state.cell.employment_persons 因结业本身发生的变化 == 0（INV-080 的写入者约束）。"
+    },
+    {
+      "test_id": "T-U-B-06",
+      "given_zh": "给定第 q+5 季的结业把 40000 人从 group.<r>.working.low 移到 group.<r>.working.mid（track = low_to_mid，四地区按 split_largest_remainder 分摊）。",
+      "when_zh": "当第 q+6 季跑完 S03 招工后做两个口径的交叉对账。",
+      "then_zh": "则对 4 地区 × 3 技能 = 12 个口径逐个成立：Σ_g group.employed_persons(region, skill) == Σ_cell cell.employment_persons(region, skill) + Σ_pubserv pubserv.employment_persons(region, skill)（12 次精确相等，INV-077）；升档不得只改群组侧而 cell 侧口径不动，残差 == 0。本判据是 P05 唯一状态写入点的下游风险点：技能档人数分布是本政策改的唯一东西，两个口径一旦脱节，之后所有失业率与用工约束的结论都失真。"
+    },
+    {
+      "test_id": "T-S-P05-CHAIN",
+      "given_zh": "给定 FX-BASE 且全部前置条件满足，席位杠杆设为上限 80000、助学金设为上限 6000 μU/人/季（单席成本 4000 + 1000 + 6000 == 11000 μU），而每季预算包仍为 cost.per_quarter_uu == 280000000 μU。",
+      "when_zh": "当在 q0 启用，无其他命令推进到 q0 + lag.max_feedback_q + 2 == q0 + 10 季。",
+      "then_zh": "则 q ∈ [q0, q0 + lag.enact_to_effect_q) 期间 education_cohort_persons 累计变化 == 0（模板断言①）；q == q0 + 1 时首次出现非零变化，且 seats_effective == idiv_floor(280000000, 11000) == 25454、p05_binding_code == 1（预算闸），与按政策参数独立复算的值精确相等（模板断言②）；当季三笔实付之和 == 25454 × 11000 == 279994000 μU（交付 101816000 + 教材 25454000 + 助学金 152724000），≤ 280000000 且等于最大余数法各分项之和；未用完的 6000 μU 随 state.gov.reserved_memo_uu 在季末归零（INV-033），不跨季结转、不进任何余数池；结果指标（flow.cell.bound_labor_uqs 的放松）首次非零出现的季 ≥ q0 + lag.min_feedback_q == q0 + 4 且 ≤ q0 + lag.max_feedback_q == q0 + 8（本参数下模型预计的首批结业在 q0 + 5，落在该闭区间内）（模板断言③）；log.explanations 中 kind == accounted 的链条条数 == effect_chain 的环数 7，无断段（模板断言④）。"
+    },
+    {
+      "test_id": "T-S-A-12",
+      "given_zh": "给定 seats_effective == 25454（承 T-S-P05-CHAIN 的场景）：席位要先按各地区 applicants 之和为权重拆到 4 个地区、再在地区内按各组 applicants 为权重拆到源组；当季 279994000 μU 的三条支付线也按同一权重拆出地区分项。",
+      "when_zh": "当第 q0+1 季 S04 与 S07 执行两级 split_largest_remainder（tiebreak 用地区下标、组下标升序）。",
+      "then_zh": "则 Σ 地区分项 == 25454 且 Σ 组分项 == 25454（两次精确相等，INV-003，不允许出现「四舍五入后多一个人」）；每季 Δstate.gov.rounding_residual_uu == Σ 本季 log.rounding.residual（精确相等）；log.rounding 中每条满足 total − Σ parts == residual（逐条精确）；被静默丢弃的余数条数 == 0。"
+    },
+    {
+      "test_id": "T-S-P05-FAIL-NOJOB",
+      "given_zh": "给定所有 cell 的需求预期为 0 或产能／材料为最紧约束（flow.cell.binding_code != 2），而 40000 名学员在第 q+5 季结业升档。",
+      "when_zh": "当推进第 q+5 至 q+8 季。",
+      "then_zh": "则 derived.gdp.production_uu 不因结业本身增加（该季唯一与 P05 有关的计入项是 public_training_delivery 这笔 160000000 μU 的成本计价非市场产出，且其金额精确等于已付工资＋中间消耗＋折旧，INV-101）；Σ state.cell.employment_persons 的变化 == 0；derived.labor.unemployment_ppm 不下降（失业者只是换了档位）；derived.politics.support_national_ppm 的变动分解中 cause == policy_bonus 的条数 == 0——支持度只能经生活／预期／信任三条通道变化（INV-121/123）。这是「没有需求时不得直接发 GDP 或支持率」的执行点。"
+    }
+  ],
+  "_note_acceptance_tests_pending": [
+    {
+      "criterion_zh": "冷却期不得补发席位与助学金；反复开关只累积成本，不刷出席位。",
+      "proposed_test_id": "T-S-P05-OFF",
+      "registry_status_zh": "docs/30_quality_gates.md §4.3 明写「这三条不是三条测试，而是三个参数化模板 × 12 个政策 = 36 条用例，在注册表里逐条展开」，因此 T-S-P05-OFF 在册；但校验器的 ID 抽取正则读到的是字面量 T-S-P<nn>-OFF，无法展开 <nn>，于是取到的是残串 T-S-P。在 §4.3 的模板行旁列出 12 个展开后的 ID，或让 tests/tools/test_registry.gd 成为注册表，任一即可解除。",
+      "given_zh": "给定政策在第 q 季开启、第 q+2 季关闭、第 q+2+cooldown_q（== q+6）季再次开启。",
+      "when_zh": "当第二次开启并推进 2 季。",
+      "then_zh": "则冷却期内（q+2 至 q+5）的开关命令被 REJECT(E_POLICY_COOLDOWN)，次数与期望精确相等；重开后不补发关闭期间的任何助学金或席位，claim_ledger 无新增历史季条目（INV-097）；state.policy.toggle_count 单调递增且每次开关都产生 toggle_cost_uu == 12000000 μU 的真实支出（两次开关共 24000000 μU，精确相等）；effective_from_q 单调不回溯（INV-098）。"
+    }
+  ],
+  "effect_chain": [
+    {
+      "link": 1,
+      "step": "S02",
+      "from": "state.policy.params_uu[P05][0]（席位）、state.policy.params_ppm[P05][1]（资金来源）、state.gov.cash_uu",
+      "rule": "12 号文件 §2.1 的资格链（legal_authority → cooldown → precondition → funding）与 02.2 预算预留",
+      "to": "state.policy.enabled[P05]、state.policy.effective_from_q[P05]、state.gov.reserved_memo_uu、state.gov.committed_memo_uu、state.policy.budget_committed_uu[P05]",
+      "note_zh": "预留只减少可用额度，不移动现金。资格链任一环失败即 REJECT，本链后续全部不发生。"
+    },
+    {
+      "link": 2,
+      "step": "S04",
+      "from": "state.gov.cash_uu、state.gov.payment_priority",
+      "rule": "8 档优先级内按可用现金支付，缺口写 arrears（12 号文件 §4.1 的 04.2）",
+      "to": "flow.gov.pay_opex_uu[]（→ agent.pubserv.<region>）、flow.gov.pay_transfers_uu[]（→ agent.group.<r>.working.<k>）、flow.gov.pay_procurement_uu（→ agent.cell.<r>.manu）、flow.pubserv.funding_ratio_ppm[]、flow.group.transfer_income_uu[]、state.cell.cash_uu[]",
+      "note_zh": "三笔款各有真实收款方，双边入账；三项之和精确等于当季 280000000 μU（交付 160000000 → agent.pubserv.<region>、助学金 80000000 → agent.group.<r>.working.<k>、教材 40000000 → agent.cell.<r>.manu）。"
+    },
+    {
+      "link": 3,
+      "step": "S07",
+      "from": "state.pubserv.teachers_persons[]、param.student_teacher_ratio、derived.group.unemployed_persons[]、state.price.wage_uu_per_person_q[]、本季培训预算",
+      "rule": "_note_enrollment_rule 的四闸取最紧 + split_largest_remainder 分配",
+      "to": "state.group.education_cohort_persons[g][q + param.training_lag_q]",
+      "note_zh": "这是本政策唯一的状态写入点。教师为 0 时本环产出恒为 0（ADV-03）。"
+    },
+    {
+      "link": 4,
+      "step": "S07（+param.training_lag_q 季）",
+      "from": "state.group.education_cohort_persons[g][到期槽]",
+      "rule": "12 号文件 §7.4 第 5 步：到期队列 → skill_out（源档）与 skill_in（高一档）等量配对",
+      "to": "flow.group.skill_out_persons[]、flow.group.skill_in_persons[]、state.group.population_persons[]",
+      "note_zh": "人口守恒不变（INV-071/072）：这是分布重排，不是净流入。"
+    },
+    {
+      "link": 5,
+      "step": "S03（结业后的下一季）",
+      "from": "state.group.population_persons[]、state.group.participation_ppm[] → derived.group.labor_force_persons[]",
+      "rule": "3.2 招工的闸一：pool[r][k] = Σ(labor_force − employed)，多个 cell 与 pubserv 竞争同一池子，超额时按 split_largest_remainder 分配",
+      "to": "state.cell.employment_persons[]、state.group.employed_persons[]、derived.labor.unemployment_ppm",
+      "note_zh": "本环可以完全不发生：企业 need_k 为 0 或工资资金闸不足时，档位升了而就业不变——这正是「不直接增加就业」的可观察形态。"
+    },
+    {
+      "link": 6,
+      "step": "S05",
+      "from": "state.cell.employment_persons[]、content.io.labor_coeff_persons_per_qs[]",
+      "rule": "五项约束取最小：Q_actual = min(plan, capacity, labor, energy, materials)，并列时按固定序取最小序号",
+      "to": "flow.cell.bound_labor_uqs[]、flow.cell.binding_code[]、flow.cell.output_actual_uqs[]",
+      "note_zh": "劳动约束放松后，binding_code 会转到下一个最紧的约束；若原本就不是劳动最紧，本环无任何变化。"
+    },
+    {
+      "link": 7,
+      "step": "S06 → S07 → S08",
+      "from": "flow.cell.output_actual_uqs[]、flow.group.wage_income_uu[]、flow.group.transfer_income_uu[]",
+      "rule": "增加值核算（INV-111/112）→ 可支配收入与消费（INV-086）→ 消费指数（§7.8）→ 生活指数与支持度合成（INV-121/123）",
+      "to": "flow.cell.value_added_uu[]、derived.gdp.production_uu、state.group.consumption_index_ppm[]、state.group.living_index_ppm[]、state.group.support_ppm[]",
+      "note_zh": "支持度的变化必须能逐项分解回生活／预期／信任三条通道；本政策不向支持度直接写入任何量。"
+    }
+  ],
+  "mechanism_ids": [
+    "mech.training_seats",
+    "mech.skill_transition",
+    "mech.public_staffing",
+    "mech.service_opex"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 mech.education_cohort → mech.training_seats（同指 JWPopulation.update_education 的席位侧）；mech.skill_transition 保留（同函数的 f_skill_out/f_skill_in 配对，是另一条流量，非同名重复）；mech.statutory_transfer 撤下——本政策是 capacity 类，不走 transfer_due_into，改为 mech.public_staffing（update_education 需要 teachers_by_region，由 JWLaborMarket.pubserv_employment 提供）。",
+  "_note_mechanism_ids": "MechanismRegistry 的全集在三份契约中均未枚举。这四个 ID 分别对应 12 号文件 §7.6（教育队列）、§7.4 第 5 步（技能升档配对）、§4.1 04.2 的 statutory_transfers 档、§7.2 的运行费与可用率。若注册表定名不同，应改本文件的引用，不得改机制。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 12000000,
+  "ui_text_keys": {
+    "blocked.authority": "policy.P05.blocked.authority",
+    "blocked.seats_short": "policy.P05.blocked.seats_short",
+    "blocked.budget": "policy.P05.blocked.budget",
+    "blocked.cooldown": "policy.P05.blocked.cooldown",
+    "blocked.no_teacher": "policy.P05.blocked.no_teacher",
+    "blocked.low_availability": "policy.P05.blocked.low_availability",
+    "blocked.no_unemployed": "policy.P05.blocked.no_unemployed",
+    "blocked.exited": "policy.P05.blocked.exited",
+    "fail.no_teacher_capacity": "policy.P05.fail.no_teacher_capacity",
+    "fail.no_applicants": "policy.P05.fail.no_applicants",
+    "fail.financing": "policy.P05.fail.financing",
+    "fail.no_job": "policy.P05.fail.no_job",
+    "fail.early_exit": "policy.P05.fail.early_exit",
+    "fail.mismatched_track": "policy.P05.fail.mismatched_track",
+    "fail.budget_lapse": "policy.P05.fail.budget_lapse"
+  },
+  "_note_ui_copy": [
+    {
+      "text_key": "_note_placeholders",
+      "template_zh": "花括号占位符一律由 Presentation 用整数或已格式化的展示值填充；SimCore 不产生任何文案（10 号文件 §2.5）。百分比型占位符（*_pct）由展示层按 存储值/10000 渲染。"
+    },
+    {
+      "text_key": "policy.P05.blocked.authority",
+      "covers": "precondition:legal_authority",
+      "template_zh": "无法提交：职业培训扩容需要预算法案级授权（第 3 号权限）。当前执政席位占比 {seats_pct}%，规则要求不低于 50.0%；本政策还需劳动与公共服务联盟不处于否决状态（当前立场 {labor_stance}）。"
+    },
+    {
+      "text_key": "policy.P05.blocked.seats_short",
+      "covers": "precondition:legal_authority.min_seats_ppm",
+      "template_zh": "无法提交：执政席位占比 {seats_pct}% 低于本政策要求的 50.0%。这类多季财政承诺必须在预算审查中过账。"
+    },
+    {
+      "text_key": "policy.P05.blocked.budget",
+      "covers": "precondition:budget_reservation",
+      "template_zh": "无法提交：本季需预留 {need} μU，国库可用额只有 {avail} μU（现金 {cash} μU 减去已预留 {reserved} μU）。改用债券融资会按当前市场利率新发批次，或改为占用其它支出档（被挤出的那一档会形成欠付）。"
+    },
+    {
+      "text_key": "policy.P05.blocked.cooldown",
+      "covers": "eligibility:cooldown",
+      "template_zh": "无法提交：本政策处于冷却期，第 {cooldown_until} 季之后才能再次开关。每次开关都会产生 {toggle_cost} μU 的行政成本，反复开关不会补发任何历史季的席位或助学金。"
+    },
+    {
+      "text_key": "policy.P05.blocked.no_teacher",
+      "covers": "precondition:teachers_persons>0",
+      "template_zh": "无法提交：{region} 目前在岗教师为 0 人，按师生比可带席位为 0。培训席位的上限由教师数决定，不由预算决定——先解决教师来源，再谈扩容。"
+    },
+    {
+      "text_key": "policy.P05.blocked.low_availability",
+      "covers": "precondition:availability_ppm>=500000",
+      "template_zh": "无法提交：{region} 的公共服务可用率为 {avail_pct}%，低于本政策要求的 50.0%。运行费欠拨尚未补齐时新增招生，只会让现有班次一起开不满。"
+    },
+    {
+      "text_key": "policy.P05.blocked.no_unemployed",
+      "covers": "precondition:unemployed_persons>0",
+      "template_zh": "无法提交：所选地区的目标技能档失业人数为 0。首版只招失业者（在职提升会破坏就业记录的配平），目标档没有闲置劳动力时本政策无人可招。"
+    },
+    {
+      "text_key": "policy.P05.blocked.exited",
+      "covers": "blocked_reason:exited",
+      "template_zh": "无法提交：本政策已进入退出结算，第 {exit_q} 季完成结算后方可重新提交。在读队列仍会走完并结业。"
+    },
+    {
+      "text_key": "policy.P05.fail.no_teacher_capacity",
+      "covers": "failure:no_teacher_capacity",
+      "template_zh": "本季招生 0 席：{region} 现有教师 {teachers} 人，最多可带 {max_seats} 席，其中 {in_class} 席被在读占用。本季已支付 {spent} μU，未换来任何入队人数。"
+    },
+    {
+      "text_key": "policy.P05.fail.no_applicants",
+      "covers": "failure:no_applicants",
+      "template_zh": "本季招生 {seats} 席，低于计划的 {requested} 席：{region} 目标档失业 {eligible} 人，在当前助学支持（{stipend} μU/人/季，约合当期工资的 {support_ratio_pct}%）下估计参训 {applicants} 人。提高助学支持会提高参训比例，但会减少同一笔预算买得起的席位。"
+    },
+    {
+      "text_key": "policy.P05.fail.budget_lapse",
+      "covers": "failure:budget_lapse",
+      "template_zh": "本季预留 {reserved} μU，实际支出 {spent} μU：受 {binding_name} 限制只开出 {seats} 席，低于预算买得起的 {affordable} 席。未用的 {unused} μU 在季末归零，不会结转到下季。"
+    },
+    {
+      "text_key": "policy.P05.fail.financing",
+      "covers": "failure:financing",
+      "template_zh": "本季培训拨款到位 {funding_ratio_pct}%，欠付 {arrears} μU。公共服务可用率由 {avail_before_pct}% 降至 {avail_after_pct}%；设施与教师都还在，但本季与后续的席位吞吐会下降。"
+    },
+    {
+      "text_key": "policy.P05.fail.no_job",
+      "covers": "failure:no_job",
+      "template_zh": "本季有 {count} 人结业升入 {target_skill} 档，但 {region} 的生产瓶颈当前是 {binding_name}，不是劳动。培训改变的是谁能被雇用，不增加岗位；要让这批人上岗，需要先解除真正的瓶颈或形成新的销路。"
+    },
+    {
+      "text_key": "policy.P05.fail.early_exit",
+      "covers": "failure:early_exit",
+      "template_zh": "已为 {in_class} 名在读学员支出 {sunk} μU，他们仍将在第 {grad_q} 季结业。撤回自本季起停止招生与助学金，并按剩余合同额的 20.0% 赔付 {penalty} μU；已支付部分不退还。"
+    },
+    {
+      "text_key": "policy.P05.fail.mismatched_track",
+      "covers": "failure:mismatched_track",
+      "template_zh": "{region} 的用工缺口在 {needed_skill} 档，而当前专业方向把人从该档抽走升到 {target_skill} 档。首版不允许技能向下替代，高一档的人不能顶低一档的岗位。"
+    }
+  ],
+  "_note_design_notes": [
+    "一、为什么 P05 不是「加技能点」：它唯一写入的状态是 state.group.education_cohort_persons，此后全部变化都由既有规则（结业配对、招工两闸、五项约束取最小）产生。政策本身不碰就业、不碰产量、不碰支持度。",
+    "二、为什么不设「利弊对称」的人为惩罚：本政策的代价是真实的财政占用与沉没成本，不是额外发明的负面修正项。计划书 §09 明确反对强行对称。",
+    "三、为什么允许它明显无效：教师为 0、目标档没有失业者、结业后没有空缺——这三种情形下 P05 花钱而不产生任何技能或就业变化，并且每一种都有独立的原因码与文案。玩家看得到无效发生在哪一闸，这正是计划书 §09 的要求。",
+    "四、与其它政策的分工：P05 不建校舍（那是资本项目类政策的事），不发失业金（那是 P03），不补企业（那是 P09）。它与 P10 共用 pubserv 的人员池，因此两者同时扩张时会在 S03 的 pool[r][k] 上直接竞争——这是可观察的冲突，不需要额外规则。"
+  ],
+  "_note_param_cards_pending_migration": {
+    "status_zh": "以下 14 个数值目前在参数全集中没有身份证——本文件已不再声明它们，content/parameters/params_core.json 也尚未建立。这不是「卡在注释里」，而是明写「卡还不存在」：注释键不进逻辑、不进 content_hash（11 号文件 §1.5、§6.4），写在这里的任何东西都不是声明点，读者不得据此认为这些参数已建卡。在 params_core.json 落地之前，引用这些 param.* 的规格（_note_enrollment_rule 的伪码、preconditions、exit_rule、cooldown_q、toggle_cost_uu）都靠本卡的正式字段取值，SimCore 里若出现同名裸数字则违反计划书 §14 / INV-152。",
+    "why_not_here_zh": "11 号文件 §2 规定 param.* 卡集中在 content/parameters/params_core.json，参数集合有独立版本线 param_set_version（§6.7 M-9）；卡片散落在政策文件里会让「改参数不改状态形状」的版本判断失效，也让 param_set_ref 无从解析。policy_definition 的 schema（§5.12，additionalProperties: false）没有 parameters 键，这两条是同一条规矩的两种表述，不是两条互相矛盾的规矩。",
+    "target_file": "content/parameters/params_core.json",
+    "blocked_by": "P05-OQ-F",
+    "migration_rule_zh": "搬运时把每条的 pending_parameter_id 改回 parameter_id、原样放进 parameter_set 的 cards[]，九字段一字不改即可；本列表的字段名与顺序已与 §5.15 的卡片格式一致。金额型卡的 value 与 valid_range 已按裁定 R-SCALE-01（1 U = 10⁹ μU）迁移完毕，搬运时不得再乘一次。",
+    "cards_to_create": [
+      {
+        "pending_parameter_id": "param.p05_delivery_cost_uu_per_seat_q",
+        "value": 4000,
+        "unit": "μU/units/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09「P05 职业培训扩容：招生席位、专业与助学支持」；§10「投入与工期」的测试夹具写法",
+        "reference_year": 0,
+        "definition": "每席每季的公共培训交付成本（教师工时与场地运行的政府拨款部分），付给 agent.pubserv.<region>，记 kind = service_opex。",
+        "valid_range": [
+          1000,
+          20000
+        ],
+        "confidence": "low",
+        "calibration_note": "与 param.p05_material_cost_uu_per_seat_q、助学金共同决定单席成本，进而决定同一预算包买得起多少席。校准顺序：先固定预算包 280000000 μU 与默认席位 40000，再反解本值（4000 × 40000 == 160000000 == cost.spend_lines_uu_per_q.public_training_delivery）；若 G2 中培训成本相对 22 U 的年度支出过于不起眼，先调本值而不是调席位上限。"
+      },
+      {
+        "pending_parameter_id": "param.p05_material_cost_uu_per_seat_q",
+        "value": 1000,
+        "unit": "μU/units/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §06「制造：消费品、设备与材料」；§09 P05 行",
+        "reference_year": 0,
+        "definition": "每席每季的教材与实训耗材采购额，向 agent.cell.<region>.manu 采购，记 kind = gov_procurement，受 S05 配给约束。",
+        "valid_range": [
+          0,
+          10000
+        ],
+        "confidence": "low",
+        "calibration_note": "设为 0 会使培训完全不消耗实物、从而无法测试「制造业短缺时培训也会被配给卡住」这条链路；因此下限虽为 0，首版取 1 以保留该可观察性。若 manu 部门长期短缺导致培训被挤压得不可理解，先查配给优先级再调本值。"
+      },
+      {
+        "pending_parameter_id": "param.p05_stipend_default_uu_per_seat_q",
+        "value": 2000,
+        "unit": "μU/人/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09「玩家直接改变：招生席位、专业与助学支持」",
+        "reference_year": 0,
+        "definition": "助学支持杠杆 stipend_uu_per_seat_q 的默认值：受训者每人每季得到的转移收入。",
+        "valid_range": [
+          0,
+          6000
+        ],
+        "confidence": "low",
+        "calibration_note": "默认值须使「默认预算恰好买得起默认席位」成立：(4000 + 1000 + 2000) × 40000 == 280000000。改动本值必须同步复算该等式与 cost.spend_lines_uu_per_q.student_stipend（2000 × 40000 == 80000000），否则默认档会在开局就撞预算闸。上限 6000 是迁移前 6 的 ×1000 等价值（裁定 R-SCALE-01 的迁移规则）；新刻度下基年季度工资率约 1360 μU/人，本杠杆自默认档起 support_ratio_ppm 即触顶，标定失真见 _note_open_questions_local 的 P05-OQ-C。"
+      },
+      {
+        "pending_parameter_id": "param.p05_seats_default_units",
+        "value": 40000,
+        "unit": "units",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05 澄湾共和国总人口 2400 万、失业率 8%；§09 P05 行",
+        "reference_year": 0,
+        "definition": "每季招生席位杠杆的默认值（全国口径）。",
+        "valid_range": [
+          0,
+          80000
+        ],
+        "confidence": "low",
+        "calibration_note": "量级依据：全国劳动力的百分之零点几量级，使一批结业者足以改变某个 cell 的 bound_labor，但不足以在一季内抹平失业。校准时先看 T-U-B-02 场景里结业批次对 pool[r][k] 的相对规模，若结业批次被招聘摩擦 param.hiring_friction_ppm 完全吸收而永远看不见效果，应先调摩擦而非本值。"
+      },
+      {
+        "pending_parameter_id": "param.p05_seats_max_units",
+        "value": 80000,
+        "unit": "units",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09「避免两种伪深度：政策可以在某些条件下明显无效；玩家应能理解无效发生在哪里」",
+        "reference_year": 0,
+        "definition": "席位杠杆的上界。超过预算或教师能承载的部分不会被静默截断，而是形成可见的 binding 原因码。",
+        "valid_range": [
+          0,
+          200000
+        ],
+        "confidence": "low",
+        "calibration_note": "上界故意设在默认值的 2 倍：它必须大到足以让玩家撞上预算闸与教师闸（否则 T-S-P05-CHAIN 与 ADV-03 无法构造），又不能大到让 UI 里出现明显荒谬的数字。"
+      },
+      {
+        "pending_parameter_id": "param.p05_takeup_base_ppm",
+        "value": 300000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「居民群组关心实际可支配收入、住房负担、服务与预期」；§09 P05 的「助学支持」杠杆必须有机制后果",
+        "reference_year": 0,
+        "definition": "助学支持为 0 时，目标群组失业者中愿意占用一个培训席位的比例（参训率的基础档）。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "本值与 param.p05_takeup_stipend_gain_ppm 共同构成 12 号文件 §7.6 中「申请席位」这一未定义输入的定义。校准方法：在 G2 的单一干预运行里把助学金从 0 扫到上限，检查招生量是否单调、是否在某档突然跳变；若结论只依赖本值，说明参训机制过于脆弱，应改为更保守的常数参训率并登记。"
+      },
+      {
+        "pending_parameter_id": "param.p05_takeup_stipend_gain_ppm",
+        "value": 400000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「短期补贴能缓解生活压力，却不能自动修复长期失信」——补贴只影响当期选择，不影响信任",
+        "reference_year": 0,
+        "definition": "助学金与当期工资率之比（support_ratio_ppm）传导到参训率的增益系数。takeup = clamp(base + mul_ppm(support_ratio, gain), 0, cap)。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "该增益不得使参训率对助学金呈现「补到等于工资就全员参训」的荒谬形态，故与 cap 联用。敏感性测试：把本值上下各调 50% 检查「先培训后建设」路线的排序结论是否翻转；若翻转，说明该路线的优势只依赖这一个参数，须在报告中标注。"
+      },
+      {
+        "pending_parameter_id": "param.p05_takeup_cap_ppm",
+        "value": 850000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §14「不应宣称的精度：不从平均群组收入输出精确结论」",
+        "reference_year": 0,
+        "definition": "参训率上限。永远小于 1000000：失业者中总有一部分因健康、照料责任或即将就业而不参训，首版不建模这些差异，只用一个显式上限承认它。",
+        "valid_range": [
+          100000,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "设为 1000000 等于宣称「补贴足够就能把全部失业者送进教室」，这是首版不敢宣称的精度。若将来引入组内异质性，本参数应被真实分布替代而不是简单放宽。"
+      },
+      {
+        "pending_parameter_id": "param.p05_opex_per_q_uu",
+        "value": 20000000,
+        "unit": "μU/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「服务有运行费：学校、医院、电网和住房建成后需要人员与维护；停拨款会降低实际服务，而非删除建筑」；§10 P04 运行费 0.02 U 的同量级写法",
+        "reference_year": 0,
+        "definition": "8 季授权窗口结束后，常设培训设施每季的人员与维护支出，计入 state.gov.service_opex_committed_uu。",
+        "valid_range": [
+          0,
+          100000000
+        ],
+        "confidence": "low",
+        "calibration_note": "取与 P04 运行费同量级（0.02 U），使两类政策的长期负担可比。校准时检查：连续 10 季只建不养，availability_ppm 的下降是否足以让玩家在报告里察觉；若察觉不到，先调 param.opex_starve_decay_ppm 而不是抬高本值。"
+      },
+      {
+        "pending_parameter_id": "param.p05_toggle_cost_uu",
+        "value": 12000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §17「恶意玩家测试：反复开关补助是否重复领钱」；12 号文件 §2.1「每次开关产生一次性行政成本」",
+        "reference_year": 0,
+        "definition": "每次开启或关闭 P05 产生的一次性行政成本，post(kind = policy_toggle_cost, gov -> pubserv)。",
+        "valid_range": [
+          0,
+          100000000
+        ],
+        "confidence": "low",
+        "calibration_note": "须高于「关掉一季省下的助学金」所能带来的短期收益，否则反复开关仍然划算。检验方式：构造一条每季开关一次的命令流，断言 40 季后国库现金严格低于全程保持开启的对照组。"
+      },
+      {
+        "pending_parameter_id": "param.p05_cooldown_q",
+        "value": 4,
+        "unit": "季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「预算每 4 季审查」；12 号文件 INV-098",
+        "reference_year": 0,
+        "definition": "两次开关之间的最短间隔（季）。与预算审查周期对齐。",
+        "valid_range": [
+          1,
+          12
+        ],
+        "confidence": "medium",
+        "calibration_note": "与预算审查周期同为 4 季是有意为之：政策的开关节奏不应比它的授权审查节奏更快。若将来预算审查周期改变，本值必须同步改变，否则会出现「可以开关但无处过账」的状态。"
+      },
+      {
+        "pending_parameter_id": "param.p05_exit_compensation_ppm",
+        "value": 200000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「签约即占用未来预算承诺，取消产生违约或沉没成本」；§10 P04 的 300000 ppm 写法",
+        "reference_year": 0,
+        "definition": "撤回时按剩余合同额计算的赔偿比例（教师聘约与培训服务合同）。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "低于 P04 的 300000 ppm，理由是服务合同剩余期限短于工程合同。校准检查：赔偿加沉没成本之和必须足以让「先开后撤」在多数局面下劣于「不开」，否则撤回会变成无成本的试错。"
+      },
+      {
+        "pending_parameter_id": "param.p05_min_availability_ppm",
+        "value": 500000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「停拨款会降低实际服务」；12 号文件 §7.2 可用率规则",
+        "reference_year": 0,
+        "definition": "开班前置条件：掩码内各地区 state.pubserv.availability_ppm 的最低要求。低于此值说明既有公共服务已在欠拨状态，不得再叠加招生负担。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "这是一条保守闸门：宁可挡住玩家，也不要让「服务已经断供还在扩招」变成一个可行策略。若试玩显示该闸门在正常局面下频繁触发、导致政策不可用，先查运行费拨款优先级，再考虑下调本值。"
+      },
+      {
+        "pending_parameter_id": "param.p05_min_seats_ppm",
+        "value": 500000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「重大改革还要满足法定权限与联盟条件」",
+        "reference_year": 0,
+        "definition": "提交本政策所需的最低执政席位占比（legal_authority.min_seats_ppm）。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "取简单多数。与 P04 同值，使「多季财政承诺类政策」的门槛一致；若将来为不同政策设不同门槛，必须给出门槛差异的制度理由，不能只为调节难度。"
+      }
+    ]
+  },
+  "_note_open_questions_local": [
+    {
+      "ref": "P05-OQ-A",
+      "zh": "政策参数槽位只有 params_ppm 与 params_uu 两种口径，无法承载「席位（人）」与「枚举码」；本文件按契约把它们塞进现有槽位并显式标注口径偏离。"
+    },
+    {
+      "ref": "P05-OQ-B",
+      "zh": "§5.12 的 effect 是单个对象，而 P05 的教师通道与席位通道在概念上是两个落点；本文件按契约只保留席位落点，教师作为约束处理，且显式声明不写 teachers_persons。"
+    },
+    {
+      "ref": "P05-OQ-C",
+      "zh": "助学金杠杆的刻度在 R-SCALE-01 之后失真。新刻度下基年季度工资率约 1360 μU/人，而本杠杆按迁移规则原样 ×1000 成 0…6000（步长 1000）：默认档 2000 μU 已使 support_ratio_ppm = idiv_floor(2000 × 1000000, 1360) 被 clamp 到 1000000，参训率直接顶到 param.p05_takeup_cap_ppm。也就是说 2000…6000 这半程只增成本、不增参训率，真正有区分度的只有 0 与 1000 两档。这不是任何校验器能发现的错误，是换刻度后的标定失真。修法（交基年重拟合决定，本文件不私自重标定，因为默认值 2000 与 cost.spend_lines_uu_per_q.student_stipend 精确配平，动它就要重配整张成本表）：把区间改到工资率量级（例如 0…1400、步长 200），或让 takeup 对绝对金额而非比率响应。"
+    },
+    {
+      "ref": "P05-OQ-D",
+      "zh": "首版只招失业者，在职提升不可实现（会破坏 INV-077/080 的就业配平）。"
+    },
+    {
+      "ref": "P05-OQ-E",
+      "zh": "已关闭。effect_chain 曾同时被「计划书 §09 要求存在且 >= 4 环」与「§5.12 未声明 + additionalProperties: false」两条规则夹住（校验器 OQ-V03）；tools/validate_content.py 现已按文档优先级把它正式登记进 policy_definition 字段表，本文件保留真键即可。契约侧剩余待办：11 号文件 §5.12 的 PolicyDefinition 键集合应同步补入 effect_chain。"
+    },
+    {
+      "ref": "P05-OQ-F",
+      "zh": "契约 §2 要求 param.* 卡集中在 content/parameters/params_core.json，该文件仍未建立。本文件已移除内嵌的 14 张卡（它们既违反 §2，又被 §5.12 判为未声明的顶层键），建卡规格逐字保留在 _note_param_cards_pending_migration。代价是这 14 个数值在参数全集中暂时没有身份证，违反计划书 §14；这是一笔显式欠账，解法只有一个——建 params_core.json 并把 cards_to_create 整体搬进去。现有 content/parameters/registry.json 是 tools/build_param_registry.py 的派生物，不是事实来源。"
+    },
+    {
+      "ref": "P05-OQ-G",
+      "zh": "docs/30_quality_gates.md §4.2/§4.3 为 P05 只登记了 CHAIN / GATE / OFF / ADV-03 / FAIL-NOJOB。本卡另有三条路径在矩阵里没有行：教师中途流失的运行期形态（ADV-03 已写断言但 ID 取不到）、参训率乘出 0 的运行期形态、mismatched_track。§4.2 失败链列写的是「至少一条」，补行不违反矩阵，但补行是测试矩阵负责人的事，本文件不擅自改文档，也不用不存在的 ID 假装已覆盖——三条的完整规格与可直接抄进矩阵的断言见 _note_failure_paths_pending。"
+    },
+    {
+      "ref": "P05-OQ-H",
+      "zh": "校验器抽取测试 ID 的正则是 \\bT-[A-Z]-[A-Z0-9][A-Z0-9\\-]*，它读不出两类在册 ID：(a) ADV-03 / ADV-E03——§4.2 的 P05 行明确把「无教师」这条失败链指派给 ADV-03，§6 对抗矩阵与 31 号文件都有它的完整断言，但前缀不是 T-；(b) T-S-P05-OFF——§4.3 明写三个模板 × 12 个政策 = 36 条用例「在注册表里逐条展开」，而正则读到的是字面量 T-S-P<nn>-OFF，只截出残串 T-S-P。结果是：任何严格照 §4.2/§4.3 写的政策卡都必然收到假的 E_POLICY_TEST_MISSING。本文件选择只引用能被抽取到的 ID，并把无法引用的绑定降级为 _note_ 待办，不改工具（越界）。修法二选一：(a) 让抽取正则同时认 ADV-\\d\\d 与 ADV-[A-Z]\\d\\d，并把 §4.3 的模板按 P01..P12 展开；(b) 让 tests/tools/test_registry.gd 落地并成为唯一注册表（OQ-V02 的本意）。"
+    }
+  ],
+  "_note_enact_command_fields": {
+    "funding_source": {
+      "key": "funding_source",
+      "label_zh": "资金来源",
+      "type": "enum",
+      "unit": "枚举码",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "enum_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "valid_range": [
+        0,
+        2
+      ],
+      "step": 1,
+      "default": 0,
+      "default_label": "cash",
+      "state_slot": "policy_enact 命令的第 5 槽（systems/commands.gd 的 SLOT_ENACT_FUNDING == 5）；不进 state.policy.params_*",
+      "meaning_zh": "cash：只用 state.gov.cash_uu 减去 reserved_memo 的可用额，不足即 REJECT(E_BUDGET_INSUFFICIENT)；bond：进入 12 号文件 §2.1 02.6 的发债需求队列，票息由规则给出、玩家不能设；reallocation：占用同季其它档的支付额度，后果是被挤出的那一档进入 arrears（可见、可解释，不是免费的）。"
+    },
+    "why_not_a_player_param_zh": "docs/11 §6.1 命令码 1 的 args 是「policy_id + 各 player_params + 资金来源」，systems/commands.gd 把它落成六槽 [policy, param0..param3, funding_source]：资金来源**另有其槽**，不占 4 个玩家参数槽位，也不写任何 state.policy.params_* 数组（S02 §02.2 只用它选预留路径）。原先把它列进 player_params，既白占一个它从不使用的 valid_range / default 槽位，又使本政策的 player_params 达到 5 项、超出 docs/17 §4.8 的 4 槽上限（载入期 E_PARAM_RANGE）。本轮只把它搬到真正的落点，取值集合、编码与默认值一字未改。"
+  }
+}

@@ -1,0 +1,1091 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P03",
+  "label_zh": "失业保障",
+  "kind": "transfer",
+  "problem_statement_zh": "模型里失业是一个反算量：derived.group.labor_force_persons 减去 state.group.employed_persons，由 S03 的两道招工闸（地区同技能劳动力池、企业工资资金闸）自然产生，不是参数。基年剧本反算出来的数是：劳动力 11677007 人、在岗 10742846 人、失业 934161 人、失业率 80000 ppm（恰为计划书 §05 的 8%）。但首版中失业者没有任何收入通道——flow.group.wage_income_uu 归零，养老金为 0（OQ-225），组间赡养只从 working 组流向 minor 与 elder 组（INV-085），财产收入只按 equity_share_ppm 与存款份额分配。于是失业群组的 derived.group.disposable_income_uu 直接塌陷，经 S05 的消费预算闸（INV-063：不能花没收到的钱）压低 flow.group.consumption_by_product_uqs，再经 S07 的 consumption_index_ppm 与 S08 的 living_index_ppm 传导到 support_ppm，而政府没有任何工具介入这条链。P03 是首版中唯一一条「失业 → 转移收入」的通道，也是唯一一个支出规模由结算结果（合格失业人数）而不是由玩家填写的金额决定的工具。",
+  "legal_authority": {
+    "authority_bit": 1,
+    "requires_budget_review": false,
+    "requires_bloc_support": [],
+    "min_seats_ppm": 500000,
+    "_note_authority_kind": "预算法案。bit 1 = 社会项目权（politics_init `_note_authority_bits`；docs/18 R-AUTHORITY-01 定表）。法定转移是一项经常性支出承诺，不能靠行政令设立，也不需要单独的立法窗口。本键原名 authority_kind_zh，因 11 号文件 §5.12 的 legal_authority 只声明四个键（additionalProperties: false），改为注释键保留原文，不参与任何逻辑。",
+    "_note_authority_bit": "判定式见 12 号文件 §2.1 02.1：(state.politics.legal_authority_mask >> 1) & 1 == 1 且 seats_gov * 1000000 / seats_total >= min_seats_ppm。",
+    "_note_requires_budget_review": "false（docs/18 R-WINDOW-01）：本字段的运行期含义是「只能在 q ≡ 3 (mod 4) 的年度预算审查季受理」（立法窗口），该窗口只约束内容包前置条件里写明需要审查窗口的 P01/P02/P06/P10；法定转移凭资金、队列与权限即可设立。原注释所说「通过后每个预算审查季须重新预留下一年度额度」是另一条续批规则，不由本字段表达，首版未实现（未续批的到期分支见 _note_failure_paths_detail.authority_lapsed）。",
+    "_note_requires_bloc_support": "空数组：本政策不要求任何集团的事前同意；三集团的立场只经 S08 的组织力与立场更新影响后续政策空间，不构成否决（content.bloc.veto_domains 中没有 social_transfer 域）。"
+  },
+  "player_params": [
+    {
+      "key": "replacement_ppm",
+      "type": "ppm",
+      "valid_range": [
+        0,
+        800000
+      ],
+      "default": 400000
+    },
+    {
+      "key": "duration_q",
+      "type": "int_q",
+      "valid_range": [
+        1,
+        8
+      ],
+      "default": 4
+    },
+    {
+      "key": "eligibility_rule",
+      "type": "int_enum",
+      "valid_range": [
+        0,
+        1
+      ],
+      "default": 1
+    },
+    {
+      "key": "region_mask",
+      "type": "mask",
+      "valid_range": [
+        1,
+        15
+      ],
+      "default": 15
+    }
+  ],
+  "cost": {
+    "one_off_uu": 4000000000,
+    "per_quarter_uu": 1000000000,
+    "planned_quarters": 4,
+    "spend_lines_uu_per_q": {
+      "transfer_group_working_low": 387671037,
+      "transfer_group_working_mid": 449976803,
+      "transfer_group_working_high": 162352160
+    },
+    "opex_per_q_uu": 20000000,
+    "required_construction_uqs": 0,
+    "required_equipment_uqs": 0,
+    "_note_required_physical": "本政策是 kind=transfer 的法定转移，没有任何工程实体：不排施工、不进 JWProjectQueue（docs/12 §04.4 的 enqueue 对 required_construction_uqs <= 0 直接拒绝入队），也没有设备到货。因此两项均为 0，与 P01/P02/P05/P09/P12 同口径。0 不是「暂缺待填」：docs/12 §5 的 Δconstruction_ppm / Δdelivery_ppm 都对 required_*_uqs == 0 显式走「不适用」分支（不是除零），本政策的进度永远停在不适用，报告不得为它渲染施工条。**校正记录**：本块原先整个漏写这两个键，而 11 号文件 §5.12 的 cost 对象声明了七个键且 additionalProperties: false，载入器 _read_policy_cost 逐键必取，于是漏写在载入期换来两条 E_POLICY_COST（/cost/required_construction_uqs、/cost/required_equipment_uqs）。补齐为显式的 0，而不是放宽载入器的必取。",
+    "_note_cost": "全部数字是**预算计提额（provision）**，单位 μU（裁定 R-SCALE-01：1 U = 1000000000 μU），不是实际支付额。one_off_uu 4000000000 μU（= 4 U）是一个预算年（4 季）的计提总额，与 content/scenarios/chengwan/government_init.json 的 annual_plan.expenditure_lines_uu.statutory_transfers 逐位相等（4000000000）；per_quarter_uu 1000000000 = idiv_floor(4000000000, 4)，是 V-PD-03 恒等式要求的**均匀季额**（one_off_uu == per_quarter_uu × planned_quarters 精确成立）。实际预留按 scenario.season_factor_ppm.gov_primary = [240000, 250000, 255000, 255000] 拆季，得 [960000000, 1000000000, 1020000000, 1020000000]，四季合计精确等于 4000000000（最大余数法，INV-042；本组权重恰好整除，四项均无余数）——cost schema 无法表达非均匀预算曲线，这一点已登记为待决问题。opex_per_q_uu 20000000 = mul_ppm(1000000000, 20000)，即计提额的 2%。**校正记录**：本块原写 one_off 3600000000 / per_quarter 900000000 / opex 18000000，并声称与剧本的 statutory_transfers「逐字相等（3600000）」。两处都不成立：剧本该行现为 4000000000 μU（八行支出合计恰为 22000000000 μU，与计划书 §05 的全年支出一致），而 3600000 是 R-SCALE-01 之前的旧刻度写法。本轮按剧本重新配平，不是把数字改成看起来对。",
+    "_note_spend_lines": "三行之和 387671037 + 449976803 + 162352160 == 1000000000 == per_quarter_uu，精确相等（V-PD-03，加载器不做归一化补偿）。权重不是拍脑袋的 6:3:1，而是基年三个技能档的「失业人数 × 该档季工资率」（state.price.wage_uu_per_person_q == [1000, 2000, 3000] μU/人/季）：低 543131 × 1000 = 543131000、中 315211 × 2000 = 630422000、高 75819 × 3000 = 227457000，合计 1401010000 μU；用 split_largest_remainder(1000000000, [543131000, 630422000, 227457000], tiebreak = 技能档下标) 拆出上面三个数（逐项商 387671037 / 449976802 / 162352160 合计 999999999，余 1 归余数最大的中技能档——三档余数为 452630 / 629980 / 318400，同分母 1401010000——故中档 +1）。注意按金额算最大的是**中技能档**而不是低技能档——低档人数最多但工资率最低，这一点与直觉相反，报告不得写成「低技能拿得最多」。**校正记录**：本块原写 348904000 / 404979000 / 146117000。这三个数是旧刻度结果 [348904, 404979, 146117] 被 tools/migrate_currency_scale.py 整体 ×1000 得到的，但 ×1000 与 floor 不可交换：即使保持当时的总额 900000000 不变，在新刻度上重跑同一条 split_largest_remainder 也应得 [348903934, 404979122, 146116944]，与迁移值逐项相差 +66 / −122 / +56 μU。迁移值三项之和恰好仍等于当时的 per_quarter_uu，所以 V-PD-03 当时也是绿的——恒等式绿不等于推导成立。本轮同时把计提额按剧本改为 1000000000（见 _note_cost 的校正记录），故最终三行是对新总额重算的结果，不是对旧三行做任何形式的缩放。"
+  },
+  "preconditions": [
+    {
+      "kind": "legal_authority",
+      "bit": 1
+    },
+    {
+      "kind": "budget_reservation",
+      "amount_ref": "cost.per_quarter_uu"
+    },
+    {
+      "kind": "metric_compare",
+      "metric": "derived.group.labor_force_persons",
+      "scope": "national",
+      "op": "gt",
+      "value": 0
+    }
+  ],
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 1,
+    "max_feedback_q": 6,
+    "commission_delay_q": 1
+  },
+  "effect": {
+    "kind": "policy_param_set",
+    "target": "state.policy.params_ppm",
+    "params_slots": [
+      {
+        "slot": 0,
+        "key": "replacement_ppm",
+        "unit": "ppm"
+      },
+      {
+        "slot": 1,
+        "key": "duration_q",
+        "unit": "q"
+      },
+      {
+        "slot": 2,
+        "key": "eligibility_rule",
+        "unit": "dimensionless"
+      }
+    ],
+    "unit_note_zh": "本政策不改变任何产能、容量或设施字段，因此效果落点只能是 state.policy.params_ppm（11 号文件 §5.12 白名单），也**没有 capacity_unit_ref 这一键**：V-PD-05 要求该键指向真实部门且与 io_table 的用电系数同口径，非容量类效果给不出这样的部门，写 \"none\" 只会把「单位一致」变成无法机器判定的口号，因此整键省略（这正是 V-PD-05 的修复建议之一）。真正的支出发生在 S04 的 mech.statutory_transfer，其金额由结算状态与这三个参数共同决定，政策文件本身不携带任何逻辑。",
+    "_note_params_slots": "slot 1 存的是季数整数，slot 2 存的是枚举下标，都不是 ppm。字段名 state.policy.params_ppm 与实际语义不符，已登记为待决问题。"
+  },
+  "effect_chain": [
+    {
+      "link": 1,
+      "step": "S03",
+      "from_state": [
+        "state.cell.employment_persons",
+        "derived.group.labor_force_persons"
+      ],
+      "rule": "mech.benefit_eligibility：失业反算（12 号文件 §3.4）。unemployed_g = labor_force_g − Σ employed_g；离岗人数 flow.cell.separations_persons 按群组归集，写入受益队列当季槽。",
+      "to_state": [
+        "derived.group.unemployed_persons",
+        "state.policy.benefit_cohort_persons"
+      ],
+      "note_zh": "state.policy.benefit_cohort_persons 是本政策要求新增的状态数组（12 组 × 8 槽），见返回的待决问题。它是「持续期」这条拉杆唯一可能的落点：没有它，duration_q 在状态里没有可判定的对象。"
+    },
+    {
+      "link": 2,
+      "step": "S04",
+      "from_state": [
+        "derived.group.unemployed_persons",
+        "state.policy.benefit_cohort_persons",
+        "state.policy.params_ppm",
+        "state.policy.region_mask",
+        "state.price.wage_uu_per_person_q"
+      ],
+      "rule": "mech.statutory_transfer（12 号文件 §4.1 04.2）：eligible_g = min(窗口内队列人数, derived.group.unemployed_persons[g])，掩码外地区取 0；wage_base_g = mul(eligible_g, wage_uu_per_person_q[k(g)])；due_g = mul_ppm(wage_base_g, replacement_ppm)。",
+      "to_state": [
+        "flow.gov.pay_transfers_uu"
+      ],
+      "note_zh": "eligible ≤ unemployed 是一条恒成立的封顶约束：受益队列不追踪个人再就业，用当期失业人数封顶保证队列的近似永远偏保守（少发不多发）。"
+    },
+    {
+      "link": 3,
+      "step": "S04",
+      "from_state": [
+        "flow.gov.pay_transfers_uu",
+        "state.gov.cash_uu",
+        "state.gov.payment_priority"
+      ],
+      "rule": "mech.gov_payment_priority（12 号文件 §4.1 04.2）：pay = min(due, 可用现金)，按收款方 ID 升序用 split_largest_remainder 拆分并逐笔 post(kind=13 transfer, gov → group)；缺口写 state.gov.arrears_by_payee_uu 与 log.arrears。",
+      "to_state": [
+        "flow.group.transfer_income_uu",
+        "state.group.cash_uu",
+        "state.gov.arrears_by_payee_uu"
+      ],
+      "note_zh": "现金不足时是「部分支付 + 欠付」，不得少算合格人数装作没人符合资格（12 号文件 §4.1 明文）。kind=13 在生产法、支出法、收入法三种口径下全部为 none（11 号文件 §5.3），因此转移本身不进任何 GDP 口径。"
+    },
+    {
+      "link": 4,
+      "step": "S05",
+      "from_state": [
+        "flow.group.transfer_income_uu",
+        "state.group.cash_uu"
+      ],
+      "rule": "mech.household_budget（12 号文件 §5 居民需求）：cash_avail 含本季已实际收到的转移；budget = min(mul_ppm(cash_avail, param.mpc_ppm) + 住房支出, state.group.cash_uu)；按 param.engel_weight_ppm 拆到四个产品。",
+      "to_state": [
+        "flow.market.demand_uqs"
+      ],
+      "note_zh": "只有已收到的转移进入预算（INV-063）。欠付的部分不形成需求，也不形成任何指数改善。"
+    },
+    {
+      "link": 5,
+      "step": "S05",
+      "from_state": [
+        "flow.market.demand_uqs",
+        "flow.market.supply_uqs"
+      ],
+      "rule": "mech.market_rationing（12 号文件 §5 配给）：供给不足时按公开优先级与同档比例配给，居民为第 0 档；Σ traded + Σ unmet == Σ demand（INV-059）。",
+      "to_state": [
+        "flow.group.consumption_by_product_uqs",
+        "flow.group.unmet_consumption_uu",
+        "state.cell.inventory_output_uqs"
+      ],
+      "note_zh": "这一环是「有钱买不到东西」的落点：转移增加的是货币需求，能否变成实物消费取决于 supply。供给受限时增量转移只抬高 unmet_consumption 与下季价格，不抬高实际消费量。"
+    },
+    {
+      "link": 6,
+      "step": "S07",
+      "from_state": [
+        "flow.group.consumption_by_product_uqs"
+      ],
+      "rule": "mech.living_index（12 号文件 §7.8）：consumption_index_ppm = floor(本季实际消费量 × 1e6 / 基年基准量)，基准在 q=0 固定后只读。",
+      "to_state": [
+        "state.group.consumption_index_ppm",
+        "state.group.service_access_ppm"
+      ],
+      "note_zh": "消费指数用数量口径，天然是实际量，不受价格上涨的虚增影响。"
+    },
+    {
+      "link": 7,
+      "step": "S08",
+      "from_state": [
+        "derived.group.disposable_income_uu",
+        "state.group.consumption_index_ppm",
+        "derived.group.housing_burden_ppm"
+      ],
+      "rule": "mech.support_composition（12 号文件 §8.1/§8.2）：living_index_ppm 由实际人均收入、住房负担与服务可及性三项加权；support_ppm 由生活、预期、信任三项按 param.support_weight_ppm 加权。",
+      "to_state": [
+        "state.group.living_index_ppm",
+        "state.group.expectation_ppm",
+        "state.group.support_ppm",
+        "derived.politics.support_national_ppm"
+      ],
+      "note_zh": "P03 只能经 living_index 与其滞后平滑出来的 expectation 影响支持度。trust_ppm 的更新式中结构上不存在 transfer_income 通道（INV-122），所以本政策买不到程序信任——这是一条设计上的硬边界，不是参数取零。"
+    },
+    {
+      "link": 8,
+      "step": "S08 → 次季 S03",
+      "from_state": [
+        "flow.market.traded_uqs",
+        "flow.market.unmet_demand_uqs"
+      ],
+      "rule": "mech.demand_expectation（12 号文件 §3.1）：E = E_prev + mul_ppm(上季成交 + 未满足 − E_prev, param.demand_smooth_ppm) → output_plan_uqs → 用工需求 → 招工。",
+      "to_state": [
+        "state.cell.demand_expect_uqs",
+        "flow.cell.output_plan_uqs",
+        "state.cell.employment_persons"
+      ],
+      "note_zh": "负反馈闭合：就业回升压低 derived.group.unemployed_persons，合格人数与支出随之自动下降。这就是「随合格失业人数自动形成支出」的另一半——它同样自动收缩，玩家不需要也无法手动关闭这条自动性。"
+    },
+    {
+      "link": 9,
+      "step": "S06 → 次季 S02",
+      "from_state": [
+        "flow.gov.pay_transfers_uu",
+        "state.gov.cash_uu"
+      ],
+      "rule": "现金恒等式（INV-027）→ 次季 S02 02.6 发债定价：dsr_ppm 上升 → market_ppm = param.market_rate_base_ppm + mul_ppm(param.market_rate_slope_ppm, dsr) → 新批次 coupon_ppm_per_q 上升（写入后永不可改，INV-036）。",
+      "to_state": [
+        "state.gov.cash_uu",
+        "state.bond.coupon_ppm_per_q",
+        "derived.fiscal.debt_service_ratio_ppm"
+      ],
+      "note_zh": "反向链：靠发债维持的转移会逐季抬高偿债率，而 debt_service 的支付优先级高于 statutory_transfers，最终把转移自己挤到后面。这条链是 crowding_out 失败路径的全部机制，不需要任何额外惩罚项。"
+    },
+    {
+      "link": 10,
+      "step": "S04 → S08",
+      "from_state": [
+        "state.gov.arrears_by_payee_uu"
+      ],
+      "rule": "mech.trust_update（12 号文件 §8.1）：本季对该组的转移欠付使 breach_count[g] += 1，breach_ppm = clamp(breach_count × 250000, 0, 1e6)，trust_ppm 下降 mul_ppm(param.trust_drop_ppm, breach_ppm)，恢复速度严格小于下降速度（加载期校验）。",
+      "to_state": [
+        "state.group.trust_ppm"
+      ],
+      "note_zh": "欠付一次的信任损失无法靠下季全额补发在同季抵消。开了失业保障却付不出钱，比没开更伤。"
+    }
+  ],
+  "exit_rule": {
+    "delivered_assets": "none",
+    "unfinished_work": "none",
+    "compensation_rule": "none",
+    "compensation_ppm": 0
+  },
+  "political_reaction": {
+    "bloc.labor_public": 300000,
+    "bloc.business": -150000,
+    "bloc.agri_coop": -80000
+  },
+  "failure_paths": [
+    {
+      "code": "financing",
+      "test_id": "T-S-P03-FAIL-PRIORITY"
+    },
+    {
+      "code": "authority_lapsed",
+      "test_id": "T-S-P03-GATE"
+    },
+    {
+      "code": "no_supply",
+      "test_id": "T-U-A-18"
+    },
+    {
+      "code": "crowding_out",
+      "test_id": "T-S-D-11"
+    },
+    {
+      "code": "no_eligible",
+      "test_id": "T-S-P03-CHAIN"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P03-CHAIN",
+    "T-S-P03-GATE",
+    "T-S-P03-FAIL-PRIORITY",
+    "T-U-A-22",
+    "T-S-A-20",
+    "T-U-A-07",
+    "T-U-A-08",
+    "T-U-B-07"
+  ],
+  "mechanism_ids": [
+    "mech.transfer_payment",
+    "mech.payment_priority",
+    "mech.consumption_budget",
+    "mech.living_index"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 mech.benefit_eligibility 撤下并入 mech.transfer_payment——领取资格与应付额在 JWPolicyEngine.transfer_due_into 是同一段代码，拆成两个名字即伪深度；mech.gov_payment_priority → mech.payment_priority（JWTreasury.pay_line / add_arrears）；mech.household_budget → mech.consumption_budget。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "ui_text_keys": {
+    "blocked.authority": "policy.P03.blocked.authority",
+    "blocked.budget": "policy.P03.blocked.budget",
+    "blocked.cooldown": "policy.P03.blocked.cooldown",
+    "blocked.precondition": "policy.P03.blocked.precondition",
+    "blocked.queue": "policy.P03.blocked.queue",
+    "blocked.exited": "policy.P03.blocked.exited"
+  },
+  "_note_calibration_and_param_cards": {
+    "single_source_rule_zh": "本节是「补充说明」，不是数据：每条 formal_value 都必须逐位等于 formal_field 指向的 schema 正式字段，正式字段是唯一事实来源。本节存在的唯一目的，是把原先写在顶层 parameters 数组里的标定理由与建卡口径保存下来，交给 content/parameters/params_core.json 的建卡人。本节刻意不写 parameter_id / value 这两个键名：注释子树里的参数卡在载入期等于不存在（11 号文件 §1.5、§6.4；tools/validate_content.py 的 E_PARAM_CARD 硬错误正是为此而设），把卡改个键名藏进注释是自欺，不是修复。",
+    "why_parameters_was_removed_zh": "顶层 parameters 键不在 11 号文件 §5.12 的 policy_definition 键集合内，而 §3 的 additionalProperties:false 禁止未声明的顶层键（校验器据此报 E_UNKNOWN_FIELD）。这 10 张卡与 schema 正式字段构成**双份事实来源**：其中 6 张的 value 逐位等于 player_params[*].default、cost.per_quarter_uu、cost.opex_per_q_uu 与 cooldown_q，另外 4 张（cohort_slots_q / initial_spell_seed_mode / ref_wage_own_skill / spend_share_ppm）是本政策新增或派生的机制参数，按 §5.15 与 docs/18 R-PARAM-01 只能建卡在 content/parameters/params_core.json。因此本轮按契约把 parameters 数组整体撤下：正式字段成为唯一事实来源，全部标定理由降级为本注释块。这与 effect_chain 的处置方向不同——effect_chain 是「校验器强制要求、§5.12 漏声明」，已由 tools/validate_content.py 正式登记进 policy_definition schema（必填、array，>= 4 环），因此留在顶层即为合法；parameters 没有任何检查要求它存在，撤下不会让任何检查失明。",
+    "card_creation_handoff_zh": "下列 10 个 parameter_id 目前在内容层没有任何一张卡（content/parameters/registry.json 是 tools/build_param_registry.py 的生成索引，不是任何参数的事实来源，不能顶替；content/parameters/params_core.json 尚未建立，校验器已对此报 E_CONTENT_LAYOUT）。该文件建成后，应把本节每条按九字段（parameter_id / value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note，derived 型另加 derivation_expr）抄成正式卡片，并逐条与此处 formal_field 指向的值做一次逐位对账。",
+    "scale_note_zh": "本节全部金额已按裁定 R-SCALE-01（1 U = 1000000000 μU）复算，且不是简单 ×1000：spend_lines 与 upper_bound 都重跑了 split_largest_remainder 与逐组 floor，计提额改用剧本现行的 statutory_transfers == 4000000000。ppm、人数、季数三类量不随货币刻度变化。",
+    "entries": [
+      {
+        "params_core_card_to_create": "param.p03_replacement_default_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/0/default（replacement_ppm）",
+        "formal_value": 400000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P03「玩家直接改变：资格、替代比例与持续期」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          800000
+        ],
+        "confidence": "low",
+        "definition_zh": "替代比例拉杆的默认值：每季给付额相对该组所属技能档现行工资率 state.price.wage_uu_per_person_q[k] 的比例（40%）。",
+        "calibration_note_zh": "先检验它：设为 0 时本政策的全部支出必须为 0；设为上限时基年四季支出必须仍在 invpool 可认购能力之内（否则 OQ-201 的融资对手方规模不足）。已用剧本初值在 R-SCALE-01 新刻度下复算过一次：基年 12 个 working 组逐组 due_g = mul_ppm(mul(unemployed_g, wage_uu_per_person_q[k]), 400000) 求和 == 560404000 μU/季（wage_uu_per_person_q == [1000, 2000, 3000]），这是「存量失业全部合格」时的**上界**；它只有计提额 1000000000 μU/季 的 56.04%，偏离远超本卡原先写的 5% 门槛。按原定处置顺序应先调本值（713770 ppm 可使上界 999998907 μU 贴到计提额之下，713771 ppm 即越过），但计划书未给替代比例的任何目标值，且提高它等于替玩家做了一次慷慨度决策；首版取保守的 40%，把差额如实登记为计提与实付的口径差，并把「计提基数取计划行还是取按默认拉杆复算的上界」交给待决问题裁定，不在本文件单方面抹平。**校正记录**：本卡原写「求和 == 560399 μU/季、只有 900000 μU/季 的 62.3%、约 650000 ppm」，三处都是旧刻度且旧计提额下的数，已按现行剧本重算。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_duration_default_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/1/default（duration_q）",
+        "formal_value": 4,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P03「持续期」；§05「基线年四季」",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          8
+        ],
+        "confidence": "low",
+        "definition_zh": "持续期拉杆的默认值：同一次失业最多领取 4 个季度，恰好覆盖一个预算年。",
+        "calibration_note_zh": "与 param.p03_cohort_slots_q 共同决定队列长度上限，二者不一致即加载失败。检验方式：在 duration_q = 2 下必须看到第 3 季支出下降而失业率不变（该断言目前还没有登记在测试矩阵里，见 _note_acceptance_tests_detail 中的 T-S-P03-DURATION-EXPIRY 与返回的待决问题）。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_eligibility_rule_default",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/2/default（eligibility_rule）",
+        "formal_value": 1,
+        "unit": "dimensionless",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P03「资格」；§13「短缺先显露」的保守原则",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1
+        ],
+        "confidence": "low",
+        "definition_zh": "资格规则拉杆的默认值：1 = 限受益窗口内离岗者（较严），0 = 全部失业者（较宽）。默认取较严的一侧。",
+        "calibration_note_zh": "两种取值下基年支出差异必须可被 derived.group.unemployed_persons 与受益队列的人数差完全解释；若无法解释，说明队列的老化规则有缺陷。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_cohort_slots_q",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件内没有承载该值的 schema 正式字段——它是本政策要求新增的机制参数）；其下游约束是 /player_params/1/valid_range/1 == 8，即拉杆上限不得超过队列长度",
+        "formal_value": 8,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "11 号文件 §5.15 param.edu_pipeline_slots 的同构取法（定长队列，运行期不扩容）",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          8
+        ],
+        "confidence": "medium",
+        "definition_zh": "受益队列 state.policy.benefit_cohort_persons 的季槽数，即 duration_q 的硬上限。队列为 12 组 × 8 槽的定长整数数组，加载期一次性 resize，运行期只做整体移位。",
+        "calibration_note_zh": "必须 >= param.p03_duration_default_q 的 valid_range 上限（当前两者都是 8，恰好相等），否则拉杆可以选到队列放不下的季数。二者当前数值相等，但不是同一个事实：一个是状态数组的形状，一个是玩家拉杆的边界，加载期必须有一条显式交叉断言。改动即 schema 破坏性变更，需升 schema_version 并写迁移函数（INV-136）。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_initial_spell_seed_mode",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件内没有承载该值的 schema 正式字段——它是本政策要求新增的机制参数）",
+        "formal_value": 1,
+        "unit": "dimensionless",
+        "source_type": "design_assumption",
+        "source_ref": "OQ-203 的同类处理：基年对账不得靠放宽断言解决",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1
+        ],
+        "confidence": "low",
+        "definition_zh": "开局受益队列的播种方式：1 = 把 q=0 的存量失业人数（934161 人）用最大余数法均匀铺满最近 duration_q 个季槽；0 = 视为全部已超期（开局合格人数为 0）。",
+        "calibration_note_zh": "取 1 是为了让基年前几季的支出不是 0；取 0 会让 statutory_transfers 这一行在基年几乎不被花掉，基线年赤字 2000000000 μU（2 U）无法如实现身。注意取 1 并不会让四季支出持平：均匀播种后，q=0 全部合格、q=1 起每季约 1/4 的存量因窗口用尽退出（934161 / 4 ≈ 233540 人），基年四季合格人数递减，缺口由当季新离岗人数补多少要到跑起来才知道。因此基年四季实付额在内容层不可预判，只能事后与计划行比对；偏差过大时改剧本的就业分配或工资率，不得改断言。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_ref_wage_own_skill",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件内没有承载该值的 schema 正式字段——它是本政策要求新增的机制参数）",
+        "formal_value": 1,
+        "unit": "dimensionless",
+        "source_type": "design_assumption",
+        "source_ref": "12 号文件 §4.1 04.2「benefit = replacement_ppm × ref_wage」；10 号文件 §9.1 state.price.wage_uu_per_person_q（3 技能档）",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1
+        ],
+        "confidence": "low",
+        "definition_zh": "参照工资口径：1 = 按受益群组自身技能档的现行工资率；0 = 全部按低技能档工资率（统一定额）。",
+        "calibration_note_zh": "取 1 时给付随工资率联动，取 0 时高技能失业者的替代比例实际偏低。计划书未规定参照口径，已登记为待决问题。检验：两种取值下拆分恒等式（T-U-A-08）都必须通过；若取 1 导致支出对工资率的敏感度过高（工资上调 3% 使支出上调 3% 并触发融资失败），再考虑改为 0 或加封顶。基年剧本的 wage_uu_per_person_q == [1000, 2000, 3000] μU/人/季（R-SCALE-01 之后；旧刻度写作 [1, 2, 3] 的说法已作废），三档之间仍是 1:2:3 的整数倍关系，取 1 时高技能档的单位给付是低技能档的 3 倍。新刻度的意义在于分辨率：旧刻度下 replacement_ppm 对低技能档只有 {0, 1} 两个可达值，现在有 1000 级。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_provision_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/per_quarter_uu",
+        "formal_value": 1000000000,
+        "unit": "μU",
+        "source_type": "derived",
+        "derivation_expr": "idiv_floor(government_init.annual_plan.expenditure_lines_uu.statutory_transfers, 4) = idiv_floor(4000000000, 4) = 1000000000",
+        "source_ref": "content/scenarios/chengwan/government_init.json 的 annual_plan.expenditure_lines_uu.statutory_transfers == 4000000000；计划书 §05 基线年支出计划",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          4000000000
+        ],
+        "confidence": "low",
+        "definition_zh": "基年每季的预算计提额（1000000000 μU/季、4000000000 μU/年），用于 S02 的资金预留与承诺登记；不是实际支付额。",
+        "calibration_note_zh": "本值由剧本的年度支出计划整除四季得到，改剧本那一行本值必须跟着改，否则 V-PD-03 的成本恒等式与剧本的 V-FIN-04 会各自成立却互相矛盾（载入期应加一条交叉断言，见返回的待决问题）。实际预留按 season_factor_ppm.gov_primary 拆季为 [960000000, 1000000000, 1020000000, 1020000000]，四季合计精确等于 4000000000；per_quarter_uu 只是恒等式要求的均匀季额，不是任何一季的真实预留额。首版没有其它经常性法定转移（养老金为 0，OQ-225），P05 的助学金虽然也走支付优先级第 3 档，但它的额度来自 P05 自己的预算包，不占用本行的年度额度——若剧本作者的本意不同，本条必须重判。**校正记录**：本卡原写 900000000 μU/季、3600000000 μU/年，并把剧本那一行写成 3600000。剧本现行值是 4000000000（八行支出合计 22000000000 μU，与计划书 §05 一致），原值既非旧刻度的正确换算也非现行剧本值，已重算。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_admin_opex_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/opex_per_q_uu",
+        "formal_value": 20000000,
+        "unit": "μU",
+        "source_type": "derived",
+        "derivation_expr": "mul_ppm(param.p03_provision_uu_per_q, 20000) = idiv_floor(1000000000 * 20000, 1000000) = 20000000",
+        "source_ref": "计划书 §07「服务有运行费」；§10 P04 运行费占总投入约 0.5%/季 的同量级取法",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          200000000
+        ],
+        "confidence": "low",
+        "definition_zh": "经办失业保障的每季运行费（信息系统维护与经办物耗），付给掩码内各地区的 pubserv，恒等于计提额的 2%。",
+        "calibration_note_zh": "检验它的方式是断供测试：把本项欠拨若干季，断言 state.pubserv.availability_ppm 下降而 capacity_active 与给付额不变（INV-102）。若断供毫无可观察后果，说明取值过小或链路未接通。**未决**：本项走支付优先级第 4 档 service_opex，但剧本 annual_plan.expenditure_lines_uu.service_opex 现为 0，该行没有额度可占，详见 _note_operating_cost.budget_line_conflict_zh。**校正记录**：本卡原写 18000000 μU/季，并声称占用 service_opex 行的 4.3%（该行 1680000 μU/年、420000 μU/季）；剧本该行为 0，这两个数在现行剧本里没有对应物，已删除，运行费本身按新计提额重算为 20000000。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_cooldown_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cooldown_q",
+        "formal_value": 4,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §17「反复开关补助是否重复领钱」；INV-098",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          8
+        ],
+        "confidence": "low",
+        "definition_zh": "本政策两次开关之间的最小间隔季数，写入 state.policy.cooldown_until_q。",
+        "calibration_note_zh": "与 INV-097 的领取幂等台账互为双保险：即便冷却被调到 1，重复领取也必须由 claim_key 挡住。ADV-A01（反复开关补助重复领钱）的转移版若能靠开关套出额外支付，先修台账再谈冷却。每次开关的行政成本见 /toggle_cost_uu == 10000000 μU。"
+      },
+      {
+        "params_core_card_to_create": "param.p03_spend_share_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件内没有承载该值的 schema 正式字段——它是本政策要求新增的机制参数）；其金额形态是 /cost/spend_lines_uu_per_q",
+        "formal_value": [
+          387671,
+          449977,
+          162352
+        ],
+        "unit": "ppm",
+        "source_type": "derived",
+        "derivation_expr": "split_largest_remainder(1000000, [543131000, 630422000, 227457000])，权重 = 基年各技能档 (Σ unemployed_persons) × wage_uu_per_person_q[k]，k 依次为 low/mid/high；三项和恒为 1000000",
+        "source_ref": "content/scenarios/chengwan/population_init.json 反算的基年失业人数（low 543131 / mid 315211 / high 75819）× scenario.json 的 prices_init.wage_uu_per_person_q == [1000, 2000, 3000]",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "definition_zh": "预算计提额在低/中/高三个技能档之间的拆分权重，三项和恒为 1000000。仅用于计提行的登记与展示，实际支付按逐组应付额拆分，不使用本权重。",
+        "calibration_note_zh": "剧本的就业分配或工资率一改，本值必须用同一条 derivation_expr 重算，否则计提行的展示会与真实构成脱节并误导玩家（它不影响任何支付）。复核方式：用 split_largest_remainder(cost.per_quarter_uu = 1000000000, 同一组权重) 应得 [387671037, 449976803, 162352160]，与 cost.spend_lines_uu_per_q 逐项相等。ppm 形态与金额形态的余数都落在中技能档，两者方向一致；工资率整体等比缩放不改变本值（权重之比不变）。"
+      }
+    ]
+  },
+  "_note_parameters_referenced": [
+    "param.p03_replacement_default_ppm",
+    "param.p03_duration_default_q",
+    "param.p03_eligibility_rule_default",
+    "param.p03_cohort_slots_q",
+    "param.p03_initial_spell_seed_mode",
+    "param.p03_ref_wage_own_skill",
+    "param.p03_provision_uu_per_q",
+    "param.p03_admin_opex_uu_per_q",
+    "param.p03_cooldown_q",
+    "param.p03_spend_share_ppm",
+    "param.policy_toggle_cost_uu",
+    "param.commitment_horizon_q",
+    "param.market_rate_base_ppm",
+    "param.market_rate_slope_ppm",
+    "param.household_bond_appetite_ppm",
+    "param.demand_smooth_ppm",
+    "param.mpc_ppm",
+    "param.engel_weight_ppm",
+    "param.support_weight_ppm",
+    "param.trust_drop_ppm",
+    "param.bloc_care_gain_ppm",
+    "param.opex_starve_decay_ppm",
+    "param.opex_recover_ppm",
+    "param.amount_max_uu"
+  ],
+  "_note_parameters_referenced_zh": "上列参数由 content/parameters/params_core.json 统一建卡（11 号文件 §5.15 的最小集与 docs/18 R-PARAM-01）。本文件只引用、不建卡：parameter_id 全集唯一，同一个参数在两个文件里各写一张卡会直接违反 V-PC-01 的唯一性前提。前 10 个 param.p03_* 原先以 parameters 数组写在本文件顶层，本轮已按契约撤下，建卡规格见 _note_calibration_and_param_cards.entries；其余 14 个是本政策读取、由其它机制拥有的参数。本键是字符串数组而不是对象数组，正是为了不把参数卡再一次藏进注释子树。",
+  "_note_identity": {
+    "code": "P03",
+    "slug": "unemployment_benefit",
+    "name_zh": "失业保障",
+    "category": "social_protection",
+    "governance_tool_type": "transfer_payment",
+    "governance_tool_type_zh": "转移支付",
+    "note_zh": "这六项原为顶层键，但 11 号文件 §5.12 的 policy_definition schema 只声明 20 个顶层键且 additionalProperties: false，它们全部与已声明字段重复（code/slug 可由 policy_id 与文件名推出，name_zh 与 label_zh 同值，category 与 governance_tool_type 由 kind == transfer 覆盖）。按契约收进注释键保留原文，不参与任何逻辑，也不进 content_hash。"
+  },
+  "_note_player_levers": {
+    "note_zh": "本块是 player_params 的展示层扩写（中文名、步长、状态槽位、枚举释义）。四条 key 与 player_params 逐条对应，valid_range 与 default 必须逐字相同；schema 只声明 player_params，因此本块按契约收进注释键。",
+    "levers": [
+      {
+        "key": "eligibility_rule",
+        "name_zh": "资格规则",
+        "type": "int_enum",
+        "unit": "dimensionless",
+        "valid_range": [
+          0,
+          1
+        ],
+        "step": 1,
+        "default": 1,
+        "state_slot": "state.policy.params_ppm[policy.P03][2]",
+        "values": [
+          {
+            "value": 0,
+            "label_zh": "全部失业者",
+            "definition_zh": "合格人数 = 该组 derived.group.unemployed_persons，不要求受益窗口内发生过离岗。duration_q 在此取值下对合格人数无约束力——这是一个玩家可见的「拉杆失效」，政策页必须说明。"
+          },
+          {
+            "value": 1,
+            "label_zh": "限受益窗口内离岗者",
+            "definition_zh": "合格人数 = 该组受益队列中仍在 duration_q 个季槽内的人数，并以当期失业人数封顶。长期失业者在窗口用尽后退出保障，支出下降但失业率不降。"
+          }
+        ]
+      },
+      {
+        "key": "replacement_ppm",
+        "name_zh": "替代比例",
+        "type": "ppm",
+        "unit": "ppm",
+        "valid_range": [
+          0,
+          800000
+        ],
+        "step": 50000,
+        "default": 400000,
+        "state_slot": "state.policy.params_ppm[policy.P03][0]",
+        "definition_zh": "每季给付额相对该组所属技能档现行工资率 state.price.wage_uu_per_person_q[k] 的比例。上限 800000（80%）是设计护栏，不是现实上限；置 0 即政策生效但不产生任何支出。"
+      },
+      {
+        "key": "duration_q",
+        "name_zh": "持续期",
+        "type": "int_q",
+        "unit": "q",
+        "valid_range": [
+          1,
+          8
+        ],
+        "step": 1,
+        "default": 4,
+        "state_slot": "state.policy.params_ppm[policy.P03][1]",
+        "definition_zh": "同一次失业最多可领取的季数，即受益队列中被计入合格人数的季槽数。上限 8 由 param.p03_cohort_slots_q 决定（队列长度固定，运行期不扩容）。"
+      },
+      {
+        "key": "region_mask",
+        "name_zh": "施行地区",
+        "type": "mask",
+        "unit": "dimensionless",
+        "valid_range": [
+          1,
+          15
+        ],
+        "step": 1,
+        "default": 15,
+        "state_slot": "state.policy.region_mask[policy.P03]",
+        "definition_zh": "位掩码，bit0 北原 / bit1 中州 / bit2 海岬 / bit3 西岭（下标序见 10 号文件 §0.5）。掩码外地区的群组合格人数恒为 0，其失业者仍出现在报告中，标注「不在施行范围」。"
+      }
+    ]
+  },
+  "_note_preconditions": "三条都只做比较，不做表达式求值（与事件触发同一限制，11 号文件 §5.13 V-EV-03）。冷却（state.policy.cooldown_until_q）与席位门槛（min_seats_ppm）由 12 号文件 §2.1 02.1 的通用资格链统一判定，不在此重复登记，否则同一条件会有两处真值来源。本政策不申请施工槽位，因此没有 construction_slot 前置条件。第三条 metric_compare 的分母口径是劳动力（11677007 人）而不是总人口（24000000 人），这正是计划书 §05 对失业率的规定。",
+  "_note_cost_model": {
+    "cost_nature_zh": "无一次性建设成本；支出全部是经常性给付，且规模由结算结果（合格失业人数 × 所属技能档工资率 × 替代比例）自动形成，不由玩家填金额。cost 块中的数字是**预算计提额（provision）**，用于 S02 的资金预留与承诺登记，不是实际支付额。实际支付额在 S04 由 mech.statutory_transfer 计算，二者的差额每季必须在财政页显式披露。",
+    "budget_curve_uu_per_q": [
+      960000000,
+      1000000000,
+      1020000000,
+      1020000000
+    ],
+    "budget_curve_horizon_q": 4,
+    "budget_curve_basis_zh": "= split_largest_remainder(4000000000, season_factor_ppm.gov_primary = [240000, 250000, 255000, 255000])，四季合计精确等于年额 4000000000（INV-042）。本组季节系数对 4000000000 恰好整除，四项都没有余数，因此本曲线不依赖 tiebreak；换一组系数或换一个年额时必须重跑最大余数法，不得手工凑数。cost.per_quarter_uu 是 V-PD-03 恒等式要求的均匀季额 1000000000，与本曲线的第 2 季相同不是巧合——gov_primary[1] == 250000 ppm 恰为四分之一——但两者仍是不同的量：一个是恒等式口径，一个是真实预留曲线，不要互相替代。",
+    "budget_curve_renewal_zh": "曲线覆盖一个预算年（4 季）。每个预算审查季（q ≡ 3 mod 4）按同一公式重新计提下一年度额度，计提基数为最近四季实际支付额的最大值；未续批则不再计提，政策进入退出流程。",
+    "provision_vs_actual": {
+      "formula_zh": "due_g = mul_ppm(mul(eligible_persons_g, wage_uu_per_person_q[k(g)]), replacement_ppm)，逐组先乘后缩放、逐组取整，本季应付总额 = Σ_g due_g（不是 floor(Σ_g 未取整值)）。新刻度下 mul_ppm 必须走 JWMath.mul_div_floor（R-SCALE-01 连带要求 1），裸乘在契约上界处真的溢出 int64。",
+      "base_year_upper_bound_uu_per_q": 560404000,
+      "base_year_upper_bound_basis_zh": "在「存量失业全部落在受益窗口内」（seed_mode = 1 的 q=0）且默认 replacement_ppm = 400000 的条件下，12 个 working 组逐组复算后求和：北原低 105740400 + 北原中 87091200 + 北原高 22468800 + 中州低 41200800 + 中州中 72264800 + 中州高 42282000 + 海岬低 36614000 + 海岬中 52610400 + 海岬高 16366800 + 西岭低 33697200 + 西岭中 40202400 + 西岭高 9865200 == 560404000 μU。在当前拉杆值下 due_g = unemployed_g × {400, 800, 1200} 恒为整数，因此逐组、逐技能档、全国三种汇总口径给出**同一个数** 560404000——旧刻度下这三个口径分别是 560399 / 560402 / 560404，差额来自逐组 floor；R-SCALE-01 买到的分辨率正是把这类口径分叉压掉。但口径规则一个字都没变：结算按组算，报告也必须按组加总。三者相等只在当前拉杆值下成立——把 replacement_ppm 调成 333333 就会重新分叉（逐组 467002860 μU，全国先汇总再取整 467002866 μU，差 6 μU），不得据此把对账口径改成全国汇总。",
+      "gap_disclosure_zh": "560404000 只有计提额 1000000000 的 56.0404%（560404 ppm），且此后各季随窗口老化只会更低。这个缺口不是配平错误，而是「计提额取自剧本的年度支出计划、实付额由结算结果自动形成」这一设计的直接后果；它每季必须在财政页以「计提 / 实付 / 差额」三行显式披露，不得靠调本文件的任何数字抹平（计划书 §13 禁止后处理补丁）。把它消掉只有两条合法路径：把默认替代比例调高到 713770 ppm（该值下上界 = 999998907 μU；调到 713771 即得 1000000308 μU，反而越过计提额，说明这条边界是整数硬边界不是近似），或把剧本的 statutory_transfers 行从 4000000000 调低到与默认拉杆复算值一致。两条都越过了单个内容文件的权限，已登记为待决问题。"
+    },
+    "spend_targets_per_q": [
+      {
+        "line": "transfer_group_working_low",
+        "payee_agent": "agent.group.<region>.working.low",
+        "amount_uu": 387671037,
+        "basis_zh": "权重 = 基年低技能档失业 543131 人 × 季工资率 1000 μU = 543131000；人数最多但工资率最低，金额占比 387671 ppm。本行是计提基数的拆分，不是实际给付。"
+      },
+      {
+        "line": "transfer_group_working_mid",
+        "payee_agent": "agent.group.<region>.working.mid",
+        "amount_uu": 449976803,
+        "basis_zh": "权重 = 315211 人 × 2000 μU = 630422000；金额占比 449977 ppm，是三档里最大的一档，最大余数法多出的那 1 μU 也归在本行。"
+      },
+      {
+        "line": "transfer_group_working_high",
+        "payee_agent": "agent.group.<region>.working.high",
+        "amount_uu": 162352160,
+        "basis_zh": "权重 = 75819 人 × 3000 μU = 227457000；金额占比 162352 ppm。"
+      }
+    ],
+    "spend_targets_sum_uu": 1000000000,
+    "spend_targets_identity_zh": "三行之和 == cost.per_quarter_uu == 1000000000 μU，精确相等（V-PD-03，加载器不做归一化补偿）。实际支付时按地区与技能档逐组拆分，权重 = 各组应付额，用 split_largest_remainder，tiebreak 为群组下标，Σ 分项 == 应付总额（INV-003）。",
+    "no_project_zh": "本政策不生成 state.project.* 条目，不占用 state.region.construction_slots_total，不需要 required_construction_uqs 或 required_equipment_uqs，因此没有施工拥堵与交付延迟两类失败路径。",
+    "arithmetic_order_zh": "逐组先乘后缩放：wage_base_g = IntMath.mul(eligible_persons_g, wage_uu_per_person_q[k(g)])；due_g = mul_ppm(wage_base_g, replacement_ppm)，而 mul_ppm 在 R-SCALE-01 之后必须走 JWMath.mul_div_floor（裸乘 mul(AMOUNT_MAX, PPM) = 4e21 真的溢出 int64）。禁止先算 benefit_per_person 再乘人数：新刻度下单人季工资是 1000 / 2000 / 3000 μU，在 replacement_ppm = 400000 这个整除的取值上两条路线恰好相等（都得 560404000 μU），但取值一旦不整除，误差就按人数放大——replacement_ppm = 333333 时逐组路线得 467002860 μU，先算人均再乘人数只得 466536330 μU，少发 466530 μU。口径不能靠「当前默认值恰好对得上」来选。入口断言 wage_base_g <= param.amount_max_uu（4000000000000000，M0）。"
+  },
+  "_note_funding_requirement": {
+    "sources_allowed": [
+      "tax_scheduling",
+      "cash",
+      "bond"
+    ],
+    "sources_zh": [
+      {
+        "source": "tax_scheduling",
+        "label_zh": "税收调度",
+        "rule_zh": "首选：占用 annual_plan.expenditure_lines_uu.statutory_transfers 这一行的年度额度（4000000000 μU = 4 U），按 season_factor_ppm.gov_primary 拆到四季（最大余数法，四季合计精确等于年额，INV-042）。额度不足时必须先用 budget_reallocate 命令从其它行调剂，调剂本身受源行额度约束。"
+      },
+      {
+        "source": "cash",
+        "label_zh": "国库现金",
+        "rule_zh": "S02 预留：need_uu = 本季预算曲线额，avail_uu = state.gov.cash_uu − state.gov.reserved_memo_uu；不足即 REJECT(E_BUDGET_INSUFFICIENT)。预留只减少可用额度，不产生任何现金移动（预算不是资产，计划书 §07）。"
+      },
+      {
+        "source": "bond",
+        "label_zh": "债券融资",
+        "rule_zh": "进入 S02 02.6 的发债需求队列。票息由规则给出（param.market_rate_base_ppm + 偿债率斜率），玩家不能设利率；国内认购受 min(credit_limit_domestic, invpool.cash × param.household_bond_appetite_ppm) 限制，外部认购受 world.credit_limit_uu − credit_used_uu 限制。用发债维持经常性转移会抬高 derived.fiscal.debt_service_ratio_ppm，进而抬高后续批次票息——这是 crowding_out 失败路径的机制来源。"
+      }
+    ],
+    "queue_occupied": "budget_commitment",
+    "queue_detail_zh": "占用的是财政承诺队列，不是项目队列：state.gov.reserved_memo_uu（本季预留，季末归零，INV-033）、state.gov.committed_memo_uu（未来承诺，滚动窗口 param.commitment_horizon_q）、以及支付优先级第 3 档 statutory_transfers（12 号文件 §2.2）。不占用 state.region.construction_slots_total 的任何槽位。",
+    "payment_priority_rank": 3,
+    "payment_priority_consequence_zh": "排在 debt_service(1)、public_wages(2) 之后，在 service_opex(4)、project_contracts(5)、procurement(6)、subsidies(7)、discretionary(8) 之前。玩家可以用 set_payment_priority 命令改变排序；把 statutory_transfers 后移会在现金紧张时把欠付转嫁给失业群组，欠付计入 S08 的 breach_count 并压低 trust_ppm。P05 的助学金也走第 3 档，两者在现金不足时按同档比例配给，不设人为先后。"
+  },
+  "_note_lag_model": {
+    "earliest_feedback_q": 1,
+    "earliest_feedback_basis_zh": "计划书 §09 给定「1 季」。通过季 q 只发生 S02 的资格判定、预留与 effective_from_q = q + 1 的写入，不产生任何支付（INV-095：q < effective_from_q 时效应函数返回零）。下一季 S04 首次支付，同季 S05 转移收入即进入居民消费预算（INV-063），因此最早可观察反馈是 1 季。",
+    "full_effect_q": 6,
+    "full_effect_basis_zh": "1（生效）+ duration_q（受益队列填满，默认 4）+ 1（S03 的需求预期平滑把上季成交与未满足需求折进 output_plan，生产与就业才回应）。这不是写死的常数：max_feedback_q 必须等于 1 + duration_q + 1，随玩家调整 duration_q 变化，UI 必须按当前拉杆值显示，而不是显示 6。",
+    "lag_drivers": [
+      {
+        "driver": "player_params.duration_q",
+        "effect_zh": "直接决定受益队列填满与排空所需季数，是完整生效期的主项。"
+      },
+      {
+        "driver": "param.demand_smooth_ppm",
+        "effect_zh": "决定消费增量多久才被企业当作需求信号（S03 §3.1），是「转移 → 生产 → 就业」这一环的滞后来源。"
+      },
+      {
+        "driver": "state.gov.payment_priority",
+        "effect_zh": "转移排在第 3 档；前两档吃光现金时本季只能部分支付，反馈被推迟到欠付清偿之后。"
+      },
+      {
+        "driver": "state.gov.cash_uu 与融资可得性",
+        "effect_zh": "发债受阻时支付被排序推迟，滞后由融资条件而非政策设计决定。"
+      },
+      {
+        "driver": "state.pubserv.availability_ppm",
+        "effect_zh": "运行费断供压低经办能力，只影响服务可及性指数的恢复速度，不改变给付时点（见 _note_operating_cost）。"
+      }
+    ],
+    "commission_delay_note_zh": "commission_delay_q = 1 是为满足 V-PD-04 的形式要求而填写的最小值；本政策不产生任何资产投运，该字段在效应链中无作用点。已登记为待决问题。"
+  },
+  "_note_targets": {
+    "groups": {
+      "eligible_group_pattern": "group.<region>.working.<skill>",
+      "count": 12,
+      "base_year_unemployed_persons": {
+        "group.beiyuan.working.low": 264351,
+        "group.beiyuan.working.mid": 108864,
+        "group.beiyuan.working.high": 18724,
+        "group.zhongzhou.working.low": 103002,
+        "group.zhongzhou.working.mid": 90331,
+        "group.zhongzhou.working.high": 35235,
+        "group.haijia.working.low": 91535,
+        "group.haijia.working.mid": 65763,
+        "group.haijia.working.high": 13639,
+        "group.xiling.working.low": 84243,
+        "group.xiling.working.mid": 50253,
+        "group.xiling.working.high": 8221
+      },
+      "base_year_unemployed_total_persons": 934161,
+      "base_year_note_zh": "以上 12 个数由 population_init.json 逐组反算：labor_force_g = idiv_floor(population_persons × participation_ppm, 1e6)，unemployed_g = labor_force_g − Σ employed_persons。本文件只读这些数用于对账与展示，绝不回写（INV-143：assertions 与反算量都不是输入）。",
+      "excluded_zh": "minor 与 elder 组不是作用对象：INV-074 规定非 working 组 participation_ppm == 0 且 employed == 0，因此不存在失业。它们只经 INV-085 的组间赡养转移间接受益（working 组可支配收入上升 → 赡养池上升），这条间接传导必须在报告中与直接给付分列。"
+    },
+    "regions": {
+      "selector": "state.policy.region_mask",
+      "default_mask": 15,
+      "rule_zh": "掩码位由 10 号文件 §0.5 的地区下标决定：bit0 北原 / bit1 中州 / bit2 海岬 / bit3 西岭。掩码外地区的合格人数恒为 0。"
+    },
+    "sectors": {
+      "rule_zh": "不按部门定向。失业是群组侧的量（derived.group.unemployed_persons），与失业者原先所在的 cell 无关；一旦离岗，人就回到群组的劳动力池，不再归属任何 cell。"
+    },
+    "allocation_rule_zh": "逐组应付额 due_g 按 _note_cost_model.arithmetic_order_zh 计算；全额支付时逐组过账。现金不足时：pay = min(Σ due, 该档可用现金)，再用 split_largest_remainder(pay, weights = 各组 due_g, tiebreak = 群组下标) 拆分，Σ 分项 == pay 精确成立（INV-003），余额逐组进 state.gov.arrears_by_payee_uu。禁止按地区或技能档手工设优先顺序——同一档内只能按比例。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 20000000,
+    "opex_share_of_provision_ppm": 20000,
+    "payee_agent": "agent.pubserv.<region>",
+    "payee_rule_zh": "按掩码内各地区的合格人数权重用 split_largest_remainder 拆分，tiebreak 为地区下标。经办由公共服务单位承担（资格核验、发放台账、申诉受理），不新设机构。",
+    "staffing_zh": "不新增编制字段：经办人员计入 state.pubserv.employment_persons，其工资走 public_wages（优先级第 2 档），本行只含信息系统维护与经办物耗。",
+    "priority_rank": 4,
+    "starvation_rule_zh": "运行费欠拨使 flow.pubserv.funding_ratio_ppm < 1000000，S07 据此按 param.opex_starve_decay_ppm 压低 state.pubserv.availability_ppm[r]，进而压低 flow.pubserv.delivered_uqs 与 state.group.service_access_ppm。",
+    "starvation_forbidden_zh": "断供**不得**减少 state.pubserv.capacity_active_uqs_per_q，不得删除任何资产（INV-102），也**不得**削减合格人数或给付额——否则就变成一次没有账目记录的静默减支。给付缺口只有一条合法表达方式：按支付优先级形成欠付（state.gov.arrears_by_payee_uu）。",
+    "recovery_zh": "补拨后按 param.opex_recover_ppm 逐季恢复可用率，恢复速度低于下降速度。",
+    "note_zh": "本块是 cost.opex_per_q_uu 的展开；两处的 20000000 必须逐位相同，schema 只声明前者。20000000 = mul_ppm(cost.per_quarter_uu = 1000000000, 20000)，计提额一改本值必须跟着重算。",
+    "budget_line_conflict_zh": "**未解决的跨文件矛盾，不得在本文件单方面抹平**：本行走支付优先级第 4 档 service_opex，但 content/scenarios/chengwan/government_init.json 的 annual_plan.expenditure_lines_uu.service_opex 现为 0 μU/年。该行没有任何年度额度，意味着 S02 对本项的预留必然 REJECT(E_BUDGET_INSUFFICIENT)，除非先用 budget_reallocate 从别的行调剂。本文件原先写「占用剧本 annual_plan 的 service_opex 行（1680000 μU/年，420000 μU/季），只占该行的 4.3%」——该剧本行现为 0，这句话在任何刻度下都不成立，已删除。两条合法出路：(a) 剧本补上 service_opex 年度额度（会牵动八行支出合计 22000000000 μU 的配平）；(b) 契约明确经办运行费由 statutory_transfers 同一行内列支（则本项须改走第 3 档，并与给付同档配给）。把 opex_per_q_uu 改成 0 装作没有运行费不是出路——计划书 §07「服务有运行费」，静默减支等于伪造一条没有账目的节约。"
+  },
+  "_note_exit_rule_detail": {
+    "triggers": [
+      {
+        "trigger": "policy_repeal",
+        "label_zh": "玩家撤回",
+        "rule_zh": "S02 受理后置 state.policy.exit_pending_q = q + 1；当季（q）已计提的应付额仍按正常规则支付或形成欠付，自 q+1 起不再产生新的应付额。"
+      },
+      {
+        "trigger": "budget_review_lapse",
+        "label_zh": "预算审查未续批",
+        "rule_zh": "预算审查季（q ≡ 3 mod 4）未重新预留时，与撤回同一路径：下季起停发，当季义务照常结清。"
+      },
+      {
+        "trigger": "run_terminated",
+        "label_zh": "本局终止",
+        "rule_zh": "state.meta.run_terminated == true 后不再结算，未付欠付保留在终局结算页，不做任何抹平。"
+      }
+    ],
+    "incurred_cost_zh": "已发生成本不可逆：已支付的转移不追回（没有任何「回收」过账类型，也不得新增），一次性开关行政成本 param.policy_toggle_cost_uu 沉没。",
+    "delivered_assets_zh": "无资产交付，无在建工程，无残值，无第三方合同，因此赔偿恒为 0。这不是「利弊对称」的省略，而是转移支付本来就不产生可回收的实物。exit_rule 三个字段填的 \"none\" 是内容层的哨兵值，契约还没有给这三个字段定义取值集合，校验器对此报 WARN；等契约补上枚举（建议取 none / retain / register_residual / remaining_contract_ppm）后本文件按枚举对齐，不在此自行发明新词。",
+    "outstanding_obligation_zh": "关键一条：撤回**不消灭已形成的欠付**。state.gov.arrears_by_payee_uu 中对各群组的余额继续按支付优先级清偿，或由玩家显式重组；政策关停不是清账手段（INV-030 的恒等式在政策关停季照常成立）。",
+    "claim_ledger_zh": "state.policy.claim_ledger 中的领取登记只增不减，政策退出不清零；关停再开启不得补发历史季（INV-097）。受益队列 state.policy.benefit_cohort_persons 在退出时保留并继续老化，重开时窗口不重置——否则反复开关就能把持续期无限续期。",
+    "cooldown_zh": "退出后 cooldown_q = 4 季内不可重开（state.policy.cooldown_until_q），每次开关计一次 toggle_count 并付一次行政成本 toggle_cost_uu = 10000000 μU（= 0.01 U，新刻度；原文写 10000 μU 是 R-SCALE-01 之前的旧刻度）。"
+  },
+  "_note_political_reaction_basis": [
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "support",
+      "stance_ppm": 300000,
+      "interest_zh": "该集团关心就业保障、工资与教育医疗（计划书 §08）。其成员映射自 working 组，正是本政策的直接受益人：失业时 flow.group.transfer_income_uu 是唯一收入来源。支持强度按 derived.group.unemployed_persons 在其成员中的占比放大——失业越高，同一条政策对它的价值越大。",
+      "mechanism_ref": "S08 集团立场更新按 param.bloc_care_gain_ppm 传导其关心指标（就业与生活指数）的变化，不是对政策名字的好恶。"
+    },
+    {
+      "bloc": "bloc.business",
+      "direction": "oppose",
+      "stance_ppm": -150000,
+      "interest_zh": "该集团关心利润与政策可预期性。反对的利益基础是可核算的两条：其一，企业补助（subsidies）在支付优先级中排第 7 档，法定转移排第 3 档，现金紧张时被挤后的是它；其二，用发债维持经常性转移抬高 derived.fiscal.debt_service_ratio_ppm 与新批次票息，并占用 invpool 的认购能力（param.household_bond_appetite_ppm 封顶），压缩其融资空间。",
+      "mechanism_ref": "反对强度随 flow.gov.new_borrowing_uu 中用于转移的比例与 state.gov.arrears_by_payee_uu 中对企业的欠付上升。不引入「反对政府一切」的溢出（INV-125：票、组织力、行政能力三者互不引用）。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "oppose_conditional",
+      "stance_ppm": -80000,
+      "interest_zh": "该集团关心农户收入与地区资源分配。在默认资格规则（限受益窗口内离岗者）下，北原以农业为主的低技能就业离岗记录稀疏，其成员大量落在「失业但不合格」一栏，却同样承担税负与融资挤占，因此是净付出方，立场为负。若玩家把 eligibility_rule 改为「全部失业者」，其成员转为净受益方，立场应转正——北原低技能档一档就占全国失业人数的 264351 / 934161 == 28.3%，这条反转在数量上是可观的。",
+      "mechanism_ref": "立场的符号由「本集团成员中合格人数占失业人数的比例」决定，是一条可核算的利益判据，不是对政策类别的固定态度。该条件反转必须在政策页与社会页同时可见。"
+    }
+  ],
+  "_note_failure_paths_detail": [
+    {
+      "code": "financing",
+      "bound_test_id": "T-S-P03-FAIL-PRIORITY",
+      "binding_zh": "精确命中。30 号文件 §4.2 的 P03 行把这条失败链定义为「现金不足时第 3 档被推迟 ⇒ arrears 增加、trust_ppm 下降、给付不得静默缩水」，与本条逐字对应。",
+      "label_zh": "付不出：现金不足，转移被排序推迟",
+      "trigger_zh": "S04 第 3 档 statutory_transfers 到位时 state.gov.cash_uu 小于本档应付额（前两档 debt_service 与 public_wages 已先行扣减），且本季无可用融资。",
+      "observable_zh": "flow.gov.pay_transfers_uu < Σ due；state.gov.arrears_by_payee_uu 对各群组出现余额；log.arrears 逐条记录 {payee, amount, reason=statutory_transfers}；S08 的 breach_count 上升，state.group.trust_ppm 下降。",
+      "player_explanation_key": "policy.P03.fail.financing"
+    },
+    {
+      "code": "authority_lapsed",
+      "bound_test_id": "T-S-P03-GATE",
+      "binding_zh": "部分命中。GATE 模板（30 号文件 §4.3）构造「恰好一条前置不满足」并断言 REJECT(E_BUDGET_INSUFFICIENT)、state_hash 逐位不变、effect.target 随后 12 季累计变化 == 0 —— 即本条的「停发」一半。未被覆盖的是另一半：「当季已计提义务仍按原规则结清」。矩阵里没有这条行，已登记为待决问题；在它落地前，本条的完整断言只由本文件记录，不由任何测试保证。",
+      "label_zh": "断档：预算审查季未续批",
+      "trigger_zh": "q ≡ 3 (mod 4) 的预算审查季，可用额度不足以重新预留下一年度计提，或玩家把额度调剂给了其它行。",
+      "observable_zh": "state.policy.exit_pending_q 被置位；下季起 flow.gov.pay_transfers_uu 归零；derived.policy.blocked_reason = budget；当季已计提义务仍按原规则结清，不因断档消失。",
+      "player_explanation_key": "policy.P03.fail.authority_lapsed"
+    },
+    {
+      "code": "no_supply",
+      "bound_test_id": "T-U-A-18",
+      "binding_zh": "执行点命中。本条的机制闸就是 S05 的市场配给恒等式，T-U-A-18（test_u_market_clearing）直接断言 Σ 成交 == 供给、Σ 成交 + Σ 未满足 == Σ 需求、alloc_i <= requested_i；这条一绿，增量货币需求就在结构上不可能变出实物。缺的是 P03 端到端版本（发钱后 consumption_index_ppm 不动、unmet_consumption 上升），矩阵里没有这条行，已登记为待决问题。",
+      "label_zh": "买不到：钱发下去了，商品供给不足",
+      "trigger_zh": "S05 中居民档需求超过 flow.market.supply_uqs，配给规则转为 priority 或 proportional。",
+      "observable_zh": "flow.group.transfer_income_uu 上升但 flow.group.consumption_by_product_uqs 不升；flow.group.unmet_consumption_uu 与 flow.market.unmet_demand_uqs 上升；state.group.consumption_index_ppm 不动；S07 的缺口信号推高下季价格。支出真实发生、生活指数不改善——这正是政策明显无效的位置。",
+      "player_explanation_key": "policy.P03.fail.no_supply"
+    },
+    {
+      "code": "crowding_out",
+      "bound_test_id": "T-S-D-11",
+      "binding_zh": "必要条件命中。挤出能否发生，取决于发债受不受对手方能力约束；T-S-D-11（test_s_financing_counterparty）断言 invpool 与外部额度不足时发行返回 REJECT(E_CREDIT_LIMIT) 且 debt 增量 == 0，即「国库不是无限资金源」。这条一红，本失败路径在模型里根本不会出现。缺的是 P03 端到端版本（连续多季 bond 融资 ⇒ dsr 与票息逐季上升 ⇒ 第 3 档反复欠付），已登记为待决问题。",
+      "label_zh": "挤出：靠发债维持，最后把自己挤后",
+      "trigger_zh": "连续多季 funding_source = bond 维持经常性转移，derived.fiscal.debt_service_ratio_ppm 上升，新批次 coupon_ppm_per_q 上升，且 invpool 可认购额度逼近上限。",
+      "observable_zh": "derived.fiscal.next4q_debt_service_uu 上升；债务档吃掉更多现金后，第 3 档转移反复形成欠付，financing 失败路径随之高频触发；严重时 state.politics.mandate_status 转 at_risk。",
+      "player_explanation_key": "policy.P03.fail.crowding_out"
+    },
+    {
+      "code": "no_eligible",
+      "bound_test_id": "T-S-P03-CHAIN",
+      "binding_zh": "反向命中，只覆盖一半。CHAIN 在 FX-BASE 与默认拉杆（seed_mode = 1，开局 934161 人全部落在受益窗口内）下断言结果指标必须在 [q0 + min_feedback_q, q0 + max_feedback_q] 内首次非零；若资格判定被写成恒为空，CHAIN 当场变红——这是「合格人数算错成 0」这个方向的真实防线。它覆盖不到的是另一个方向：合格人数**正当地**接近 0（窗口用尽或掩码排除）时，报告必须逐组列出「失业 N 人 / 其中合格 M 人 / 不合格原因」。那一半需要 docs/30_quality_gates.md §4.2 的 P03 行新增一条失败链 T-S-P03-FAIL-NO-ELIGIBLE，已在返回值中登记；在它落地前本条只有半边测试，不得对外宣称已被覆盖。",
+      "label_zh": "空转：合格人数远小于失业人数",
+      "trigger_zh": "eligibility_rule = 1（限受益窗口内离岗者）且 duration_q 偏小，或失业主要是窗口外的长期失业；也可能因 region_mask 排除了失业集中的地区。",
+      "observable_zh": "derived.group.unemployed_persons 高位不动，而合格人数与 flow.gov.pay_transfers_uu 接近 0；政策处于 enabled 且已生效状态，却对 living_index_ppm 没有任何可测影响。报告必须逐组列出「失业 N 人 / 其中合格 M 人 / 不合格原因（窗口用尽 | 不在施行地区）」。",
+      "player_explanation_key": "policy.P03.fail.no_eligible"
+    }
+  ],
+  "_note_acceptance_tests_detail": [
+    {
+      "claim": "生效前不得发放任何效果",
+      "covered_by": [
+        "T-S-P03-GATE",
+        "T-S-P03-CHAIN"
+      ],
+      "coverage_zh": "完全覆盖。GATE 断言被拒命令的 state_hash 逐位不变、log.rejections 增 1、effect.target 随后 12 季累计变化 == 0；CHAIN 断言 q ∈ [q0, q0 + enact_to_effect_q) 期间 effect.target 累计变化 == 0。",
+      "given_zh": "给定 policy.P03 的 state.policy.enabled == 0，或 state.time.q < state.policy.effective_from_q，或前置条件 legal_authority(bit 1) 不满足而命令被 REJECT，",
+      "when_zh": "当推进一个完整季度（S01..S08），",
+      "then_zh": "则 flow.gov.pay_transfers_uu 全部为 0、flow.group.transfer_income_uu 全部为 0、state.policy.claim_ledger 无新增条目，且本季 state_hash 与「从未提交该命令」的对照局逐位相同（被拒命令只进命令流与 log.rejections，不改状态，INV-137）。",
+      "covers": [
+        "INV-095",
+        "INV-137",
+        "计划书 §17「未满足前置条件不得发放效果」"
+      ]
+    },
+    {
+      "claim": "支出规模自动随合格失业人数形成与收缩",
+      "covered_by": [
+        "T-S-P03-CHAIN"
+      ],
+      "coverage_zh": "完全覆盖。CHAIN 断言 ② 要求首次非零变化量等于「按政策参数独立复算的值」，本政策的独立复算式就是「合格人数增量 × 对应技能档工资率 × replacement_ppm」；断言 ④ 要求每段路径在 log.explanations 中有 accounted 条目，链条条数 == 路径段数。",
+      "given_zh": "给定 P03 已生效且参数此后不再改变，构造一次使就业下降的外生冲击（shock.S01 出口需求下降），",
+      "when_zh": "当失业人数上升后推进若干季，",
+      "then_zh": "则 flow.gov.pay_transfers_uu 在无任何新命令的情况下自动上升，且上升幅度可由「合格人数增量 × 对应技能档工资率 × replacement_ppm」逐项复算；就业回升后自动下降。支出规模不得出现任何只能由手工设定解释的成分。",
+      "covers": [
+        "计划书 §09「随合格失业人数自动形成支出」",
+        "INV-139"
+      ]
+    },
+    {
+      "claim": "欠付不得静默缩水，信任下降不可当季抵消",
+      "covered_by": [
+        "T-S-P03-FAIL-PRIORITY",
+        "T-U-A-07"
+      ],
+      "coverage_zh": "完全覆盖。T-U-A-07 断言欠付双边登记（Σ recv == Σ pay、gov.arrears_uu 增量精确、log.arrears 增行）；T-S-P03-FAIL-PRIORITY 断言给付不得静默缩水且 trust_ppm 下降。",
+      "given_zh": "给定 state.gov.cash_uu 只够支付应付额的一部分，",
+      "when_zh": "当 S04 处理第 3 档，",
+      "then_zh": "则实付额按比例拆分、缺口全额写入 state.gov.arrears_by_payee_uu 与 log.arrears，合格人数不得被下调以掩盖缺口，state.gov.arrears 的期末恒等式成立（INV-030），且 S08 的 breach_count 上升导致 state.group.trust_ppm 下降；下季全额补发后 trust_ppm 不得在同季恢复到欠付前的数值。",
+      "covers": [
+        "INV-030",
+        "INV-122",
+        "12 号文件 §4.1「不得少算人数装作没人符合资格」"
+      ]
+    },
+    {
+      "claim": "拆分恒等：Σ 实付 + Σ 新增欠付 == 应付总额",
+      "covered_by": [
+        "T-U-A-08",
+        "T-U-A-07"
+      ],
+      "coverage_zh": "完全覆盖算术部分。T-U-A-08（test_u_split_sum）断言 split_largest_remainder 的 Σ 分项 == total；T-U-A-07 断言欠付与应收成对。二者合起来即本条。",
+      "given_zh": "给定本季应付总额 T > 0 且现金充足或部分充足，",
+      "when_zh": "当按群组拆分并逐笔过账，",
+      "then_zh": "则 Σ 各组实付 + Σ 各组新增欠付 == T 精确成立（最大余数法，INV-003），每笔 txn 的有符号行之和为 0（INV-015），且 Σ 全部主体 Δcash == 0（INV-017）。",
+      "covers": [
+        "INV-003",
+        "INV-015",
+        "INV-017"
+      ]
+    },
+    {
+      "claim": "转移不进任何 GDP 口径，没有需求就没有奖励",
+      "covered_by": [
+        "T-U-A-22",
+        "T-S-A-20"
+      ],
+      "coverage_zh": "覆盖核心。T-U-A-22（test_u_gdp_class_coverage）逐字断言 kind ∈ {10..18, 27, 28} 的账本行在三种口径下分类均为 none，转移 kind=13 正在其中；T-S-A-20（test_s_no_phantom_income）断言每组消费付款 ≤ 本季已实际到账的（工资 + 转移 + 赡养净额），即「欠付的转移不形成需求」。缺的是 P03 版的对照局比较（供给夹死时 consumption_index_ppm 不上升、support 变化只能由实际收入项解释），已登记为待决问题。",
+      "given_zh": "给定所有部门供给被夹死（初始库存为 0 且 capacity_active 为 0），居民消费需求必然得不到满足，",
+      "when_zh": "当 P03 生效并足额支付转移，",
+      "then_zh": "则 derived.gdp.production_uu 与 derived.gdp.real_uu 相对无政策对照局逐季相等（转移 kind=13 三种口径均为 none，INV-029/INV-113），state.group.consumption_index_ppm 不上升，state.group.support_ppm 的变化只能由 living_index 中的实际收入项解释且必须有来源分解记录（INV-123）；不得存在任何绕过消费量直接加 GDP 或加支持率的通路。",
+      "covers": [
+        "INV-029",
+        "INV-113",
+        "INV-123",
+        "计划书 §10 验收测试"
+      ]
+    },
+    {
+      "claim": "失业与合格人数都是反算量，不是填进来的数",
+      "covered_by": [
+        "T-U-B-07"
+      ],
+      "coverage_zh": "覆盖分母口径。T-U-B-07（test_u_unemployment_derivation）断言 unemployment_ppm 由就业分配反算、落在 [79500, 80500] ppm、且剧本 schema 中「失业率输入字段」数量 == 0。本政策「支出由结算结果而非玩家填写决定」整条依赖它。",
+      "given_zh": "给定基年剧本载入完成，",
+      "when_zh": "当读取 derived.labor.unemployment_ppm 与 derived.group.unemployed_persons，",
+      "then_zh": "则失业率 == 80000 ppm（由 11677007 人劳动力与 10742846 人在岗反算），逐组失业人数与 _note_targets.groups.base_year_unemployed_persons 逐项相等；任何一处出现手写的失业率字段即失败。",
+      "covers": [
+        "INV-143",
+        "计划书 §05「分母是劳动力，由初始就业分配反算」"
+      ]
+    },
+    {
+      "claim": "合格人数不得超过失业人数，掩码外恒为 0",
+      "covered_by": [],
+      "needs_matrix_row": "T-S-P03-ELIGIBLE-SUBSET",
+      "coverage_zh": "**未覆盖**。没有现有矩阵行断言 eligible_persons_g <= derived.group.unemployed_persons[g]。这是本政策最基本的一条不变量（超过就意味着给没失业的人发钱），必须单独立行。",
+      "given_zh": "给定任意受益队列状态与任意 duration_q、region_mask 组合，",
+      "when_zh": "当 S04 计算合格人数，",
+      "then_zh": "则逐组 eligible_persons_g <= derived.group.unemployed_persons[g] 恒成立，且掩码外地区的 eligible_persons_g == 0；违反即 Fault。",
+      "covers": [
+        "INV-075",
+        "INV-076"
+      ]
+    },
+    {
+      "claim": "持续期到点退出，支出下降而失业率不降",
+      "covered_by": [],
+      "needs_matrix_row": "T-S-P03-DURATION-EXPIRY",
+      "coverage_zh": "**未覆盖**。这是「持续期」这条拉杆唯一可观察的后果，也是 state.policy.benefit_cohort_persons 这个新增状态数组存在的理由；没有它，duration_q 在测试上不可判定。",
+      "given_zh": "给定 eligibility_rule = 1、duration_q = 2，某组在第 q 季有 N 人进入受益队列且此后无人再就业、无人再离岗，",
+      "when_zh": "当推进到第 q+2 季，",
+      "then_zh": "则该批 N 人不再计入合格人数，该组 flow.gov.pay_transfers_uu 相应下降，而 derived.group.unemployed_persons 不变；报告把这 N 人列入「窗口用尽」。",
+      "covers": [
+        "计划书 §09「持续期」"
+      ]
+    },
+    {
+      "claim": "反复开关不得重复领取、不得补发历史季",
+      "covered_by": [],
+      "needs_matrix_row": "T-S-P03-NO-DOUBLE-CLAIM（ADV-A01 的转移版）",
+      "coverage_zh": "**未覆盖**。31 号文件的 ADV-A01（反复开关补助重复领钱）写的是 P09 的补助版；转移版的幂等键、冷却与「重开不重置受益队列窗口」需要单独一行。校验器的测试 ID 提取正则只认 T-* 前缀，ADV-* 即使写进来也会被判为不存在，这一点同样登记为待决问题。",
+      "given_zh": "给定玩家在同一季内反复提交 policy_enact / policy_repeal，",
+      "when_zh": "当结算该季与随后 8 季，",
+      "then_zh": "则同一 (policy.P03, group, q) 至多支付一次（claim_key 幂等，INV-097），冷却期内的重复开关一律 REJECT(E_POLICY_COOLDOWN)，每次成功开关计一次 param.policy_toggle_cost_uu，关停再开启不得补发历史季，受益队列的窗口不因重开而重置。",
+      "covers": [
+        "INV-097",
+        "INV-098"
+      ]
+    },
+    {
+      "claim": "转移收入不计入个税税基",
+      "covered_by": [],
+      "needs_matrix_row": "T-S-P03-TRANSFER-NOT-TAXED",
+      "coverage_zh": "**未覆盖**。OQ-212 已把口径定为「不计入」，但没有任何测试拦住反向实现；若实现把转移计进税基，就会出现「转移越多、税收越多、财政反而改善」的反直觉回路，而这条回路不违反任何现有不变量。",
+      "given_zh": "给定 P03 生效且 P01 个人所得税税率大于 0，",
+      "when_zh": "当 S06 计算个税，",
+      "then_zh": "则 flow.group.income_tax_paid_uu 的税基只含工资与财产收入，转移收入不计入（OQ-212）；提高 replacement_ppm 不得同时提高个税收入。",
+      "covers": [
+        "OQ-212",
+        "INV-031"
+      ]
+    }
+  ],
+  "_note_ui_copy": {
+    "placeholder_types_zh": "占位符只有整数与稳定 ID 两类，不支持表达式（OQ-235）。单位换算（μU → U、ppm → 百分比）在 Presentation 的格式化函数中完成，该函数不得回写状态。",
+    "blocked_reasons": [
+      {
+        "key": "policy.P03.blocked.authority",
+        "blocked_reason": "authority",
+        "covers_precondition": "legal_authority(bit 1)",
+        "template_zh": "无法执行：失业保障属经常性支出，需要预算法案授权。当前执政席位 {seats_gov}/{seats_total}，低于所需的过半门槛；或议会尚未授予预算法案权限。先取得授权，或等待第 {next_election_q} 季的选举。"
+      },
+      {
+        "key": "policy.P03.blocked.budget",
+        "blocked_reason": "budget",
+        "covers_precondition": "budget_reservation(cost.per_quarter_uu)",
+        "template_zh": "无法执行：本季需预留 {need_uu}，当前可用额度只有 {avail_uu}（国库现金 {cash_uu} 减去已预留 {reserved_uu}）。可选：从其它支出行调剂额度、改用债券融资，或把替代比例从 {replacement_ppm} 调低。"
+      },
+      {
+        "key": "policy.P03.blocked.cooldown",
+        "blocked_reason": "cooldown",
+        "covers_precondition": "通用资格链 · 冷却",
+        "template_zh": "无法执行：本政策在第 {cooldown_until_q} 季之前处于冷却期（上次开关发生在第 {last_toggle_q} 季）。反复开关会产生行政成本，且不会补发历史季的给付。"
+      },
+      {
+        "key": "policy.P03.blocked.precondition",
+        "blocked_reason": "precondition",
+        "covers_precondition": "metric_compare(derived.group.labor_force_persons > 0)",
+        "template_zh": "无法执行：当前全国劳动力为 {labor_force_persons} 人，没有可判定的失业对象。失业保障的分母是劳动力，不是总人口。"
+      },
+      {
+        "key": "policy.P03.blocked.queue",
+        "blocked_reason": "queue",
+        "covers_precondition": "不适用",
+        "template_zh": "无法执行：本政策不占用施工队列，出现本原因即为程序缺陷，请导出故障包（{fault_code}）。"
+      },
+      {
+        "key": "policy.P03.blocked.exited",
+        "blocked_reason": "exited",
+        "covers_precondition": "_note_exit_rule_detail.triggers",
+        "template_zh": "无法执行：本政策已于第 {exit_q} 季退出，退出后 {cooldown_q} 季内不可重开。已形成的欠付 {arrears_uu} 仍在偿付队列中，不会因退出而消失。"
+      }
+    ],
+    "failure_explanations": [
+      {
+        "key": "policy.P03.fail.financing",
+        "failure_code": "financing",
+        "template_zh": "本季应发 {due_uu}，实发 {paid_uu}，欠付 {arrears_uu}，涉及 {affected_persons} 人。原因：支付顺序中债务偿付与公共部门工资先行，本季现金用尽。欠付已计入政府债务性欠款，并使受影响群组的程序信任下降；下季补发不会在同季把信任补回来。"
+      },
+      {
+        "key": "policy.P03.fail.authority_lapsed",
+        "failure_code": "authority_lapsed",
+        "template_zh": "第 {q} 季预算审查未通过本政策的下一年度额度，自第 {next_q} 季起停止发放。第 {q} 季已形成的 {due_uu} 仍按原规则结清。若要恢复，需重新取得预算法案授权，并等待冷却期结束（第 {cooldown_until_q} 季）。"
+      },
+      {
+        "key": "policy.P03.fail.no_eligible",
+        "failure_code": "no_eligible",
+        "template_zh": "本季失业 {unemployed_persons} 人，其中合格 {eligible_persons} 人。不合格的 {not_eligible_persons} 人中：受益窗口已用尽 {expired_persons} 人，不在施行地区 {out_of_mask_persons} 人。政策正在生效，但在这批人身上不产生任何支出与任何效果。可考虑放宽资格规则或延长持续期。"
+      },
+      {
+        "key": "policy.P03.fail.no_supply",
+        "failure_code": "no_supply",
+        "template_zh": "本季转移收入 {transfer_uu} 已足额发放，但 {sector_id} 的供给不足以满足居民需求：成交 {traded_uqs}，未满足 {unmet_uqs}。居民实际消费量没有增加，消费指数维持 {consumption_index_ppm}。钱发出去了，东西没多出来——模型中的限制因素在供给一侧，不在收入一侧。"
+      },
+      {
+        "key": "policy.P03.fail.crowding_out",
+        "failure_code": "crowding_out",
+        "template_zh": "已连续 {bond_funded_q} 季用发债维持失业保障。偿债率升至 {debt_service_ratio_ppm}，新发批次票息升至 {coupon_ppm_per_q}，未来四季到期本息 {next4q_debt_service_uu}。债务偿付的支付顺序高于法定转移，继续这样融资将首先挤掉失业保障本身。"
+      }
+    ],
+    "ineffectiveness_notices": [
+      {
+        "key": "policy.P03.note.no_trust_channel",
+        "template_zh": "说明：失业保障提高的是当期生活指数与由它平滑出来的未来预期，不直接改变程序信任。程序信任只由承诺是否兑现驱动——按时足额发放不会加分，欠付会扣分。"
+      },
+      {
+        "key": "policy.P03.note.duration_inert",
+        "template_zh": "说明：当前资格规则为「全部失业者」，持续期 {duration_q} 季对合格人数不产生约束。要让持续期生效，需把资格规则改为「限受益窗口内离岗者」。"
+      },
+      {
+        "key": "policy.P03.note.transfer_not_taxed",
+        "template_zh": "说明：转移收入不计入个人所得税税基，因此提高替代比例不会带回额外税收。"
+      },
+      {
+        "key": "policy.P03.note.provision_vs_actual",
+        "template_zh": "说明：本季计提 {provision_uu}，实付 {paid_uu}，差额 {gap_uu}。计提额来自年度支出计划中的法定转移行，实付额由合格失业人数与替代比例自动算出；两者不相等是正常的，差额不会被挪作他用，也不会自动结转到下季。"
+      }
+    ]
+  },
+  "_note_notes": "本文件的全部数值为设计假设、派生量与测试夹具，不是现实国家数据，也不是已跑出的结果。支出规模由结算结果自动形成，cost 块中的数字只是预算计提额；凡标 derived 的量都给出了可复算的 derivation_expr，剧本一改必须跟着重算。本轮的三项实质修改：(1) 顶层 parameters 键已按 11 号文件 §3 撤下——它不在 §5.12 的键集合内，且与正式字段构成双份事实来源，标定理由整体降级为 _note_calibration_and_param_cards（刻意不带 parameter_id 键，注释子树里的卡等于不存在）；effect_chain 相反，它被校验器的必填检查消费，且已由 tools/validate_content.py 正式登记进 policy_definition schema，因此留在顶层，两侧方向一致后矛盾消失。(2) 按裁定 R-SCALE-01 复核了全部货币量，包括字符串正文里写死的旧刻度数字；spend_lines 与基年支出上界不是 ×1000 得到的，而是在新刻度上重跑 split_largest_remainder 与逐组 floor 得到的（×1000 与 floor 不可交换）。(3) 计提额按剧本现行的 annual_plan.expenditure_lines_uu.statutory_transfers == 4000000000 重新配平（原文写 3600000000 并声称与剧本逐字相等，两项都不成立）。仍未解决、且不在本文件权限内的两条：剧本的 service_opex 行为 0 而本政策有运行费（见 _note_operating_cost.budget_line_conflict_zh）；计提额与默认拉杆复算上界相差 43.96%（见 _note_cost_model.provision_vs_actual.gap_disclosure_zh）。"
+}

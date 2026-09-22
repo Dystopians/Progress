@@ -1,0 +1,710 @@
+{
+  "schema_kind": "event_template",
+  "schema_version": 1,
+  "event_id": "event.E02",
+  "label_zh": "北原歉收与粮价上行",
+  "trigger": {
+    "all_of": [
+      {
+        "metric": "state.price.sector_uu_per_qs",
+        "scope": "sector.agri",
+        "op": "ge",
+        "value": 1080000000
+      },
+      {
+        "metric": "flow.cell.binding_code",
+        "scope": "cell.beiyuan.agri",
+        "op": "ne",
+        "value": 0
+      },
+      {
+        "metric": "state.cell.inventory_output_uqs",
+        "scope": "cell.beiyuan.agri",
+        "op": "lt",
+        "value": 700000
+      },
+      {
+        "metric": "flow.cell.unmet_demand_uqs",
+        "scope": "cell.beiyuan.agri",
+        "op": "gt",
+        "value": 0
+      },
+      {
+        "metric": "state.time.q",
+        "op": "ge",
+        "value": 3
+      }
+    ],
+    "probability_ppm": 700000,
+    "rng_stream": "rng.event",
+    "cooldown_q": 4,
+    "max_occurrences": 4
+  },
+  "effects": [
+    {
+      "target": "state.group.expectation_ppm",
+      "scope": "region.beiyuan",
+      "delta_ppm": -35000
+    },
+    {
+      "target": "state.bloc.org_power_ppm",
+      "scope": "bloc.agri_coop",
+      "delta_ppm": 25000
+    }
+  ],
+  "_note_consequences": [
+    {
+      "consequence_id": "E02.CONS.1",
+      "effect_ref": "/effects/0",
+      "entity_id": "state.group.expectation_ppm",
+      "entities_written": [
+        "group.beiyuan.* —— region.beiyuan 的 9 个群组，逐组各写一次，共 9 处写入；不是对地区做一次加总写入"
+      ],
+      "source_operation": "event.E02 触发（五条状态条件全部成立后，rng.event 抽样通过；抽样记录写 log.rng）",
+      "written_by": "event.E02",
+      "settlement_step": "S08",
+      "applied_at": "S08 §8.4（社会与报告步；同一步的 §8.2 已先合成完支持度）",
+      "amount_uu": 0,
+      "quantity_uqs": 0,
+      "magnitude_ppm": -35000,
+      "magnitude_note_zh": "量纲是 ppm（−35000 ppm = −3.5 个百分点），不是金额也不是实物数量：本条的 μU 金额与 μQ_s 数量都精确为 0。",
+      "counterparty": "none",
+      "counterparty_reason_zh": "本条不是一笔交易，因此没有付款方与收款方。它改写的是群组的预期指数——一个 ppm 刻度的状态量，不落在 10 号文件 §2.2 的任何账本科目上（既不是 cash_uu，也不是 inv.*、capital_uu、arrears_uu），所以「对手方」在这里的正确答案是「不存在，且必须不存在」。凡是真有对手方的应对（立项 P07、调参 P01）都只能由玩家用 §6.1 的命令发起，由 S02 到 S07 按既有规则产生双边入账。",
+      "change_expr": "for g in region.beiyuan 的 9 个群组: expectation_ppm[g] = clamp(expectation_ppm[g] + param.e02_expectation_delta_ppm, 0, 2000000)，其中 param.e02_expectation_delta_ppm = -35000（== /effects/0/delta_ppm，两处必须同值）",
+      "accounting_zh": "零账本效应（INV-130、V-EV-06）：cell 子系统（含库存与现金）、gov、price 三个 subsystem_hash 与无事件对照组逐位相同；不存在配平项、不存在平衡修正（计划书 §13 禁止后处理补丁）。会计上这条只是社会状态量的一次水平位移，不进任何科目，也不进 GDP 的任何一法。钉死这一点的是 T-S-E02-NO-LEDGER-EFFECT。",
+      "constraints_zh": [
+        "取值被 clamp 到 [0, 2000000]；夹逼发生时按既有规则记录，不静默吞掉",
+        "写入时点约束：S08 §8.4 晚于 §8.2 的支持度合成，因此本季支持度不变，增量经下一季的 §8.1 到 §8.2 才进入 support_ppm（显式一季时滞，报告不得宣称事件当季拉低了支持率）",
+        "触发次数约束：cooldown_q = 4、max_occurrences = 4，故整局最多 4 次、最多覆盖 16 季",
+        "写入白名单约束：state.group.expectation_ppm 在 11 号文件 §5.13 的事件可写白名单内（V-EV-05）"
+      ],
+      "duration_zh": "一次性水平位移，无「持续季数」字段；此后按 param.expectation_inertia_ppm = 700000 的惯性平滑，约 2 季衰减一半。",
+      "reversible": true,
+      "evidence_refs": [
+        "state.price.sector_uu_per_qs",
+        "flow.cell.output_actual_uqs",
+        "state.cell.inventory_output_uqs",
+        "flow.cell.unmet_demand_uqs"
+      ],
+      "explanation_zh": "歉收年对未来的判断会变差。只写北原：本事件记录的是北原的产出事实；全国居民因粮价上行而受的损失走真实通道（消费指数 → 生活指数 → 预期与支持度），不在这里重复记一次，否则 INV-123 的来源分解会出现无法解释的一项。"
+    },
+    {
+      "consequence_id": "E02.CONS.2",
+      "effect_ref": "/effects/1",
+      "entity_id": "state.bloc.org_power_ppm",
+      "entities_written": [
+        "bloc.agri_coop —— 农业合作联盟本身，单点写入，共 1 处"
+      ],
+      "source_operation": "event.E02 触发（同一次抽样，与 E02.CONS.1 是同一事件的两处写入，不是两次独立判定）",
+      "written_by": "event.E02",
+      "settlement_step": "S08",
+      "applied_at": "S08 §8.4（与 E02.CONS.1 同步写入）",
+      "amount_uu": 0,
+      "quantity_uqs": 0,
+      "magnitude_ppm": 25000,
+      "magnitude_note_zh": "量纲是 ppm（+25000 ppm = +2.5 个百分点）；不涉及任何 μU 金额或 μQ_s 实物。",
+      "counterparty": "none",
+      "counterparty_reason_zh": "组织力不是从谁手里转过来的存量，没有守恒关系，因此没有对手方：agri_coop 的 +25000 不对应 business 或 labor_public 的 −25000（政治模型里三方组织力互相独立，见 12 号文件 §8.3）。这一点必须写明，否则读者会把它误读成一笔零和的势力转移。",
+      "change_expr": "org_power_ppm[bloc.agri_coop] = clamp(org_power_ppm[bloc.agri_coop] + param.e02_agri_org_power_delta_ppm, 0, 1000000)，其中 param.e02_agri_org_power_delta_ppm = 25000（== /effects/1/delta_ppm，两处必须同值）",
+      "accounting_zh": "零账本效应（INV-130、V-EV-06）：不动现金、库存、产能、人口、GDP。组织力只进 §8.3 的政治结算，不进任何会计科目；它对财政的影响只能经玩家后续的命令实现，事件本身不花一分钱。",
+      "constraints_zh": [
+        "取值被 clamp 到 [0, 1000000]",
+        "开局 org_power_ppm[agri_coop] = 300000（politics.json：成员分散、动员成本高，为三者最低）；单次 +25000 不足以跨过任何否决域门槛，只改变议程强度",
+        "累计上界：max_occurrences = 4，故整局累计至多 +100000，仍低于另两个集团的开局值",
+        "本条不写 stance_ppm：立场由 §8.3 按关心指标（flow.cell.value_added_real_uu）的变化率自行更新，事件重复写入会双计"
+      ],
+      "duration_zh": "一次性水平位移；此后按 param.bloc_org_inertia_ppm = 700000 的惯性回归其规模与资源决定的水平（12 号文件 §8.3）。",
+      "reversible": true,
+      "evidence_refs": [
+        "flow.cell.binding_code",
+        "state.region.irrigation_index_ppm",
+        "flow.cell.output_actual_uqs"
+      ],
+      "explanation_zh": "歉收年农户更容易被组织起来协商灌溉与地区资源分配——这是动员成本下降，不是支持者增加。本事件只加组织力、不预写立场，正是为了让「谁被组织起来」与「他们支持谁」保持可分辨。"
+    }
+  ],
+  "evidence_refs": [
+    "state.price.sector_uu_per_qs",
+    "flow.cell.output_actual_uqs",
+    "flow.cell.binding_code",
+    "state.cell.inventory_output_uqs",
+    "flow.cell.unmet_demand_uqs",
+    "state.region.irrigation_index_ppm",
+    "flow.group.consumption_by_product_uqs",
+    "derived.price.consumer_index_ppm"
+  ],
+  "report_template_id": "tpl.event.e02_harvest_shortfall",
+  "kind": "inferred",
+  "_note_contract_fix_zh": "本文件的结构修复记录。(1) 文件名按 11_data_contract.md §2 的固定布局改为 events/event_E<nn>.json；原来的 E<nn>_<slug>.json 不在布局表里，载入器按固定路径读，等于这份内容不存在。slug 保留在 _note_slug 中。(2) 顶层只保留 §5.13 EventTemplate 声明的九个键，加上 consequences（见 (3)）；其余扩展块一律按 §3 改名为 _note_<原键名>，明确标记为「注释键，不进逻辑、不进 content_hash」。_note_parameters 内各条的 parameter_id 另改名为 value_id，理由见 _note_parameters_zh。(3) consequences 的去向已按文档优先级裁定，不再是悬而未决的冲突：计划书 §13（优先级第 1 位）要求「每条变化附带实体 ID、来源操作、金额／数量、时间和约束」，而 11_data_contract.md §5.13（优先级第 4 位）的键集合漏列了承载这一要求的字段，于是 additionalProperties: false 与该要求互相排斥——任一份事件文件都必然报一个 ERROR。按「冲突时上位者胜」，本文件把后果说明升格为顶层正式字段 consequences（原 _note_consequences 已删除，不保留双份事实来源），并在 tools/validate_content.py 的 event_template schema 中把 consequences 登记为可选数组字段，使 §13 的要求可满足；E_EVENT_EVIDENCE 的逐条检查一字未放宽。待办：请契约维护者把 consequences 正式补进 §5.13 的键表与 V-EV 校验表（见本轮返回值 open_questions）。",
+  "_note_spec_ext": "以下 _note_* 字段不在 11_data_contract.md §5.13 的 EventTemplate 键集合内，而 §3 规定 additionalProperties: false。本文件按任务卡（触发、证据、后果、玩家选项、政治反应、文案、验收测试、参数身份证）写全，故把其中没有契约字段可落的部分一律降级为 _note_ 注释键，不私自扩充契约；唯一升格为正式字段的是 consequences，理由见 _note_contract_fix_zh (3)。在契约未扩展前，加载器应只读契约字段（schema_kind 到 kind）与 consequences；下列 _note_* 是同一事实的可审计说明，不引入任何新数值来源（凡有数值处一律用 *_ref 指回契约字段或参数卡）。",
+  "_note_spec_ext_version": 1,
+  "_note_code": "E02",
+  "_note_slug": "beiyuan_harvest_shortfall_food_prices",
+  "_note_category": "supply_shortfall",
+  "_note_one_line_zh": "北原农业产出被实际约束压住、成品库存跌破下限，农产品价格连续多季上行，农户与买粮的居民同时受压。",
+  "_note_spec_field_map": {
+    "id": "event_id",
+    "name_zh": "label_zh",
+    "one_line_statement": "one_line_zh",
+    "trigger": "trigger + trigger_rationale",
+    "evidence": "evidence_refs + evidence",
+    "consequences": "effects + consequences",
+    "player_options": "player_options + options_rejected_in_v1",
+    "political_reaction": "political_reaction + residents_reaction",
+    "copy": "report_template_id + copy",
+    "acceptance_tests": "acceptance_criteria",
+    "parameters": "parameters"
+  },
+  "_note_scope_semantics_note_zh": "scope 的读法与 11_data_contract.md §5.13 的示例一致：对逐组字段（state.group.*）写 region.<r> 表示「该地区的 9 个群组各自施加同一 delta」，不是对地区做一次加总写入；对 state.bloc.* 写 bloc.<id> 表示该集团本身。",
+  "_note_values_without_parameter_card": [
+    {
+      "site": "trigger.all_of[1].value",
+      "literal": 0,
+      "why_no_card_zh": "这不是一个可校准的参数，而是 10 号文件 §4.2 的枚举码 0（计划约束）。条件 != 0 的含义是产量不是由需求计划决定，没有可调空间；给枚举码建卡会制造一个可以被调成别的枚举值的旋钮。"
+    },
+    {
+      "site": "trigger.all_of[3].value",
+      "literal": 0,
+      "why_no_card_zh": "零下界，属 INV-152 的魔数白名单（0, 1, −1, 1000000）。条件的含义是未满足需求严格为正。"
+    }
+  ],
+  "_note_contract_op_note_zh": "比较运算符按 11_data_contract.md 的 V-EV-03 取值：op ∈ {lt, le, eq, ne, ge, gt}。注意 §5.13 的 EventTemplate 示例里写的是 \"op\": \"gte\"，不在该枚举内——示例与校验规则自相矛盾。本文件按规范性条款（V-EV-03 与错误码 E_EVENT_OP）执行，写 ge；不私自修改契约，该矛盾已登记为本轮返回值中的待决问题，须由契约维护者统一裁定后同步修订全部 12 个事件文件。",
+  "_note_trigger_rationale": {
+    "no_random_popup_zh": "五条条件全部是状态比较；条件全部成立后才抽一次样（rng.event），抽样写 log.rng。歉收本身在首版不是一次随机事件：农业产量由 §5.3 的五项约束取最小值决定，其中灌溉设施指数与电力、劳动、材料共同决定 bound_capacity 与 bound_materials。本事件只负责在这些状态越过阈值后，把它记成一次可核查的公开事实。",
+    "conditions_zh": [
+      {
+        "cond": "state.price.sector_uu_per_qs[sector.agri] >= 1080000000",
+        "why_zh": "粮价上行的权威度量：农产品现行价格相对基年价（1000000000 μU/Q_s，INV-148）上行 8% 以上。这一条同时是首版唯一合法的持续性表达：价格单季变动上限为 param.price_step_max_ppm = 30000（±3%），因此从基年价升到 1080000000 至少需要 3 个连续上行季（INV-067）。阈值本身内含了持续季数要求，不需要新字段。"
+      },
+      {
+        "cond": "flow.cell.binding_code[cell.beiyuan.agri] != 0",
+        "why_zh": "0 = 计划约束。不等于 0 表示北原农业的产量不是由需求计划决定，而是被产能、劳动、能源或材料中的某一项压住，即真正意义上的歉收。用 binding_code 而不是产量绝对值，可避免阈值随剧本规模漂移。"
+      },
+      {
+        "cond": "state.cell.inventory_output_uqs[cell.beiyuan.agri] < 700000",
+        "why_zh": "任务卡要求的库存条件。契约的 trigger 只能与常数比较，无法表达库存环比下降，故取绝对下限：成品库存低于该值表示缓冲已被耗尽，歉收会直接传导到市场。该阈值依赖尚未落地的 cells_init.json，已在参数卡与验收测试中登记为必须重新拟合。"
+      },
+      {
+        "cond": "flow.cell.unmet_demand_uqs[cell.beiyuan.agri] > 0",
+        "why_zh": "必须真的有人买不到：未满足需求在 §5.6 的市场对账中显式登记（INV-059、INV-064），是玩家可下钻核查的对象。"
+      },
+      {
+        "cond": "state.time.q >= 3",
+        "why_zh": "农业有季节性，首版由季节系数体现；至少走完基年四季中的三季，价格才可能累计上行 8%。"
+      }
+    ],
+    "cumulative_and_persistence_zh": "与 E01 不同，本事件的持续性由价格阈值天然承担（见上）。因此不需要 condition_streak_q 扩展也能成立；cooldown_q 取 4 而不是 6，使连续歉收年能被逐年记录一次。",
+    "why_not_output_absolute_zh": "不用 flow.cell.output_actual_uqs 的绝对阈值作为主条件：该值的量级完全由尚未落地的cells_init.json 与 io_table.json 决定，写死一个数字会在剧本初值变化时静默失效。binding_code 与价格是量级无关的口径。库存阈值是唯一的量级相关条件，故单独建卡并配验收测试。"
+  },
+  "_note_evidence": [
+    {
+      "ref": "state.price.sector_uu_per_qs",
+      "scope": "sector.agri",
+      "label_zh": "农产品现行价格（相对基年价）",
+      "page": "国家总览",
+      "ledger_zh": "价格台账：flow.price.gap_ppm 的两项来源（供需缺口、库存偏离）与每次夹逼的 log.clamp 记录",
+      "how_to_verify_zh": "价格只在 S07 写 pending、S08 末一次性 swap（INV-065）；逐季步长不超过 ±3%（INV-067），可逐季回看上行路径。"
+    },
+    {
+      "ref": "flow.cell.output_actual_uqs",
+      "scope": "cell.beiyuan.agri",
+      "label_zh": "北原农业实际产量",
+      "page": "地区页面",
+      "ledger_zh": "五项约束台账：计划、产能、劳动、能源、材料的换算值与最小项",
+      "how_to_verify_zh": "实际产量等于五项之最小值（12 号文件 §5.3），每一项都可单独查看。"
+    },
+    {
+      "ref": "flow.cell.binding_code",
+      "scope": "cell.beiyuan.agri",
+      "label_zh": "本季最紧约束",
+      "page": "季度报告",
+      "ledger_zh": "log.constraint_diag（INV-045）",
+      "how_to_verify_zh": "报告只报一个最紧项（OQ-237）；若多项同时紧，台账中的余量列可看出。"
+    },
+    {
+      "ref": "state.cell.inventory_output_uqs",
+      "scope": "cell.beiyuan.agri",
+      "label_zh": "北原农业成品库存",
+      "page": "地区页面",
+      "ledger_zh": "库存恒等式：期末 = 期初 + 生产 + 购入 − 售出 − 生产耗用 − 损耗（INV-047）",
+      "how_to_verify_zh": "六项逐项列出，合计必须精确相等；损耗单列，不允许用盘点差异吸收（INV-053）。"
+    },
+    {
+      "ref": "flow.cell.unmet_demand_uqs",
+      "scope": "cell.beiyuan.agri",
+      "label_zh": "北原农产品未满足需求",
+      "page": "地区页面",
+      "ledger_zh": "市场对账：需求、实际成交、未满足需求三列必须自洽（INV-059、INV-064）",
+      "how_to_verify_zh": "未满足部分不得被当作已消费（INV-064）；配给按公开优先级执行，居民档最先，可逐买方核对谁被挤出。本条是 trigger.all_of[3] 的直接对应证据。"
+    },
+    {
+      "ref": "state.region.irrigation_index_ppm",
+      "scope": "region.beiyuan",
+      "label_zh": "灌溉设施指数",
+      "page": "地区页面",
+      "ledger_zh": "P07 项目台账：pending 增量只在完工季写入，S01 才转入在用（INV-091）",
+      "how_to_verify_zh": "开局为 620000，是四地区最低；可核对是否有 P07 项目在建及其进度来源。"
+    },
+    {
+      "ref": "flow.group.consumption_by_product_uqs",
+      "scope": "sector.agri",
+      "label_zh": "各群组的食品实际消费量",
+      "page": "社会页面",
+      "ledger_zh": "消费台账：分产品支出与分产品数量分列（INV-062、INV-059）",
+      "how_to_verify_zh": "数量口径天然是实际量，用它算消费指数，不用名义支出除价格指数（12 号文件 §7.8）。"
+    },
+    {
+      "ref": "derived.price.consumer_index_ppm",
+      "scope": "national",
+      "label_zh": "居民消费价格指数",
+      "page": "国家总览",
+      "ledger_zh": "按 param.engel_weight_ppm 加权的分产品价格",
+      "how_to_verify_zh": "实际 GDP 禁止用名义 GDP 除以本指数（INV-117）；本指数只用于居民实际收入口径。"
+    },
+    {
+      "ref": "flow.gov.pay_transfers_uu",
+      "scope": "policy.P03",
+      "label_zh": "法定转移的实付与欠付",
+      "page": "政策工作台",
+      "ledger_zh": "支付优先级第 3 档；不足时部分支付并登记欠付（log.arrears）",
+      "how_to_verify_zh": "欠付会进入 trust 的失信计数（12 号文件 §8.1），这是本事件之外的另一条独立通道。"
+    }
+  ],
+  "_note_consequences_through_existing_mechanisms": [
+    {
+      "channel_zh": "居民实际可支配收入",
+      "path_zh": "农产品价格上行 → derived.price.consumer_index_ppm 上升 → 12 号文件 §8.1 的 real_income_uu 下降 → living_index_ppm 下降 → 下一季 expectation 与 support 下降。",
+      "why_not_event_effect_zh": "这条链条已经由结算规则完整实现。若事件再直接写一次生活指数或支持度，同一件事会被记两遍，且 INV-123 的来源分解会出现无法解释的一项。事件在这里什么都不做是正确的。"
+    },
+    {
+      "channel_zh": "农户收入",
+      "path_zh": "量减价升同时发生：flow.cell.value_added_uu 名义值可能不降，但 value_added_real_uu（基年价）下降；bloc.agri_coop 的关心指标正是后者（politics.json 明文），因此其 stance 由 §8.3 自行更新。",
+      "why_not_event_effect_zh": "stance_ppm 虽在事件可写白名单内，本事件不写：它已由关心指标的变化率驱动，重复写入会双计。"
+    },
+    {
+      "channel_zh": "食品短缺的分配后果",
+      "path_zh": "配给按公开优先级执行（居民档最先），未成交部分写 flow.group.unmet_consumption_uu，不被当作已消费（INV-064）。",
+      "why_not_event_effect_zh": "配给结果是 S05 的结算产物，事件无权改写库存或成交量（INV-130）。"
+    }
+  ],
+  "_note_consequence_boundary_zh": "首版事件没有任何账本效应（INV-130 / V-EV-06）：本事件不写现金、库存、产能、人口、GDP。凡涉及花钱或改变物理能力的应对，一律只能由玩家通过 11_data_contract.md §6.1 表中的命令走政策或项目，由 S02 到 S07 按既有规则产生双边入账。此处不存在「凭空增减资源」的通路，也不需要任何平衡修正项（计划书 §13）。",
+  "_note_effect_timing_note_zh": "事件在 S08 §8.4 触发，而 support_ppm 已在同一步的 §8.2 由「生活／预期／信任」三项合成完毕。因此本事件写入的 trust/expectation 增量不改变本季支持度，而是经下一季的 §8.1 到 §8.2 进入支持度：这是一个显式的一季时滞，报告必须这样写，不得宣称「事件当季拉低了支持率」。事件不直接写 support_ppm，避免出现一处无来源分解的支持度变动（INV-123）。",
+  "_note_effect_decay_note_zh": "契约的 EventTemplate 没有「效应持续季数」字段，效应是一次性水平位移，之后由既有规则自行衰减：expectation 按 param.expectation_inertia_ppm=700000 的惯性平滑（约 2 季衰减一半），trust 只能按 param.trust_recover_ppm=20000 的速度恢复且恢复慢于下降（INV-122），org_power 按 param.bloc_org_inertia_ppm=700000 的惯性回归其规模与资源决定的水平（12 号文件 §8.3）。所以「持续季数」在首版是衰减机制的结果，不是内容包里的一个数字；consequences[*].duration_zh 描述的是这个机制，不是新增字段。",
+  "_note_trust_not_written_note_zh": "本事件不写 trust_ppm。理由：12 号文件 §8.1 把失信定义为一个闭集合（转移支付欠付、公共服务运行费欠拨、项目被取消、债券违约）。歉收不在其中，它不是政府未兑现的承诺。若玩家因歉收而欠付转移支付，trust 会经那条既有通道自行下降，不需要事件代劳。",
+  "_note_player_options": [
+    {
+      "option_id": "E02.OPT.A",
+      "label_zh": "立项：北原灌溉与农业物流",
+      "command": "project_launch",
+      "args_zh": "policy.P07，region_id = region.beiyuan，scale_ppm 与 funding_source 由玩家选定",
+      "cost_zh": "按 P07 的合同总额与分季支出计划占用预算承诺（committed_memo），并占用北原 2 个施工槽位中的 1 个；投运后有每季运行费。具体金额以 content/policies/P07_irrigation_and_agri_logistics.json 为准。",
+      "preconditions_zh": [
+        "权限位 2（建设与采购权）已持有",
+        "北原有空闲施工槽位（INV-094）",
+        "资金来源已声明；签约即占用未来预算承诺（计划书 §07）"
+      ],
+      "lag_q": 5,
+      "lag_note_zh": "P07 的最早反馈为 4 到 8 季（计划书 §09），再加 1 季投运时滞（INV-091）。本季与下季的粮价不会因此改变。",
+      "failure_modes_zh": [
+        "financing：资金中断则项目 suspended，已付金额不退回（INV-093）",
+        "congestion：北原只有 2 个施工槽位，与其它在建项目冲突时 suspended(congestion)",
+        "生产季节：灌溉设施投运后仍需等到下一个生产周期才可能改变 bound_capacity",
+        "no_demand：若歉收的最紧约束其实是劳动或材料，灌溉指数上升不改变产量，投资表现为无效"
+      ],
+      "political_reaction_zh": "bloc.agri_coop 立场上行；bloc.business 因地区资源分配与自身关心指标无关而中性偏负。"
+    },
+    {
+      "option_id": "E02.OPT.B",
+      "label_zh": "调参：上调个人所得税免征额，缓冲居民实际收入",
+      "command": "policy_set_params",
+      "args_zh": "policy.P01，上调免征额档位（取值须在 P01 的 valid_range 内）",
+      "cost_zh": "政府个税收入下降，赤字扩大；金额由 S06 按实际税基结算，不是一个事先给定的数字。",
+      "preconditions_zh": [
+        "P01 已生效且不在冷却期内（INV-098）",
+        "改动在 P01 允许的修改窗口内；每次开关产生一次性行政成本 param.policy_toggle_cost_uu"
+      ],
+      "lag_q": 1,
+      "lag_note_zh": "计划书 §09：P01 最早反馈 1 季；税基来自实际收入，征收受 state.gov.tax_capacity_ppm 约束。",
+      "failure_modes_zh": [
+        "征收能力不足时，名义税率变化与实际税收变化不成比例（计划书 §09、INV-031）",
+        "低收入群组本就缴税很少，免征额上调对他们的可支配收入改善可能接近于零，而财政缺口是实打实的：这是一条可被玩家观察到的无效路径",
+        "收入下降若导致转移支付欠付，反而经失信通道压低 trust_ppm"
+      ],
+      "political_reaction_zh": "bloc.labor_public 短期偏正；预算审查季（q ≡ 3 mod 4）若赤字超限，mandate_status 可被置 at_risk。"
+    },
+    {
+      "option_id": "E02.OPT.C",
+      "label_zh": "什么都不做：让价格与配给自行出清",
+      "command": "advance_quarter",
+      "args_zh": "本季不提交与农业相关的命令",
+      "cost_zh": "零现金支出。",
+      "preconditions_zh": [
+        "无"
+      ],
+      "lag_q": 0,
+      "lag_note_zh": "后果当季在台账中可见。",
+      "consequences_of_inaction_zh": [
+        "价格继续按 §7.3 的有界规则上行，直至供需缺口与库存偏离转向；上行速度受 ±3%/季 的硬步长限制",
+        "食品消费量下降经 §7.8 直接压低 consumption_index_ppm，再经 §8.1 压低 living_index_ppm 与支持度",
+        "条件继续成立时本事件每 4 季可再触发一次，最多 4 次",
+        "若价格触及 param.price_ceil_ppm 的上界，每次夹逼写 log.clamp 并计入 clamp_budget_used_count；该计数在压力测试中超预算即判失败（INV-069），这是模型自我暴露的机制，不是给玩家的惩罚"
+      ],
+      "political_reaction_zh": "bloc.agri_coop 的组织力逐次累积；居民预期与支持度经真实通道逐季下行。"
+    }
+  ],
+  "_note_options_rejected_in_v1": [
+    {
+      "label_zh": "动用国家粮食储备 / 紧急进口粮食平抑价格",
+      "why_unavailable_zh": "科目层面是可表达的：账本科目表（10 号文件 §2.2）允许 agent.gov 持有 inv.<sector>，农产品也是可库存品（content.storable[agri] == 1）。缺的是机制与命令：11_data_contract.md §6.1 的 12 类命令里没有任何一条可以让玩家买入或抛售政府存货，12 号文件 §5.6 的买方类里政府采购也不含平抑价格的抛售方向。在没有机制的情况下把它写成选项，等于凭空增加一份粮食（计划书 §13 禁止）。",
+      "what_it_would_require_zh": "需要新增一项政策（例如粮食储备与投放）并在 §5.6 定义政府作为卖方的交易方向与配给次序，进口方向还须受 state.world.delivery_capacity_uqs[agri] 与外部信用额度约束（INV-104）。已登记为待决问题。"
+    },
+    {
+      "label_zh": "直接限价",
+      "why_unavailable_zh": "价格只在 S07 写 pending、S08 末 swap，且必须落在 [400000000, 2500000000]（PRICE_MIN / PRICE_MAX） 并满足 ±3% 步长（INV-065/066/067）。命令不得携带任何直接状态值（INV-138），因此不存在把价格设成某个数的合法通路。"
+    }
+  ],
+  "_note_political_reaction": [
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "mobilize",
+      "effect_ref": "effects[1]",
+      "interest_zh": "农业合作联盟关心农户收入、灌溉与地区资源分配（计划书 §08）。",
+      "evidence_metrics": [
+        "flow.cell.value_added_real_uu[cell.beiyuan.agri]",
+        "state.region.irrigation_index_ppm[region.beiyuan]",
+        "flow.gov.pay_project_uu（按地区分布）"
+      ],
+      "basis_zh": "其关心指标是基年价增加值（politics.json 明文：粮价上涨带来的名义增长不应被读成农户处境改善）。因此歉收年里它的 stance 大概率转负，即使名义收入未降。本事件只加组织力，不预写 stance。"
+    },
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "oppose_if_transfers_cut",
+      "effect_ref": "none",
+      "interest_zh": "劳动与公共服务联盟关心就业保障、工资、教育医疗和居住。",
+      "evidence_metrics": [
+        "flow.group.unmet_consumption_uu",
+        "flow.gov.pay_transfers_uu"
+      ],
+      "basis_zh": "粮价上行压低实际工资；若玩家选 OPT.B 造成财政缺口并压缩转移支付，其关心指标下行，stance 在下一季转负。"
+    },
+    {
+      "bloc": "bloc.business",
+      "direction": "neutral_to_negative",
+      "effect_ref": "none",
+      "interest_zh": "工商业联盟关心能源、运输、利润与政策可预期性。",
+      "evidence_metrics": [
+        "flow.cell.profit_pretax_uu",
+        "content.region.logistics_cost_ppm"
+      ],
+      "basis_zh": "食品涨价推高工资压力与物流成本预期；但若农产品加工链的售价同步上行，利润未必下降。方向由 §8.3 的关心指标实算决定，本事件不预设。"
+    }
+  ],
+  "_note_residents_reaction": {
+    "groups_scope": "直接写入只覆盖 region.beiyuan 的 9 个群组",
+    "channel_zh": "expectation_ppm（一次性位移）",
+    "not_channel_zh": "不写 trust_ppm（见 trust_not_written_note_zh），不写 living_index_ppm 与 support_ppm（它们由 §8.1、§8.2 按实际消费量与实际收入算出，事件重复写入会双计）。"
+  },
+  "_note_copy": {
+    "style_note_zh": "三类措辞严格分栏（计划书 §04、12 号文件 §8.6）。占位符只支持整数与 ID（OQ-235）。",
+    "accounted": [
+      {
+        "key": "event.E02.accounted.output_and_stock",
+        "template_zh": "第 {q_display} 季，北原农业实际产量 {output_qs} 单位，期末成品库存 {inventory_qs} 单位（期初 {inventory_prev_qs}，本季生产 {produced_qs}，售出 {sold_qs}，损耗 {spoilage_qs}）。",
+        "placeholders": [
+          "q_display",
+          "output_qs",
+          "inventory_qs",
+          "inventory_prev_qs",
+          "produced_qs",
+          "sold_qs",
+          "spoilage_qs"
+        ],
+        "evidence_refs": [
+          "flow.cell.output_actual_uqs",
+          "state.cell.inventory_output_uqs",
+          "flow.cell.sold_uqs",
+          "flow.cell.spoilage_uqs"
+        ]
+      },
+      {
+        "key": "event.E02.accounted.price",
+        "template_zh": "农产品价格为基年价的 {price_pct}%，已连续 {rise_quarters} 季上行；本季未满足的农产品需求为 {unmet_qs} 单位。",
+        "placeholders": [
+          "price_pct",
+          "rise_quarters",
+          "unmet_qs"
+        ],
+        "evidence_refs": [
+          "state.price.sector_uu_per_qs",
+          "flow.cell.unmet_demand_uqs"
+        ]
+      }
+    ],
+    "inferred": [
+      {
+        "key": "event.E02.inferred.binding",
+        "template_zh": "模型中，北原农业本季的限制因素是 {binding_name_zh}，不是需求计划。灌溉设施指数当前为 {irrigation_pct}%，是四地区中最低的一档。多个约束可能同时偏紧，报告只列出最紧的一项，其余四项的余量见约束台账。",
+        "placeholders": [
+          "binding_name_zh",
+          "irrigation_pct"
+        ],
+        "evidence_refs": [
+          "flow.cell.binding_code",
+          "state.region.irrigation_index_ppm",
+          "flow.cell.bound_capacity_uqs",
+          "flow.cell.bound_labor_uqs",
+          "flow.cell.bound_materials_uqs"
+        ]
+      },
+      {
+        "key": "event.E02.inferred.price_rule",
+        "template_zh": "模型中的价格规则：下一季价格按供需缺口与库存偏离两项信号调整，单季变动不超过 {step_pct}%，并被限制在基年价的 {floor_pct}% 到 {ceil_pct}% 之间。价格在本季之内不再变动。",
+        "placeholders": [
+          "step_pct",
+          "floor_pct",
+          "ceil_pct"
+        ],
+        "evidence_refs": [
+          "flow.price.gap_ppm",
+          "state.price.pending_uu_per_qs"
+        ]
+      }
+    ],
+    "projected": [
+      {
+        "key": "event.E02.projected.no_action",
+        "template_zh": "情景预测（假设：不提交新命令、外部条件不变、库存按既有规则补充）：未来四季农产品价格仍处上行区间，居民食品实际消费量下降 {proj_consumption_drop_pct}%。本预测由同一套结算规则空跑四季得到，不宣称识别真实世界因果。",
+        "placeholders": [
+          "proj_consumption_drop_pct"
+        ],
+        "evidence_refs": [
+          "state.price.pending_uu_per_qs",
+          "flow.group.consumption_by_product_uqs"
+        ]
+      },
+      {
+        "key": "event.E02.projected.with_p07",
+        "template_zh": "情景预测（假设：本季立项 P07，资金不中断、施工能力充足）：灌溉设施指数最早在第 {commission_q_display} 季提高。若届时北原农业的限制因素已变为劳动或材料，产量不会因灌溉改善而提高。",
+        "placeholders": [
+          "commission_q_display"
+        ],
+        "evidence_refs": [
+          "state.region.irrigation_index_pending_ppm",
+          "state.project.commissioned_q"
+        ]
+      }
+    ]
+  },
+  "_note_acceptance_criteria": [
+    {
+      "test_id": "T-S-E02-NO-FIRE-WHEN-PRICE-FLAT",
+      "given_zh": "构造 state.price.sector_uu_per_qs[sector.agri] = 1000000000（基年价，INV-148），其余四条件全部成立",
+      "when_zh": "推进 20 个季度",
+      "then_zh": "fire_count 恒为 0，且 rng.event 不因本事件产生任何抽样",
+      "invariants": [
+        "INV-009",
+        "INV-011"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-NO-FIRE-AT-BASELINE",
+      "given_zh": "无命令、无冲击的基线剧本",
+      "when_zh": "推进基年四季（q = 0..3）",
+      "then_zh": "fire_count == 0。基年全部门价格恒为 1000000000（INV-148），因此第一条条件在基年结构上不可能成立",
+      "invariants": [
+        "INV-148",
+        "INV-118"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-INVENTORY-THRESHOLD-FIT",
+      "given_zh": "载入完整剧本（cells_init.json 落地后）",
+      "when_zh": "计算北原农业 cell 的基年季度目标库存 IT = mul_ppm(基年季度吞吐量, param.inventory_target_ppm)",
+      "then_zh": "param.e02_agri_inventory_floor_uqs 落在 [20% × IT, 60% × IT] 区间内；超出即失败，提示阈值必须随剧本初值重新拟合，而不是让事件永不触发或开局即触发",
+      "invariants": [
+        "INV-152"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-FIRE-WHEN-CONDITIONS-MET",
+      "given_zh": "构造 state.price.sector_uu_per_qs[sector.agri] = 1100000000、flow.cell.binding_code[cell.beiyuan.agri] != 0、state.cell.inventory_output_uqs[cell.beiyuan.agri] = 500000、unmet_demand > 0、q >= 3，固定 root_seed",
+      "when_zh": "连续推进 8 个季度",
+      "then_zh": "fire_count >= 1；两次触发间隔 >= 4；整局不超过 4 次",
+      "invariants": [
+        "INV-130"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-NO-LEDGER-EFFECT",
+      "given_zh": "构造一次确定触发与一个除事件外完全相同的对照组",
+      "when_zh": "触发当季结算完成",
+      "then_zh": "cell 子系统（含库存与现金）、gov、price 三个 subsystem_hash 与对照组逐位相同；事件没有改变任何一粒粮食或一分钱",
+      "invariants": [
+        "INV-130",
+        "INV-047"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-NO-REDRAW-ON-RELOAD",
+      "given_zh": "在事件已确定触发的那一季之前存档",
+      "when_zh": "save 到 load 再 advance，与直接 advance 各跑一次",
+      "then_zh": "state_hash 逐位相同，log.rng 完全一致，fire_count 与 last_fire_q 一致",
+      "invariants": [
+        "INV-131",
+        "INV-133",
+        "ADV-06"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-TRUST-UNTOUCHED",
+      "given_zh": "构造一次确定触发，且该季无任何欠付、无项目取消、无债券违约",
+      "when_zh": "触发当季结算完成",
+      "then_zh": "全部 36 个群组的 trust_ppm 与对照组逐位相同：歉收不属于失信闭集合，事件不得代替它写信任",
+      "invariants": [
+        "INV-122"
+      ]
+    },
+    {
+      "test_id": "T-S-E02-CONSEQUENCE-MATCHES-EFFECT",
+      "given_zh": "载入 content/events/event_E02.json",
+      "when_zh": "逐条比对 consequences[k] 与它的 effect_ref 指向的 effects[k]（k = 0, 1）",
+      "then_zh": "consequences[0].magnitude_ppm == effects[0].delta_ppm == -35000 且 consequences[0].entity_id == effects[0].target == \"state.group.expectation_ppm\"；consequences[1].magnitude_ppm == effects[1].delta_ppm == 25000 且 consequences[1].entity_id == effects[1].target == \"state.bloc.org_power_ppm\"；两条的 amount_uu == 0 且 quantity_uqs == 0。任一处不等即失败：说明后果说明与实际写入脱钩，这正是双份事实来源会产生的缺陷。",
+      "invariants": [
+        "INV-130"
+      ]
+    }
+  ],
+  "_note_parameters_zh": "本键原名 parameters，是 11_data_contract.md §5.13 的 event_template schema 未声明的顶层键（additionalProperties: false），按 §3 改为 _note_ 注释键。同时把每条记录的 parameter_id 改名为 value_id：§5.15 规定 ParameterCard 只覆盖 param.* 命名空间且全部集中在 content/parameters/params_core.json，内容包文件里的同形对象既不会被载入器当成参数卡读到，留着 parameter_id 只会让人以为「这张卡已经登记过了」。九项身份证字段（value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note）一字未删，它们记录的是本文件内容数值的来源与校准计划，而不是冒充一张 SimCore 能加载的 param.* 卡。是否把事件阈值正式升格为 param.* 行为参数，登记为待决问题（见返回值 open_questions）；若升格，须由 params_core.json 的负责人建卡，本文件只保留数值与 value_id 引用。",
+  "_note_parameters": [
+    {
+      "value_id": "param.e02_agri_price_threshold_uu_per_qs",
+      "binds_to": "trigger.all_of[0].value",
+      "value": 1080000000,
+      "unit": "μU/Q_s",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §06 价格有界平滑；10 号文件 §9.1 基年价 1000000000 μU/Q_s、单季步长上限 param.price_step_max_ppm = 30000 ppm；裁定 R-SCALE-01（docs/18）",
+      "reference_year": 0,
+      "definition": "触发所需的农产品价格下界：1080000000 μU/Q_s，即相对基年价（1000000000）上行 8%。由于单季步长上限为 3%，该阈值内含至少 3 个连续上行季。",
+      "valid_range": [
+        1030000000,
+        1500000000
+      ],
+      "confidence": "low",
+      "calibration_note": "本阈值与 param.price_step_max_ppm 绑定：若步长参数被调小，达到同一阈值所需的季数变多，事件变得更罕见。调整任一方时必须同时复核另一方。校准检验：无冲击基线 40 季中农产品价格不应触及本阈值。刻度说明（裁定 R-SCALE-01）：本值原为旧刻度的 1080000，位于 trigger.all_of[0].value 这一「键名不含 uu 词元」的位置，tools/migrate_currency_scale.py 的迁移规则扫不到，因此漏迁；旧值 1080000 远低于 PRICE_MIN = 400000000，在新刻度下本条件恒真，会让事件退化为「只要另外四条成立就触发」。本轮已改为 1080000000，valid_range 同步 ×1000。凡新增以 μU/Q_s 计价的阈值都必须手工复核，不能依赖迁移器。"
+    },
+    {
+      "value_id": "param.e02_agri_inventory_floor_uqs",
+      "binds_to": "trigger.all_of[2].value",
+      "value": 700000,
+      "unit": "μQ_s",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：目标库存覆盖比例 param.inventory_target_ppm = 500000（半季覆盖）的约四成",
+      "reference_year": 0,
+      "definition": "触发所需的北原农业成品库存上界：低于该值表示缓冲已被耗尽。",
+      "valid_range": [
+        200000,
+        3000000
+      ],
+      "confidence": "low",
+      "calibration_note": "这是本事件唯一与剧本规模相关的阈值，cells_init.json 尚未落地，当前取值是占位估算（按北原农业季度吞吐量约 1.5 到 3.5 百万 μQ_s 推得）。T-S-E02-INVENTORY-THRESHOLD-FIT 会在剧本落地后强制重新拟合；在该测试通过之前，本参数的 confidence 不得改为 medium。"
+    },
+    {
+      "value_id": "param.e02_min_q",
+      "binds_to": "trigger.all_of[4].value",
+      "value": 3,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "计划书 §05 季度财政由季节系数分配，初始四季合计与年计划一致",
+      "reference_year": 0,
+      "definition": "本事件允许触发的最早季度索引（q 从 0 起，故为第 4 季）。",
+      "valid_range": [
+        0,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "与 param.e02_agri_price_threshold_ppm 呼应：价格从基年价升到 108% 至少需要 3 季，故更早的门槛没有意义。"
+    },
+    {
+      "value_id": "param.e02_probability_ppm",
+      "binds_to": "trigger.probability_ppm",
+      "value": 700000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：条件满足后被公开记录为一次歉收的概率",
+      "reference_year": 0,
+      "definition": "五条条件全部成立后本季触发的概率。抽样走 rng.event。",
+      "valid_range": [
+        100000,
+        1000000
+      ],
+      "confidence": "low",
+      "calibration_note": "取值高于 E01（600000），因为粮价与库存都是全国可见的公开数据，被忽略的可能性更小。若试玩者反馈条件成立却长期无事发生，提高到 1000000（退化为纯条件触发）。"
+    },
+    {
+      "value_id": "param.e02_cooldown_q",
+      "binds_to": "trigger.cooldown_q",
+      "value": 4,
+      "unit": "q",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：农业以年为周期，冷却取一年",
+      "reference_year": 0,
+      "definition": "两次触发之间的最小间隔季数。",
+      "valid_range": [
+        1,
+        12
+      ],
+      "confidence": "low",
+      "calibration_note": "取 4 使连续歉收年能被逐年各记一次；若压测中出现同一轮价格上行被记两次，提高到 6。"
+    },
+    {
+      "value_id": "param.e02_max_occurrences",
+      "binds_to": "trigger.max_occurrences",
+      "value": 4,
+      "unit": "次",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：40 季局内最多经历 4 个歉收年",
+      "reference_year": 0,
+      "definition": "整局中本事件最多触发次数。",
+      "valid_range": [
+        1,
+        10
+      ],
+      "confidence": "low",
+      "calibration_note": "与 cooldown_q = 4 一起，使本事件最多覆盖 16 季；120 季压测中若 agri_coop 组织力被单调推高到上界，先降本值。"
+    },
+    {
+      "value_id": "param.e02_expectation_delta_ppm",
+      "binds_to": "effects[0].delta_ppm",
+      "value": -35000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：与 E01 的 −30000 同一量级，略高，因为歉收直接触及口粮",
+      "reference_year": 0,
+      "definition": "触发时对北原各群组未来预期的一次性下调（−3.5 个百分点）。",
+      "valid_range": [
+        -150000,
+        -5000
+      ],
+      "confidence": "low",
+      "calibration_note": "注意不要把居民因粮价上行而受到的实际损失重复计入：那条链条已由消费指数与生活指数承担。若报告中出现生活指数与预期同向大幅下跌而玩家无法分辨来源，先降本值。"
+    },
+    {
+      "value_id": "param.e02_agri_org_power_delta_ppm",
+      "binds_to": "effects[1].delta_ppm",
+      "value": 25000,
+      "unit": "ppm",
+      "source_type": "design_assumption",
+      "source_ref": "设计假设：略高于 E01 对工商业联盟的 +20000",
+      "reference_year": 0,
+      "definition": "触发时农业合作联盟组织力的一次性上调（+2.5 个百分点）。",
+      "valid_range": [
+        5000,
+        100000
+      ],
+      "confidence": "low",
+      "calibration_note": "农业合作联盟开局组织力 300000 为三者最低（politics.json：成员分散、动员成本高）。歉收是其少数能降低动员成本的时刻。校准检验：连续 4 次触发累计不应使其越过任何否决域门槛。"
+    }
+  ],
+  "_note_notes_zh": "全部数值为设计假设与测试夹具（计划书 §14、§19）。本文件刻意不写 trust_ppm、不写 living_index_ppm、不写 stance_ppm：这三项都已有各自的既有通道，事件再写一次就会双计。任务卡中的库存下降条件在契约里只能表达为库存低于绝对阈值，该阈值依赖尚未落地的 cells_init.json，已配 T-S-E02-INVENTORY-THRESHOLD-FIT 强制重新拟合。",
+  "_note_scale_fix_zh": "裁定 R-SCALE-01（1 U = 1000000000 μU）在本文件的落点：只有一处真数值需要改，trigger.all_of[0].value 由 1080000 改为 1080000000（对应参数卡 param.e02_agri_price_threshold_uu_per_qs 的 value 与 valid_range 同步 ×1000）。其余数值全部是 μQ_s（库存 700000、500000）、ppm（概率、各项 delta、灌溉指数、组织力）或季度索引，按 R-SCALE-01 一律不变。字符串正文中的旧刻度数字（基年价 1000000、价格区间 [400000, 2500000]、验收测试里的 1000000 / 1100000）已同步改为新刻度。本文件不含任何「分母带 μU」的系数，因此不涉及 R-SCALE-01 连带要求 2 的反向 ÷1000。"
+}

@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "_note": "色板唯一来源（docs/20 §12.1）。kind: text / graphic / decorative；allowed_on 列出允许叠放的底色。赭色只用于需要注意的状态（§12.2），不用于三类信息与装饰。",
+  "tokens": {
+    "bg.abyss": {"hex": "#0B1620", "kind": "decorative", "allowed_on": []},
+    "bg.base": {"hex": "#0F1D28", "kind": "decorative", "allowed_on": []},
+    "bg.panel": {"hex": "#162734", "kind": "decorative", "allowed_on": []},
+    "bg.raised": {"hex": "#1E3442", "kind": "decorative", "allowed_on": []},
+    "bg.paper": {"hex": "#ECE7DE", "kind": "decorative", "allowed_on": []},
+    "bg.paper2": {"hex": "#E0D9CC", "kind": "decorative", "allowed_on": []},
+    "text.primary": {"hex": "#E9EFF3", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised", "bg.abyss"]},
+    "text.secondary": {"hex": "#B3C5D0", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised", "bg.abyss"]},
+    "text.muted": {"hex": "#8DA3B0", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "text.ink": {"hex": "#17242C", "kind": "text", "allowed_on": ["bg.paper", "bg.paper2", "teal.core"]},
+    "text.ink2": {"hex": "#3E4C55", "kind": "text", "allowed_on": ["bg.paper", "bg.paper2"]},
+    "warm.ink": {"hex": "#5A5246", "kind": "text", "allowed_on": ["bg.paper", "bg.paper2"]},
+    "teal.deep": {"hex": "#23625A", "kind": "text", "allowed_on": ["bg.paper", "bg.paper2"]},
+    "ochre.ink": {"hex": "#8A4A1E", "kind": "text", "allowed_on": ["bg.paper", "bg.paper2"]},
+    "teal.core": {"hex": "#5FB3A4", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "focus.ring": {"hex": "#8FD3C6", "kind": "graphic", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "teal.dim": {"hex": "#3A7F76", "kind": "graphic", "allowed_on": ["bg.abyss"]},
+    "warm.text": {"hex": "#D6CEC1", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "line.strong": {"hex": "#5A8199", "kind": "graphic", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "line.hair": {"hex": "#2F4C60", "kind": "decorative", "allowed_on": []},
+    "ochre.core": {"hex": "#D9954A", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "ochre.hot": {"hex": "#EE8552", "kind": "text", "allowed_on": ["bg.base", "bg.panel", "bg.raised"]},
+    "series.1": {"hex": "#357569", "kind": "graphic", "allowed_on": ["bg.abyss"]},
+    "series.2": {"hex": "#66879A", "kind": "graphic", "allowed_on": ["bg.abyss"]},
+    "series.3": {"hex": "#75A79B", "kind": "graphic", "allowed_on": ["bg.abyss"]},
+    "series.4": {"hex": "#C7BCAB", "kind": "graphic", "allowed_on": ["bg.abyss"]},
+    "debug.missing": {"hex": "#A0204A", "kind": "decorative", "allowed_on": []}
+  }
+}

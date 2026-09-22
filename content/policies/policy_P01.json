@@ -1,0 +1,1012 @@
+{
+  "schema_kind": "policy_definition",
+  "schema_version": 1,
+  "policy_id": "policy.P01",
+  "_note_code": "P01",
+  "label_zh": "个人所得税",
+  "_note_slug": "personal_income_tax",
+  "_note_category": "fiscal_revenue",
+  "_note_governance_tool": "tax",
+  "_note_governance_tool_zh": "税收",
+  "kind": "rate",
+  "_note_schema_deviation_zh": "本文件的扩展字段一律按 11_data_contract.md §3 的做法改名为 _note_<field> 注释键：schema 未声明的键不会被载入器读取，也不进 content_hash，因此把它们伪装成数据字段只会让「拼错字段名被静默忽略」这条风险重新出现。两个曾经留在顶层的键现已处理完毕：\n（1）parameters —— 这 11 张参数身份证与 schema 正式字段构成双份事实来源：其中 10 张的 value 逐个等于 player_params[*].default、cost.one_off_uu、cost.opex_per_q_uu、preconditions[*].right 与 cooldown_q，剩下 1 张（param.income_tax_ref_base_uu_per_q）是本文件唯一真正新增的机制参数、但它按 11_data_contract.md §5.15 与 docs/18 R-PARAM-01 只能建卡在 content/parameters/params_core.json。因此本轮按契约把 parameters 数组整体撤下：正式字段成为唯一事实来源，全部标定理由与建卡口径降级为 _note_calibration_and_param_cards，并在 _note_parameters_referenced 中登记这 11 个 parameter_id 为「本文件引用、由 params_core.json 建卡」。注意：那里保存的是**给建卡人看的规格说明**，不是卡片本身 —— 它刻意不带 parameter_id 字段，因为一张写在注释子树里的卡等于不存在（校验器的 E_PARAM_CARD 硬错误正是为此而设），在 params_core.json 建成之前，本政策的这 11 个参数在内容层就是「尚未建卡」，不得假装已有。\n（1b）player_params 超槽 —— docs/17 §4.8 的 param_min_ppm / param_max_ppm / param_default 三张表长度均为 48 == 12×4，每项政策只有 4 个玩家参数槽位，而本文件原先声明了 6 项，载入期必然 E_PARAM_RANGE。两项非槽位参数已按各自真正的落点搬走：funding_source 归 policy_enact 命令的第 5 槽，start_delay_q 与 docs/12 §2.1 02.1 的生效季公式冲突、已撤下。两者的完整规格与理由见 _note_enact_command_fields，没有任何一条被静默删除。\n（2）effect_chain —— 11_data_contract.md §5.12 的 PolicyDefinition schema 里没有这个字段，而计划书 §09「每项至少 1 条完整反馈链」（文档优先级第 1 位）要求它必须存在、验收口径 ≥ 4 环。两条规则在 additionalProperties:false 下不可能同时满足，这是 tools/validate_content.py 自己登记的 OQ-V03。按文档优先级「计划书 > 裁定 > 12 > 11 > 10」，缺字段的一侧是 §5.12 而不是计划书，因此本轮把 effect_chain 正式登记进校验器的 policy_definition schema（必填、array），两条检查方向一致后本字段留在顶层即为合法。待 §5.12 与 docs/18 同步补上该字段后，本段可删。",
+  "problem_statement_zh": "模型里政府的经常性收入只有三条通道：个人所得税、企业利润税与公共服务收费（flow.gov.receipts_income_tax_uu / receipts_profit_tax_uu / receipts_other_uu）。其中只有个税能按居民收入分布分档调节，因此它是唯一一条把「财政缺口由谁负担」这件事写进状态的通道：它直接决定 derived.group.disposable_income_uu 的分组差异，再经居民预算约束决定 flow.group.consumption_by_product_uqs 与 flow.market.demand_uqs，最后决定 flow.gov.new_borrowing_uu 的规模。缺了这条政策，玩家面对 2 U 的基线年赤字只能借款，分配问题在模型里无处表达；而一旦有了它，提高税率是否真的增加收入，又受 state.gov.tax_capacity_ppm（征收能力）与税基侵蚀两道机制反压，形成一个可观察、可解释、可失败的取舍。",
+  "_note_mechanism_gap_refs": [
+    "flow.gov.receipts_income_tax_uu",
+    "derived.group.disposable_income_uu",
+    "state.gov.tax_receivable_uu",
+    "flow.gov.new_borrowing_uu"
+  ],
+  "legal_authority": {
+    "authority_bit": 0,
+    "_note_authority_kind": "legislation_window",
+    "_note_authority_note_zh": "税制变更属立法事项，需要预算法案与立法窗口，不能用行政令实施。首版把「立法窗口」落实为三条可机器求值的条件：法定权限位、执政席位比例、预算审查季。",
+    "requires_budget_review": true,
+    "requires_bloc_support": [],
+    "_note_veto_domain": "tax_law",
+    "_note_veto_bloc": "bloc.business",
+    "_note_veto_stance_min_ppm": -300000,
+    "min_seats_ppm": 500000
+  },
+  "player_params": [
+    {
+      "key": "rate2_ppm",
+      "label_zh": "最高档边际税率（主速率槽 j=0）",
+      "type": "ppm",
+      "unit": "ppm",
+      "state_slot": "state.policy.params_ppm[policy.P01][0]",
+      "valid_range": [
+        0,
+        600000
+      ],
+      "step": 5000,
+      "default": 400000,
+      "meaning_zh": "适用于超过 bracket2_lower_ppm 部分税基的边际税率，也是本政策的**主速率**：sim/policy/policy_def.gd 的 PARAM_SLOT_PRIMARY 规定 kind ∈ {rate, transfer} 的政策 j=0 槽是主速率参数，docs/31 ADV-A04（别名 ADV-05）把它称作 param.p01_rate_ppm 并在 100000…600000 之间扫描，扫描时 j=1..3 三槽一律取 0（免征额 0、第二级起征点 0、第一级税率 0），此时 (exemption, bracket2_lower] 区间为空，整个税基落在第二档，本参数即为单一税率。上限 600000 与 ADV-05「税率 10% → 60%」的恶意玩家用例口径一致。"
+    },
+    {
+      "key": "exemption_ppm",
+      "label_zh": "免征额",
+      "type": "ppm",
+      "unit": "ppm",
+      "state_slot": "state.policy.params_ppm[policy.P01][1]",
+      "valid_range": [
+        0,
+        2000000
+      ],
+      "step": 10000,
+      "default": 250000,
+      "meaning_zh": "以「基年单季全国应税收入基准」折到本组的水平（ref_g_uu）为分母的免征门槛。250000 表示免征额为该组平均水平应税收入的 25%。"
+    },
+    {
+      "key": "bracket2_lower_ppm",
+      "label_zh": "第二级起征点",
+      "type": "ppm",
+      "unit": "ppm",
+      "state_slot": "state.policy.params_ppm[policy.P01][2]",
+      "valid_range": [
+        0,
+        6000000
+      ],
+      "step": 10000,
+      "default": 1200000,
+      "meaning_zh": "同一分母下第二档边际税率的起点。必须 ≥ exemption_ppm，否则命令被拒（precondition.bracket_order）。"
+    },
+    {
+      "key": "rate1_ppm",
+      "label_zh": "第一级边际税率",
+      "type": "ppm",
+      "unit": "ppm",
+      "state_slot": "state.policy.params_ppm[policy.P01][3]",
+      "valid_range": [
+        0,
+        600000
+      ],
+      "step": 5000,
+      "default": 200000,
+      "meaning_zh": "适用于 (exemption_ppm, bracket2_lower_ppm] 区间内税基的边际税率。两档的划分与 liability_formula 一字未改，改的只是四个参数在命令槽中的次序。"
+    }
+  ],
+  "_note_params_slot_map": {
+    "enact_command_layout": "[policy, param0, param1, param2, param3, funding_source]（systems/commands.gd 的槽位布局，docs/11 §6.1 命令码 1）",
+    "params_ppm": [
+      "rate2_ppm",
+      "exemption_ppm",
+      "bracket2_lower_ppm",
+      "rate1_ppm"
+    ],
+    "params_uu": [
+      "unused",
+      "unused",
+      "unused",
+      "unused"
+    ],
+    "note_zh": "docs/17 §4.8 的 param_min_ppm / param_max_ppm / param_default 三张表长度都是 48 == 12×4，JWIds.POLICY_PARAM_STRIDE == 4：每项政策**只有 4 个**玩家参数槽位，systems/content_loader.gd 的 _read_policy_params 把 player_params[j] 映射到 idx_policy_param(p, j) 且 j < 4，第 5 项起无处安放（E_PARAM_RANGE）。因此 params_ppm 与 params_uu 不是 4+4 个独立槽位，而是同一组 4 个整数的两个单位视图（JWPolicyEngine.apply_pending_params 对同一个 j 同时写两张表）。四个 ppm 槽被两档税率、免征额与第二级起征点占满，首版个税固定为「免征额 + 两档边际税率」。三档及以上级距需要先扩展状态结构，不得靠复用 params_uu 偷渡。j=0 放最高档税率而不是免征额，是 PARAM_SLOT_PRIMARY 与 ADV-A04 的共同要求，见 player_params[0].meaning_zh。"
+  },
+  "preconditions": [
+    {
+      "id": "precondition.legal_authority",
+      "kind": "authority_bit",
+      "left": "state.politics.legal_authority_mask",
+      "op": "bit_set",
+      "right": 0,
+      "reject_code": "E_AUTHORITY",
+      "blocked_reason": "authority",
+      "ui_text_key": "policy.P01.blocked.authority"
+    },
+    {
+      "id": "precondition.seats",
+      "kind": "seat_share",
+      "left": "derived.politics.seats_gov_share_ppm",
+      "op": "gte",
+      "right": 500000,
+      "reject_code": "E_SEATS_SHORT",
+      "blocked_reason": "authority",
+      "ui_text_key": "policy.P01.blocked.seats"
+    },
+    {
+      "id": "precondition.no_bloc_veto",
+      "kind": "bloc_veto",
+      "left": "state.bloc.stance_ppm[bloc.business][policy.P01]",
+      "op": "gte",
+      "right": -300000,
+      "reject_code": "E_BLOC_VETO",
+      "blocked_reason": "authority",
+      "ui_text_key": "policy.P01.blocked.veto"
+    },
+    {
+      "id": "precondition.budget_review_window",
+      "kind": "state_compare",
+      "left": "state.time.q",
+      "op": "gte",
+      "right": "state.politics.next_budget_review_q",
+      "reject_code": "E_PRECONDITION",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P01.blocked.window"
+    },
+    {
+      "id": "precondition.cooldown",
+      "kind": "state_compare",
+      "left": "state.time.q",
+      "op": "gte",
+      "right": "state.policy.cooldown_until_q[policy.P01]",
+      "reject_code": "E_POLICY_COOLDOWN",
+      "blocked_reason": "cooldown",
+      "ui_text_key": "policy.P01.blocked.cooldown"
+    },
+    {
+      "id": "precondition.admin_capacity",
+      "kind": "state_compare",
+      "left": "state.politics.admin_capacity_ppm",
+      "op": "gte",
+      "right": 400000,
+      "reject_code": "E_PRECONDITION",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P01.blocked.admin_capacity"
+    },
+    {
+      "id": "precondition.bracket_order",
+      "kind": "param_order",
+      "left": "state.policy.pending_params[policy.P01].bracket2_lower_ppm",
+      "op": "gte",
+      "right": "state.policy.pending_params[policy.P01].exemption_ppm",
+      "reject_code": "E_PRECONDITION",
+      "blocked_reason": "precondition",
+      "ui_text_key": "policy.P01.blocked.bracket_order"
+    },
+    {
+      "id": "precondition.budget_reservation",
+      "kind": "budget_reservation",
+      "left": "state.gov.cash_uu",
+      "op": "gte",
+      "right": "cost.per_quarter_uu",
+      "reject_code": "E_BUDGET_INSUFFICIENT",
+      "blocked_reason": "budget",
+      "ui_text_key": "policy.P01.blocked.budget"
+    }
+  ],
+  "cost": {
+    "one_off_uu": 60000000,
+    "per_quarter_uu": 60000000,
+    "planned_quarters": 1,
+    "spend_lines_uu_per_q": {
+      "tax_admin_public_wage": 36000000,
+      "tax_admin_domestic_service": 24000000
+    },
+    "opex_per_q_uu": 12000000,
+    "required_construction_uqs": 0,
+    "required_equipment_uqs": 0
+  },
+  "_note_cost_model": {
+    "budget_curve_uu_per_q": [
+      60000000
+    ],
+    "budget_curve_offset_note_zh": "数组下标是相对 enacted_q 的季偏移。首版实施成本压缩在通过季一季内付清（planned_quarters = 1），因此不需要为本政策保存跨季的 funding_source，也不会产生「合同跨季但资金来源已丢失」的缝隙。",
+    "spend_incidence": [
+      {
+        "line": "tax_admin_public_wage",
+        "amount_uu": 36000000,
+        "payee_agent": "agent.pubserv.<region>",
+        "payer_agent": "agent.gov",
+        "ledger_kind": "public_wage_payment",
+        "allocation_rule": "按四地区 state.pubserv.employment_persons 的人口权重用 split_largest_remainder 拆分",
+        "note_zh": "申报表改版、公告与窗口人力。pubserv 无自有现金，支付由 agent.gov 执行（10 号文件 §2.1）。"
+      },
+      {
+        "line": "tax_admin_domestic_service",
+        "amount_uu": 24000000,
+        "payee_agent": "agent.cell.<region>.services",
+        "payer_agent": "agent.gov",
+        "ledger_kind": "gov_procurement",
+        "allocation_rule": "按四地区 flow.cell.output_actual_uqs[cell.<r>.services] 用 split_largest_remainder 拆分；该部门当季无可售供给时转为 flow.market.unmet_demand_uqs，不得凭空成交",
+        "note_zh": "信息系统改造与印刷寄送，向服务部门采购。"
+      }
+    ],
+    "spend_sum_check": "Σ spend_incidence.amount_uu == cost.per_quarter_uu == 60000000（V-PD-03，加载器不做归一化补偿）",
+    "toggle_cost_note_zh": "除上述实施成本外，每次开关另计一次性行政成本 param.policy_toggle_cost_uu（S02 过账，kind = policy_toggle_cost）。这两笔是不同的钱：前者是税制改版本身的成本，后者是「反复开关」的代价。"
+  },
+  "_note_funding_requirement": {
+    "allowed_sources": [
+      "cash",
+      "bond",
+      "reallocation"
+    ],
+    "default_source": "cash",
+    "cash_rule": "S02 检查 state.gov.cash_uu − state.gov.reserved_memo_uu ≥ 60000000，通过则 reserved_memo_uu += 60000000，不产生任何现金移动；实际支付在 S04。",
+    "bond_rule": "进入 02.6 发债需求队列。票息由规则给出（param.market_rate_base_ppm + 偿债率斜率），玩家不能设；额度受 min(state.gov.credit_limit_domestic_memo_uu, mul_ppm(state.invpool.cash_uu, param.household_bond_appetite_ppm)) 与 state.world.credit_limit_uu − credit_used_uu 双重约束。",
+    "reallocation_rule": "在本季 annual_plan 的 discretionary 档内调剂；调剂额度不足即 REJECT(E_NO_FUNDING)，不允许挤占更高优先级档位。",
+    "queue_occupied": "none",
+    "queue_note_zh": "本政策不占用 state.region.construction_slots_total（无施工、无设备交付，required_construction_uqs 与 required_equipment_uqs 均为 0）。它占用的是两种稀缺资源：预算审查窗口（每 4 季一次，precondition.budget_review_window）与行政执行能力（state.politics.admin_capacity_ppm ≥ 400000）。因此它与 P04/P06/P07/P08 这类工程政策不争施工槽位，却与同季其它需要立法窗口的改革互相排队。",
+    "revenue_is_not_funding_note_zh": "本政策带来的税收不得被当作它自己的资金来源：实施成本在 enacted_q 的 S04 支付，税收最早在 effective_from_q 的 S06 才产生。两者不在同一季，结构上无法自筹。"
+  },
+  "lag": {
+    "enact_to_effect_q": 1,
+    "min_feedback_q": 1,
+    "max_feedback_q": 2,
+    "commission_delay_q": 1
+  },
+  "_note_lag_model": {
+    "earliest_feedback_q": 1,
+    "full_effect_q": 2,
+    "effective_from_rule": "state.policy.effective_from_q = enacted_q + lag.enact_to_effect_q（docs/12 §2.1 的 02.1，只能向前、不得回溯，INV-098）",
+    "commission_delay_note_zh": "本政策不投运任何资产，commission_delay_q = 1 仅为满足 V-PD-04 的结构要求；state.project 表中不会出现 P01 的条目。",
+    "driven_by": [
+      {
+        "source": "player.enacted_q（玩家选择在哪一季提交 policy_enact）",
+        "effect_zh": "生效季 = 通过季 + lag.enact_to_effect_q（1 季）。玩家对「执行起点」的控制来自选择通过季本身，而不是一个额外的延后参数——见 _note_enact_command_fields.start_delay_q_withdrawn。"
+      },
+      {
+        "source": "state.politics.next_budget_review_q",
+        "effect_zh": "通过季必须落在预算审查季，因此从「想改」到「能改」之间还有 0..3 季的等待，由当前季在四季周期中的位置决定，不是常数。"
+      },
+      {
+        "source": "state.gov.tax_capacity_ppm",
+        "effect_zh": "决定应征额中有多少能在当季变成实收。能力越低，liability 与 collected 的缺口越大，差额滞留在 state.gov.tax_receivable_uu，只能按 param.tax_recovery_ppm 在后续季度部分转为实收 —— 这是「完整生效」需要 2 季而不是 1 季的唯一原因。"
+      },
+      {
+        "source": "param.tax_recovery_ppm",
+        "effect_zh": "应收欠税的季度追回比例，决定滞后部分的收敛速度（OQ-240：首版不设滞纳金与追缴机制）。"
+      }
+    ]
+  },
+  "effect": {
+    "kind": "tax_schedule",
+    "target": "state.policy.params_ppm",
+    "settlement_step": "S06",
+    "settlement_ref": "12_simulation_contract.md §6.5",
+    "bracket_count": 2,
+    "schedule_scaling": {
+      "why_zh": "§6.5 的 liability = Σ_bracket mul_ppm(max(0, min(base_eff, upper_b) − lower_b), rate_b_ppm) 没有规定 lower_b / upper_b 从哪来。税基 base 是群组的季度总收入（μU），而级距在直觉上是「人均」概念；本政策规定级距边界由群组规模折算得出，从而在不改动 §6.5 公式的前提下让级距有意义。全程只做乘法与 ppm 缩放，不把金额除到人均，避免在人均量级上产生不可接受的取整误差。",
+      "steps": [
+        "taxpayers_g = Σ_sector state.group.employed_persons[g][*]（含 pubserv 档）；若 == 0 且 base > 0（只有财产收入的组），取 state.group.population_persons[g]；若两者都为 0 则 base 必为 0，直接跳过该组",
+        "taxpayers_total = Σ_g taxpayers_g",
+        "share_g_ppm = idiv_floor(mul(taxpayers_g, 1000000), max(taxpayers_total, 1))  # rounding: floor, reason=门槛缩放属换算不属拆分，写 log.rounding，不产生债权债务（INV-005）",
+        "ref_g_uu = mul_ppm(param.income_tax_ref_base_uu_per_q, share_g_ppm)",
+        "lower_1_g = mul_ppm(ref_g_uu, exemption_ppm)",
+        "lower_2_g = mul_ppm(ref_g_uu, bracket2_lower_ppm)",
+        "upper_1_g = lower_2_g",
+        "upper_2_g = param.amount_max_uu"
+      ],
+      "not_a_split_note_zh": "share_g_ppm 用 floor 且各组之和可能略小于 1000000。这不违反 INV-003：这里没有把任何一笔已存在的金额拆给多方，只是在缩放一个门槛。禁止为此引入「余数池」，否则会把一个门槛变成一笔钱（INV-005）。"
+    },
+    "liability_formula": "liability_g = mul_ppm(max(0, min(base_eff_g, upper_1_g) − lower_1_g), rate1_ppm) + mul_ppm(max(0, min(base_eff_g, upper_2_g) − lower_2_g), rate2_ppm)  # rounding: floor, reason=少征优于多征",
+    "base_definition": "base_g = flow.group.wage_income_uu[g] + flow.group.property_income_uu[g]；转移收入不计税（OQ-212）；税基只来自已过账的收入分录，不存在独立的「税收系数」字段（ADV-05）",
+    "erosion_rule": "avg_rate_ppm = idiv_floor(mul(liability_at(base_g), 1000000), max(base_g, 1))；evasion_ppm = mul_ppm(param.tax_evasion_slope_ppm, max(0, avg_rate_ppm − param.tax_base_rate_ppm))；base_eff_g = base_g − mul_ppm(base_g, evasion_ppm)",
+    "collection_rule": "collected_g = mul_ppm(liability_g, min(state.gov.tax_capacity_ppm, 1000000))；再 collected_g = min(collected_g, state.group.cash_uu[g])；差额 liability_g − collected_g 进 state.gov.tax_receivable_uu，显式登记不消失",
+    "does_not_write": [
+      "state.gov.tax_capacity_ppm",
+      "state.group.support_ppm",
+      "derived.gdp.production_uu",
+      "state.cell.capacity_active_uqs_per_q"
+    ],
+    "does_not_write_note_zh": "征收能力是 P11 的唯一效果落点。本政策只读它，不写它：这既避免了同一字段两个写入者（10 号文件 §0.7），也让计划书 §09「不把同一个效果复制成十个名字」落到实处 —— 想提高征收能力，玩家必须去用 P11，而不是把税率调高。"
+  },
+  "effect_chain": [
+    {
+      "step": 1,
+      "settlement_step": "S06",
+      "from": [
+        "flow.group.wage_income_uu",
+        "flow.group.property_income_uu"
+      ],
+      "rule": "mech.income_tax_base",
+      "to": [
+        "log.explanations(base_eff)"
+      ],
+      "note_zh": "税基只由已过账的工资与财产收入分录求和得出（转移收入不计税，OQ-212）。税率越高，avg_rate_ppm 越高，evasion_ppm 越大，base_eff 越小 —— 这一环就是「提高税率后税收是否绕过实际税基」的落点。"
+    },
+    {
+      "step": 2,
+      "settlement_step": "S06",
+      "from": [
+        "log.explanations(base_eff)",
+        "state.policy.params_ppm"
+      ],
+      "rule": "mech.income_tax_schedule",
+      "to": [
+        "log.explanations(liability)"
+      ],
+      "note_zh": "两档累进求和。级距边界由 taxpayers_g 与 param.income_tax_ref_base_uu_per_q 缩放得出；floor 取整，少征优于多征。"
+    },
+    {
+      "step": 3,
+      "settlement_step": "S06",
+      "from": [
+        "log.explanations(liability)",
+        "state.gov.tax_capacity_ppm",
+        "state.group.cash_uu"
+      ],
+      "rule": "mech.tax_capacity_gate",
+      "to": [
+        "flow.group.income_tax_paid_uu",
+        "flow.gov.receipts_income_tax_uu",
+        "state.gov.tax_receivable_uu",
+        "state.gov.cash_uu"
+      ],
+      "note_zh": "征收受能力约束（计划书 §09），再受群组现金约束（不得把群组现金打成负，INV-016）。两道闸各自可观测：liability 与 collected 分别有日志，缺口进应收税，不消失（INV-031）。"
+    },
+    {
+      "step": 4,
+      "settlement_step": "S06",
+      "from": [
+        "flow.group.income_tax_paid_uu"
+      ],
+      "rule": "mech.disposable_income",
+      "to": [
+        "derived.group.disposable_income_uu",
+        "flow.group.savings_uu",
+        "state.group.deposit_uu"
+      ],
+      "note_zh": "可支配收入恒等式：工资 + 财产 + 转移 + 赡养入 − 赡养出 − 个税（INV-086）。储蓄的存款部分流入 agent.invpool，因此加税在减少居民消费的同时，也改变了政府发债的对手方资金规模。"
+    },
+    {
+      "step": 5,
+      "settlement_step": "S05",
+      "from": [
+        "derived.group.disposable_income_uu",
+        "state.group.cash_uu"
+      ],
+      "rule": "mech.household_budget",
+      "to": [
+        "flow.group.consumption_by_product_uu",
+        "flow.group.consumption_by_product_uqs",
+        "flow.market.demand_uqs"
+      ],
+      "note_zh": "居民本季可花的钱只包括已实际到手的部分（INV-063）。因为税在 S06 才结算、消费在 S05 发生，加税对消费的作用必然滞后一季 —— 这是时滞的结构来源，不是一个写死的延迟参数。"
+    },
+    {
+      "step": 6,
+      "settlement_step": "S03",
+      "from": [
+        "flow.market.demand_uqs",
+        "flow.cell.unmet_demand_uqs"
+      ],
+      "rule": "mech.demand_expectation",
+      "to": [
+        "state.cell.demand_expect_uqs",
+        "flow.cell.output_plan_uqs"
+      ],
+      "note_zh": "需求预期按 param.demand_smooth_ppm 平滑滞后需求。只有当 flow.cell.binding_code == 0（计划）时，需求下降才真的压低 flow.cell.output_actual_uqs；若该 cell 本来就被产能、劳动、能源或材料卡住，减税带来的需求增加不会变成任何产出。这是本政策「明显无效」的第一处，玩家可在约束诊断里直接看到是哪一项在卡。"
+    },
+    {
+      "step": 7,
+      "settlement_step": "S02",
+      "from": [
+        "state.gov.cash_uu",
+        "flow.gov.receipts_income_tax_uu"
+      ],
+      "rule": "mech.financing_need",
+      "to": [
+        "flow.gov.new_borrowing_uu",
+        "state.bond.principal_outstanding_uu",
+        "state.gov.arrears_uu"
+      ],
+      "note_zh": "收入改善减少下季的发债需求；收入恶化则按支付优先级推迟支出并生成欠付（计划书 §07「短缺先显露」）。新增借款不进入收入构成，也不进入任何 GDP 口径（INV-029）。"
+    },
+    {
+      "step": 8,
+      "settlement_step": "S07 → S08",
+      "from": [
+        "derived.group.disposable_income_uu"
+      ],
+      "rule": "mech.living_index → mech.support",
+      "to": [
+        "state.group.living_index_ppm",
+        "state.group.expectation_ppm",
+        "state.group.support_ppm"
+      ],
+      "note_zh": "支持度只能经生活指数与预期这条路变化，不存在「税率 → 支持度」的直连（INV-121/INV-123）。程序信任 state.group.trust_ppm 的更新式里结构上没有税收通道，因此减税不能修复失信。"
+    }
+  ],
+  "_note_targets": {
+    "region_mask_fixed": 15,
+    "region_mask_note_zh": "个税全国统一，region_mask 恒为 15 且不是玩家可改参数。地区差异不由税率表达，而由各地区群组的收入结构自然产生。",
+    "groups": "全部 36 个 group.<region>.<age>.<skill>",
+    "group_selection_rule": "逐组求值，base_g == 0 的组（含全部空组与无收入组）liability == 0、collected == 0，仍然参与全部恒等式检查",
+    "de_facto_incidence_zh": "实际负担落在有工资或财产收入的组上：working 档因工资收入普遍进入税基；minor 与 elder 档只有在持有 deposit 或股权而取得 flow.group.property_income_uu 时才进入税基（OQ-225：首版无养老金，老年组收入主要来自组间赡养转移，而赡养转移不计税）。",
+    "sectors": "不直接作用于任何部门；对 16 个 cell 的影响全部经 flow.market.demand_uqs 传导",
+    "allocation_rule": "不存在「把税收分配到地区或部门」的步骤。税款是 36 组各自向 agent.gov 的双边过账（kind = income_tax），Σ_g flow.group.income_tax_paid_uu == flow.gov.receipts_income_tax_uu 精确成立。"
+  },
+  "_note_operating_cost": {
+    "opex_per_q_uu": 12000000,
+    "starts_from": "effective_from_q",
+    "payees": [
+      {
+        "line": "tax_admin_staff",
+        "amount_uu": 8000000,
+        "payee_agent": "agent.pubserv.<region>",
+        "ledger_kind": "service_opex",
+        "allocation_rule": "按四地区 state.pubserv.employment_persons 用 split_largest_remainder 拆分"
+      },
+      {
+        "line": "tax_admin_maintenance",
+        "amount_uu": 4000000,
+        "payee_agent": "agent.cell.<region>.services",
+        "ledger_kind": "service_opex",
+        "allocation_rule": "按四地区 derived.region.population_persons 用 split_largest_remainder 拆分"
+      }
+    ],
+    "sum_check": "8000000 + 4000000 == opex_per_q_uu == 12000000",
+    "priority_class": "service_opex",
+    "starvation_effect": {
+      "writes": [
+        "state.pubserv.availability_ppm"
+      ],
+      "rule": "欠拨当季按 param.opex_starve_decay_ppm 降低该地区 state.pubserv.availability_ppm，恢复按 param.opex_recover_ppm（恢复慢于下降）",
+      "must_not_write": [
+        "state.pubserv.capacity_active_uqs_per_q",
+        "state.gov.tax_capacity_ppm",
+        "state.pubserv.capital_value_uu"
+      ],
+      "note_zh": "断供只降低服务可用率，不删除任何资产，也不用「写 0」表达停运（INV-102）。特别地，断供不下调征收能力：tax_capacity_ppm 只由 P11 在 S07 写入，本政策的运行费欠拨不能借道改它，否则会出现同一字段两个写入者、并让两项政策的效果互相伪装。欠拨的可观察后果是该地区的 state.group.service_access_ppm 下降，进而压低 state.group.living_index_ppm。"
+    }
+  },
+  "exit_rule": {
+    "delivered_assets": "retain",
+    "unfinished_work": "register_residual",
+    "compensation_rule": "none",
+    "compensation_ppm": 0,
+    "exit_detail": {
+      "on_repeal_zh": "撤回（policy_toggle 关闭）自下一季生效：state.policy.enabled = 0，S06 起 liability 恒为 0。撤回不是「税率归零」的同义词 —— 若玩家想保留税制但把税率降到 0，必须显式提交一版 rate1_ppm = 0、rate2_ppm = 0 的参数，并同样受预算审查窗口与冷却约束。",
+      "sunk_cost_zh": "已发生的 60000000 μU 实施成本与已支付的运行费不退、不冲回（INV-093 的同一纪律）。未摊完部分不存在，因为实施成本一季付清。",
+      "collected_tax_zh": "已征税款不退。首版不存在追溯退税路径；任何「撤回后返还历史税款」的写法都是对已完成双边过账的事后改账，属计划书 §13 禁止的后处理补丁。",
+      "receivable_zh": "撤回时 state.gov.tax_receivable_uu 上已挂的应收欠税不核销、不清零，继续按 param.tax_recovery_ppm 在后续季度部分转为实收。撤回一项税不等于免除已经发生的纳税义务。",
+      "opex_zh": "撤回后 opex_per_q_uu 义务同步从 state.gov.service_opex_committed_uu 中扣除；本季已承诺部分照付。",
+      "residual_value_zh": "本政策不形成任何资产，残值恒为 0；state.project.residual_value_uu 中不会出现 P01 的条目。",
+      "cooldown_zh": "撤回同样计入 state.policy.toggle_count 并刷新 cooldown_until_q，同样支付 param.policy_toggle_cost_uu。「关掉再打开」不是免费的（INV-098）。"
+    }
+  },
+  "political_reaction": {
+    "bloc.business": -180000,
+    "bloc.labor_public": 120000,
+    "bloc.agri_coop": -40000
+  },
+  "_note_political_reaction_basis": [
+    {
+      "bloc": "bloc.business",
+      "direction": "oppose",
+      "strength_ppm": -180000,
+      "interest_metric": "Σ_cell flow.cell.profit_pretax_uu",
+      "basis_zh": "工商业联盟的关心指标是全部 cell 的税前利润之和（12 号文件 §8.3）。个税提高压低 derived.group.disposable_income_uu，经居民预算约束压低 flow.market.demand_uqs，直接压低其关心指标。它同时持有 tax_law 的否决域（politics_init.blocs），因此它的反对不只是态度，而是一道可以让命令被 REJECT(E_BLOC_VETO) 的硬约束。",
+      "note_zh": "这里给出的是税制变更当季的一次性立场增量。此后立场还会随 care_delta_ppm 自动变化 —— 即：如果加税确实压低了利润，反对会继续加深；如果没有（例如经济正被产能约束而非需求约束卡住），反对就不会继续加深。反应依据是利益的实际变化，不是对政策名称的好恶。"
+    },
+    {
+      "bloc": "bloc.labor_public",
+      "direction": "support",
+      "strength_ppm": 120000,
+      "interest_metric": "全国就业人数 + 公共服务可用率的人口加权",
+      "basis_zh": "劳动与公共服务联盟的关心指标是就业与公共服务可用率。个税收入改善国库现金，降低公共部门工资（优先级第 2 档）与服务运行费（第 4 档）被推迟的概率，直接托住其关心指标。",
+      "conditional_zh": "这份支持是有条件的：若玩家把 exemption_ppm 调得很低，其成员本身的可支配收入会下降，living_index_ppm 随之下降。首版 schema 只允许每集团一个固定增量，因此参数相关的那部分反应不写在这里，而由 care 通道自动产生 —— 它不会因为「这是一项支持我们的政策」就无视成员实际变穷。"
+    },
+    {
+      "bloc": "bloc.agri_coop",
+      "direction": "oppose",
+      "strength_ppm": -40000,
+      "interest_metric": "Σ 农业 cell 的 flow.cell.value_added_real_uu",
+      "basis_zh": "农业合作联盟关心农户收入与农业增加值。加税压低居民对农产品的消费需求，间接压低农业实际增加值；但农业群组以低技能工资为主，较高的免征额会把相当部分成员挡在税基之外，因此反对强度明显弱于工商业联盟。",
+      "note_zh": "强度差异来自税基分布，不是为了让三个集团「利弊对称」。"
+    }
+  ],
+  "_note_test_binding_zh": "V-PD-06 / V-PD-07 要求每个 test_id 在测试注册表中真实存在。注册表尚未落成代码（tools/validate_content.py 的 OQ-V02），当前以 docs/30_quality_gates.md + docs/31_adversarial_tests.md 的测试矩阵为准，而该矩阵给 P01 的只有三个 ID：T-S-P01-CHAIN、T-S-P01-GATE、T-S-P01-FAIL-CAPACITY（§4.2 的 P01 行 + §4.3 的三模板）。本文件原先自造的 12 个 T-S-P01-* ID 一个都不在矩阵里 —— 那不是「有测试」，是「写了测试的名字」。因此全部改绑到矩阵中真实存在、且断言确实会因该失败路径变红的用例；原 ID 与逐条绑定理由保留在 _note_failure_paths_detail / _note_acceptance_tests_detail 的 proposed_test_id 与 binding_note_zh 中，作为给测试矩阵维护者的待补清单。矩阵补齐前不得把 proposed_test_id 写回 test_id：指向不存在的用例等于没有测试，V-PD-06 的整条防线就是为了挡住这件事。此外 docs/30 §4.2 已有「失败链列直接引用 ADV-0n」的先例（P05 用 ADV-03、P09 用 ADV-01），但校验器的注册表抽取器只认 ^T- 开头的 ID，因此税基侵蚀这条无法绑到它真正的归宿 ADV-05。",
+  "failure_paths": [
+    {
+      "code": "not_effective",
+      "test_id": "T-S-P01-CHAIN"
+    },
+    {
+      "code": "authority",
+      "test_id": "T-S-P01-GATE"
+    },
+    {
+      "code": "capacity_bound",
+      "test_id": "T-S-P01-FAIL-CAPACITY"
+    },
+    {
+      "code": "base_erosion",
+      "test_id": "T-S-P01-CHAIN"
+    },
+    {
+      "code": "cash_bound",
+      "test_id": "T-S-A-20"
+    },
+    {
+      "code": "demand_contraction",
+      "test_id": "T-U-A-18"
+    }
+  ],
+  "_note_failure_paths_detail": [
+    {
+      "code": "not_effective",
+      "proposed_test_id": "T-S-P01-FAIL-NOT-EFFECTIVE",
+      "bound_test_id": "T-S-P01-CHAIN",
+      "binding_note_zh": "绑定到 T-S-P01-CHAIN 的断言 ①：q ∈ [q0, q0 + lag.enact_to_effect_q) 期间 effect.target 累计变化 == 0。若生效季判断失效（未到生效季就按新税制结算），该断言立刻变红。",
+      "trigger": "state.time.q < state.policy.effective_from_q[policy.P01] 或 state.policy.enabled[policy.P01] == 0",
+      "expected_behavior": "S06 的个税效应函数返回零效应；本季税额按上一版参数结算（若从未通过，则 liability == 0）",
+      "player_explanation_key": "policy.P01.fail.not_effective",
+      "player_explanation_zh": "新税制已通过，但执行起点在第 {effective_from_q} 季。本季（第 {q} 季）仍按旧税制结算，收入不会变化。"
+    },
+    {
+      "code": "authority",
+      "proposed_test_id": "T-S-P01-FAIL-AUTHORITY",
+      "bound_test_id": "T-S-P01-GATE",
+      "binding_note_zh": "绑定到 T-S-P01-GATE：docs/30_quality_gates.md §4.2 的 P01 行把 E_AUTHORITY 与「预算审查窗口未到」明确划给该用例；§4.3 的 GATE 模板断言 ①②③⑤ 与本条 expected_behavior 逐条重合。",
+      "trigger": "法定权限位未置 或 derived.politics.seats_gov_share_ppm < 500000 或 state.bloc.stance_ppm[bloc.business][policy.P01] < -300000 或 state.time.q < state.politics.next_budget_review_q",
+      "expected_behavior": "命令 REJECT，写 log.rejections，state_hash 完全不变（INV-137）；derived.policy.blocked_reason = authority 或 precondition",
+      "player_explanation_key": "policy.P01.fail.authority",
+      "player_explanation_zh": "税制变更需要立法窗口。当前缺少的是：{blocked_reason}。下一个预算审查季是第 {next_budget_review_q} 季。"
+    },
+    {
+      "code": "capacity_bound",
+      "proposed_test_id": "T-S-P01-FAIL-CAPACITY",
+      "bound_test_id": "T-S-P01-FAIL-CAPACITY",
+      "binding_note_zh": "矩阵中已有的专用用例，口径与本条完全一致：征收能力不足 ⇒ 实收 < 应计，差额进 tax_receivable。",
+      "trigger": "state.gov.tax_capacity_ppm 偏低时提高税率",
+      "expected_behavior": "liability 随税率上升，collected 几乎不动，差额全部堆进 state.gov.tax_receivable_uu；gov.cash 的改善远小于账面预期",
+      "player_explanation_key": "policy.P01.fail.capacity",
+      "player_explanation_zh": "本季应征 {liability_uu} μU，实收 {collected_uu} μU，差额 {receivable_delta_uu} μU 挂入应收未收税。征收能力为 {tax_capacity_ppm} ppm，是当前的限制因素。提高征收能力要用 P11 税务能力建设，调税率不会改变它。"
+    },
+    {
+      "code": "base_erosion",
+      "proposed_test_id": "T-S-P01-FAIL-EROSION",
+      "bound_test_id": "T-S-P01-CHAIN",
+      "binding_note_zh": "暂绑到 T-S-P01-CHAIN 的断言 ②：首次非零变化量必须等于「按政策参数独立复算的值」，而 12_simulation_contract.md §6.5 的独立复算含 base_eff，因此侵蚀通道缺失时该断言会变红。但「非线性 + 拐点」只有 docs/30_quality_gates.md §5 的 ADV-05（= 31 号文件 ADV-A04，夹具 FX-TAXRAMP）真正断言；ADV-05 是矩阵中的合法测试 ID（P05 行用 ADV-03、P09 行用 ADV-01 是同一用法），但 tools/validate_content.py 的注册表抽取器只认 ^T- 开头的 ID，写 ADV-05 会被判为不存在。",
+      "trigger": "平均税率 avg_rate_ppm 超过 param.tax_base_rate_ppm 后继续提高税率",
+      "expected_behavior": "evasion_ppm 上升，base_eff 单调下降；receipts 曲线走平并出现拐点，极端档位下绝对值可能下降（ADV-05）",
+      "player_explanation_key": "policy.P01.fail.erosion",
+      "player_explanation_zh": "可征税基已从 {base_uu} μU 缩到 {base_eff_uu} μU。平均税率越过 {tax_base_rate_ppm} ppm 后，继续提高税率带来的收入增量在缩小。"
+    },
+    {
+      "code": "cash_bound",
+      "proposed_test_id": "T-S-P01-FAIL-CASHBOUND",
+      "bound_test_id": "T-S-A-20",
+      "binding_note_zh": "绑定到 T-S-A-20（test_s_no_phantom_income）：它逐组逐季断言 group.cash_uu >= 0 恒成立且违例数 == 0，正是本条「按现金上限征收、群组现金不得为负（INV-016）」的机器落点。",
+      "trigger": "某组 state.group.cash_uu < collected_g（低收入组或本季工资尚未到账的组最先触发）",
+      "expected_behavior": "collected_g = state.group.cash_uu[g]，差额进应收税；群组现金不得为负（INV-016）",
+      "player_explanation_key": "policy.P01.fail.cash_bound",
+      "player_explanation_zh": "{group_id} 本季应缴 {liability_uu} μU，但可用现金只有 {cash_uu} μU。已按现金上限征收，其余转为应收未收税。"
+    },
+    {
+      "code": "demand_contraction",
+      "proposed_test_id": "T-S-P01-FAIL-DEMAND",
+      "bound_test_id": "T-U-A-18",
+      "binding_note_zh": "绑定到 T-U-A-18（test_u_market_clearing）：Σ成交 + Σ未满足 == Σ需求，需求不得静默消失（INV-059/060/064）。加税引起的需求下降必须在成交与未满足两侧闭合，而不是凭空蒸发。",
+      "trigger": "加税后 derived.group.disposable_income_uu 下降，flow.market.demand_uqs 下降，某些 cell 的 flow.cell.binding_code 变为 0（计划）",
+      "expected_behavior": "flow.cell.output_actual_uqs 下降 → 工资与利润下降 → 下季税基缩小；即「加税 → 税基缩小 → 收入增量被部分抵消」这条自我抵消链在账上逐笔可查",
+      "player_explanation_key": "policy.P01.fail.demand",
+      "player_explanation_zh": "{cell_id} 的限制因素已从 {binding_prev} 变为「计划（需求不足）」。本季税基比上季减少 {base_delta_uu} μU。"
+    }
+  ],
+  "acceptance_tests": [
+    "T-S-P01-CHAIN",
+    "T-S-P01-GATE",
+    "T-S-P01-FAIL-CAPACITY",
+    "T-U-E-06",
+    "T-U-A-01",
+    "T-U-A-22",
+    "T-U-A-18",
+    "T-S-A-20",
+    "T-U-G-05"
+  ],
+  "_note_acceptance_tests_detail": [
+    {
+      "proposed_test_id": "T-S-P01-NO-EFFECT-BEFORE-PRECOND",
+      "bound_test_id": "T-S-P01-GATE",
+      "binding_note_zh": "绑定到 T-S-P01-GATE，并由 T-U-E-06（test_u_reject_pure：被拒命令零副作用、state_hash 逐位不变、序号照常消耗）补齐纯净性一侧。GATE 模板的断言 ①②③⑤ 与本条 then_zh 逐条对应。",
+      "given_zh": "给定 state.politics.legal_authority_mask 的第 0 位未置，或当前季不是预算审查季",
+      "when_zh": "当玩家提交 P01 的参数变更命令",
+      "then_zh": "则命令被 REJECT 并写 log.rejections；state_hash 逐位不变；本季不得出现任何 kind = income_tax 的新分录，state.policy.params_ppm[policy.P01] 与 effective_from_q 均不变；derived.policy.blocked_reason 非 none 且本地化文案存在（INV-100、INV-137）",
+      "covers": "计划书 §17「未满足前置条件不得发放效果」的本政策版本"
+    },
+    {
+      "proposed_test_id": "T-S-P01-NO-DEMAND-NO-BONUS",
+      "bound_test_id": "T-U-A-18",
+      "binding_note_zh": "绑定到 T-U-A-18（需求闭合：多出的购买力必须进未满足）与 T-S-A-20（居民只能花已到手的钱，INV-063/064）。docs/30_quality_gates.md §4.4 的 T-S-P04-NO-DEMAND-NO-BONUS 是 P04 专用夹具 FX-NODEMAND 下的用例，本政策不得借用它的 ID。",
+      "given_zh": "给定把 rate1_ppm 与 rate2_ppm 降到 0（大幅减税），同时把全部 cell 的 flow.cell.binding_code 构造为非 0（产能或材料约束），使多出的购买力无法形成成交",
+      "when_zh": "当推进季度",
+      "then_zh": "则 derived.gdp.production_uu 与 derived.politics.support_national_ppm 不得因减税本身上升：GDP 只能由 flow.cell.output_actual_uqs 的变化解释，支持度只能由 state.group.living_index_ppm 的变化解释；多出的购买力必须表现为 flow.group.unmet_consumption_uu 与 flow.market.unmet_demand_uqs，不得静默消失，也不得当作已消费（INV-064）",
+      "covers": "计划书 §10「没有销路时不能直接发放 GDP 与支持率奖励」的本政策版本"
+    },
+    {
+      "proposed_test_id": "T-S-P01-LAG-EFFECTIVE-FROM",
+      "bound_test_id": "T-S-P01-CHAIN",
+      "binding_note_zh": "绑定到 T-S-P01-CHAIN 的断言 ①②③。本条额外要求的「effective_from_q == q0 + 1，且实施成本 60000000 μU 仍在 q0 的 S04 一次付清」尚无专用矩阵条目，按 proposed_test_id 登记待补。",
+      "given_zh": "给定在第 q0 季（预算审查季）通过 P01",
+      "when_zh": "当连续推进到第 q0+3 季",
+      "then_zh": "则 effective_from_q == q0 + lag.enact_to_effect_q == q0 + 1；第 q0 季的个税按旧参数结算，第 q0+1 季起按新参数结算；实施成本 60000000 μU 在第 q0 季的 S04 一次付清，与生效季无关",
+      "covers": "时滞由 docs/12 §2.1 02.1 的规则与玩家选择的通过季共同决定，而不是写死在效果里"
+    },
+    {
+      "proposed_test_id": "T-S-P01-CAPACITY-GATE",
+      "bound_test_id": "T-S-P01-FAIL-CAPACITY",
+      "binding_note_zh": "绑定到矩阵中已有的 T-S-P01-FAIL-CAPACITY；本条是它在极端档（tax_capacity_ppm == 0）下的参数化实例。",
+      "given_zh": "给定 state.gov.tax_capacity_ppm == 0",
+      "when_zh": "当把 rate1_ppm 与 rate2_ppm 提到上限 600000 并推进季度",
+      "then_zh": "则 Σ_g flow.group.income_tax_paid_uu == 0；state.gov.cash_uu 不因个税增加；state.gov.tax_receivable_uu 的增量精确等于 Σ_g liability_g；且 state.gov.tax_capacity_ppm 在本季未被任何写入者修改",
+      "covers": "计划书 §09「征收受能力约束」"
+    },
+    {
+      "proposed_test_id": "T-S-P01-EROSION-NONLINEAR",
+      "bound_test_id": "T-S-P01-CHAIN",
+      "binding_note_zh": "同 failure_paths 的 base_erosion 条：真正的断言在 ADV-05（夹具 FX-TAXRAMP，税率 100000 → 600000 ppm），但该 ID 不被校验器的注册表抽取器识别，暂绑 T-S-P01-CHAIN 的独立复算断言。",
+      "given_zh": "给定固定的收入分布与 tax_capacity_ppm，把 rate1_ppm 从 100000 按步长 50000 提到 600000",
+      "when_zh": "当逐档各跑一季",
+      "then_zh": "则 flow.gov.receipts_income_tax_uu 关于税率的曲线非线性且存在拐点；base_eff 单调不增；base_eff 与 collected 两个量分别可观测、可分别绘图（ADV-05）",
+      "covers": "计划书 §17「提高税率后税收是否绕过实际税基」"
+    },
+    {
+      "proposed_test_id": "T-S-P01-RECEIPTS-IDENTITY",
+      "bound_test_id": "T-U-A-01",
+      "binding_note_zh": "绑定到 T-U-A-01（test_u_post_balanced：每笔 txn 有符号行之和 == 0、两端账户不同，INV-015）与 T-U-A-22（test_u_gdp_class_coverage：kind ∈ {10..18, 27, 28} 在生产/支出/收入三口径下均为 none，INV-114/029/113）。本条的 Σ_g income_tax_paid_uu == receipts_income_tax_uu 残差为 0 尚无专用矩阵条目，按 proposed_test_id 登记待补。",
+      "given_zh": "给定任意合法参数与任意一季",
+      "when_zh": "当该季 S06 结束",
+      "then_zh": "则 Σ_g flow.group.income_tax_paid_uu == flow.gov.receipts_income_tax_uu，残差为 0；每一笔都有一条 kind = income_tax 的双边分录（INV-015）；该 kind 在生产法、支出法、收入法三种口径下均为 none（INV-114）；state.gov.tax_receivable_uu 的季内变化被 INV-031 完全解释",
+      "covers": "税是再分配，不是 GDP；账目零残差"
+    },
+    {
+      "proposed_test_id": "T-S-P01-NO-CAPACITY-WRITE",
+      "bound_test_id": "T-U-G-05",
+      "binding_note_zh": "绑定到 T-U-G-05（test_u_no_single_score，静态检查）：它断言生活/预期/信任是三个独立字段且三个更新函数互不引用，正是本条「不存在税率 → 支持度直连」（INV-121/125）的机器落点。「P01 的任何函数都不得写 state.gov.tax_capacity_ppm」需要 tools/check_writers.gd 增加一条按政策作用域的写者检查（现有 T-U-A-04 只覆盖 cash / inv / capital / debt），按 proposed_test_id 登记待补。",
+      "given_zh": "给定本政策的全部代码路径（含运行费欠拨路径）",
+      "when_zh": "当执行构建期静态检查",
+      "then_zh": "则 P01 的任何函数都不得写 state.gov.tax_capacity_ppm、state.group.support_ppm 与任何 derived.gdp.* 字段；违反即构建失败",
+      "covers": "计划书 §09「不把同一个效果复制成十个名字」；INV-121、INV-125"
+    }
+  ],
+  "mechanism_ids": [
+    "mech.tax_rate",
+    "mech.income_tax",
+    "mech.tax_capacity",
+    "mech.disposable_income",
+    "mech.consumption_budget",
+    "mech.output_plan"
+  ],
+  "_note_mechanism_ids_zh": "本数组按 docs/17 §8 IR-02（「12 个机制 ID 先写死，十一项政策规格补齐后复核清单」）与 docs/18「待闭合三缺口」表的纪律重写：机制注册表 JWPolicyDef.MECHANISM_IDS 已从**真实代码**单向抽取扩到 37 项（每项在 sim/policy/policy_def.gd 里逐条注明它指的那个已实现函数），本文件只引用表里已有的 ID。原先此处的名字里，凡是与已注册机制同指一个函数的（例如 mech.tax_capacity_gate 之于 mech.tax_capacity、mech.service_opex_funding 之于 mech.service_opex），按计划书 §09「同一效果不得有两个名字」并入既有 ID；凡是在 sim/ 下找不到任何实现的，按 V-PD-08 / INV-099 从本数组撤下——政策不能自带逻辑。effect_chain 是因果叙述、不是注册表，未随之改写：它描述的中间量仍然只进日志、不进 state（见本文件其他 _note_）。 撤下的名字：mech.income_tax_base / mech.income_tax_schedule 合并为 mech.income_tax（同一个 JWTreasury.collect_income_tax，累进档由其 _bracket_tax 实现）；mech.tax_capacity_gate → mech.tax_capacity；mech.household_budget → mech.consumption_budget（JWPopulation.consumption_budget_into）；mech.demand_expectation → mech.output_plan（JWSectorModel.plan_output）。另补 mech.tax_rate：本政策是 rate 类，税率经 JWPolicyEngine.apply_pending_params 生效。",
+  "cooldown_q": 4,
+  "toggle_cost_uu": 10000000,
+  "_note_calibration_and_param_cards": {
+    "single_source_rule_zh": "本节是「补充说明」，不是数据：每条 formal_value 都必须逐位等于 formal_field 指向的 schema 正式字段，正式字段是唯一事实来源。本节存在的唯一目的，是把原先写在顶层 parameters 数组里的标定理由与建卡口径保存下来，交给 content/parameters/params_core.json 的建卡人。本节刻意不写 parameter_id / value 这两个键名：注释子树里的参数卡在载入期等于不存在（11_data_contract.md §1.5、§6.4），把卡改个键名藏进注释是自欺，不是修复。",
+    "card_creation_handoff_zh": "下列 10 个 parameter_id 目前在内容层没有任何一张卡（content/parameters/registry.json 是 tools/build_param_registry.py 的生成索引，文件头自称「不是任何参数的事实来源」，不能顶替）。content/parameters/params_core.json 尚未建立，校验器已对此报 E_CONTENT_LAYOUT。该文件建成后，应把本节每条按九字段（parameter_id / value / unit / source_type / source_ref / reference_year / definition / valid_range / confidence / calibration_note，derived 型另加 derivation_expr）抄成正式卡片，并逐条与此处 formal_field 指向的值做一次逐位对账。｜本轮变动：param.income_tax_start_delay_default_q 随 player_params.start_delay_q 一并撤下（理由见 /_note_enact_command_fields/start_delay_q_withdrawn），建卡清单由 11 条减为 10 条；其余各条的 formal_field 指针已跟随 player_params 的新次序改写，formal_value 一字未动。",
+    "entries": [
+      {
+        "params_core_card_to_create": "param.income_tax_ref_base_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "（本文件无正式字段；由 /effect/schedule_scaling/steps[3] 引用）",
+        "formal_value": 12500000000,
+        "unit": "μU",
+        "source_type": "derived",
+        "source_ref": "由 content/scenarios/chengwan/population_init.json 与 scenario.json 的基年初值在加载期复算（11_data_contract.md §5.15 V-PC-05）",
+        "derivation_expr": "sum_k( sum_g population_init.groups[g].employed_persons[*] with skill == k ) * scenario.prices_init.wage_uu_per_person_q[k]",
+        "reference_year": 0,
+        "valid_range": [
+          1000000000,
+          25000000000
+        ],
+        "confidence": "low",
+        "definition_zh": "基年（q=0 之前的剧本初值口径）单季全国应税收入基准，单位 μU。它只是级距缩放用的分母，不是任何一笔钱。12500000000 是 T03 剧本定稿前的占位推算：基年单季名义 GDP 25 U = 25000000000 μU（裁定 R-SCALE-01：1 U = 1e9 μU，基年全年名义 GDP = 100000000000 μU），取劳动报酬份额 50%。加载器必须用 derivation_expr 复算并与该值逐位比对，不符即 E_PARAM_STALE —— 这保证「改了剧本工资或就业初值却忘了更新本卡」会当场暴露，而不是让级距悄悄错位。首版口径只含工资收入，不含财产收入（剧本初值中没有基年财产收入的独立字段），这是显式简化。",
+        "calibration_note_zh": "它固定在基年、之后只读，因此名义工资上涨会产生级距爬升（玩家不调门槛，实际税负会自己变重）。这是刻意保留的可观察现象，不是缺陷：自动指数化是一条会隐藏玩家决策的机制，首版不引入。检验方式：把 wage_uu_per_person_q 全部翻倍跑 8 季，断言在参数不变时 Σ receipts_income_tax 的占 GDP 比上升，且该上升完全可由本参数未变解释。",
+        "blocking_note_zh": "这是本文件唯一没有正式字段承载的数值：撤下 parameters 数组后，它在内容层暂时无卡。params_core.json 建成前，/effect/schedule_scaling 引用的是一个尚未建卡的参数 ID，不得因此把它退回本文件顶层 —— §5.15 与 R-PARAM-01 都规定 param.* 只在 parameter_set 文件建卡。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_exemption_default_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/1/default（exemption_ppm）",
+        "formal_value": 250000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P01「玩家直接改变级距、免征额与执行起点」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          2000000
+        ],
+        "confidence": "low",
+        "definition_zh": "开局免征额档位，表示为该组平均水平应税收入 ref_g_uu 的百万分之一份额。250000 = 25%。",
+        "calibration_note_zh": "先与 government_init.annual_plan.receipt_lines_uu.income_tax（基年计划 10400000000 μU/年 = 10.4 U/年）对账：无命令跑满基年四季，Σ flow.gov.receipts_income_tax_uu 应落在该计划值的合理邻域。不符时调本档与两档税率，或由 T03 调剧本收入计划，二选一 —— 禁止引入任何平衡修正项（计划书 §13）。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_bracket2_default_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/2/default（bracket2_lower_ppm）",
+        "formal_value": 1200000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P01「级距」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          6000000
+        ],
+        "confidence": "low",
+        "definition_zh": "开局第二级起征点，表示为 ref_g_uu 的百万分之一份额。1200000 = 平均水平的 1.2 倍。",
+        "calibration_note_zh": "该档与免征额共同决定累进强度。检验方式：比较最高与最低技能档群组的 derived.group.disposable_income_uu 变化率，若两者几乎相同，说明级距形同虚设，应拉开本档与免征额的距离而不是提高税率。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_rate1_default_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/3/default（rate1_ppm）",
+        "formal_value": 200000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P01「级距」；12_simulation_contract.md §6.5",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          600000
+        ],
+        "confidence": "low",
+        "definition_zh": "开局第一级边际税率，20%。适用于超过免征额、未超过第二级起征点的那部分税基。",
+        "calibration_note_zh": "与 param.tax_base_rate_ppm（150000）的关系决定侵蚀是否在开局就已激活。开局平均税率略高于该门槛是有意的：让玩家一上来就能观察到侵蚀通道存在，而不是要把税率推到极端才发现。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_rate2_default_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/player_params/0/default（rate2_ppm）",
+        "formal_value": 400000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09 P01「级距」；12_simulation_contract.md §11 ADV-05",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          600000
+        ],
+        "confidence": "low",
+        "definition_zh": "开局第二级边际税率，40%。上限 600000 与 ADV-05 的「税率 10% → 60%」扫描口径一致。",
+        "calibration_note_zh": "若 ADV-05 的扫描中 receipts 曲线一直单调上升而看不到拐点，先查 param.tax_evasion_slope_ppm 与 tax_capacity_ppm 是否被测试夹具固定成了理想值，再考虑调本档上限 —— 拐点必须来自机制，不能靠给税率设上限来伪造。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_setup_cost_uu",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/one_off_uu == /cost/per_quarter_uu",
+        "formal_value": 60000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §09「每项政策都需要一次性与持续成本」",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1000000000
+        ],
+        "confidence": "low",
+        "definition_zh": "税制变更的一次性实施成本（申报表改版、公告、信息系统改造），在通过季一季付清，拆为公共部门工资 36000000 与向服务部门采购 24000000。",
+        "calibration_note_zh": "数值是测试夹具，不是工程估算。检验方式：它必须小到不会让税制变更本身变成财政事件（60000000 μU = 0.06 U，相对基年单季支出 5.5 U 约为百分之一），又必须大到在 40 季里反复改税会累积出可见成本。若玩家每季都改税却看不出代价，先提高 param.policy_toggle_cost_uu 与冷却季数，再动本值。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_opex_uu_per_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cost/opex_per_q_uu == /_note_operating_cost/opex_per_q_uu",
+        "formal_value": 12000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「服务有运行费」；§09 P01",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          500000000
+        ],
+        "confidence": "low",
+        "definition_zh": "税制生效后每季的征管运行费（人员与系统维护），拆为 pubserv 人员 8000000 与服务部门维护 4000000。它计入 state.gov.service_opex_committed_uu，支付优先级第 4 档。",
+        "calibration_note_zh": "检验方式：断供一季，断言 state.pubserv.availability_ppm 下降而 capacity_active 与 tax_capacity_ppm 不变（INV-102）。若欠拨完全没有可观察后果，说明本值相对 pubserv 运行费总量太小，应提高本值而不是给它加一条新的作用通道。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_min_admin_capacity_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/preconditions/5/right（precondition.admin_capacity）",
+        "formal_value": 400000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「重大改革还要满足法定权限与联盟条件」；世界银行 WDR 2017 关于实施能力的机制讨论 [4]",
+        "reference_year": 0,
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "definition_zh": "通过税制变更所需的最低行政执行能力（state.politics.admin_capacity_ppm）。低于该值命令被拒，理由码 precondition。",
+        "calibration_note_zh": "剧本初值 admin_capacity_ppm = 600000，因此开局可用、但在行政能力被其它承诺消耗后会失效。检验方式：构造 admin_capacity_ppm = 390000 的存档，断言命令被拒且 ui 文案给出的是「行政执行能力不足」而不是笼统的不可用。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_veto_stance_min_ppm",
+        "card_status": "not_created_yet",
+        "formal_field": "/preconditions/2/right（precondition.no_bloc_veto）；同值另见 /legal_authority/_note_veto_stance_min_ppm",
+        "formal_value": -300000,
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "12_simulation_contract.md §2.1「无 bloc 否决（bloc.veto_domains 命中且 stance_ppm < 阈值）」；politics_init 中 bloc.business 持有 tax_law 否决域",
+        "reference_year": 0,
+        "valid_range": [
+          -1000000,
+          0
+        ],
+        "confidence": "low",
+        "definition_zh": "工商业联盟对 P01 的立场低于该阈值时，其对 tax_law 域的否决权生效，命令被 REJECT(E_BLOC_VETO)。",
+        "calibration_note_zh": "它决定「连续加税会不会把自己锁死」。检验方式：连续三次提高税率，断言 stance_ppm 逐次下降并在某次之后命令被否决；若从未被否决，说明 param.bloc_care_gain_ppm 太小或本阈值太低，先查前者。"
+      },
+      {
+        "params_core_card_to_create": "param.income_tax_cooldown_q",
+        "card_status": "not_created_yet",
+        "formal_field": "/cooldown_q",
+        "formal_value": 4,
+        "unit": "q",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「预算每 4 季审查」；§17「反复开关是否重复获利」",
+        "reference_year": 0,
+        "valid_range": [
+          1,
+          16
+        ],
+        "confidence": "medium",
+        "definition_zh": "两次税制变更之间的最小间隔季数，写入 state.policy.cooldown_until_q。与预算审查周期同为 4 季，使「每年至多改一次税」成为结构事实而非建议。",
+        "calibration_note_zh": "与 precondition.budget_review_window 共同生效，两者都不可单独放宽：去掉窗口只留冷却，玩家仍可在任意季改税；去掉冷却只留窗口，玩家可以每 4 季改一次（这恰好是设计意图，因此冷却取 4 而不是更大值）。"
+      }
+    ],
+    "scale_note_zh": "本节全部 μU 数值已按裁定 R-SCALE-01（1 U = 1e9 μU）复核：实施成本 60000000 μU = 0.06 U，运行费 12000000 μU/季 = 0.012 U/季，级距分母基准 12500000000 μU = 12.5 U/季。ppm 与 q 两类量与货币刻度无关，未随之变动。"
+  },
+  "_note_parameters_referenced": [
+    "param.income_tax_ref_base_uu_per_q",
+    "param.income_tax_exemption_default_ppm",
+    "param.income_tax_bracket2_default_ppm",
+    "param.income_tax_rate1_default_ppm",
+    "param.income_tax_rate2_default_ppm",
+    "param.income_tax_setup_cost_uu",
+    "param.income_tax_opex_uu_per_q",
+    "param.income_tax_min_admin_capacity_ppm",
+    "param.income_tax_veto_stance_min_ppm",
+    "param.income_tax_cooldown_q",
+    "param.tax_evasion_slope_ppm",
+    "param.tax_base_rate_ppm",
+    "param.tax_recovery_ppm",
+    "param.policy_toggle_cost_uu",
+    "param.opex_starve_decay_ppm",
+    "param.opex_recover_ppm",
+    "param.mpc_ppm",
+    "param.dissave_ppm",
+    "param.demand_smooth_ppm",
+    "param.amount_max_uu"
+  ],
+  "_note_parameters_referenced_zh": "上列参数由 content/parameters/params_core.json 统一建卡（11_data_contract.md §5.15 的最小集与 docs/18 R-PARAM-01）。本文件只引用、不建卡：parameter_id 全集唯一，同一个参数在两个文件里各写一张卡会直接违反 V-PC-01 的唯一性前提。前 10 个 param.income_tax_* 原先以 parameters 数组写在本文件顶层（原第 11 条 param.income_tax_start_delay_default_q 已随该杠杆一并撤下），本轮已按契约撤下，建卡规格见 _note_calibration_and_param_cards；其余 10 个是本政策读取、由其它机制拥有的参数。",
+  "ui_text_keys": {
+    "blocked.authority": "policy.P01.blocked.authority",
+    "blocked.seats": "policy.P01.blocked.seats",
+    "blocked.veto": "policy.P01.blocked.veto",
+    "blocked.window": "policy.P01.blocked.window",
+    "blocked.cooldown": "policy.P01.blocked.cooldown",
+    "blocked.admin_capacity": "policy.P01.blocked.admin_capacity",
+    "blocked.bracket_order": "policy.P01.blocked.bracket_order",
+    "blocked.budget": "policy.P01.blocked.budget"
+  },
+  "_note_ui_copy": {
+    "summary_zh": "调整个人所得税的免征额、两档级距与执行起点。税基来自居民已实际取得的工资与财产收入；实际征到多少还取决于征收能力，以及税率本身对税基的侵蚀。",
+    "blocked_reasons": [
+      {
+        "key": "policy.P01.blocked.authority",
+        "precondition_id": "precondition.legal_authority",
+        "template_zh": "不能执行：税制变更需要立法授权，当前的 legal_authority_mask 未包含该权限位。先取得立法授权，或改用不需要立法的工具。"
+      },
+      {
+        "key": "policy.P01.blocked.seats",
+        "precondition_id": "precondition.seats",
+        "template_zh": "不能执行：税制变更需要执政席位达到半数，当前为 {seats_gov} / {seats_total} 席。"
+      },
+      {
+        "key": "policy.P01.blocked.veto",
+        "precondition_id": "precondition.no_bloc_veto",
+        "template_zh": "不能执行：工商业联盟对本政策的立场为 {stance_ppm} ppm，低于否决阈值 {veto_stance_min_ppm} ppm，而它在税法域拥有否决权。"
+      },
+      {
+        "key": "policy.P01.blocked.window",
+        "precondition_id": "precondition.budget_review_window",
+        "template_zh": "不能执行：税制变更只能在预算审查季提交。下一个预算审查季是第 {next_budget_review_q} 季，当前是第 {q} 季。"
+      },
+      {
+        "key": "policy.P01.blocked.cooldown",
+        "precondition_id": "precondition.cooldown",
+        "template_zh": "不能执行：上次税制变更后的冷却期到第 {cooldown_until_q} 季结束，当前是第 {q} 季。"
+      },
+      {
+        "key": "policy.P01.blocked.admin_capacity",
+        "precondition_id": "precondition.admin_capacity",
+        "template_zh": "不能执行：行政执行能力为 {admin_capacity_ppm} ppm，低于本政策所需的 {required_admin_capacity_ppm} ppm。"
+      },
+      {
+        "key": "policy.P01.blocked.bracket_order",
+        "precondition_id": "precondition.bracket_order",
+        "template_zh": "不能执行：第二级起征点 {bracket2_lower_ppm} ppm 低于免征额 {exemption_ppm} ppm，级距顺序不成立。"
+      },
+      {
+        "key": "policy.P01.blocked.budget",
+        "precondition_id": "precondition.budget_reservation",
+        "template_zh": "不能执行：本次变更的实施成本为 {required_uu} μU，当前可预留的国库现金为 {available_uu} μU。可改用发债或在可自由裁量支出内调剂。"
+      }
+    ],
+    "failure_explanations": [
+      {
+        "key": "policy.P01.fail.not_effective",
+        "failure_code": "not_effective",
+        "template_zh": "新税制已通过，但执行起点在第 {effective_from_q} 季。本季（第 {q} 季）仍按旧税制结算。"
+      },
+      {
+        "key": "policy.P01.fail.authority",
+        "failure_code": "authority",
+        "template_zh": "本次提交被拒，原因码 {blocked_reason}。国家状态没有发生任何变化。"
+      },
+      {
+        "key": "policy.P01.fail.capacity",
+        "failure_code": "capacity_bound",
+        "template_zh": "本季应征 {liability_uu} μU，实收 {collected_uu} μU，差额挂入应收未收税。征收能力 {tax_capacity_ppm} ppm 是当前的限制因素；它只能由 P11 税务能力建设改变。"
+      },
+      {
+        "key": "policy.P01.fail.erosion",
+        "failure_code": "base_erosion",
+        "template_zh": "可征税基已从 {base_uu} μU 缩到 {base_eff_uu} μU。平均税率越过 {tax_base_rate_ppm} ppm 后，继续提高税率带来的收入增量在缩小。"
+      },
+      {
+        "key": "policy.P01.fail.cash_bound",
+        "failure_code": "cash_bound",
+        "template_zh": "{group_id} 本季应缴 {liability_uu} μU，可用现金只有 {cash_uu} μU。已按现金上限征收，其余转为应收未收税。"
+      },
+      {
+        "key": "policy.P01.fail.demand",
+        "failure_code": "demand_contraction",
+        "template_zh": "{cell_id} 的限制因素已变为「计划（需求不足）」。本季税基比上季减少 {base_delta_uu} μU。"
+      }
+    ],
+    "disclaimer_zh": "报告中的应征额与实收额分列两行，两者之差始终等于应收未收税的当季增量。本页不显示任何合成的「税收健康度」分数。"
+  },
+  "_note_zh": "本文件的全部数值是测试夹具，不是任何现实国家的税制参数。级距与税率的默认档位需在 T03 剧本定稿后与 government_init.annual_plan.receipt_lines_uu.income_tax 做一次对账。",
+  "_note_enact_command_fields": {
+    "funding_source": {
+      "where": "policy_enact 命令的第 5 槽（systems/commands.gd 的 SLOT_ENACT_FUNDING == 5），不占 player_params 的 4 个槽位",
+      "values": [
+        "cash",
+        "bond",
+        "reallocation"
+      ],
+      "value_codes": {
+        "cash": 0,
+        "bond": 1,
+        "reallocation": 2
+      },
+      "default": 0,
+      "why_not_a_player_param_zh": "docs/11 §6.1 命令码 1 的 args 是「policy_id + 各 player_params + 资金来源」，systems/commands.gd 把它落成 [policy, param0..param3, funding_source] 六槽，资金来源**另有其槽**；它也不写 state.policy.params_ppm / params_uu（S02 §02.2 只用它选预留路径）。把它列进 player_params 会白占一个它从不使用的 valid_range / default 槽位，并把其后参数的 j 下标整体挤错。原条目的语义一字未改，只是搬到了它真正所在的槽。",
+      "meaning_zh": "一次性实施成本 60000000 μU 的来源。默认现金：为一笔 0.06 U 的行政支出发债会在 40 季里留下一条长期票息，属明显劣于其它选项的做法，但不禁止，玩家可以选。"
+    },
+    "start_delay_q_withdrawn": {
+      "status": "withdrawn_v1",
+      "previous_spec": {
+        "key": "start_delay_q",
+        "label_zh": "执行起点（相对通过季的延后季数）",
+        "type": "int",
+        "unit": "q",
+        "state_slot": "state.policy.effective_from_q[policy.P01]",
+        "valid_range": [
+          1,
+          8
+        ],
+        "step": 1,
+        "default": 1,
+        "meaning_zh": "玩家可把新税制的执行起点推迟到通过季之后第 N 季。effective_from_q = enacted_q + max(lag.enact_to_effect_q, start_delay_q)，只能向前，不可回溯（INV-098）。延后不减少实施成本，但给居民与企业留出调整时间，也推迟了收入到位。"
+      },
+      "reason_zh": "两条独立理由，任一条单独成立即不能保留：（1）docs/12 §2.1 的 02.1 把生效季写死为 policy.effective_from_q = q + lag.enact_to_effect_q，没有任何玩家项；原条目声明的 effective_from_q = enacted_q + max(lag.enact_to_effect_q, start_delay_q) 与 12 号文件冲突，而 12 号文件在文档优先级上高于内容层。（2）四个玩家参数槽位已被税制本身占满（见 _note_params_slot_map），而它既不落在 params_ppm / params_uu，也没有自己的命令槽可用。计划书 §09 给 P01 列的「执行起点」在首版由两件已存在的机制承担：玩家自己选择在哪一季提交 policy_enact，以及 precondition.budget_review_window 决定的 0..3 季等待；两者都写进命令流、都可重放、都不需要新槽位。若将来要恢复这条杠杆，必须先在 docs/12 §2.1 02.1 补上玩家项并给它一个命令槽，不能靠内容层单方面声明。已登记为待决问题。"
+    }
+  }
+}

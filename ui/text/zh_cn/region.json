@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "t": {
+    "rg.empty.why": "尚未开局，没有地区数据。",
+    "rg.empty.when": "开局后，四个地区的人口、就业、产出与约束阶梯显示在这里。",
+    "rg.empty.rule": "规则：地区页只读取结算后的状态与剧本数据，不打分、不排名。",
+    "rg.compare": "并排四区（不排序）",
+    "rg.pop": "人口",
+    "rg.unemp": "失业率",
+    "rg.va": "增加值（基年价）",
+    "rg.card.caption": "劳动力 {lf}，其中失业 {un}；失业率分母为劳动力，不是总人口。",
+
+    "rg.adj.title": "邻接与跨区物流成本",
+    "rg.adj.edge": "实记 · 与{to}相邻；跨区物流成本系数 {cost}（剧本参数）。",
+    "rg.adj.none": "实记 · 与{to}不相邻（剧本拓扑）。",
+    "rg.adj.basis": "物流成本系数：跨区购买时在货值上另加的成本比例；区内为 0 %。系数是剧本常量，运行期不变。",
+
+    "rg.acct.title": "本区居民收支（上季结算）",
+    "rg.acct.cold": "开账状态：还没有已结算的居民收支。第一季结算后显示工资、转移、个人所得税与住房支出。",
+    "rg.acct.line": "实记 · {quarter}本区居民工资收入 {wages}、转移收入 {transfers}、个人所得税 {tax}、住房支出 {housing}。 ▸{citation}",
+
+    "rg.ladder.title": "约束阶梯 · 实际产出取五项最小值",
+    "rg.ladder.head": "推算 · {region}{sector}：五项约束换算为同一产品口径（{unit}/季）后比较。",
+    "rg.ladder.cold.why": "开账状态：约束阶梯需要一次结算的产出计划与投入数据。",
+    "rg.ladder.cold.when": "第一季结算后显示计划、产能、劳动、电力、材料五根横条与紧约束标记。",
+    "rg.ladder.cold.rule": "规则：Q_actual = min(Q_plan, Q_capacity, Q_labor, Q_energy, Q_materials)。",
+    "rg.ladder.na": "不约束",
+    "rg.ladder.tight": "◂ 紧",
+    "rg.ladder.actual": "推算 · 本季实际产出 {actual}，等于五项中的最小值。{rule_id}",
+    "rg.ladder.plan": "推算 · 本季的紧约束判定为计划量（由产出计划规则按需求给出）。{rule_id}",
+    "rg.ladder.ties": "推算 · {list}与紧约束持平：持平的各项同样限制本季产出，单独解除其中一项不会提高产出。{rule_id}",
+    "rg.ladder.delta": "（比本季实际多 {d}）",
+    "tpl.derived.next_binding": "推算 · 在其余项不变的条件下，解除{bound_name}后的次紧约束为{next_bound_name}，可达产量 {next_output_qty}。{rule_id} 输入：{citations}",
+    "rg.ladder.adverse": "预测 · 不利条件下，本单元{q}的产出落在 {range}。假设 2 条 ▾",
+    "rg.ladder.range": "〔{lo}–{hi}〕{unit}",
+    "rg.ladder.adverse_pending": "不利条件下的产出区间正在重算……",
+    "rg.ladder.note": "五根横条同一量纲，长度按五项中的最大有限值归一；标注「不约束」的一项在本单元系数为 0。各项不可相加，也不合成瓶颈分数。",
+
+    "rg.q1": "产出与限制因素",
+    "rg.q1.col.sector": "部门",
+    "rg.q1.col.output": "实际产出",
+    "rg.q1.col.va": "增加值 U（基年价）",
+    "rg.q1.col.binding": "紧约束（算）",
+    "rg.q1.note": "产出单位为各部门的产品口径（Q_农/Q_制/Q_能/Q_服）每季；增加值按第 1 年价格。",
+
+    "rg.q2": "人群与就业",
+    "rg.q2.col.group": "年龄·技能",
+    "rg.q2.col.pop": "人口",
+    "rg.q2.col.emp": "就业率",
+    "rg.q2.col.burden": "住房负担",
+    "rg.q2.note": "就业率分母为该组劳动力；未成年与老年组不计就业率。住房负担 = 住房支出 ÷ 该组可支配收入。",
+
+    "rg.q3": "住房、电力与公共服务",
+    "rg.q3.burden": "住房负担",
+    "rg.q3.burden_abs": "住房支出 {housing}，可支配收入 {disp}（本季）",
+    "rg.q3.power": "实记 · 电力可用率 {avail}；电网容量 {cap}/季，在建待投运 {pending}/季。",
+    "rg.q3.service": "实记 · 公共服务可用率 {avail}；教师 {teachers}，医护 {health}。",
+    "rg.q3.housing": "实记 · 住房存量 {stock} 套，容量 {cap} 套，在建待交付 {pending} 套。",
+
+    "rg.q4": "建设位与在建项目",
+    "rg.q4.slots": "实记 · 建设位已用 {used} / 共 {total}。",
+    "rg.q4.project": "实记 · {name} · {status}：已付 {paid} / 合同 {total}，进度 {prog}。",
+    "rg.q4.none": "本区当前没有项目。",
+    "rg.q4.link": "打开项目台账 ▸",
+
+    "rg.cmp.title": "并排四区",
+    "rg.cmp.note": "列顺序为剧本地区顺序，不代表排名；不合成任何综合分。",
+    "rg.cmp.col.metric": "指标"
+  }
+}

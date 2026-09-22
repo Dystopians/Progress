@@ -1,0 +1,8 @@
+.godot/
+export/
+__pycache__/
+.venv/
+*.tmp
+docs/_drafts/spine_*/
+build/
+tools/out/

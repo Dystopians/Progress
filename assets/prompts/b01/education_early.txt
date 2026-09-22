@@ -1,0 +1,8 @@
+Use case: stylized-concept. Asset type: standalone square PNG building card illustration for Jingwei, a fictional 1600-2000 nation-development game.
+Input image 1 is a STYLE REFERENCE ONLY, NOT an edit target. Generate a NEW building with the same restrained isometric camera, clean outlined illustration style, blue-gray/pale stone/muted teal palette and object scale. Do not copy the reference waterwheel, terraces, channels or roof unless explicitly required by the subject.
+Style: crisp simplified architectural illustration, broad mostly flat planes, minimal textures and functional details, clear at 64px. 30-degree elevated three-quarter isometric view. Entire facility centered with 12% empty margins, no cropped parts, a single compact installation.
+Palette: blue-black edges #0B1620, blue-gray #35515E, pale stone #D8DDD7, neutral gray #AAA99D, muted teal #5FB3A4. No orange, ochre, gold, vivid red.
+Background: truly transparent PNG alpha. No checkerboard, opaque backdrop, cast shadow, rectangular display base, border, scenery, text, numbers, signs, flags, people, brand, watermark, glow or photographic rendering.
+
+Subject: A compact early local school: pale plaster, neutral timber frame, dark slate pitched roof, a broad central doorway with a visible simple bench inside, two symmetrical classroom windows, small open courtyard with one fixed reading desk and a closed book. Modest, secular and region-neutral. No water wheel, chimney, bell tower, cross, temple ornament or text.
+Match the reference family visually while making this subject unmistakable.

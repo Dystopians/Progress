@@ -1,0 +1,261 @@
+{
+    "batch":  "B01",
+    "date":  "2026-09-22",
+    "status":  "pending_user_review",
+    "generator":  "OpenAI built-in imagegen",
+    "integrated":  false,
+    "assets":  [
+                   {
+                       "id":  "irrigation_early",
+                       "name":  "渠系水轮",
+                       "family":  "水利",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b01/irrigation_early.png",
+                       "prompt":  "assets/prompts/b01/irrigation_early.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-99129aad-62b8-4e60-b528-01cbfdeebf3b.png",
+                       "style_reference":  null,
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1212314,
+                       "sha256":  "dfc02f596cd9708efea690b19ded78d7a1630085af7b31e2aefb503b791aec21",
+                       "alpha":  {
+                                     "transparent_pixels":  997238,
+                                     "partial_pixels":  574404,
+                                     "opaque_pixels":  874,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    105,
+                                                                    138,
+                                                                    1154,
+                                                                    1110
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "irrigation_industrial",
+                       "name":  "工业泵站",
+                       "family":  "水利",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b01/irrigation_industrial.png",
+                       "prompt":  "assets/prompts/b01/irrigation_industrial.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-1131111c-862b-44f2-88e8-04c5932f5c08.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1150204,
+                       "sha256":  "e2959acedc507b8d809fd65af98efee6a5db0f218103cce75e2b7a10b9b13c56",
+                       "alpha":  {
+                                     "transparent_pixels":  974105,
+                                     "partial_pixels":  597605,
+                                     "opaque_pixels":  806,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    73,
+                                                                    87,
+                                                                    1190,
+                                                                    1170
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "irrigation_modern",
+                       "name":  "电动灌溉站",
+                       "family":  "水利",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b01/irrigation_modern.png",
+                       "prompt":  "assets/prompts/b01/irrigation_modern.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-7210affa-e6a6-4204-84ba-b4860c9be35b.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1016283,
+                       "sha256":  "4f4705f4f3ee154fe3c58d4e6ce2a1e7580139b3db90463a28a0c55aa6c91c33",
+                       "alpha":  {
+                                     "transparent_pixels":  1045254,
+                                     "partial_pixels":  526773,
+                                     "opaque_pixels":  489,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    128,
+                                                                    176,
+                                                                    1141,
+                                                                    1094
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "workshop_early",
+                       "name":  "手工工场",
+                       "family":  "工场",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b01/workshop_early.png",
+                       "prompt":  "assets/prompts/b01/workshop_early.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-3e3d8064-af33-42df-83db-81ba08a38654.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1203350,
+                       "sha256":  "f7db52476cd0292dcd3ba8402965c4cbe6b56363a238687dba24b752d5de0071",
+                       "alpha":  {
+                                     "transparent_pixels":  910022,
+                                     "partial_pixels":  661184,
+                                     "opaque_pixels":  1310,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    92,
+                                                                    160,
+                                                                    1167,
+                                                                    1139
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "workshop_industrial",
+                       "name":  "蒸汽工厂",
+                       "family":  "工场",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b01/workshop_industrial.png",
+                       "prompt":  "assets/prompts/b01/workshop_industrial.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-c0895554-9be7-473e-a95c-71235ccebcc3.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1307451,
+                       "sha256":  "6231d292872db96eec7a3a0b8bfb9a42584626e4ab5d4ec9dbb240fc93aac77b",
+                       "alpha":  {
+                                     "transparent_pixels":  900775,
+                                     "partial_pixels":  670832,
+                                     "opaque_pixels":  909,
+                                     "nontransparent_edge_pixels":  6,
+                                     "content_bounds_alpha16":  [
+                                                                    93,
+                                                                    73,
+                                                                    1162,
+                                                                    1188
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "workshop_modern",
+                       "name":  "电动制造厂",
+                       "family":  "工场",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b01/workshop_modern.png",
+                       "prompt":  "assets/prompts/b01/workshop_modern.txt",
+                       "edit_prompt":  "assets/prompts/b01/workshop_modern_edit.txt",
+                       "source_generation":  "exec-46ba8c7b-32ab-4f75-968a-f1112167edb0.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  2,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1206982,
+                       "sha256":  "1b8bb8171748475873f9dc58e08b92209e9ff1803844dba0fefa5d32b08c4afe",
+                       "alpha":  {
+                                     "transparent_pixels":  948728,
+                                     "partial_pixels":  622335,
+                                     "opaque_pixels":  1453,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    112,
+                                                                    210,
+                                                                    1172,
+                                                                    1058
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "education_early",
+                       "name":  "地方学舍",
+                       "family":  "教育",
+                       "era":  "早期",
+                       "file":  "assets/buildings/b01/education_early.png",
+                       "prompt":  "assets/prompts/b01/education_early.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-322b4afa-128d-43cd-a95f-88357cf82d92.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1259624,
+                       "sha256":  "3ff6f0f0755d3eadce8e1433abb0a57ed7e31b6eb21487f743762806ec586fcc",
+                       "alpha":  {
+                                     "transparent_pixels":  898574,
+                                     "partial_pixels":  673128,
+                                     "opaque_pixels":  814,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    87,
+                                                                    112,
+                                                                    1167,
+                                                                    1150
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "education_industrial",
+                       "name":  "工程学校",
+                       "family":  "教育",
+                       "era":  "工业期",
+                       "file":  "assets/buildings/b01/education_industrial.png",
+                       "prompt":  "assets/prompts/b01/education_industrial.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-65c49fa1-39f4-4dac-bc25-6f03298bb716.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1355472,
+                       "sha256":  "48f499030ff8ef24b2d0e214c94e6649e3e4f481fd0a9dee9ebe3e2466f5933f",
+                       "alpha":  {
+                                     "transparent_pixels":  895621,
+                                     "partial_pixels":  676165,
+                                     "opaque_pixels":  730,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    56,
+                                                                    168,
+                                                                    1194,
+                                                                    1112
+                                                                ]
+                                 }
+                   },
+                   {
+                       "id":  "education_modern",
+                       "name":  "研究中心",
+                       "family":  "教育",
+                       "era":  "现代期",
+                       "file":  "assets/buildings/b01/education_modern.png",
+                       "prompt":  "assets/prompts/b01/education_modern.txt",
+                       "edit_prompt":  null,
+                       "source_generation":  "exec-9d867772-6460-4922-b83a-2115b77d9902.png",
+                       "style_reference":  "irrigation_early",
+                       "revision":  1,
+                       "width":  1254,
+                       "height":  1254,
+                       "bytes":  1220825,
+                       "sha256":  "02ed0a5aeb4e6668885a8f31687eb44ee44dd45c3d1660f6591b20bc49e18b53",
+                       "alpha":  {
+                                     "transparent_pixels":  925405,
+                                     "partial_pixels":  646189,
+                                     "opaque_pixels":  922,
+                                     "nontransparent_edge_pixels":  0,
+                                     "content_bounds_alpha16":  [
+                                                                    60,
+                                                                    189,
+                                                                    1186,
+                                                                    1065
+                                                                ]
+                                 }
+                   }
+               ]
+}
