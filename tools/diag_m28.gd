@@ -103,6 +103,28 @@ func _init() -> void:
 					JWMath.sum(st.capital.f_cell_investment) / U,
 					JWMath.sum(st.capital.f_cell_dep_uu) / U,
 					bound]) + "  " + _binding_mix(st))
+	# 末季的政府现金收支按类型拆开：找「随通胀扩大的结构性盈余」到底出在哪一类。
+	var kin: Dictionary = {}
+	var kout: Dictionary = {}
+	for i: int in st.ledger.log_row_count():
+		var acc: int = st.ledger.l_account[i]
+		var ag: int = int(acc / ACC_STRIDE)
+		if ag != JWIds.AGENT_GOV or acc - ag * ACC_STRIDE != JWIds.ACC_CASH:
+			continue
+		var kd: int = st.ledger.l_kind[i]
+		var d: int = st.ledger.l_delta[i]
+		if d > 0:
+			kin[kd] = int(kin.get(kd, 0)) + d
+		else:
+			kout[kd] = int(kout.get(kd, 0)) - d
+	var names: Dictionary = {}
+	for k: String in JWUnits.Kind.keys():
+		names[int(JWUnits.Kind[k])] = k
+	print("── 末季政府现金收支（按类型，U）──")
+	for kd2: int in kin.keys():
+		print("   收 %-24s %8.3f" % [names.get(kd2, str(kd2)), int(kin[kd2]) / U])
+	for kd3: int in kout.keys():
+		print("   支 %-24s %8.3f" % [names.get(kd3, str(kd3)), int(kout[kd3]) / U])
 	print("耗时 %d ms（%d 季）" % [Time.get_ticks_msec(), n_q])
 	quit(0)
 
