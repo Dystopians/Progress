@@ -33,6 +33,19 @@
     "points_per_edu_ppm": 200000,
     "points_per_high_skill_ppm": 20
   },
+  "trade_rule": {
+    "quota_step_ppm": 100000,
+    "treaty_price_bonus_ppm": 50000,
+    "partners": [
+      {"partner_id": "partner.north_ports", "label_zh": "北方海港诸邦", "export_share_ppm": 400000,
+        "import_share_ppm": 350000, "price_mult_ppm": 1000000, "relation_ppm": 100000},
+      {"partner_id": "partner.south_isles", "label_zh": "南洋列岛", "export_share_ppm": 350000,
+        "import_share_ppm": 300000, "price_mult_ppm": 1050000, "relation_ppm": 0},
+      {"partner_id": "partner.inland_khanate", "label_zh": "内陆汗国", "export_share_ppm": 250000,
+        "import_share_ppm": 350000, "price_mult_ppm": 950000, "relation_ppm": -50000}
+    ]
+  },
+  "_note_trade_rule": "R-TRADE-01（docs/18）。三个伙伴是外部账户下的备查子账，不新增主体；份额之和 1 000 000 == 与无伙伴时相同的出口通道。命令 16 每次调一档 10%，贸易协定使该伙伴的进口价降 5%。占位数值，M2 标定时按 1600 年的贸易结构重定。",
   "_note_research_rule": "R-RESEARCH-01（docs/18）。研究点 = 本季实际交付的教育服务量 × 0.2 + 在业高技能人数 × 0.00002。M1 骨架经济下每季约 23 万点；8 项占位科技的成本定在 200 万—1200 万点（合计约 215 季），五十年切片（200 季）内拿不全，必须取舍。M2 标定 1600 年经济时连同科技成本一起重定。",
   "_note_money_rule": "R-MONEY-01 / R-PRICE-LONG-01（docs/18）。M1 骨架取值：目标通胀 0（中性：货币量只跟随实际产出）；每季补齐缺口的 25%，单季发行不超过货币量的 2%；相对价格带宽为价格水平的 1/4—4 倍，绝对护栏为基年价的 1/20—50 倍；工资上限另留 5 倍实际增长余量。基期实际产出取基年全年 100 U 的四分之一。R-CLOSURE-01：外部现金不低于开局的 80%（不足部分以发行货币买入外汇储备补足）；企业现金超过营运目标 2 倍的部分每季分出 25%。篮子权重为占位值，M2 按 1600 年消费结构重定。",
   "_note_campaign_m1": "M1 骨架剧本：经济数据暂为现代剧本的副本，只用于验证长时钟、批量推进、价格水平与危机状态机（docs/53 §3）。M1-3 按数值尺度预算缩小起步规模；M2 换成 1600 年的内容。",

@@ -86,6 +86,10 @@ var _sc_taxable: PackedInt64Array = PackedInt64Array()
 
 ## 可分配利润（S06 中转），长 CELL。
 var _sc_distributable: PackedInt64Array = PackedInt64Array()
+## R-TRADE-01：伙伴子账摊分缓冲。
+var _sc_partner_tb: PackedInt64Array = PackedInt64Array()
+var _sc_partner_w: PackedInt64Array = PackedInt64Array()
+var _sc_partner_out: PackedInt64Array = PackedInt64Array()
 ## R-METHOD-01：本季的生产方式倍率缓冲（劳动 EMP_N、投入 INV_N）。
 var _sc_labor_mult: PackedInt64Array = PackedInt64Array()
 var _sc_input_mult: PackedInt64Array = PackedInt64Array()
@@ -215,6 +219,9 @@ func _init(st: JWSimState, events: JWEventEngine) -> void:
 	_alloc(_sc_taxable, JWUnits.CELL)
 	_alloc(_sc_distributable, JWUnits.CELL)
 	_alloc(_sc_labor_mult, JWUnits.EMP_N)
+	_alloc(_sc_partner_tb, JWPartners.CAP0)
+	_alloc(_sc_partner_w, JWPartners.CAP0)
+	_alloc(_sc_partner_out, JWPartners.CAP0)
 	_alloc(_sc_input_mult, JWUnits.INV_N)
 
 	_alloc(_sc_sold_prev, JWUnits.CELL)
@@ -448,6 +455,10 @@ func _step_s01(cmds: JWCommands) -> int:
 	if rc != JWResult.OK:
 		return rc
 
+	# ── 第 6″ 条（R-TRADE-01）：把伙伴份额折成本季的出口通道与进口价格倍率（旧剧本恒为 1e6）。
+	_st.world.partner_export_mult_ppm = _st.partners.export_multiplier_ppm()
+	_st.world.partner_import_price_mult_ppm = _st.partners.import_price_multiplier_ppm()
+
 	# ── 第 7 条：completed → commissioned ───────────────────────────────
 	rc = _st.commissioning.promote_completed(_st.projects, _st.q)
 	if rc != JWResult.OK:
@@ -651,6 +662,10 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 			rc = _cmd_build_building(cmds, row)
 		JWCommands.Kind.RETROFIT_STACK:
 			rc = _cmd_retrofit_stack(cmds, row)
+		JWCommands.Kind.TRADE_ARRANGE:
+			rc = _st.partners.arrange(cmds.arg_at(row, JWCommands.SLOT_PARTNER),
+					cmds.arg_at(row, JWCommands.SLOT_TRADE_MODE),
+					cmds.arg_at(row, JWCommands.SLOT_TRADE_UP))
 		JWCommands.Kind.PROJECT_DEFER:
 			rc = _st.projects.defer(_st.projects.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_PROJECT)),
 					cmds.arg_at(row, JWCommands.SLOT_DEFER_QUARTERS), _st.q, _st.params,
@@ -1781,6 +1796,14 @@ func _step_s06() -> int:
 	# R-PAYOUT-02：分配以「下季付得起足额工资」为前提（S04 发薪只能动用期初现金的 wage_cash_share）；
 	# 亏损季耗掉的营运现金由其后的利润先补回，而不是被全额分走、一路耗到付不起工资。
 	_retain_working_capital()
+
+	# 第 6″ 条（R-TRADE-01）：本季贸易净额按伙伴份额摊进子账（INV-P01：Σ 子账变动 == 出口 − 进口）。
+	if _st.partners.partner_count > 0:
+		var trade_net: int = _st.world.f_exports_uu - _st.world.f_imports_uu
+		var rc_sub: int = _st.partners.settle_subledger(trade_net, _sc_partner_tb, _sc_partner_w,
+				_sc_partner_out)
+		if rc_sub != 0:
+			return rc_sub
 
 	# 第 7′ 条（R-OWNER-01）：国有建筑堆的经营盈余按有效产能份额归政府，其余才分给股东。
 	rc = _split_gov_surplus()

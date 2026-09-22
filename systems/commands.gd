@@ -35,6 +35,8 @@ enum Kind {
 	# R-METHOD-01（M2）：新建建筑、改造建筑堆的生产方式。
 	BUILD_BUILDING = 14,
 	RETROFIT_STACK = 15,
+	# R-TRADE-01（M2）：贸易安排（调额度或缔结贸易协定）。
+	TRADE_ARRANGE = 16,
 	ADVANCE_QUARTER = 99,
 }
 
@@ -107,6 +109,10 @@ const SLOT_BUILD_METHOD: int = 3
 ## 命令 15 的参数槽：目标堆的稳定实体号、要换成的生产方式。
 const SLOT_RETROFIT_STACK: int = 0
 const SLOT_RETROFIT_METHOD: int = 1
+## 命令 16 的参数槽：伙伴下标、模式（0 出口额度 / 1 进口额度 / 2 贸易协定）、加或减（1 / 0）。
+const SLOT_PARTNER: int = 0
+const SLOT_TRADE_MODE: int = 1
+const SLOT_TRADE_UP: int = 2
 
 
 ## 资金来源码。docs/11 §5.12 的 `funding_source` 枚举顺序 `["cash", "bond", "reallocation"]`
@@ -1102,6 +1108,18 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 			return JWResult.Reject.PARAM_RANGE
 		return JWResult.OK
 
+	if kind == Kind.TRADE_ARRANGE:
+		var pn: int = c_arg[base + SLOT_PARTNER]
+		var md2: int = c_arg[base + SLOT_TRADE_MODE]
+		var up: int = c_arg[base + SLOT_TRADE_UP]
+		if pn < 0 or pn >= JWPartners.CAP0:
+			_last_reject_slot = SLOT_PARTNER
+			return JWResult.Reject.PARAM_RANGE
+		if md2 < 0 or md2 > 2 or up < 0 or up > 1:
+			_last_reject_slot = SLOT_TRADE_MODE
+			return JWResult.Reject.PARAM_RANGE
+		return JWResult.OK
+
 	if kind == Kind.SET_RESEARCH_FOCUS:
 		var tv: int = c_arg[base + SLOT_TECH]
 		# 形状：−1 或 [0, 科技表容量)。「这项科技存不存在、前置齐没齐」是 S02 的 Reject。
@@ -1219,6 +1237,8 @@ static func _arity_of(kind: int) -> int:
 		return 4
 	if kind == Kind.RETROFIT_STACK:
 		return 2
+	if kind == Kind.TRADE_ARRANGE:
+		return 3
 	if kind == Kind.ADVANCE_QUARTER:
 		return 0
 	return -1
@@ -1367,6 +1387,8 @@ static func _arg_keys(kind: int) -> PackedStringArray:
 		return PackedStringArray(["building_type", "region", "owner", "method"])
 	if kind == Kind.RETROFIT_STACK:
 		return PackedStringArray(["stack", "method"])
+	if kind == Kind.TRADE_ARRANGE:
+		return PackedStringArray(["partner", "mode", "up"])
 	# kind 10 的 order[] 是数组形态，不走键名表；kind 99 无参数。
 	return PackedStringArray()
 

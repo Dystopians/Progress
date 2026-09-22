@@ -220,7 +220,8 @@ func record_export(s: int, qty_uqs: int, value_uu: int) -> int:
 	# **这是「不能自造订单」的结构性落点**：撮合侧就算算错了额度，也过不了这道回写闸。
 	# 与进口各自独立受同一个上限约束、不共享额度池（world.json delivery_capacity_semantics_zh），
 	# 所以这里读 delivery_capacity 而不是 _delivery_remaining，也不扣减后者。
-	var potential_uqs: int = JWMath.mul_ppm(base_export_uqs[s], export_demand_ppm[s])
+	# R-TRADE-01：出口通道倍率（伙伴份额）折进外部需求；旧剧本恒为 1e6。
+	var potential_uqs: int = JWMath.mul_ppm(base_export_uqs[s], export_demand_with_partners(s))
 	var cap_uqs: int = potential_uqs
 	if delivery_capacity[s] < cap_uqs:
 		cap_uqs = delivery_capacity[s]
@@ -395,11 +396,31 @@ func export_demand(s: int) -> int:
 ## 后置：不改状态
 ## 不变量：INV-105（fx 恒定）
 ## 失败：越界 → JWResult.raise_fault(INDEX_OUT_OF_RANGE) 并返回 0
+## R-TRADE-01：伙伴合计倍率（不是状态：每季 S01 由 JWPartners 写入，旧剧本恒为 1e6）。
+var partner_export_mult_ppm: int = JWUnits.PPM
+var partner_import_price_mult_ppm: int = JWUnits.PPM
+
+
+## 出口需求（已含伙伴通道倍率）。R-TRADE-01：伙伴份额改变的是通道，不改变本国的产能与外国的基准需求。
+func export_demand_with_partners(s: int) -> int:
+	if s < 0 or s >= export_demand_ppm.size():
+		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, s, export_demand_ppm.size())
+		return 0
+	if partner_export_mult_ppm == JWUnits.PPM:
+		return export_demand_ppm[s]
+	return JWMath.clamp_i(JWMath.mul_ppm(export_demand_ppm[s], partner_export_mult_ppm),
+			EXPORT_DEMAND_MIN_PPM, EXPORT_DEMAND_MAX_PPM)
+
+
 func import_price(s: int) -> int:
 	if s < 0 or s >= JWUnits.S or import_price_ppm.size() != JWUnits.S:
 		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, s, JWUnits.S)
 		return 0
-	return import_price_ppm[s]
+	# R-TRADE-01：按进口份额加权的伙伴价格系数（含贸易协定的折扣）；旧剧本恒为 1e6。
+	if partner_import_price_mult_ppm == JWUnits.PPM:
+		return import_price_ppm[s]
+	return JWMath.clamp_i(JWMath.mul_ppm(import_price_ppm[s], partner_import_price_mult_ppm),
+			IMPORT_PRICE_MIN_PPM, IMPORT_PRICE_MAX_PPM)
 
 
 ## 派生只读：主权利率（供 S02 新发债定价）。

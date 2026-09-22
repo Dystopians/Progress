@@ -1179,7 +1179,14 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 	"unit_declaration", "horizon_q", "param_set_ref", "param_set_version", "root_seed",
 	"includes", "enabled_policies", "baseline_policies", "enabled_events", "enabled_shocks", "season_factor_ppm",
 	"prices_init", "world_init", "mandate_goals", "total_cash_uu", "notes_zh",
-	"mode", "start_year", "money_rule", "research_rule",
+	"mode", "start_year", "money_rule", "research_rule", "trade_rule",
+]
+
+## R-TRADE-01：剧本 trade_rule 的字段（只允许战役模式）。
+const TRADE_RULE_KEYS: PackedStringArray = ["quota_step_ppm", "treaty_price_bonus_ppm", "partners"]
+const PARTNER_KEYS: PackedStringArray = [
+	"partner_id", "label_zh", "export_share_ppm", "import_share_ppm", "price_mult_ppm",
+	"relation_ppm",
 ]
 
 ## R-RESEARCH-01：剧本 research_rule 的字段（只允许战役模式）。下标 == JWResearch 内容标量槽位 5、6。
@@ -1307,6 +1314,56 @@ func _validate_scenario(st: JWSimState) -> void:
 		_validate_money_rule(st, doc, w)
 	if doc.has("research_rule"):
 		_validate_research_rule(st, doc, w)
+	if doc.has("trade_rule"):
+		_validate_trade_rule(st, doc, w)
+
+
+## R-TRADE-01：贸易伙伴（只允许战役模式）。伙伴是外部账户下的备查子账，不新增主体。
+func _validate_trade_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
+	var tw: String = w + "/trade_rule"
+	if st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, tw + "#term-mode", st.mode, JWUnits.Mode.CAMPAIGN)
+		return
+	var tr: Dictionary = _get_dict(doc, "trade_rule", w, JWResult.Load.SCHEMA_HEADER)
+	_check_keys(tr, TRADE_RULE_KEYS, tw)
+	var step: int = _get_int(tr, "quota_step_ppm", tw, JWResult.Load.SCHEMA_HEADER)
+	var bonus: int = _get_int(tr, "treaty_price_bonus_ppm", tw, JWResult.Load.SCHEMA_HEADER)
+	if step <= 0 or step > JWUnits.PPM or bonus < 0 or bonus > JWUnits.PPM:
+		_fail(JWResult.Load.RANGE, tw + "#step", step, bonus)
+	var list: Array = _get_array(tr, "partners", tw, JWResult.Load.SCHEMA_HEADER)
+	var n: int = list.size()
+	if n <= 0 or n > JWPartners.CAP0:
+		_fail(JWResult.Load.SCHEMA_HEADER, tw + "/partners#count", n, JWPartners.CAP0)
+		return
+	var exp_s: PackedInt64Array = _zeros(JWPartners.CAP0)
+	var imp_s: PackedInt64Array = _zeros(JWPartners.CAP0)
+	var price: PackedInt64Array = _zeros(JWPartners.CAP0)
+	var rel: PackedInt64Array = _zeros(JWPartners.CAP0)
+	price.fill(JWUnits.PPM)
+	for i: int in n:
+		var pw: String = tw + "/partners/" + str(i)
+		if typeof(list[i]) != TYPE_DICTIONARY:
+			_fail(JWResult.Load.SCHEMA_HEADER, pw, typeof(list[i]), TYPE_DICTIONARY)
+			continue
+		var pd: Dictionary = list[i]
+		_check_keys(pd, PARTNER_KEYS, pw)
+		var pid: String = _get_str(pd, "partner_id", pw, JWResult.Load.SCHEMA_HEADER)
+		if not pid.begins_with("partner."):
+			_fail(JWResult.Load.ID_FORMAT, pw + "/partner_id", 0, 0)
+		exp_s[i] = _get_int(pd, "export_share_ppm", pw, JWResult.Load.SCHEMA_HEADER)
+		imp_s[i] = _get_int(pd, "import_share_ppm", pw, JWResult.Load.SCHEMA_HEADER)
+		price[i] = _get_int(pd, "price_mult_ppm", pw, JWResult.Load.SCHEMA_HEADER)
+		rel[i] = _get_int(pd, "relation_ppm", pw, JWResult.Load.SCHEMA_HEADER)
+		if exp_s[i] < 0 or exp_s[i] > JWUnits.PPM or imp_s[i] < 0 or imp_s[i] > JWUnits.PPM \
+				or price[i] <= 0 or rel[i] < -JWUnits.PPM or rel[i] > JWUnits.PPM:
+			_fail(JWResult.Load.RANGE, pw, exp_s[i], imp_s[i])
+	_set_arr(st.partners, 0, exp_s, tw + "#export_share")
+	_set_arr(st.partners, 1, imp_s, tw + "#import_share")
+	_set_arr(st.partners, 2, price, tw + "#price_mult")
+	_set_arr(st.partners, 3, rel, tw + "#relation")
+	_set_scalar(st.partners, 0, n, tw + "#count")
+	_set_scalar(st.partners, 1, step, tw + "#quota_step")
+	_set_scalar(st.partners, 2, bonus, tw + "#treaty_bonus")
 
 
 ## R-RESEARCH-01：剧本的研究规则（只允许战役模式）。

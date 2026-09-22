@@ -69,7 +69,9 @@ const BLK_BUILDINGS: int = 23
 const BLK_CRISIS: int = 24
 ## R-RESEARCH-01：研究与科技（战役模式）。
 const BLK_RESEARCH: int = 25
-const BLOCK_N: int = 26
+## R-TRADE-01：贸易伙伴分账（战役模式）。
+const BLK_PARTNERS: int = 26
+const BLOCK_N: int = 27
 
 ## 各块缺省子系统归属，下标 == BLK_*。
 ##
@@ -83,7 +85,7 @@ const BLOCK_DEFAULT_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_WORLD, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_POLICY,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_META, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_CELL,
-	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_GOV,
+	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_WORLD,
 ]
 
 # ── 两个 SoA（docs/11 §6.4 的 soa 段只有这两个） ───────────────────────────
@@ -246,6 +248,7 @@ var money: JWMoney = null
 var buildings: JWBuildings = null
 var crisis: JWCrisis = null
 var research: JWResearch = null
+var partners: JWPartners = null
 
 ## 按上表顺序登记的状态块；顺序进哈希，不得重排（INV-136）。
 var _blocks: Array[RefCounted] = []
@@ -319,6 +322,7 @@ func allocate_all() -> void:
 	buildings = JWBuildings.new()
 	crisis = JWCrisis.new()
 	research = JWResearch.new()
+	partners = JWPartners.new()
 	capital.buildings = buildings
 
 	_blocks.clear()
@@ -349,6 +353,7 @@ func allocate_all() -> void:
 	_blocks[BLK_BUILDINGS] = buildings
 	_blocks[BLK_CRISIS] = crisis
 	_blocks[BLK_RESEARCH] = research
+	_blocks[BLK_PARTNERS] = partners
 
 	for b: RefCounted in _blocks:
 		b.allocate()

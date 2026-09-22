@@ -168,6 +168,19 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	bz.resize(JWBuildings.CAP0)
 	bz.fill(0)
 	ar["state.building.frozen_ppm"] = _mig_encode(bz)
+	# R-TRADE-01：旧存档没有贸易伙伴，份额与子账为 0、价格系数为基准。
+	var tz: PackedInt64Array = PackedInt64Array()
+	tz.resize(JWPartners.CAP0)
+	tz.fill(0)
+	var tp: PackedInt64Array = PackedInt64Array()
+	tp.resize(JWPartners.CAP0)
+	tp.fill(JWUnits.PPM)
+	ar["state.partner.export_share_ppm"] = _mig_encode(tz)
+	ar["state.partner.import_share_ppm"] = _mig_encode(tz)
+	ar["state.partner.price_mult_ppm"] = _mig_encode(tp)
+	ar["state.partner.relation_ppm"] = _mig_encode(tz)
+	ar["state.partner.treaty_mask"] = _mig_encode(tz)
+	ar["state.partner.balance_uu"] = _mig_encode(tz)
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 
