@@ -44,8 +44,11 @@ const STATE_SCALAR_SUBSYS: PackedInt64Array = [
 const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.money.real_gdp_ring_uu",
 	"content.money.level_weight_ppm",
+	# R-WAGEFLOOR-01：最近八季的价格水平（法定工资下限按它的均值上浮，不追当季）。
+	"state.money.level_ring_ppm",
 ]
-const STATE_ARRAY_SUBSYS: PackedInt64Array = [JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV]
+const STATE_ARRAY_SUBSYS: PackedInt64Array = [JWUnits.SUBSYS_GOV, JWUnits.SUBSYS_GOV,
+		JWUnits.SUBSYS_GOV]
 ## 本季发行额的流量归国库块（flow.gov.money_issued_uu），它要进 INV-027 的政府现金恒等式。
 const FLOW_SCALAR_IDS: PackedStringArray = []
 const FLOW_SCALAR_SUBSYS: PackedInt64Array = []
@@ -54,6 +57,8 @@ const FLOW_ARRAY_SUBSYS: PackedInt64Array = []
 
 ## 实际产出滚动窗口的长度（四季，抹掉季节性）。
 const RING_N: int = 4
+## R-WAGEFLOOR-01：工资下限跟随价格水平的滞后窗口（八季 == 两年）。
+const LEVEL_RING_N: int = 8
 
 # ── 状态 ───────────────────────────────────────────────────────────────────
 
@@ -65,6 +70,8 @@ var price_level_ppm: int = JWUnits.PPM
 var target_level_ppm: int = JWUnits.PPM
 ## state.money.real_gdp_ring_uu —— 最近四季的实际 GDP（基年价，μU），下标 q % 4。写入者 S07
 var real_gdp_ring: PackedInt64Array = PackedInt64Array()
+## state.money.level_ring_ppm —— 最近八季的价格水平，下标 q % 8。写入者 S07
+var level_ring: PackedInt64Array = PackedInt64Array()
 
 # ── 内容常量（剧本 money_rule；不进哈希与存档） ───────────────────────────
 
@@ -91,6 +98,8 @@ func allocate() -> void:
 	target_level_ppm = JWUnits.PPM
 	real_gdp_ring.resize(RING_N)
 	real_gdp_ring.fill(0)
+	level_ring.resize(LEVEL_RING_N)
+	level_ring.fill(JWUnits.PPM)
 	level_weight_ppm.resize(JWUnits.S)
 	level_weight_ppm.fill(0)
 
@@ -172,6 +181,27 @@ func row_topup(row_cash_uu: int) -> int:
 	return maxi(0, floor_uu - row_cash_uu)
 
 
+## R-WAGEFLOOR-01：法定工资下限跟随的价格水平——最近八季的均值，不是当季值。
+##
+## 为什么不用当季值：当季值会把「供给崩 → 价格涨 → 法定工资下限涨 → 企业发不起薪 → 就业再降 →
+## 供给更崩」接成一个正反馈。实测长局里三档工资最后全部并到下限上并随价格一路上浮，失业 85%
+## 的同时名义工资涨到基年的 7 倍。现实中的法定工资本来就是滞后调整的，滞后两年既符合事实，
+## 也把这条正反馈打断。
+func wage_floor_level_ppm() -> int:
+	var sum: int = 0
+	for i: int in LEVEL_RING_N:
+		sum += level_ring[i]
+	# rounding: floor, reason=均值只取整一次
+	return maxi(1, JWMath.floor_div(sum, LEVEL_RING_N))
+
+
+## S07：把本季价格水平写进滞后环。
+func note_level(q: int) -> void:
+	if level_ring.size() != LEVEL_RING_N:
+		return
+	level_ring[q % LEVEL_RING_N] = maxi(1, price_level_ppm)
+
+
 ## 过账成功之后登记累计额（本季流量由国库登记）。
 func note_issued(amount_uu: int) -> void:
 	issued_total += amount_uu
@@ -197,6 +227,8 @@ func state_array(i: int) -> PackedInt64Array:
 		return real_gdp_ring
 	if i == 1:
 		return level_weight_ppm
+	if i == 2:
+		return level_ring
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 	return PackedInt64Array()
 
@@ -211,6 +243,11 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 		if v.size() != JWUnits.S:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, v.size(), JWUnits.S)
 		level_weight_ppm = v.duplicate()
+		return JWResult.OK
+	if i == 2:
+		if v.size() != LEVEL_RING_N:
+			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, v.size(), LEVEL_RING_N)
+		level_ring = v.duplicate()
 		return JWResult.OK
 	return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 

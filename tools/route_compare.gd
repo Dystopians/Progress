@@ -128,7 +128,10 @@ static func _mix(st: JWSimState) -> String:
 	var firm_cash: int = 0
 	for c2: int in JWUnits.CELL:
 		firm_cash += st.accounts.cash_of(JWIds.agent_of_cell(c2))
-	var gov: String = ""
+	var pol: String = " 政策"
+	for pi: int in 3:
+		pol += "%d" % (1 if st.policy.is_effective(pi, st.q) else 0)
+	var gov: String = pol
 	for c3: int in JWUnits.CELL:
 		var sh: int = st.buildings.gov_share_ppm(c3)
 		if sh > 0:

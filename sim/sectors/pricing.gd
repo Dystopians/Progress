@@ -226,13 +226,18 @@ var _lr_band_ceil_ppm: int = 0
 var _lr_abs_floor_ppm: int = 0
 var _lr_abs_ceil_ppm: int = 0
 var _lr_wage_ceil_mult_ppm: int = JWUnits.PPM
+## R-WAGEFLOOR-01：工资上下限跟随的滞后价格水平（价格带仍用当季水平）。
+var _lr_wage_level_ppm: int = JWUnits.PPM
 
 
 ## 写入本季的长期上下限参数（编排器 S07 调用；on == false 即关闭）。
 func set_long_run_bounds(on: bool, level_ppm: int, band_floor_ppm: int, band_ceil_ppm: int,
-		abs_floor_ppm: int, abs_ceil_ppm: int, wage_ceil_mult_ppm: int) -> void:
+		abs_floor_ppm: int, abs_ceil_ppm: int, wage_ceil_mult_ppm: int,
+		wage_level_ppm: int = -1) -> void:
 	_lr_on = on
 	_lr_level_ppm = maxi(1, level_ppm)
+	# R-WAGEFLOOR-01：法定工资上下限跟随的是**滞后**价格水平（缺省退回当季值）。
+	_lr_wage_level_ppm = maxi(1, wage_level_ppm if wage_level_ppm > 0 else level_ppm)
 	_lr_band_floor_ppm = band_floor_ppm
 	_lr_band_ceil_ppm = band_ceil_ppm
 	_lr_abs_floor_ppm = abs_floor_ppm
@@ -381,8 +386,9 @@ func update_wages(vacancies_persons: int, unemployed_persons: int,
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, wage_floor, wage_ceil)
 	if _lr_on:
 		# R-PRICE-LONG-01：工资上下限随价格水平移动；上限另乘实际工资增长余量（四百年的实际工资可以数倍增长）。
-		wage_floor = JWMath.mul_ppm(wage_floor, _lr_level_ppm)
-		wage_ceil = JWMath.mul_ppm(JWMath.mul_ppm(wage_ceil, _lr_level_ppm), _lr_wage_ceil_mult_ppm)
+		wage_floor = JWMath.mul_ppm(wage_floor, _lr_wage_level_ppm)
+		wage_ceil = JWMath.mul_ppm(JWMath.mul_ppm(wage_ceil, _lr_wage_level_ppm),
+				_lr_wage_ceil_mult_ppm)
 	if wage_floor < 1:
 		# docs/10 §9.1：工资率区间 > 0。下界至少 1 μU，避免把工资清成 0。
 		wage_floor = 1

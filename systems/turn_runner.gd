@@ -2143,9 +2143,11 @@ func _step_s07() -> int:
 		return rc
 	_st.money.record_real_gdp(_st.q, _st.diag.gdp_real)
 	var m: JWMoney = _st.money
+	# R-WAGEFLOOR-01：工资上下限跟随滞后八季的价格水平；价格带仍用当季水平。
+	m.note_level(_st.q)
 	_st.pricing.set_long_run_bounds(_st.mode == JWUnits.Mode.CAMPAIGN and m.band_ceil_ppm > 0,
 			m.price_level_ppm, m.band_floor_ppm, m.band_ceil_ppm, m.abs_floor_ppm, m.abs_ceil_ppm,
-			m.wage_ceil_mult_ppm)
+			m.wage_ceil_mult_ppm, m.wage_floor_level_ppm())
 
 	# 第 4 条：价格 / 工资 / 租金（**只写 pending**，INV-065..070）。
 	rc = _st.pricing.update_prices(_st.inventory.m_supply, _st.inventory.m_demand,
