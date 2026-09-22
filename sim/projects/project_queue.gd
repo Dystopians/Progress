@@ -23,6 +23,7 @@ const STATE_ARRAY_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
+	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
 	JWUnits.SUBSYS_PROJECT,
 ]
 
@@ -57,6 +58,11 @@ const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.project.defer_fee_uu",
 	# R-CAP-01：稳定实体号（== 立项时的 entity_seq）。命令按它引用项目；行号会因压实而变。
 	"state.project.entity",
+	# R-METHOD-01（M2）：建筑项目的落点。建筑类型 0 表示这不是建筑项目（政策工程）。
+	"state.project.building_type",
+	"state.project.building_owner",
+	"state.project.building_method",
+	"state.project.retrofit_stack",
 ]
 const STATE_SCALAR_IDS: PackedStringArray = [
 	"state.project.count",
@@ -157,6 +163,14 @@ var defer_until_q: PackedInt64Array = PackedInt64Array()
 var defer_fee: PackedInt64Array = PackedInt64Array()
 ## state.project.entity —— 稳定实体号（R-CAP-01），−1 == 空行。写入者 S02
 var entity: PackedInt64Array = PackedInt64Array()
+## state.project.building_type —— 建筑类型（0 == 非建筑项目）。写入者 S02
+var building_type: PackedInt64Array = PackedInt64Array()
+## state.project.building_owner —— 建成后的所有者（JWBuildings.OWNER_*）。写入者 S02
+var building_owner: PackedInt64Array = PackedInt64Array()
+## state.project.building_method —— 建成后的生产方式。写入者 S02
+var building_method: PackedInt64Array = PackedInt64Array()
+## state.project.retrofit_stack —— 改造项目的目标堆实体号（−1 == 不是改造）。写入者 S02
+var retrofit_stack: PackedInt64Array = PackedInt64Array()
 
 ## flow.region.construction_capacity_uqs：μQ_services，写入者 S05
 var f_construction_capacity: PackedInt64Array = PackedInt64Array()
@@ -768,9 +782,7 @@ func compact_terminal() -> int:
 		var arr: PackedInt64Array = state_array(i)
 		var stride: int = LINE_N if (i == 5 or i == 6) else 1
 		var fill: int = 0
-		if i == 15:
-			fill = -1
-		elif i == 23:
+		if i == 15 or i == 23 or i == 27:
 			fill = -1
 		_compact_rows(arr, stride, map, n_old, n_new, fill)
 	for p2: int in n_old:
@@ -798,6 +810,69 @@ static func _compact_rows(arr: PackedInt64Array, stride: int, map: PackedInt64Ar
 	while e < n_old * stride:
 		arr[e] = fill
 		e += 1
+
+
+## R-METHOD-01：立一个建筑项目（新建或改造）。成本、工期、产能取自建筑类型 / 生产方式卡。
+## 与政策工程共用同一条施工、付款、延期、取消路径：policy_idx 取 −1，取消赔偿为 0。
+## 返回项目行号；槽位满、参数非法或规模退化时返回 −1。
+## 步骤：S02
+## 前置：capital 已就位；施工槽位未满（INV-094）
+## 后置：新行 status == PLANNED，占一个施工槽位
+func launch_building(entity_seq: int, region: int, capital: JWCapital, q: int,
+		type_i: int, owner_i: int, method_i: int, retrofit_entity: int,
+		cost_uu: int, quarters_n: int, work_uqs: int, effect_uqs: int, opex_uu: int) -> int:
+	if region < 0 or region >= JWUnits.R or q < 0 or entity_seq < 0 or capital == null:
+		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, region, q)
+		return -1
+	if count < 0 or count >= JWUnits.PROJECT_CAP0:
+		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, count, JWUnits.PROJECT_CAP0)
+		return -1
+	# 施工量必须为正（进度按它推进）；新增产能可以为 0（改造项目只换方式，不加产能）。
+	if cost_uu <= 0 or quarters_n <= 0 or work_uqs <= 0 or effect_uqs < 0:
+		return -1
+	if slots_used(region) >= capital.slots_total(region):
+		return -1
+	var p: int = count
+	id[p] = "project.q%03d_%d" % [q, entity_seq]
+	entity[p] = entity_seq
+	self.policy_idx[p] = -1
+	region_idx[p] = region
+	status[p] = JWUnits.ProjectStatus.PLANNED
+	total_cost[p] = cost_uu
+	planned_quarters[p] = quarters_n
+	building_type[p] = type_i
+	building_owner[p] = owner_i
+	building_method[p] = method_i
+	retrofit_stack[p] = retrofit_entity
+	# 三条支出线按固定比例拆（进口设备 20% / 国内材料 40% / 施工服务 40%）：
+	# 建筑卡暂不单列这条比例，M2 标定时如需再入卡。
+	var lines: PackedInt64Array = PackedInt64Array([200000, 400000, 400000])
+	var acc: int = 0
+	for line: int in LINE_N:
+		var part: int = JWMath.mul_ppm(cost_uu, lines[line])
+		if line == LINE_N - 1:
+			part = cost_uu - acc
+		acc += part
+		spend_plan[p * LINE_N + line] = part
+		paid[p * LINE_N + line] = 0
+	delivery_progress[p] = 0
+	construction_progress[p] = 0
+	required_construction[p] = work_uqs
+	required_equipment[p] = 0
+	capacity_effect[p] = effect_uqs
+	capacity_target[p] = 4
+	opex_per_q[p] = opex_uu
+	commissioned_q[p] = -1
+	residual_value[p] = 0
+	cancel_penalty[p] = 0
+	suspension_reason[p] = JWUnits.SuspendReason.NONE
+	defer_count[p] = 0
+	defer_q_total[p] = 0
+	defer_until_q[p] = 0
+	defer_fee[p] = 0
+	slot_held[p] = 1
+	count += 1
+	return p
 
 
 func set_status(p: int, to: int, reason: int) -> int:
@@ -1141,6 +1216,14 @@ func allocate() -> void:
 	commissioned_q.fill(-1)
 	entity.resize(n)
 	entity.fill(-1)
+	building_type.resize(n)
+	building_type.fill(0)
+	building_owner.resize(n)
+	building_owner.fill(0)
+	building_method.resize(n)
+	building_method.fill(0)
+	retrofit_stack.resize(n)
+	retrofit_stack.fill(-1)
 	residual_value.resize(n)
 	residual_value.fill(0)
 	cancel_penalty.resize(n)
@@ -1234,6 +1317,14 @@ func state_array(i: int) -> PackedInt64Array:
 			return defer_fee
 		23:
 			return entity
+		24:
+			return building_type
+		25:
+			return building_owner
+		26:
+			return building_method
+		27:
+			return retrofit_stack
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 	return PackedInt64Array()
 
@@ -1306,6 +1397,14 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 			defer_fee = d
 		23:
 			entity = d
+		24:
+			building_type = d
+		25:
+			building_owner = d
+		26:
+			building_method = d
+		27:
+			retrofit_stack = d
 	return JWResult.OK
 
 

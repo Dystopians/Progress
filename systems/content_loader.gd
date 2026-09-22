@@ -104,9 +104,15 @@ const SCHEMA_KINDS: PackedStringArray = [
 	"scenario", "io_table", "regions", "population_init", "cells_init", "pubserv_init",
 	"government_init", "politics_init", "assertions", "policy_definition", "event_template",
 	"shock_definition", "parameter_set", "parameter_registry",
-	# R-RESEARCH-01（M2）：科技卡。
-	"technology",
+	# R-RESEARCH-01 / R-METHOD-01（M2）：科技卡、建筑类型卡、生产方式卡。
+	"technology", "building_type", "production_method",
 ]
+
+## 建筑类型与生产方式的目录与前缀（R-METHOD-01）。目录可以不存在（旧剧本没有建筑表）。
+const BUILDING_DIR: String = "buildings"
+const BUILDING_PREFIX: String = "building_"
+const METHOD_DIR: String = "methods"
+const METHOD_PREFIX: String = "method_"
 
 ## 科技目录与文件前缀（R-RESEARCH-01）。目录可以不存在（旧剧本没有科技）。
 const TECH_DIR: String = "technologies"
@@ -123,6 +129,12 @@ var _region_names: PackedStringArray = REGION_NAMES_DEFAULT
 var _plan_locks: bool = true
 ## 本次载入的科技卡文件（升序）。R-RESEARCH-01。
 var _tech_files: PackedStringArray = PackedStringArray()
+## 建筑类型卡与生产方式卡文件（升序）。R-METHOD-01。
+var _building_files: PackedStringArray = PackedStringArray()
+var _method_files: PackedStringArray = PackedStringArray()
+## 建筑类型 ID / 生产方式 ID → 下标（从 1 起）。
+var _building_index: Dictionary = {}
+var _method_index: Dictionary = {}
 ## 科技 ID → 下标（载入期解析前置与解锁引用用）。
 var _tech_index: Dictionary = {}
 const SECTOR_NAMES: PackedStringArray = ["agri", "manu", "energy", "services"]
@@ -726,6 +738,10 @@ func _in_layout(rel: String) -> bool:
 		return _shock_index("shock." + rel.substr(13, rel.length() - 18)) >= 0
 	if rel.begins_with(TECH_DIR + "/" + TECH_PREFIX) and rel.ends_with(".json"):
 		return true
+	if rel.begins_with(BUILDING_DIR + "/" + BUILDING_PREFIX) and rel.ends_with(".json"):
+		return true
+	if rel.begins_with(METHOD_DIR + "/" + METHOD_PREFIX) and rel.ends_with(".json"):
+		return true
 	if rel.begins_with(SCENARIOS_ROOT + "/"):
 		var parts: PackedStringArray = rel.split("/")
 		return parts.size() == 3 and _scenario_name_ok(parts[1]) and SCENARIO_FILES.has(parts[2])
@@ -1035,6 +1051,18 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 			_tech_files.append(found[i2])
 	for i3: int in _tech_files.size():
 		_read_one(_tech_files[i3])
+	# R-METHOD-01：建筑类型卡与生产方式卡，同样按文件名升序，下标从 1 起（0 是既有设施 / 既有方式）。
+	_building_files = PackedStringArray()
+	_method_files = PackedStringArray()
+	for i4: int in found.size():
+		if found[i4].begins_with(BUILDING_DIR + "/" + BUILDING_PREFIX) and found[i4].ends_with(".json"):
+			_building_files.append(found[i4])
+		elif found[i4].begins_with(METHOD_DIR + "/" + METHOD_PREFIX) and found[i4].ends_with(".json"):
+			_method_files.append(found[i4])
+	for i5: int in _building_files.size():
+		_read_one(_building_files[i5])
+	for i6: int in _method_files.size():
+		_read_one(_method_files[i6])
 	for i: int in OPTIONAL_FILES.size():
 		if FileAccess.file_exists(_root + "/" + OPTIONAL_FILES[i]):
 			_read_one(OPTIONAL_FILES[i])
@@ -1061,6 +1089,8 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	_validate_policies(st)
 	_derive_policy_domains(st)
 	_derive_wage_anchor(st)
+	_validate_buildings(st)
+	_validate_methods(st)
 	_validate_technologies(st)
 	_validate_events()
 	_validate_shocks(st)
@@ -1129,6 +1159,10 @@ func _reset() -> void:
 	_total_cash_uu = 0
 	_tech_files = PackedStringArray()
 	_tech_index = {}
+	_building_files = PackedStringArray()
+	_method_files = PackedStringArray()
+	_building_index = {}
+	_method_index = {}
 	_op_agent = PackedInt64Array()
 	_op_code = PackedInt64Array()
 	_op_amount = PackedInt64Array()
@@ -3856,6 +3890,162 @@ func check_scenario_assertions(st: JWSimState) -> JWResult:
 	return errors[before]
 
 
+## R-METHOD-01：建筑类型卡。下标按文件名升序、从 1 起（0 是「既有设施」）。
+const BUILDING_ALLOWED: PackedStringArray = [
+	"schema_kind", "schema_version", "building_id", "label_zh", "desc_zh", "family", "sector",
+	"owners_allowed", "unit_capacity_uqs_per_q", "construction", "opex_per_q_uu", "methods",
+	"placeholder",
+]
+const CONSTRUCTION_KEYS: PackedStringArray = ["cost_uu", "quarters"]
+const OWNER_NAMES: PackedStringArray = ["private", "gov"]
+
+
+func _validate_buildings(st: JWSimState) -> void:
+	var n: int = _building_files.size()
+	if n == 0:
+		return
+	if n + 1 > JWBuildings.TYPE_CAP0:
+		_fail(JWResult.Load.SCHEMA_HEADER, BUILDING_DIR + "#count", n, JWBuildings.TYPE_CAP0)
+		return
+	var sec: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var fam: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var cap: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var cost: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var quarters: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var opex: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	var owners: PackedInt64Array = _zeros(JWBuildings.TYPE_CAP0)
+	_building_index = {}
+	for i: int in n:
+		var rel: String = _building_files[i]
+		var idx: int = _doc_index(rel)
+		if idx < 0:
+			continue
+		var t: int = i + 1
+		var doc: Dictionary = _docs[idx]
+		var w: String = rel + "#"
+		_check_keys(doc, BUILDING_ALLOWED, w)
+		var bid: String = _get_str(doc, "building_id", w, JWResult.Load.SCHEMA_HEADER)
+		if not bid.begins_with("building."):
+			_fail(JWResult.Load.ID_FORMAT, w + "/building_id", 0, 0)
+		if _building_index.has(bid):
+			_fail(JWResult.Load.DUP_ID, w + "/building_id", t, int(_building_index[bid]))
+		_building_index[bid] = t
+		sec[t] = _name_index(SECTOR_NAMES, _get_str(doc, "sector", w, JWResult.Load.SCHEMA_HEADER))
+		if sec[t] < 0:
+			_fail(JWResult.Load.SCHEMA_HEADER, w + "/sector", 0, 0)
+			sec[t] = 0
+		fam[t] = i
+		cap[t] = _get_int(doc, "unit_capacity_uqs_per_q", w, JWResult.Load.SCHEMA_HEADER)
+		opex[t] = _get_int(doc, "opex_per_q_uu", w, JWResult.Load.SCHEMA_HEADER)
+		var con: Dictionary = _get_dict(doc, "construction", w, JWResult.Load.SCHEMA_HEADER)
+		_check_keys(con, CONSTRUCTION_KEYS, w + "/construction")
+		cost[t] = _get_int(con, "cost_uu", w + "/construction", JWResult.Load.SCHEMA_HEADER)
+		quarters[t] = _get_int(con, "quarters", w + "/construction", JWResult.Load.SCHEMA_HEADER)
+		if cap[t] <= 0 or cost[t] <= 0 or quarters[t] <= 0 or opex[t] < 0:
+			_fail(JWResult.Load.RANGE, w + "#positive", cap[t], cost[t])
+		var ow: Array = _get_array(doc, "owners_allowed", w, JWResult.Load.SCHEMA_HEADER)
+		var mask: int = 0
+		for j: int in ow.size():
+			var oi: int = _name_index(OWNER_NAMES, String(ow[j]))
+			if oi < 0:
+				_fail(JWResult.Load.SCHEMA_HEADER, w + "/owners_allowed/" + str(j), 0, 0)
+				continue
+			mask = mask | (1 << oi)
+		owners[t] = mask
+	_set_arr(st.buildings, 12, sec, BUILDING_DIR + "#sector")
+	_set_arr(st.buildings, 13, fam, BUILDING_DIR + "#family")
+	_set_arr(st.buildings, 14, cap, BUILDING_DIR + "#unit_capacity")
+	_set_arr(st.buildings, 15, cost, BUILDING_DIR + "#cost")
+	_set_arr(st.buildings, 16, quarters, BUILDING_DIR + "#quarters")
+	_set_arr(st.buildings, 17, opex, BUILDING_DIR + "#opex")
+	_set_arr(st.buildings, 18, owners, BUILDING_DIR + "#owners_mask")
+	_set_scalar(st.buildings, 1, n + 1, BUILDING_DIR + "#type_count")
+
+
+## R-METHOD-01：生产方式卡。系数是**相对剧本基线的倍率**（1 000 000 == 与既有方式相同），
+## 不是绝对系数：1600 年经济日后重标定基线时，方式卡不必跟着改。
+const METHOD_ALLOWED: PackedStringArray = [
+	"schema_kind", "schema_version", "method_id", "building_id", "group", "requires_tech",
+	"coeff_mult_ppm", "output_ppm", "retrofit", "label_zh", "desc_zh", "placeholder",
+]
+const COEFF_KEYS: PackedStringArray = ["labor_by_skill", "electricity", "materials"]
+const RETROFIT_KEYS: PackedStringArray = ["cost_uu", "quarters", "capacity_frozen_ppm"]
+
+
+func _validate_methods(st: JWSimState) -> void:
+	var n: int = _method_files.size()
+	if n == 0:
+		return
+	if n + 1 > JWBuildings.METHOD_CAP0:
+		_fail(JWResult.Load.SCHEMA_HEADER, METHOD_DIR + "#count", n, JWBuildings.METHOD_CAP0)
+		return
+	var bld: PackedInt64Array = _zeros(JWBuildings.METHOD_CAP0)
+	var outp: PackedInt64Array = _ppm_arr(JWBuildings.METHOD_CAP0)
+	var elec: PackedInt64Array = _ppm_arr(JWBuildings.METHOD_CAP0)
+	var mat: PackedInt64Array = _ppm_arr(JWBuildings.METHOD_CAP0)
+	var lab: PackedInt64Array = _ppm_arr(JWBuildings.METHOD_CAP0 * JWUnits.K)
+	var rcost: PackedInt64Array = _zeros(JWBuildings.METHOD_CAP0)
+	var rq: PackedInt64Array = _zeros(JWBuildings.METHOD_CAP0)
+	var rfz: PackedInt64Array = _zeros(JWBuildings.METHOD_CAP0)
+	_method_index = {}
+	for i: int in n:
+		var rel: String = _method_files[i]
+		var idx: int = _doc_index(rel)
+		if idx < 0:
+			continue
+		var m: int = i + 1
+		var doc: Dictionary = _docs[idx]
+		var w: String = rel + "#"
+		_check_keys(doc, METHOD_ALLOWED, w)
+		var mid: String = _get_str(doc, "method_id", w, JWResult.Load.SCHEMA_HEADER)
+		if not mid.begins_with("method."):
+			_fail(JWResult.Load.ID_FORMAT, w + "/method_id", 0, 0)
+		if _method_index.has(mid):
+			_fail(JWResult.Load.DUP_ID, w + "/method_id", m, int(_method_index[mid]))
+		_method_index[mid] = m
+		var bid: String = _get_str(doc, "building_id", w, JWResult.Load.SCHEMA_HEADER)
+		if not _building_index.has(bid):
+			_fail(JWResult.Load.SCHEMA_HEADER, w + "/building_id#dangling", m, 0)
+		else:
+			bld[m] = int(_building_index[bid])
+		outp[m] = _get_int(doc, "output_ppm", w, JWResult.Load.SCHEMA_HEADER)
+		var cf: Dictionary = _get_dict(doc, "coeff_mult_ppm", w, JWResult.Load.SCHEMA_HEADER)
+		_check_keys(cf, COEFF_KEYS, w + "/coeff_mult_ppm")
+		elec[m] = _get_int(cf, "electricity", w + "/coeff_mult_ppm", JWResult.Load.SCHEMA_HEADER)
+		mat[m] = _get_int(cf, "materials", w + "/coeff_mult_ppm", JWResult.Load.SCHEMA_HEADER)
+		var lk: PackedInt64Array = _get_int_array(cf, "labor_by_skill", JWUnits.K,
+				w + "/coeff_mult_ppm", JWResult.Load.SCHEMA_HEADER)
+		for k: int in mini(lk.size(), JWUnits.K):
+			if lk[k] <= 0:
+				_fail(JWResult.Load.RANGE, w + "/coeff_mult_ppm/labor_by_skill/" + str(k), lk[k], 1)
+			lab[m * JWUnits.K + k] = maxi(1, lk[k])
+		if outp[m] <= 0 or elec[m] <= 0 or mat[m] <= 0:
+			_fail(JWResult.Load.RANGE, w + "#positive-mult", outp[m], elec[m])
+		var rf: Dictionary = _get_dict(doc, "retrofit", w, JWResult.Load.SCHEMA_HEADER)
+		_check_keys(rf, RETROFIT_KEYS, w + "/retrofit")
+		rcost[m] = _get_int(rf, "cost_uu", w + "/retrofit", JWResult.Load.SCHEMA_HEADER)
+		rq[m] = _get_int(rf, "quarters", w + "/retrofit", JWResult.Load.SCHEMA_HEADER)
+		rfz[m] = _get_int(rf, "capacity_frozen_ppm", w + "/retrofit", JWResult.Load.SCHEMA_HEADER)
+		if rcost[m] < 0 or rq[m] < 0 or rfz[m] < 0 or rfz[m] > JWUnits.PPM:
+			_fail(JWResult.Load.RANGE, w + "/retrofit", rcost[m], rq[m])
+	_set_arr(st.buildings, 19, bld, METHOD_DIR + "#building")
+	_set_arr(st.buildings, 20, outp, METHOD_DIR + "#output_ppm")
+	_set_arr(st.buildings, 21, elec, METHOD_DIR + "#elec_ppm")
+	_set_arr(st.buildings, 22, mat, METHOD_DIR + "#material_ppm")
+	_set_arr(st.buildings, 23, lab, METHOD_DIR + "#labor_ppm")
+	_set_arr(st.buildings, 24, rcost, METHOD_DIR + "#retrofit_cost")
+	_set_arr(st.buildings, 25, rq, METHOD_DIR + "#retrofit_quarters")
+	_set_arr(st.buildings, 26, rfz, METHOD_DIR + "#retrofit_frozen")
+	_set_scalar(st.buildings, 2, n + 1, METHOD_DIR + "#method_count")
+
+
+func _ppm_arr(n: int) -> PackedInt64Array:
+	var a: PackedInt64Array = PackedInt64Array()
+	a.resize(n)
+	a.fill(JWUnits.PPM)
+	return a
+
+
 ## R-RESEARCH-01：科技卡校验与装载。下标 == 文件名升序；前置只能指向更靠前的科技（保证无环）。
 ## 解锁的建筑类型与生产方式在 M2-2 的建筑表落地后解析，本轮只校验它们是字符串并登记为 0 掩码。
 const TECH_ALLOWED: PackedStringArray = [
@@ -3875,6 +4065,8 @@ func _validate_technologies(st: JWSimState) -> void:
 	var cost: PackedInt64Array = _zeros(JWResearch.CAP0)
 	var era: PackedInt64Array = _zeros(JWResearch.CAP0)
 	var prereq: PackedInt64Array = _zeros(JWResearch.CAP0)
+	var unlock_b: PackedInt64Array = _zeros(JWResearch.CAP0)
+	var unlock_m: PackedInt64Array = _zeros(JWResearch.CAP0)
 	_tech_index = {}
 	for t: int in n:
 		var rel: String = _tech_files[t]
@@ -3904,6 +4096,7 @@ func _validate_technologies(st: JWSimState) -> void:
 				continue
 			mask = mask | (1 << int(_tech_index[pid]))
 		prereq[t] = mask
+		# R-METHOD-01：解锁引用解析成位图（建筑类型与生产方式的下标从 1 起）。
 		var unl: Dictionary = _get_dict(doc, "unlocks", w, JWResult.Load.SCHEMA_HEADER)
 		_check_keys(unl, TECH_UNLOCK_KEYS, w + "/unlocks")
 		for k: int in TECH_UNLOCK_KEYS.size():
@@ -3912,9 +4105,23 @@ func _validate_technologies(st: JWSimState) -> void:
 			for m: int in lst.size():
 				if typeof(lst[m]) != TYPE_STRING:
 					_fail(JWResult.Load.ID_FORMAT, w + "/unlocks/" + TECH_UNLOCK_KEYS[k], m, 0)
+					continue
+				var ref: String = String(lst[m])
+				if k == 0:
+					if not _building_index.has(ref):
+						_fail(JWResult.Load.SCHEMA_HEADER, w + "/unlocks/building_types#dangling", t, m)
+					else:
+						unlock_b[t] = unlock_b[t] | (1 << int(_building_index[ref]))
+				else:
+					if not _method_index.has(ref):
+						_fail(JWResult.Load.SCHEMA_HEADER, w + "/unlocks/methods#dangling", t, m)
+					else:
+						unlock_m[t] = unlock_m[t] | (1 << int(_method_index[ref]))
 	_set_arr(st.research, 2, cost, TECH_DIR + "#cost")
 	_set_arr(st.research, 3, era, TECH_DIR + "#era_hint")
 	_set_arr(st.research, 4, prereq, TECH_DIR + "#prereq_mask")
+	_set_arr(st.research, 5, unlock_b, TECH_DIR + "#unlock_building_mask")
+	_set_arr(st.research, 6, unlock_m, TECH_DIR + "#unlock_method_mask")
 	_set_scalar(st.research, 3, n, TECH_DIR + "#count")
 	# 载入即刷新可研究状态（前置为空的科技一开始就可研究）。
 	st.research.advance_research(0)

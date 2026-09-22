@@ -39,6 +39,52 @@ static func state_array_len() -> PackedInt64Array:
 		JWUnits.S, JWUnits.S, JWUnits.S, JWUnits.S,
 	])
 
+## R-METHOD-01：按 cell 的生产方式倍率（ppm，1 000 000 == 剧本基线系数）。
+## **不是状态**：每季 S01 由建筑堆按各堆的有效产能加权重算，用完即弃；旧剧本与既有设施恒为 1 000 000，
+## 于是 `labor_of` / `input_of` 与直接读基线系数逐位相同。
+var cell_labor_mult: PackedInt64Array = PackedInt64Array()
+var cell_input_mult: PackedInt64Array = PackedInt64Array()
+
+
+## 重置为基线（S01 未写入或旧剧本）。
+func reset_cell_multipliers() -> void:
+	cell_labor_mult.resize(JWUnits.EMP_N)
+	cell_labor_mult.fill(JWUnits.PPM)
+	cell_input_mult.resize(JWUnits.INV_N)
+	cell_input_mult.fill(JWUnits.PPM)
+
+
+## S01：写入本季的方式倍率（长度不符即忽略并登记故障，不静默半套）。
+func set_cell_multipliers(labor_mult: PackedInt64Array, input_mult: PackedInt64Array) -> int:
+	if labor_mult.size() != JWUnits.EMP_N or input_mult.size() != JWUnits.INV_N:
+		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, labor_mult.size(), JWUnits.EMP_N)
+	cell_labor_mult = labor_mult.duplicate()
+	cell_input_mult = input_mult.duplicate()
+	return JWResult.OK
+
+
+## 生产方式加权后的劳动系数（R-METHOD-01）。生产函数一律走它，不再直接读基线。
+func labor_of(cell: int, k: int) -> int:
+	var base: int = labor(cell, k)
+	if base == 0:
+		return 0
+	var i: int = JWIds.idx_emp(cell, k)
+	if i >= cell_labor_mult.size():
+		return base
+	return JWMath.mul_ppm(base, cell_labor_mult[i])
+
+
+## 生产方式加权后的投入系数（含能源行）。
+func input_of(cell: int, s_from: int) -> int:
+	var base: int = io(s_from, JWIds.sector_of_cell(cell))
+	if base == 0:
+		return 0
+	var i: int = JWIds.idx_inv(cell, s_from)
+	if i >= cell_input_mult.size():
+		return base
+	return JWMath.mul_ppm(base, cell_input_mult[i])
+
+
 ## V-IO-05 的整数迭代轮数（docs/11 §5.5）。
 const LEONTIEF_ROUNDS: int = 30
 
@@ -312,6 +358,7 @@ func validate() -> JWResult:
 ## 不变量：INV-136（数组顺序与长度是 schema 的一部分）
 ## 失败：无
 func allocate() -> void:
+	reset_cell_multipliers()
 	io_coeff.resize(JWUnits.IO_N)
 	io_coeff.fill(0)
 	labor_coeff.resize(JWUnits.EMP_N)

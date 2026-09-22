@@ -32,6 +32,9 @@ enum Kind {
 	SELECT_MANDATE_GOAL = 12,
 	# R-RESEARCH-01（M2）：设定研究方向；参数是科技下标，−1 == 撤销方向。
 	SET_RESEARCH_FOCUS = 13,
+	# R-METHOD-01（M2）：新建建筑、改造建筑堆的生产方式。
+	BUILD_BUILDING = 14,
+	RETROFIT_STACK = 15,
 	ADVANCE_QUARTER = 99,
 }
 
@@ -96,6 +99,14 @@ const SLOT_RULE_VALUE: int = 1
 const SLOT_GOAL: int = 0
 ## 命令 13 的参数槽：科技下标（−1 == 撤销）。
 const SLOT_TECH: int = 0
+## 命令 14 的参数槽：建筑类型、地区、所有者、生产方式。
+const SLOT_BUILD_TYPE: int = 0
+const SLOT_BUILD_REGION: int = 1
+const SLOT_BUILD_OWNER: int = 2
+const SLOT_BUILD_METHOD: int = 3
+## 命令 15 的参数槽：目标堆的稳定实体号、要换成的生产方式。
+const SLOT_RETROFIT_STACK: int = 0
+const SLOT_RETROFIT_METHOD: int = 1
 
 
 ## 资金来源码。docs/11 §5.12 的 `funding_source` 枚举顺序 `["cash", "bond", "reallocation"]`
@@ -1064,6 +1075,33 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 			return JWResult.Reject.PARAM_RANGE
 		return JWResult.OK
 
+	if kind == Kind.BUILD_BUILDING:
+		var bt: int = c_arg[base + SLOT_BUILD_TYPE]
+		var br: int = c_arg[base + SLOT_BUILD_REGION]
+		var bo: int = c_arg[base + SLOT_BUILD_OWNER]
+		var bm: int = c_arg[base + SLOT_BUILD_METHOD]
+		# 形状：类型、地区、所有者、方式都在表容量内。「解锁没解锁、槽位有没有」是 S02 的 Reject。
+		if bt < 1 or bt >= JWBuildings.TYPE_CAP0:
+			_last_reject_slot = SLOT_BUILD_TYPE
+			return JWResult.Reject.PARAM_RANGE
+		if br < 0 or br >= JWUnits.R:
+			_last_reject_slot = SLOT_BUILD_REGION
+			return JWResult.Reject.PARAM_RANGE
+		if bo < 0 or bo > JWBuildings.OWNER_GOV:
+			_last_reject_slot = SLOT_BUILD_OWNER
+			return JWResult.Reject.PARAM_RANGE
+		if bm < 0 or bm >= JWBuildings.METHOD_CAP0:
+			_last_reject_slot = SLOT_BUILD_METHOD
+			return JWResult.Reject.PARAM_RANGE
+		return JWResult.OK
+
+	if kind == Kind.RETROFIT_STACK:
+		var rm: int = c_arg[base + SLOT_RETROFIT_METHOD]
+		if rm < 1 or rm >= JWBuildings.METHOD_CAP0:
+			_last_reject_slot = SLOT_RETROFIT_METHOD
+			return JWResult.Reject.PARAM_RANGE
+		return JWResult.OK
+
 	if kind == Kind.SET_RESEARCH_FOCUS:
 		var tv: int = c_arg[base + SLOT_TECH]
 		# 形状：−1 或 [0, 科技表容量)。「这项科技存不存在、前置齐没齐」是 S02 的 Reject。
@@ -1177,6 +1215,10 @@ static func _arity_of(kind: int) -> int:
 		return 1
 	if kind == Kind.SET_RESEARCH_FOCUS:
 		return 1
+	if kind == Kind.BUILD_BUILDING:
+		return 4
+	if kind == Kind.RETROFIT_STACK:
+		return 2
 	if kind == Kind.ADVANCE_QUARTER:
 		return 0
 	return -1
@@ -1321,6 +1363,10 @@ static func _arg_keys(kind: int) -> PackedStringArray:
 		return PackedStringArray(["goal"])
 	if kind == Kind.SET_RESEARCH_FOCUS:
 		return PackedStringArray(["tech"])
+	if kind == Kind.BUILD_BUILDING:
+		return PackedStringArray(["building_type", "region", "owner", "method"])
+	if kind == Kind.RETROFIT_STACK:
+		return PackedStringArray(["stack", "method"])
 	# kind 10 的 order[] 是数组形态，不走键名表；kind 99 无参数。
 	return PackedStringArray()
 

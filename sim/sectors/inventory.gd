@@ -610,7 +610,7 @@ func consume_inputs(cell: int, q_actual_uqs: int, io: JWIoTable) -> int:
 	for j: int in JWUnits.S:
 		if j == JWUnits.Sector.ENERGY:
 			continue
-		var a: int = io.io(j, s)
+		var a: int = io.input_of(cell, j)
 		if a == 0:
 			# 零系数跳过，不做除零，也不用 max(a,1) 代替（INV-044）。
 			continue

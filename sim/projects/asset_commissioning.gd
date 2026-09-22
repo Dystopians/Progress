@@ -126,10 +126,20 @@ func commission_ready(pq: JWProjectQueue, capital: JWCapital, treasury: JWTreasu
 			continue
 		var r: int = pq.region_idx[p]
 		var target: int = pq.capacity_target[p]
-		# 条件三：目标主体人员不为零（OQ-245）。人员落点随效果落点变（见 OPERATOR_OF_TARGET）。
-		if not _operator_staffed(target, r, labor):
+		# R-METHOD-01：建筑项目的产能落到指定的建筑堆，不走地区级落点表。
+		var is_building: bool = p < pq.building_type.size() and pq.building_type[p] > 0
+		# 条件三：目标主体人员不为零（OQ-245）。人员落点随效果落点变（见 OPERATOR_OF_TARGET）；
+		# 建筑项目的运营方就是它自己所在部门的生产单元（落点表对「单元产能」这一项登记的是「无」）。
+		if is_building:
+			var sec_b: int = capital.buildings.t_sector[pq.building_type[p]]
+			var staffed: int = 0
+			for k: int in JWUnits.K:
+				staffed += labor.employment(JWIds.idx_cell(r, sec_b), k)
+			if staffed <= 0:
+				continue
+		elif not _operator_staffed(target, r, labor):
 			continue
-		var slot: int = _effect_slot(target, r)
+		var slot: int = _effect_slot(target, r) if not is_building else 0
 		if slot < 0:
 			# 落点无法解成一个稠密槽位：不猜、不投运，登记越权写入。
 			var bad: int = JWResult.raise_fault(JWResult.Fault.WRITE_OUT_OF_SCOPE, target, p)
@@ -151,7 +161,17 @@ func commission_ready(pq: JWProjectQueue, capital: JWCapital, treasury: JWTreasu
 				continue
 		# **只写 pending**（INV-091）：本季完工的产能对本季生产毫无影响（INV-054）。
 		# 本函数不持有任何 *_active_* 的写入通道——这是结构保证，不是自觉。
-		var code_pend: int = capital.add_pending(target, slot, pq.capacity_effect[p])
+		var code_pend: int = 0
+		if is_building and pq.retrofit_stack[p] >= 0:
+			# R-METHOD-01：改造完工——整堆切到新方式，解冻产能，不新增产能。
+			code_pend = capital.switch_stack_method(pq.retrofit_stack[p], pq.building_method[p])
+		elif is_building:
+			var sec: int = capital.buildings.t_sector[pq.building_type[p]]
+			code_pend = capital.add_building_pending(JWIds.idx_cell(r, sec), pq.building_type[p],
+					pq.building_owner[p], pq.building_method[p], pq.capacity_effect[p], q,
+					pq.entity[p])
+		else:
+			code_pend = capital.add_pending(target, slot, pq.capacity_effect[p])
 		if code_pend != 0:
 			if first_err == 0:
 				first_err = code_pend
@@ -226,6 +246,9 @@ func pay_cancel_penalty(pq: JWProjectQueue, p: int, defs: JWPolicyDef, treasury:
 	if n < 0 or p < 0 or p >= n:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, p, n)
 	var pol: int = pq.policy_idx[p]
+	# R-METHOD-01：建筑项目没有政策卡（policy_idx == −1），退出赔偿为 0，核对式自然成立。
+	if pol < 0 and p < pq.building_type.size() and pq.building_type[p] > 0:
+		return JWResult.OK
 	if pol < 0 or pol >= defs.exit_compensation_ppm.size():
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, pol,
 				defs.exit_compensation_ppm.size())

@@ -1,0 +1,22 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.irrigation_regional",
+  "label_zh": "地区水利",
+  "desc_zh": "解决什么：单点灌溉覆盖不了整片耕地。需要什么：水利营造。何时见效：建成后可切到灌溉耕作方式。谁受影响：全地区农业。失败条件：无。",
+  "family": "family.irrigation",
+  "sector": "agri",
+  "owners_allowed": [
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 150000,
+  "construction": {
+    "cost_uu": 900000000,
+    "quarters": 8
+  },
+  "opex_per_q_uu": 9000000,
+  "methods": [
+    "method.farm_irrigated"
+  ],
+  "placeholder": 1
+}

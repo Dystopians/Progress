@@ -153,6 +153,21 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	sc["state.research.focus"] = JWResearch.NO_FOCUS
 	sc["state.research.completed_mask"] = 0
 	sc["flow.research.points_gained"] = 0
+	# R-METHOD-01：旧存档没有建筑项目与改造，落点字段取「非建筑项目」的缺省值。
+	var pz: PackedInt64Array = PackedInt64Array()
+	pz.resize(JWUnits.PROJECT_CAP0)
+	pz.fill(0)
+	ar["state.project.building_type"] = _mig_encode(pz)
+	ar["state.project.building_owner"] = _mig_encode(pz)
+	ar["state.project.building_method"] = _mig_encode(pz)
+	var pneg: PackedInt64Array = PackedInt64Array()
+	pneg.resize(JWUnits.PROJECT_CAP0)
+	pneg.fill(-1)
+	ar["state.project.retrofit_stack"] = _mig_encode(pneg)
+	var bz: PackedInt64Array = PackedInt64Array()
+	bz.resize(JWBuildings.CAP0)
+	bz.fill(0)
+	ar["state.building.frozen_ppm"] = _mig_encode(bz)
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 

@@ -1,0 +1,28 @@
+{
+  "schema_kind": "production_method",
+  "schema_version": 1,
+  "method_id": "method.farm_irrigated",
+  "building_id": "building.irrigation_regional",
+  "group": "power",
+  "requires_tech": [
+    "tech.water_management"
+  ],
+  "coeff_mult_ppm": {
+    "labor_by_skill": [
+      1050000,
+      1000000,
+      1000000
+    ],
+    "electricity": 1000000,
+    "materials": 1100000
+  },
+  "output_ppm": 1150000,
+  "retrofit": {
+    "cost_uu": 120000000,
+    "quarters": 2,
+    "capacity_frozen_ppm": 500000
+  },
+  "label_zh": "灌溉耕作",
+  "desc_zh": "同等人力下产量更高，但要维持沟渠（材料消耗略增）。倍率是相对剧本基线的比例：1 000 000 == 与既有方式相同。",
+  "placeholder": 1
+}

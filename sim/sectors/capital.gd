@@ -162,6 +162,40 @@ func _stack_of(cell: int) -> int:
 	return b
 
 
+## R-METHOD-01：把一笔完工产能落到指定的建筑堆（没有就新建一堆）。只写待投运，S01 才转在用（INV-091）。
+## 步骤：S07（投运）
+## 前置：delta >= 0；cell 合法
+## 后置：该堆的待投运产能增加、等级 +1；cell 三列由堆表重新汇总
+func add_building_pending(cell: int, type_i: int, owner_i: int, method_i: int, delta: int,
+		q: int, entity_seq: int) -> int:
+	if not _use_stacks():
+		return add_pending(4, cell, delta)
+	if delta < 0:
+		return JWResult.raise_fault(JWResult.Fault.WRITE_OUT_OF_SCOPE, type_i, delta)
+	var b: int = buildings.find_stack(cell, type_i, owner_i, method_i)
+	if b < 0:
+		b = buildings.add_stack(cell, type_i, owner_i, method_i, 0, 0, 0, q, entity_seq)
+		if b < 0:
+			return JWResult.pending_code()
+	buildings.capacity_pending[b] = JWMath.check_qty(buildings.capacity_pending[b] + delta)
+	buildings.level[b] = buildings.level[b] + 1
+	sync_cells_from_buildings()
+	return JWResult.OK
+
+
+## R-METHOD-01：改造完工——把某个堆切到新的生产方式并解冻产能。
+func switch_stack_method(stack_entity: int, method_i: int) -> int:
+	if not _use_stacks():
+		return JWResult.OK
+	var b: int = buildings.stack_of_entity(stack_entity)
+	if b < 0:
+		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, stack_entity, buildings.count)
+	buildings.method[b] = method_i
+	buildings.frozen_ppm[b] = 0
+	sync_cells_from_buildings()
+	return JWResult.OK
+
+
 ## INV-B01（R-BUILDING-01）：cell 三列 == 堆表按 cell 求和。
 func check_buildings_consistency() -> int:
 	if not _use_stacks():
@@ -349,7 +383,8 @@ func depreciate(io: JWIoTable, ledger: JWLedger, accounts: JWAccount) -> int:
 			buildings.capital_value[b] = val_b - d_uu
 			buildings.capacity_active[b] = cap_b - d_uqs
 			f_cell_dep_uu[cb] += d_uu
-			f_cell_dep_uqs[cb] += d_uqs
+			# 产能轨按有效产能记（R-METHOD-01：cell 的在用产能是各堆按产出倍率折算后的和）。
+			f_cell_dep_uqs[cb] += JWMath.mul_ppm(d_uqs, buildings.output_ppm_of(b))
 			b += 1
 		sync_cells_from_buildings()
 		for i2: int in JWUnits.CELL:

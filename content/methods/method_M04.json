@@ -1,0 +1,28 @@
+{
+  "schema_kind": "production_method",
+  "schema_version": 1,
+  "method_id": "method.workshop_water",
+  "building_id": "building.workshop_manual",
+  "group": "power",
+  "requires_tech": [
+    "tech.water_power"
+  ],
+  "coeff_mult_ppm": {
+    "labor_by_skill": [
+      850000,
+      950000,
+      1000000
+    ],
+    "electricity": 1000000,
+    "materials": 1050000
+  },
+  "output_ppm": 1250000,
+  "retrofit": {
+    "cost_uu": 150000000,
+    "quarters": 2,
+    "capacity_frozen_ppm": 500000
+  },
+  "label_zh": "水力工场",
+  "desc_zh": "水力替代部分人力：同等产出所需低技能劳力更少，产出更高；需靠近水源（本版不做地形限制，M3 补）。",
+  "placeholder": 1
+}

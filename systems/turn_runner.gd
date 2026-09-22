@@ -86,6 +86,9 @@ var _sc_taxable: PackedInt64Array = PackedInt64Array()
 
 ## 可分配利润（S06 中转），长 CELL。
 var _sc_distributable: PackedInt64Array = PackedInt64Array()
+## R-METHOD-01：本季的生产方式倍率缓冲（劳动 EMP_N、投入 INV_N）。
+var _sc_labor_mult: PackedInt64Array = PackedInt64Array()
+var _sc_input_mult: PackedInt64Array = PackedInt64Array()
 
 # ── 骨架之外新增的 scratch（全部在 _init 一次性 resize，结算期不分配） ──────
 #
@@ -211,6 +214,8 @@ func _init(st: JWSimState, events: JWEventEngine) -> void:
 	_alloc(_sc_breach, JWUnits.GROUP)
 	_alloc(_sc_taxable, JWUnits.CELL)
 	_alloc(_sc_distributable, JWUnits.CELL)
+	_alloc(_sc_labor_mult, JWUnits.EMP_N)
+	_alloc(_sc_input_mult, JWUnits.INV_N)
 
 	_alloc(_sc_sold_prev, JWUnits.CELL)
 	_alloc(_sc_unmet_prev, JWUnits.CELL)
@@ -437,6 +442,12 @@ func _step_s01(cmds: JWCommands) -> int:
 	if rc != JWResult.OK:
 		return rc
 
+	# ── 第 6′ 条（R-METHOD-01）：按建筑堆重算本季的生产方式倍率（旧剧本与既有设施恒为 1e6）。
+	_st.buildings.cell_multipliers_into(_sc_labor_mult, _sc_input_mult)
+	rc = _st.io.set_cell_multipliers(_sc_labor_mult, _sc_input_mult)
+	if rc != JWResult.OK:
+		return rc
+
 	# ── 第 7 条：completed → commissioned ───────────────────────────────
 	rc = _st.commissioning.promote_completed(_st.projects, _st.q)
 	if rc != JWResult.OK:
@@ -636,6 +647,10 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 			rc = _cmd_mandate_goal(cmds.arg_at(row, JWCommands.SLOT_GOAL))
 		JWCommands.Kind.SET_RESEARCH_FOCUS:
 			rc = _st.research.set_focus(cmds.arg_at(row, JWCommands.SLOT_TECH))
+		JWCommands.Kind.BUILD_BUILDING:
+			rc = _cmd_build_building(cmds, row)
+		JWCommands.Kind.RETROFIT_STACK:
+			rc = _cmd_retrofit_stack(cmds, row)
 		JWCommands.Kind.PROJECT_DEFER:
 			rc = _st.projects.defer(_st.projects.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_PROJECT)),
 					cmds.arg_at(row, JWCommands.SLOT_DEFER_QUARTERS), _st.q, _st.params,
@@ -652,6 +667,73 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 		cmds.c_accepted[row] = 0
 		cmds.c_reject_code[row] = rc
 	return rc
+
+
+## R-METHOD-01：新建建筑（命令 14）。建筑类型与生产方式都必须已由科技解锁；所有者必须在卡片允许之内。
+## 与政策工程共用同一条施工路径：占施工槽位、按三条支出线付款、可延期、可取消。
+func _cmd_build_building(cmds: JWCommands, row: int) -> int:
+	var b: JWBuildings = _st.buildings
+	if b.type_count <= 1 or _st.mode != JWUnits.Mode.CAMPAIGN:
+		# 内容包没有建筑类型表，或这是单届剧本（建造与改造属于战役玩法）：不是参数错。
+		return JWResult.Reject.PRECONDITION
+	var t: int = cmds.arg_at(row, JWCommands.SLOT_BUILD_TYPE)
+	if t < 1 or t >= b.type_count:
+		return JWResult.Reject.NOT_FOUND
+	if _st.research.enabled == 1 and ((_st.research.unlocked_building_mask() >> t) & 1) == 0:
+		return JWResult.Reject.PRECONDITION
+	var owner_i: int = cmds.arg_at(row, JWCommands.SLOT_BUILD_OWNER)
+	if ((b.t_owners_mask[t] >> owner_i) & 1) == 0:
+		return JWResult.Reject.PRECONDITION
+	var m: int = cmds.arg_at(row, JWCommands.SLOT_BUILD_METHOD)
+	if m > 0:
+		if m >= b.method_count or b.m_building[m] != t:
+			return JWResult.Reject.NOT_FOUND
+		if _st.research.enabled == 1 and ((_st.research.unlocked_method_mask() >> m) & 1) == 0:
+			return JWResult.Reject.PRECONDITION
+	var region: int = cmds.arg_at(row, JWCommands.SLOT_BUILD_REGION)
+	var p: int = _st.projects.launch_building(_st.entity_seq + 1, region, _st.capital, _st.q,
+			t, owner_i, m, -1, b.t_cost[t], b.t_quarters[t], b.t_unit_capacity[t],
+			b.t_unit_capacity[t], b.t_opex[t])
+	if p >= 0:
+		_st.entity_seq += 1
+		return _st.projects.start(p, _st.treasury)
+	if JWResult.has_pending():
+		return JWResult.pending_code()
+	return JWResult.Reject.NO_SLOT
+
+
+## R-METHOD-01：改造建筑堆的生产方式（命令 15）。改造期间冻结该堆的一部分产能（资产不减）；
+## 完工时整堆切到新方式。同一堆同时只能有一项改造。
+func _cmd_retrofit_stack(cmds: JWCommands, row: int) -> int:
+	var b: JWBuildings = _st.buildings
+	if _st.mode != JWUnits.Mode.CAMPAIGN:
+		return JWResult.Reject.PRECONDITION
+	var e: int = cmds.arg_at(row, JWCommands.SLOT_RETROFIT_STACK)
+	var m: int = cmds.arg_at(row, JWCommands.SLOT_RETROFIT_METHOD)
+	var si: int = b.stack_of_entity(e)
+	if si < 0 or m >= b.method_count:
+		return JWResult.Reject.NOT_FOUND
+	if b.m_building[m] != b.type[si] or b.method[si] == m:
+		return JWResult.Reject.PRECONDITION
+	if b.frozen_ppm[si] > 0:
+		return JWResult.Reject.PRECONDITION
+	if _st.research.enabled == 1 and ((_st.research.unlocked_method_mask() >> m) & 1) == 0:
+		return JWResult.Reject.PRECONDITION
+	if b.m_retrofit_cost[m] <= 0 or b.m_retrofit_quarters[m] <= 0:
+		# 基线方式没有改造工程（成本与工期为 0）：不立一个永远完不了的项目。
+		return JWResult.Reject.PRECONDITION
+	var region: int = JWIds.region_of_cell(b.cell[si])
+	var p: int = _st.projects.launch_building(_st.entity_seq + 1, region, _st.capital, _st.q,
+			b.type[si], b.owner[si], m, e, b.m_retrofit_cost[m], b.m_retrofit_quarters[m],
+			maxi(1, b.capacity_active[si]), 0, 0)
+	if p >= 0:
+		_st.entity_seq += 1
+		b.frozen_ppm[si] = b.m_retrofit_frozen[m]
+		_st.capital.sync_cells_from_buildings()
+		return _st.projects.start(p, _st.treasury)
+	if JWResult.has_pending():
+		return JWResult.pending_code()
+	return JWResult.Reject.NO_SLOT
 
 
 ## 通过一项政策（命令 1）。

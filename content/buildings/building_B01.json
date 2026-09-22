@@ -1,0 +1,21 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.irrigation_basic",
+  "label_zh": "基本灌溉",
+  "desc_zh": "解决什么：靠天吃饭的产量波动。需要什么：土地清丈。何时见效：建成后本地区农业产能上升。谁受影响：农户与雇工。失败条件：无。能否退出：可拆除（本版不做拆除，改造即可）。",
+  "family": "family.irrigation",
+  "sector": "agri",
+  "owners_allowed": [
+    "private",
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 60000,
+  "construction": {
+    "cost_uu": 300000000,
+    "quarters": 4
+  },
+  "opex_per_q_uu": 3000000,
+  "methods": [],
+  "placeholder": 1
+}

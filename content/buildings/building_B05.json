@@ -1,0 +1,21 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.market_hall",
+  "label_zh": "市集商行",
+  "desc_zh": "解决什么：商贸缺少集中场所与账目。需要什么：复式记账。何时见效：建成后服务业产能上升。谁受影响：商户与雇工。",
+  "family": "family.market",
+  "sector": "services",
+  "owners_allowed": [
+    "private",
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 70000,
+  "construction": {
+    "cost_uu": 260000000,
+    "quarters": 3
+  },
+  "opex_per_q_uu": 4000000,
+  "methods": [],
+  "placeholder": 1
+}

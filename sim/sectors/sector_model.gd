@@ -220,7 +220,7 @@ func plan_output(sold_prev_uqs: PackedInt64Array, unmet_prev_uqs: PackedInt64Arr
 			var base_next: int = maxi(plan, e)
 			var j: int = 0
 			while j < JWUnits.S:
-				var a: int = io.io(j, s)
+				var a: int = io.input_of(cell, j)
 				var tgt: int = 0
 				# 能源经电网当期配给、不入投入品库存（INV-051），不登记目标。
 				if a > 0 and j != JWUnits.Sector.ENERGY:
@@ -614,7 +614,7 @@ func solve_output(cell: int, capital: JWCapital, labor: JWLaborMarket,
 	var bound_labor: int = JWUnits.SENTINEL
 	var k: int = 0
 	while k < JWUnits.K:
-		var c: int = io.labor(cell, k)
+		var c: int = io.labor_of(cell, k)
 		if c == 0:
 			k += 1
 			continue
@@ -626,7 +626,7 @@ func solve_output(cell: int, capital: JWCapital, labor: JWLaborMarket,
 		k += 1
 
 	# 4) 能源（能源 cell 自供，跳过此项，见 §5.2）
-	var a_e: int = io.io(JWUnits.Sector.ENERGY, s)
+	var a_e: int = io.input_of(cell, JWUnits.Sector.ENERGY)
 	var bound_energy: int = JWUnits.SENTINEL
 	if a_e != 0 and s != JWUnits.Sector.ENERGY:
 		active_mask |= 1 << JWUnits.Binding.ENERGY
@@ -639,7 +639,7 @@ func solve_output(cell: int, capital: JWCapital, labor: JWLaborMarket,
 		if j == JWUnits.Sector.ENERGY:
 			j += 1
 			continue
-		var a: int = io.io(j, s)
+		var a: int = io.input_of(cell, j)
 		if a == 0:
 			j += 1
 			continue
@@ -721,7 +721,7 @@ func settle_production(capital: JWCapital, labor: JWLaborMarket, inventory: JWIn
 			if rc != JWResult.OK:
 				return rc
 			# 电力：当季用掉多少由 q_actual 反算，配而未用的部分当季作废（不入库存）。
-			var a_e: int = io.io(JWUnits.Sector.ENERGY, s)
+			var a_e: int = io.input_of(cell, JWUnits.Sector.ENERGY)
 			var energy_use: int = 0
 			if a_e != 0:
 				energy_use = _ceil_mul_div(q_actual, a_e, JWUnits.PPM)
@@ -1344,7 +1344,7 @@ func _recompute_energy_need(io: JWIoTable) -> int:
 		var s: int = 0
 		while s < JWUnits.S:
 			var cell: int = JWIds.idx_cell(r, s)
-			var a_e: int = io.io(JWUnits.Sector.ENERGY, s)
+			var a_e: int = io.input_of(cell, JWUnits.Sector.ENERGY)
 			if a_e == 0:
 				_need_energy[cell] = 0
 			else:

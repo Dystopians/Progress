@@ -1,0 +1,28 @@
+{
+  "schema_kind": "production_method",
+  "schema_version": 1,
+  "method_id": "method.workshop_hand",
+  "building_id": "building.workshop_manual",
+  "group": "power",
+  "requires_tech": [
+    "tech.craft_guild"
+  ],
+  "coeff_mult_ppm": {
+    "labor_by_skill": [
+      1000000,
+      1000000,
+      1000000
+    ],
+    "electricity": 1000000,
+    "materials": 1000000
+  },
+  "output_ppm": 1000000,
+  "retrofit": {
+    "cost_uu": 0,
+    "quarters": 0,
+    "capacity_frozen_ppm": 0
+  },
+  "label_zh": "人力工场",
+  "desc_zh": "基线方式：与既有设施相同，作为水力方式的对照。",
+  "placeholder": 1
+}

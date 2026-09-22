@@ -1,0 +1,21 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.smelter_charcoal",
+  "label_zh": "木炭冶炼",
+  "desc_zh": "解决什么：金属器具依赖外购。需要什么：木炭冶炼。何时见效：建成后制造业产能上升，能源消耗更高。谁受影响：制造业与林地。",
+  "family": "family.smelter",
+  "sector": "manu",
+  "owners_allowed": [
+    "private",
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 40000,
+  "construction": {
+    "cost_uu": 420000000,
+    "quarters": 6
+  },
+  "opex_per_q_uu": 8000000,
+  "methods": [],
+  "placeholder": 1
+}

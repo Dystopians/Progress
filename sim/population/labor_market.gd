@@ -182,7 +182,7 @@ func hire_and_fire(output_plan_uqs: PackedInt64Array, io: JWIoTable, pricing: JW
 		var k: int = 0
 		while k < JWUnits.K:
 			var idx: int = JWIds.idx_emp(cell, k)
-			var coeff: int = io.labor(cell, k)
+			var coeff: int = io.labor_of(cell, k)
 			var need_k: int = 0
 			if coeff > 0:
 				# rounding: ceil, reason=不得少算用工（docs/12 §3.2 (a)）

@@ -1,0 +1,20 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.harbor_yard",
+  "label_zh": "港务扩建",
+  "desc_zh": "解决什么：旧码头吞吐不足。需要什么：港务营造。何时见效：建成后服务业产能上升（沿海地区）。谁受影响：外贸与港区雇工。",
+  "family": "family.harbor",
+  "sector": "services",
+  "owners_allowed": [
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 90000,
+  "construction": {
+    "cost_uu": 700000000,
+    "quarters": 6
+  },
+  "opex_per_q_uu": 7000000,
+  "methods": [],
+  "placeholder": 1
+}

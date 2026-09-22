@@ -1,0 +1,28 @@
+{
+  "schema_kind": "production_method",
+  "schema_version": 1,
+  "method_id": "method.farm_rotation",
+  "building_id": "building.irrigation_basic",
+  "group": "crop",
+  "requires_tech": [
+    "tech.crop_rotation"
+  ],
+  "coeff_mult_ppm": {
+    "labor_by_skill": [
+      1000000,
+      1050000,
+      1000000
+    ],
+    "electricity": 1000000,
+    "materials": 1000000
+  },
+  "output_ppm": 1120000,
+  "retrofit": {
+    "cost_uu": 60000000,
+    "quarters": 1,
+    "capacity_frozen_ppm": 500000
+  },
+  "label_zh": "轮作",
+  "desc_zh": "以更精细的安排提高单位面积产出，对中等技能劳力要求略高。",
+  "placeholder": 1
+}
