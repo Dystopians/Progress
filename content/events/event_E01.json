@@ -677,5 +677,31 @@
       "calibration_note": "org_power 的稳态由规模与资源决定（12 号文件 §8.3），惯性 700000 使一次位移在数季内消散。校准检验：一次触发不应使该集团跨过任何否决域门槛；若跨过，说明门槛过低而不是本值过高。"
     }
   ],
-  "_note_notes_zh": "本文件的全部数值均为设计假设与测试夹具，不是工程估算（计划书 §14、§19）。三处与契约的不一致已在本轮返回值中登记为待决问题：(1) 11_data_contract.md §5.13 的示例把同一主题的限电事件编号为 event.E07，而本轮任务卡把它分配为 E01；(2) 契约的文件布局写 events/event_E01.json，而 content/policies/ 已在用 P04_grid_reliability_upgrade.json 的命名，本文件与政策文件保持一致；(3) 累计限电小时、持续季数、ration_mode、应急购电四项在首版契约中没有对应字段或机制，本文件不发明，只登记。"
+  "_note_notes_zh": "本文件的全部数值均为设计假设与测试夹具，不是工程估算（计划书 §14、§19）。三处与契约的不一致已在本轮返回值中登记为待决问题：(1) 11_data_contract.md §5.13 的示例把同一主题的限电事件编号为 event.E07，而本轮任务卡把它分配为 E01；(2) 契约的文件布局写 events/event_E01.json，而 content/policies/ 已在用 P04_grid_reliability_upgrade.json 的命名，本文件与政策文件保持一致；(3) 累计限电小时、持续季数、ration_mode、应急购电四项在首版契约中没有对应字段或机制，本文件不发明，只登记。",
+  "choices": [
+    {
+      "option_id": "opt.import_more",
+      "label_zh": "提高进口额度",
+      "desc_zh": "向北方海港诸邦多买一档，缓解短缺；代价是外汇流出与对该伙伴的依赖。",
+      "draft_command": {
+        "kind": 16,
+        "args": [
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "option_id": "opt.self_supply",
+      "label_zh": "转向自给",
+      "desc_zh": "不扩大进口，把研究方向转到水利营造，靠自己的产量补缺口。",
+      "draft_command": {
+        "kind": 13,
+        "args": [
+          1
+        ]
+      }
+    }
+  ]
 }

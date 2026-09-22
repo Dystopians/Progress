@@ -791,5 +791,33 @@
       "conservative_take_zh": "卡片内容一字未删，等待迁入 content/parameters/params_core.json 后由 V-PC-01..07 正式接管；迁移前不得认为这 10 个数值已经过校验。",
       "escalated": true
     }
+  ],
+  "choices": [
+    {
+      "option_id": "opt.treaty_north",
+      "label_zh": "与北方海港缔结贸易协定",
+      "desc_zh": "进口价下降一档，关系上升；协定一旦缔结不可重复。",
+      "draft_command": {
+        "kind": 16,
+        "args": [
+          0,
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "option_id": "opt.wait",
+      "label_zh": "按兵不动",
+      "desc_zh": "维持现状，不承担协定义务。",
+      "draft_command": {
+        "kind": 16,
+        "args": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
   ]
 }

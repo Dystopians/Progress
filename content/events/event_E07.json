@@ -776,5 +776,29 @@
       "conservative_take_zh": "把 T-S-E07-NO-FIRE-IN-BASE-QUARTERS 作为阈值的硬约束测试；剧本到期结构变动时，阈值必须重新校准而不是反过来要求剧本迁就阈值。",
       "escalated": true
     }
+  ],
+  "choices": [
+    {
+      "option_id": "opt.research_shift",
+      "label_zh": "转向行会工场",
+      "desc_zh": "把研究方向改到行会工场，尽快解锁手工工场。",
+      "draft_command": {
+        "kind": 13,
+        "args": [
+          4
+        ]
+      }
+    },
+    {
+      "option_id": "opt.research_keep",
+      "label_zh": "维持原方向",
+      "desc_zh": "不改研究方向。",
+      "draft_command": {
+        "kind": 13,
+        "args": [
+          -1
+        ]
+      }
+    }
   ]
 }

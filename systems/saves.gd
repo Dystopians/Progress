@@ -181,6 +181,16 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	ar["state.partner.relation_ppm"] = _mig_encode(tz)
 	ar["state.partner.treaty_mask"] = _mig_encode(tz)
 	ar["state.partner.balance_uu"] = _mig_encode(tz)
+	# R-EVENTCHOICE-01：旧存档没有选择型事件，待决与已选为 −1、选项数为 0。
+	var ez: PackedInt64Array = PackedInt64Array()
+	ez.resize(JWUnits.EVENT_N)
+	ez.fill(-1)
+	var e0: PackedInt64Array = PackedInt64Array()
+	e0.resize(JWUnits.EVENT_N)
+	e0.fill(0)
+	ar["state.event.pending_until_q"] = _mig_encode(ez)
+	ar["state.event.chosen_option"] = _mig_encode(ez)
+	ar["state.event.choice_count"] = _mig_encode(e0)
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 

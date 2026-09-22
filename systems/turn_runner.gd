@@ -662,6 +662,9 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 			rc = _cmd_build_building(cmds, row)
 		JWCommands.Kind.RETROFIT_STACK:
 			rc = _cmd_retrofit_stack(cmds, row)
+		JWCommands.Kind.EVENT_CHOICE:
+			rc = _st.politics.take_event_choice(cmds.arg_at(row, JWCommands.SLOT_EVENT),
+					cmds.arg_at(row, JWCommands.SLOT_EVENT_OPTION), _st.q)
 		JWCommands.Kind.TRADE_ARRANGE:
 			rc = _st.partners.arrange(cmds.arg_at(row, JWCommands.SLOT_PARTNER),
 					cmds.arg_at(row, JWCommands.SLOT_TRADE_MODE),
@@ -1054,6 +1057,10 @@ func _issue_money() -> int:
 	_st.money.note_issued(x)
 	_st.treasury.f_money_issued += x
 	return JWResult.OK
+
+
+## R-EVENTCHOICE-01：选择型事件的待决窗口长度（季）。窗口内不选就作废，不替玩家选。
+const EVENT_CHOICE_WINDOW_Q: int = 2
 
 
 ## R-OWNER-01：把各生产单元可分配额里属于政府的那一份（按国有堆的有效产能份额）划给政府。
@@ -2063,6 +2070,11 @@ func _step_s08() -> int:
 	rc = _events.fire_events(_st, _st.q)
 	if rc != JWResult.OK:
 		return rc
+	# R-EVENTCHOICE-01：选择型事件触发后开一个待决窗口；过期的窗口在本季末关闭（不替玩家选）。
+	for e: int in JWUnits.EVENT_N:
+		if _events.fired_this_quarter(e):
+			_st.politics.note_event_fired(e, _st.q, EVENT_CHOICE_WINDOW_Q)
+	_st.politics.expire_event_choices(_st.q)
 
 	# 第 6 条：任期审查与终局（选举只在 q ∈ {15, 31}；终局式中无任何 GDP 项）。
 	rc = _st.politics.review_and_terminate(_st.treasury, _st.pop, _st.q, _st.horizon_q,

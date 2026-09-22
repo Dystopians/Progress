@@ -364,7 +364,8 @@ func submit_command(kind: int, args: PackedInt64Array) -> JWResult:
 # ── R-CLOCK-01 第二部分：批量推进与暂停原因 ───────────────────────────────
 
 ## 批量推进的暂停原因（界面按它显示「为什么停下」）。
-enum Pause { NONE = 0, TERMINATED = 1, CRISIS = 2, GOV_CHANGE = 3, ELECTION = 4, ARREARS = 5, FAILED = 6 }
+enum Pause { NONE = 0, TERMINATED = 1, CRISIS = 2, GOV_CHANGE = 3, ELECTION = 4, ARREARS = 5,
+		FAILED = 6, EVENT_CHOICE = 7 }
 
 
 ## 推进前的探针：危机各轨级别、政府更替次数、届次、欠付。
@@ -391,6 +392,8 @@ func pause_reason(before: Dictionary, advance_ok: bool) -> int:
 		return Pause.GOV_CHANGE
 	if _st.politics.term_index > int(before["term_index"]):
 		return Pause.ELECTION
+	if _st.politics.has_pending_choice():
+		return Pause.EVENT_CHOICE
 	if _st.treasury.arrears > int(before["arrears"]):
 		return Pause.ARREARS
 	return Pause.NONE

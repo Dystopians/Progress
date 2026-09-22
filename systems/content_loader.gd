@@ -1092,7 +1092,7 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	_validate_buildings(st)
 	_validate_methods(st)
 	_validate_technologies(st)
-	_validate_events()
+	_validate_events(st)
 	_validate_shocks(st)
 
 	# ⑤ 跨文件引用与冗余交叉校验（悬空引用即失败）。
@@ -3582,10 +3582,15 @@ const CHAIN_MIN_LINKS: int = 4
 const EVENT_ALLOWED: PackedStringArray = [
 	"schema_kind", "schema_version", "event_id", "label_zh", "kind", "trigger", "effects",
 	"evidence_refs", "report_template_id",
+	# R-EVENTCHOICE-01（M2）：选项表。选项只登记「预填哪一条普通命令」，事件本身仍无账本效应。
+	"choices",
 ]
+const CHOICE_KEYS: PackedStringArray = ["option_id", "label_zh", "desc_zh", "draft_command"]
+const DRAFT_KEYS: PackedStringArray = ["kind", "args"]
 
 
-func _validate_events() -> void:
+func _validate_events(st: JWSimState) -> void:
+	var choice_count: PackedInt64Array = _zeros(JWUnits.EVENT_N)
 	for e: int in JWUnits.EVENT_N:
 		var rel: String = "events/event_E" + _pad2(e + 1) + ".json"
 		var idx: int = _doc_index(rel)
@@ -3599,6 +3604,31 @@ func _validate_events() -> void:
 		# V-EV-06：首版不存在 ledger_effects 字段；出现即失败（事件不得有账本效应）。
 		if doc.has("ledger_effects"):
 			_fail(JWResult.Load.EVENT_LEDGER, w + "/ledger_effects", 0, 0)
+		# R-EVENTCHOICE-01：选项表（可选）。逐条校验选项 ID 与预填命令的形状；命令本身由玩家提交。
+		if doc.has("choices"):
+			var chs: Array = _get_array(doc, "choices", w, JWResult.Load.SCHEMA_HEADER)
+			if chs.size() < 2 or chs.size() > 3:
+				_fail(JWResult.Load.SCHEMA_HEADER, w + "/choices#count", chs.size(), 2)
+			for ci: int in chs.size():
+				var cw: String = w + "/choices/" + str(ci)
+				if typeof(chs[ci]) != TYPE_DICTIONARY:
+					_fail(JWResult.Load.SCHEMA_HEADER, cw, typeof(chs[ci]), TYPE_DICTIONARY)
+					continue
+				var cd: Dictionary = chs[ci]
+				_check_keys(cd, CHOICE_KEYS, cw)
+				var oid: String = _get_str(cd, "option_id", cw, JWResult.Load.SCHEMA_HEADER)
+				if not oid.begins_with("opt."):
+					_fail(JWResult.Load.ID_FORMAT, cw + "/option_id", 0, 0)
+				var dc: Dictionary = _get_dict(cd, "draft_command", cw, JWResult.Load.SCHEMA_HEADER)
+				_check_keys(dc, DRAFT_KEYS, cw + "/draft_command")
+				var dk: int = _get_int(dc, "kind", cw + "/draft_command", JWResult.Load.SCHEMA_HEADER)
+				if dk < 0 or dk > JWCommands.Kind.EVENT_CHOICE:
+					_fail(JWResult.Load.SCHEMA_HEADER, cw + "/draft_command/kind", dk, 0)
+				var da: Array = _get_array(dc, "args", cw + "/draft_command", JWResult.Load.SCHEMA_HEADER)
+				if da.size() > JWCommands.ARG_SLOTS:
+					_fail(JWResult.Load.SCHEMA_HEADER, cw + "/draft_command/args", da.size(),
+							JWCommands.ARG_SLOTS)
+			choice_count[e] = chs.size()
 		if _event_index(_get_str(doc, "event_id", w, JWResult.Load.EVENT_COUNT)) != e:
 			_fail(JWResult.Load.EVENT_COUNT, w + "/event_id", e, 0)
 
@@ -3638,6 +3668,7 @@ func _validate_events() -> void:
 		for i: int in ev.size():
 			if not _is_metric_ref(String(ev[i])):
 				_fail(JWResult.Load.EVENT_EVIDENCE, w + "/evidence_refs/" + str(i), i, 0)
+	_set_arr(st.politics, 12, choice_count, "events#choice_count")
 
 
 ## V-EV-02 / V-EV-03：metric 必须是真实存在的稳定 ID，op 只有六种比较。

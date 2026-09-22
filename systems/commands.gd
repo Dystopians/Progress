@@ -37,6 +37,8 @@ enum Kind {
 	RETROFIT_STACK = 15,
 	# R-TRADE-01（M2）：贸易安排（调额度或缔结贸易协定）。
 	TRADE_ARRANGE = 16,
+	# R-EVENTCHOICE-01（M2）：记下对某条选择型事件的选择（本身没有经济效果，效果由预填的普通命令完成）。
+	EVENT_CHOICE = 17,
 	ADVANCE_QUARTER = 99,
 }
 
@@ -109,6 +111,9 @@ const SLOT_BUILD_METHOD: int = 3
 ## 命令 15 的参数槽：目标堆的稳定实体号、要换成的生产方式。
 const SLOT_RETROFIT_STACK: int = 0
 const SLOT_RETROFIT_METHOD: int = 1
+## 命令 17 的参数槽：事件下标、选项下标。
+const SLOT_EVENT: int = 0
+const SLOT_EVENT_OPTION: int = 1
 ## 命令 16 的参数槽：伙伴下标、模式（0 出口额度 / 1 进口额度 / 2 贸易协定）、加或减（1 / 0）。
 const SLOT_PARTNER: int = 0
 const SLOT_TRADE_MODE: int = 1
@@ -1108,6 +1113,17 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 			return JWResult.Reject.PARAM_RANGE
 		return JWResult.OK
 
+	if kind == Kind.EVENT_CHOICE:
+		var ev: int = c_arg[base + SLOT_EVENT]
+		var op: int = c_arg[base + SLOT_EVENT_OPTION]
+		if ev < 0 or ev >= JWUnits.EVENT_N:
+			_last_reject_slot = SLOT_EVENT
+			return JWResult.Reject.PARAM_RANGE
+		if op < 0 or op > 3:
+			_last_reject_slot = SLOT_EVENT_OPTION
+			return JWResult.Reject.PARAM_RANGE
+		return JWResult.OK
+
 	if kind == Kind.TRADE_ARRANGE:
 		var pn: int = c_arg[base + SLOT_PARTNER]
 		var md2: int = c_arg[base + SLOT_TRADE_MODE]
@@ -1239,6 +1255,8 @@ static func _arity_of(kind: int) -> int:
 		return 2
 	if kind == Kind.TRADE_ARRANGE:
 		return 3
+	if kind == Kind.EVENT_CHOICE:
+		return 2
 	if kind == Kind.ADVANCE_QUARTER:
 		return 0
 	return -1
@@ -1389,6 +1407,8 @@ static func _arg_keys(kind: int) -> PackedStringArray:
 		return PackedStringArray(["stack", "method"])
 	if kind == Kind.TRADE_ARRANGE:
 		return PackedStringArray(["partner", "mode", "up"])
+	if kind == Kind.EVENT_CHOICE:
+		return PackedStringArray(["event", "option"])
 	# kind 10 的 order[] 是数组形态，不走键名表；kind 99 无参数。
 	return PackedStringArray()
 

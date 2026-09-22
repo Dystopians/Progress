@@ -14,6 +14,7 @@ const STATE_ARRAY_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_GROUP, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_GROUP, JWUnits.SUBSYS_GROUP, JWUnits.SUBSYS_GROUP,
 	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_POLITICS,
+	JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_POLITICS, JWUnits.SUBSYS_POLITICS,
 ]
 
 ## 本块各状态标量所属子系统（与 STATE_SCALAR_IDS 等长）。
@@ -50,6 +51,10 @@ const STATE_ARRAY_IDS: PackedStringArray = [
 	# 读档后冷却与次数上限归零，「存档 → 读档 → 推进」与「直接推进」分叉）。
 	"state.event.fire_count",
 	"state.event.last_fire_q",
+	# R-EVENTCHOICE-01（M2）：选择型事件的待决与已选记录。事件本身仍只写主观量（INV-130）。
+	"state.event.pending_until_q",
+	"state.event.chosen_option",
+	"content.event.choice_count",
 ]
 ## 下标 11…15 是本次实现追加的跨季状态（docs/10 §8.3 尚无稳定 ID，按同族命名暂定，
 ## 已登记为接口变更请求）。它们**必须**进哈希与存档：预算审查的四季窗口与两条连胜／连败计数
@@ -171,6 +176,13 @@ var base_trust: PackedInt64Array = PackedInt64Array()
 ## `set_state_array()` 会在**第一次**写入某个主观量时顺带捕获基准——第一次写入必然是剧本初值，
 ## 之后的写入（读档回填）不会再动基准。不进哈希：它是加载路径的记账，不是模拟状态。
 var base_captured_mask: int = 0
+
+## state.event.pending_until_q[] —— 该事件正在等玩家决定，截止季（−1 == 没有待决）。写入者 S08 / S02
+var event_pending_until_q: PackedInt64Array = PackedInt64Array()
+## state.event.chosen_option[] —— 上一次选了哪个选项（−1 == 没选过）。写入者 S02（命令 17）
+var event_chosen_option: PackedInt64Array = PackedInt64Array()
+## content.event.choice_count[] —— 该事件有几个选项（0 == 不是选择型事件）。写入者 LOAD
+var event_choice_count: PackedInt64Array = PackedInt64Array()
 
 # ── 契约给了公式、但 JWUnits.Param 里没有下标的阈值（类 C，写入者 LOAD） ───
 #
@@ -793,6 +805,54 @@ func trust_national_ppm(pop: JWPopulation) -> int:
 	return JWMath.clamp_i(JWMath.floor_div(num, JWUnits.PPM), 0, JWUnits.PPM)
 
 
+## R-EVENTCHOICE-01：事件触发时，若它是选择型事件，则登记一个待决窗口（截止季 = 触发季 + window_q）。
+## 事件本身仍然只写主观量；选项对应的经济动作是玩家随后提交的普通命令（内容里预填）。
+## 步骤：S08（事件结算之后）
+func note_event_fired(e: int, q: int, window_q: int) -> void:
+	if e < 0 or e >= JWUnits.EVENT_N or event_choice_count.size() != JWUnits.EVENT_N:
+		return
+	if event_choice_count[e] <= 0:
+		return
+	event_pending_until_q[e] = q + maxi(1, window_q)
+	event_chosen_option[e] = -1
+
+
+## S02：记下玩家对某条待决事件的选择（命令 17）。本函数**没有任何经济效果**：
+## 它只关掉待决窗口并留档，经济动作由同一批次里预填的普通命令完成。
+func take_event_choice(e: int, option: int, q: int) -> int:
+	if e < 0 or e >= JWUnits.EVENT_N or event_choice_count.size() != JWUnits.EVENT_N:
+		return JWResult.Reject.NOT_FOUND
+	if event_choice_count[e] <= 0:
+		return JWResult.Reject.PRECONDITION
+	if event_pending_until_q[e] < 0 or q > event_pending_until_q[e]:
+		return JWResult.Reject.PRECONDITION
+	if option < 0 or option >= event_choice_count[e]:
+		return JWResult.Reject.PARAM_RANGE
+	event_chosen_option[e] = option
+	event_pending_until_q[e] = -1
+	return JWResult.OK
+
+
+## S08 末：过期的待决窗口关闭（没选就是没选，不替玩家选）。返回本季过期的条数。
+func expire_event_choices(q: int) -> int:
+	if event_pending_until_q.size() != JWUnits.EVENT_N:
+		return 0
+	var n: int = 0
+	for e: int in JWUnits.EVENT_N:
+		if event_pending_until_q[e] >= 0 and q > event_pending_until_q[e]:
+			event_pending_until_q[e] = -1
+			n += 1
+	return n
+
+
+## 是否有事件在等玩家决定（批量推进据此暂停）。
+func has_pending_choice() -> bool:
+	for e: int in event_pending_until_q.size():
+		if event_pending_until_q[e] >= 0:
+			return true
+	return false
+
+
 ## 事件效果落点（只允许白名单内的 ppm 增量）。
 ## 步骤：S08 §8.4
 ## 前置：target ∈ {expectation_ppm, trust_ppm, support_ppm, admin_capacity_ppm}
@@ -854,6 +914,12 @@ func allocate() -> void:
 	event_fire_count.fill(0)
 	event_last_fire_q.resize(JWUnits.EVENT_N)
 	event_last_fire_q.fill(EVENT_NEVER_FIRED_Q)
+	event_pending_until_q.resize(JWUnits.EVENT_N)
+	event_pending_until_q.fill(-1)
+	event_chosen_option.resize(JWUnits.EVENT_N)
+	event_chosen_option.fill(-1)
+	event_choice_count.resize(JWUnits.EVENT_N)
+	event_choice_count.fill(0)
 
 	_support_decomp.resize(JWUnits.GROUP * 3)
 	_support_decomp.fill(0)
@@ -886,6 +952,12 @@ func state_array(i: int) -> PackedInt64Array:
 		return event_fire_count
 	if i == 9:
 		return event_last_fire_q
+	if i == 10:
+		return event_pending_until_q
+	if i == 11:
+		return event_chosen_option
+	if i == 12:
+		return event_choice_count
 	if i == 0:
 		return living_index
 	if i == 1:
@@ -916,6 +988,16 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 	if i < 0 or i >= STATE_ARRAY_IDS.size():
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE,
 				i, STATE_ARRAY_IDS.size())
+	if i >= 10 and i <= 12:
+		if v.size() != JWUnits.EVENT_N:
+			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, v.size(), JWUnits.EVENT_N)
+		if i == 10:
+			event_pending_until_q = v.duplicate()
+		elif i == 11:
+			event_chosen_option = v.duplicate()
+		else:
+			event_choice_count = v.duplicate()
+		return JWResult.OK
 	if i == 8 or i == 9:
 		# R-EVENT-01：事件计数按事件下标（长 EVENT_N），不按群组。
 		if v.size() != JWUnits.EVENT_N:
