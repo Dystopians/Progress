@@ -150,6 +150,17 @@ func commission_ready(pq: JWProjectQueue, capital: JWCapital, treasury: JWTreasu
 		# 已付款项在 S04 全部计入 gov.wip_uu（INV-092；R-PROJECT-01 四腿付款的第三腿），
 		# 故归属本项目的 wip 就是 Σ_line paid。
 		var wip_part: int = _paid_total(pq, p)
+		# R-OWNER-01：扶持私人的建筑项目——政府出资建成后把资产移交给企业（资本转移），
+		# 不留在政府名下；国有项目照旧留在政府名下。
+		if is_building and pq.building_owner[p] == JWBuildings.OWNER_PRIVATE and wip_part > 0:
+			var sec_t: int = capital.buildings.t_sector[pq.building_type[p]]
+			var code_tr: int = capital.transfer_wip_to_cell(JWIds.idx_cell(r, sec_t), wip_part,
+					ledger, accounts, p)
+			if code_tr != 0:
+				if first_err == 0:
+					first_err = code_tr
+				continue
+			wip_part = 0
 		if wip_part > 0:
 			# 公共资本项目的资产落在政府名下（docs/10 §3.1：state.gov.capital_uu 的写入者含 S07）；
 			# wip → capital 由 JWCapital 过一笔 ASSET_RECLASS 两腿分录（R-ASSET-01：政府 wip −V、

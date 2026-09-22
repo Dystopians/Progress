@@ -258,6 +258,24 @@ func seed_legacy(cap: PackedInt64Array, value: PackedInt64Array) -> int:
 	return JWResult.OK
 
 
+## R-OWNER-01：某生产单元里政府所有的有效产能份额（ppm）。没有产能时返回 0。
+func gov_share_ppm(c: int) -> int:
+	var total: int = 0
+	var gov: int = 0
+	var b: int = 0
+	while b < count:
+		if cell[b] == c:
+			var w: int = effective_capacity(b)
+			total += w
+			if owner[b] == OWNER_GOV:
+				gov += w
+		b += 1
+	if total <= 0:
+		return 0
+	# rounding: floor, reason=份额只取整一次，少划给政府优于多划
+	return JWMath.mul_div_floor(gov, JWUnits.PPM, total)
+
+
 ## 按 cell 求和：在用产能、待投运产能、资本价值。写进调用方给的三个长 CELL 数组（先清零）。
 func sum_by_cell(out_active: PackedInt64Array, out_pending: PackedInt64Array,
 		out_value: PackedInt64Array) -> void:

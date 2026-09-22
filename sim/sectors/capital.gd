@@ -183,6 +183,49 @@ func add_building_pending(cell: int, type_i: int, owner_i: int, method_i: int, d
 	return JWResult.OK
 
 
+## R-OWNER-01：政府扶持私人——把政府名下的在建工程移交给企业，成为企业的资本。
+## 四腿非现金分录：政府 wip −V、政府净值 −V；企业资本 +V、企业净值 +V。三口径全 none。
+## 步骤：S07（投运）
+## 前置：政府 wip 足够；amount > 0
+## 后置：企业资本与该 cell 的建筑堆资本同额增加
+func transfer_wip_to_cell(cell: int, amount_uu: int, ledger: JWLedger, accounts: JWAccount,
+		entity_ref: int) -> int:
+	if amount_uu <= 0:
+		return JWResult.OK
+	if ledger == null or accounts == null:
+		return JWResult.raise_fault(JWResult.Fault.PHASE_VIOLATION, cell, 0)
+	var gov_wip: int = accounts.get_balance(JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_WIP))
+	if gov_wip < amount_uu:
+		return JWResult.raise_fault(JWResult.Fault.BALANCE_SHEET_BROKEN, gov_wip, amount_uu)
+	var agent: int = JWIds.agent_of_cell(cell)
+	_transfer_acc[0] = JWIds.idx_account(agent, JWIds.ACC_CAPITAL)
+	_transfer_d[0] = amount_uu
+	_transfer_acc[1] = JWIds.idx_account(agent, JWIds.ACC_NW)
+	_transfer_d[1] = -amount_uu
+	_transfer_acc[2] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_WIP)
+	_transfer_d[2] = -amount_uu
+	_transfer_acc[3] = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_NW)
+	_transfer_d[3] = amount_uu
+	var rc: int = ledger.post_multi(JWUnits.Kind.CAPITAL_TRANSFER, _transfer_acc, _transfer_d,
+			0, -1, JWUnits.Kind.CAPITAL_TRANSFER, entity_ref)
+	if rc != JWResult.OK:
+		return rc
+	# 资本价值同步进该 cell 的缺省堆（产能在 add_building_pending 里单独落到目标堆）。
+	if _use_stacks():
+		var b: int = _stack_of(cell)
+		if b < 0:
+			return JWResult.pending_code()
+		buildings.capital_value[b] = JWMath.check_amount(buildings.capital_value[b] + amount_uu)
+		sync_cells_from_buildings()
+	else:
+		cell_capital_value[cell] = JWMath.check_amount(cell_capital_value[cell] + amount_uu)
+	return JWResult.OK
+
+
+var _transfer_acc: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+var _transfer_d: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+
+
 ## R-METHOD-01：改造完工——把某个堆切到新的生产方式并解冻产能。
 func switch_stack_method(stack_entity: int, method_i: int) -> int:
 	if not _use_stacks():

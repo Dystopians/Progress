@@ -1041,6 +1041,37 @@ func _issue_money() -> int:
 	return JWResult.OK
 
 
+## R-OWNER-01：把各生产单元可分配额里属于政府的那一份（按国有堆的有效产能份额）划给政府。
+## 现金从企业走到政府，登记为政府的其他收入（进 INV-027 的收入项）；余下部分照常按股权分给居民。
+func _split_gov_surplus() -> int:
+	if _st.buildings.count == 0:
+		return JWResult.OK
+	var gov_cash: int = JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_CASH)
+	var c: int = 0
+	while c < JWUnits.CELL:
+		var d: int = _sc_distributable[c]
+		if d > 0:
+			var share: int = _st.buildings.gov_share_ppm(c)
+			if share > 0:
+				# rounding: floor, reason=份额折算只取整一次
+				var part: int = JWMath.mul_ppm(d, share)
+				var agent: int = JWIds.agent_of_cell(c)
+				part = mini(part, _st.accounts.cash_of(agent))
+				if part > 0:
+					var rc: int = _st.ledger.post(JWUnits.Kind.PROPERTY_INCOME,
+							JWIds.idx_account(agent, JWIds.ACC_CASH), gov_cash, part, 0, -1,
+							JWUnits.Kind.PROPERTY_INCOME, c)
+					if rc != JWResult.OK:
+						return rc
+					var rc2: int = _st.treasury.record_other_receipt(part)
+					if rc2 != JWResult.OK:
+						return rc2
+					_sc_distributable[c] = d - part
+					_st.sectors.f_distributed[c] = _sc_distributable[c]
+		c += 1
+	return JWResult.OK
+
+
 ## R-CLOSURE-01：外部现金补足（外汇储备）。四腿：外部现金 +Y、外部应付 +Y、政府应收 +Y、政府净值 +Y。
 func _issue_row_reserves(row_cash: int) -> int:
 	var y: int = _st.money.row_topup(row_cash)
@@ -1750,6 +1781,11 @@ func _step_s06() -> int:
 	# R-PAYOUT-02：分配以「下季付得起足额工资」为前提（S04 发薪只能动用期初现金的 wage_cash_share）；
 	# 亏损季耗掉的营运现金由其后的利润先补回，而不是被全额分走、一路耗到付不起工资。
 	_retain_working_capital()
+
+	# 第 7′ 条（R-OWNER-01）：国有建筑堆的经营盈余按有效产能份额归政府，其余才分给股东。
+	rc = _split_gov_surplus()
+	if rc != JWResult.OK:
+		return rc
 
 	# 第 8 条（前半，R-TAXBASE-01）：企业分配与存款利息先过账到户——§6.5 个税的税基是
 	# 「已过账的 wage + property」，分配排在个税之后等于本季财产收入永远不进税基。
