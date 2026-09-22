@@ -93,6 +93,12 @@ const SCALAR_IDS: PackedStringArray = [
 	"flow.gov.final_consumption_uu", "flow.gov.gross_capital_formation_uu",
 	"flow.world.exports_uu", "flow.world.imports_uu", "flow.politics.budget_review_due",
 	"flow.gov.procurement_budget_q_uu", "flow.gov.rollover_uu",
+	# M2：研究、建筑、伙伴（R-RESEARCH-01 / R-METHOD-01 / R-TRADE-01）。
+	"state.research.points_pool", "state.research.focus", "state.research.completed_mask",
+	"content.tech.count", "content.research.enabled",
+	"flow.research.points_gained",
+	"state.building.count", "content.building.type_count", "content.method.count",
+	"content.partner.count",
 ]
 
 const ARRAY_IDS: PackedStringArray = [
@@ -109,6 +115,23 @@ const ARRAY_IDS: PackedStringArray = [
 	"state.project.suspension_reason", "state.project.queue_slot_held",
 	"state.project.defer_count", "state.project.defer_quarters_total", "state.project.defer_until_q",
 	"state.project.defer_fee_uu", "state.project.entity",
+	"state.project.building_type", "state.project.building_owner", "state.project.building_method",
+	"state.project.retrofit_stack",
+	# M2：研究、建筑堆与内容表、伙伴。
+	"state.research.status", "state.research.progress",
+	"content.tech.cost", "content.tech.era_hint", "content.tech.prereq_mask",
+	"state.building.cell", "state.building.type", "state.building.owner", "state.building.method",
+	"state.building.level", "state.building.capacity_active_uqs_per_q",
+	"state.building.capacity_pending_uqs_per_q", "state.building.capital_value_uu",
+	"state.building.frozen_ppm", "state.building.entity",
+	"content.building.sector", "content.building.unit_capacity_uqs", "content.building.cost_uu",
+	"content.building.quarters", "content.building.opex_uu", "content.building.owners_mask",
+	"content.method.building", "content.method.output_ppm", "content.method.retrofit_cost_uu",
+	"content.method.retrofit_quarters", "content.method.retrofit_frozen_ppm",
+	"state.partner.export_share_ppm", "state.partner.import_share_ppm",
+	"state.partner.price_mult_ppm", "state.partner.relation_ppm", "state.partner.treaty_mask",
+	"state.partner.balance_uu",
+	"state.event.pending_until_q", "state.event.chosen_option", "content.event.choice_count",
 	"state.policy.enabled", "state.policy.enacted_q", "state.policy.effective_from_q",
 	"state.policy.cooldown_until_q", "state.policy.exit_pending_q", "state.policy.params_ppm",
 	"state.policy.region_mask", "state.policy.toggle_count", "state.policy.budget_committed_uu",
@@ -203,6 +226,38 @@ func refresh() -> void:
 	derived = game.derived_snapshot() if game.has_method("derived_snapshot") else {}
 	rules = game.rule_params() if game.has_method("rule_params") else {}
 	cmdlog = game.command_log_copy() if game.has_method("command_log_copy") else {}
+
+
+## M2：某项科技是否可研究（前置齐备且未完成）。界面据此决定「设为方向」可不可点。
+func tech_available(t: int) -> bool:
+	if t < 0 or t >= sc("content.tech.count"):
+		return false
+	var done: int = sc("state.research.completed_mask")
+	if (done >> t) & 1 == 1:
+		return false
+	return at("content.tech.prereq_mask", t) & ~done == 0
+
+
+## M2：本局的建筑堆行数。
+func stack_count() -> int:
+	return sc("state.building.count")
+
+
+## M2：某个建筑堆的一行数据（界面用；产能已按方式与冻结折算由 SimCore 汇总，这里给原值与倍率分量）。
+func stack_row(b: int) -> Dictionary:
+	return {
+		"b": b,
+		"entity": at("state.building.entity", b),
+		"cell": at("state.building.cell", b),
+		"type": at("state.building.type", b),
+		"owner": at("state.building.owner", b),
+		"method": at("state.building.method", b),
+		"level": at("state.building.level", b),
+		"capacity": at("state.building.capacity_active_uqs_per_q", b),
+		"pending": at("state.building.capacity_pending_uqs_per_q", b),
+		"value": at("state.building.capital_value_uu", b),
+		"frozen_ppm": at("state.building.frozen_ppm", b),
+	}
 
 
 ## R-CAP-01：本季第 p 行项目的稳定实体号（命令参数用它，不用行号）。

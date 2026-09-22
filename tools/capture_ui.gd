@@ -10,6 +10,9 @@ var _out: String = ""
 var _wait: int = 90
 var _advance: int = 0
 var _batch: int = 0
+## 「--jw-research=<科技下标,...>@<每项最多推进季数>」：截图用的自动研究（走真实命令 13，不改规则）。
+var _research: PackedInt64Array = PackedInt64Array()
+var _research_q: int = 160
 var _page: String = ""
 var _frames: int = 0
 var _main: Node = null
@@ -27,6 +30,15 @@ func _init() -> void:
 	if args.size() > 2 and args[2].begins_with("b") and args[2].substr(1).is_valid_int():
 		_batch = int(args[2].substr(1))
 	_page = args[3] if args.size() > 3 and not args[3].begins_with("--") else ""
+	for a: String in args:
+		if a.begins_with("--jw-research="):
+			var spec: String = a.substr(14)
+			if spec.find("@") > 0:
+				_research_q = maxi(int(spec.get_slice("@", 1)), 1)
+				spec = spec.get_slice("@", 0)
+			for tok: String in spec.split(",", false):
+				if tok.is_valid_int():
+					_research.append(int(tok))
 	var packed: PackedScene = load("res://ui/main.tscn") as PackedScene
 	if packed == null:
 		print("主场景载入失败")
@@ -49,6 +61,9 @@ func _on_frame() -> void:
 			var r: Variant = (session as Object).call("advance")
 			_advanced += 1
 			print("推进第 %d 季：%s" % [_advanced, str(r).substr(0, 160)])
+	if _research.size() > 0 and _frames == 20:
+		_run_research(_main.get("session") as Object)
+		_research = PackedInt64Array()
 	if _batch > 0 and _frames == 20:
 		var s2: Object = _main.get("session") as Object
 		if s2 != null:
@@ -96,6 +111,33 @@ func _on_frame() -> void:
 	print("截图 %s（%dx%d）：%s" % [ProjectSettings.globalize_path(_out), img.get_width(), img.get_height(),
 			"ok" if err == OK else "失败 %d" % err])
 	quit(0)
+
+
+## 逐项设定研究方向并批量推进，直到该项完成或用满季数（与玩家手动操作走同一条命令路径）。
+func _run_research(s: Object) -> void:
+	if s == null:
+		return
+	var game: Object = s.get("game") as Object
+	var model: Object = s.get("model") as Object
+	if game == null or model == null:
+		return
+	for t: int in _research:
+		var spent: int = 0
+		while spent < _research_q:
+			if (int(model.call("sc", "state.research.completed_mask")) >> t) & 1 == 1:
+				break
+			if int(model.call("sc", "state.research.focus")) != t:
+				s.call("add_draft", s.call("draft_research", t, "T%d" % t))
+			var step: int = mini(_research_q - spent, 8)
+			var rb: Variant = s.call("advance_batch", step)
+			var adv: int = int((rb as Dictionary).get("batch", {}).get("done", 0))
+			if adv <= 0:
+				break
+			spent += adv
+			s.call("clear_drafts")
+		print("科技 %d：%s（用了 %d 季）" % [t,
+				"完成" if (int(model.call("sc", "state.research.completed_mask")) >> t) & 1 == 1 else "未完成",
+				spent])
 
 
 static func _find_tagged(n: Node, id: String) -> Control:

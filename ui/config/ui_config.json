@@ -241,5 +241,17 @@
       ]
     }
   },
-  "region_polygons_pending_owner": "content/scenarios/chengwan/regions.json 的地区轮廓（docs/20 §7.2.5「多边形顶点来自剧本配置」）"
+  "region_polygons_pending_owner": "content/scenarios/chengwan/regions.json 的地区轮廓（docs/20 §7.2.5「多边形顶点来自剧本配置」）",
+  "building_art": {
+    "family.irrigation": "res://assets/buildings/b01/irrigation_{era}.png",
+    "family.workshop": "res://assets/buildings/b01/workshop_{era}.png",
+    "family.smelter": "res://assets/buildings/b07/steel_{era}.png",
+    "family.market": "res://assets/buildings/b10/market_{era}.png",
+    "family.harbor": "res://assets/buildings/b03/port_{era}.png"
+  },
+  "_note_building_art": "M2-7（R-METHOD-01 / 用户 2026-09-22 决定）：建筑卡的配图按家族取 Codex 的资源；{era} 由科技时代档替换为 early / industrial / modern。资源仍待用户初审，文件不存在时界面自动退回纯文字卡片。",
+  "era_art": {
+    "1": "res://assets/eras/e01/era01_agriculture.png",
+    "2": "res://assets/eras/e01/era02_commerce.png"
+  }
 }

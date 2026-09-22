@@ -4,12 +4,14 @@
 class_name JwGlossary
 extends RefCounted
 
-## 术语 → 规则手册锚点（JwRulesBook 的 RuleAnchor1..13）。
+## 术语 → 规则手册锚点（JwRulesBook 的 RuleAnchor1..14）。
 const ANCHOR: Dictionary = {
 	"info_class": 13, "gov_cash": 3, "arrears": 3, "commitment": 3, "tax_capacity": 3,
 	"availability": 3, "budget_review": 7, "termination": 7, "bond_batch": 4, "sovereign_rate": 4,
 	"slot": 6, "project_defer": 6, "lag": 1, "veto": 7, "seats": 7, "trust": 7, "living": 8,
 	"unemployment": 8, "event": 9, "shock": 10,
+	# M2（docs/53）：研究、建筑与生产方式、贸易。
+	"research_point": 14, "building_stack": 14, "production_method": 14, "trade_quota": 14,
 }
 
 ## 各页「本页术语」条列出的术语（顺序即显示顺序）。
@@ -17,6 +19,7 @@ const PAGE_TERMS: Dictionary = {
 	"overview": ["info_class", "gov_cash", "arrears", "budget_review", "termination", "unemployment", "event", "shock"],
 	"region": ["slot", "availability", "living", "unemployment"],
 	"policy": ["lag", "veto", "seats", "commitment", "tax_capacity", "bond_batch", "sovereign_rate", "project_defer"],
+	"industry": ["research_point", "building_stack", "production_method", "trade_quota", "slot"],
 	"society": ["living", "trust", "seats", "veto"],
 	"report": ["info_class", "event", "project_defer", "arrears", "commitment"],
 }
@@ -105,6 +108,15 @@ static func instance(id: String, s: JwSession) -> String:
 			slots = {"n": str(m.events_fired_total())}
 		"shock":
 			slots = {"seed": str(s.seed_value)}
+		"research_point":
+			slots = {"gained": JwFormat.group3(m.sc("flow.research.points_gained")),
+					"pool": JwFormat.group3(m.sc("state.research.points_pool"))}
+		"building_stack":
+			slots = {"n": str(m.stack_count())}
+		"production_method":
+			slots = {"n": str(maxi(m.sc("content.method.count") - 1, 0))}
+		"trade_quota":
+			slots = {"n": str(m.sc("content.partner.count"))}
 		_:
 			return ""
 	return JwText.render("gloss.%s.inst" % id, slots)

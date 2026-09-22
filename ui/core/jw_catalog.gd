@@ -26,6 +26,13 @@ const SKILL_IDS: PackedStringArray = ["low", "mid", "high"]
 ## 当前剧本目录名（R-SCENARIO-01；`content/scenarios/<name>/`）。
 var scenario_name: String = "chengwan"
 
+## M2 内容卡（只取展示需要的字段；数值口径以注册表里的 content.* 为准）。
+var technologies: Array[Dictionary] = []
+var building_types: Array[Dictionary] = []
+var methods: Array[Dictionary] = []
+var partners: Array[Dictionary] = []
+var event_choices: Dictionary = {}
+
 var policies: Array[Dictionary] = []
 var regions: Array[Dictionary] = []
 var blocs: Array[Dictionary] = []
@@ -60,6 +67,17 @@ func load_all() -> void:
 			"theme": String(themes[i]) if i < themes.size() else "",
 		})
 		i += 1
+	# M2：科技卡、建筑卡、方式卡按文件名升序（与 SimCore 的下标一致）；建筑与方式的下标从 1 起。
+	technologies = _load_dir(CONTENT_ROOT + "/technologies", "tech_")
+	building_types = _load_dir(CONTENT_ROOT + "/buildings", "building_")
+	methods = _load_dir(CONTENT_ROOT + "/methods", "method_")
+	var trade_rule: Dictionary = scenario.get("trade_rule", {})
+	for pd: Variant in trade_rule.get("partners", []):
+		partners.append(pd)
+	for e: int in EVENT_N:
+		var ed: Dictionary = _json(CONTENT_ROOT + "/events/event_E%02d.json" % (e + 1))
+		if ed.has("choices"):
+			event_choices[e] = ed["choices"]
 	var pol: Dictionary = _json(sdir + "/politics_init.json")
 	for b: Variant in pol.get("blocs", []):
 		var bd: Dictionary = b
@@ -327,6 +345,90 @@ func scenario_mode() -> int:
 ## 第 0 季所在公历年（0 = 不显示年份）。
 func start_year() -> int:
 	return int(scenario.get("start_year", 0))
+
+
+## 按前缀读一个内容目录（文件名升序）。
+static func _load_dir(dir: String, prefix: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var names: PackedStringArray = DirAccess.get_files_at(dir)
+	names.sort()
+	for f: String in names:
+		if f.begins_with(prefix) and f.ends_with(".json"):
+			var fa: FileAccess = FileAccess.open(dir + "/" + f, FileAccess.READ)
+			if fa == null:
+				continue
+			var v: Variant = JSON.parse_string(fa.get_as_text())
+			fa.close()
+			if v is Dictionary:
+				out.append(v)
+	return out
+
+
+## M2：科技 / 建筑 / 方式的显示名（下标越界时给出可诊断的占位串，不静默留空）。
+func tech_label(t: int) -> String:
+	if t < 0 or t >= technologies.size():
+		return "tech#%d" % t
+	return String(technologies[t].get("label_zh", "tech#%d" % t))
+
+
+func tech_desc(t: int) -> String:
+	if t < 0 or t >= technologies.size():
+		return ""
+	return String(technologies[t].get("desc_zh", ""))
+
+
+func building_label(bt: int) -> String:
+	# 下标 0 是「既有设施」，不在卡片里。
+	if bt <= 0 or bt - 1 >= building_types.size():
+		return JwText.t("ind.legacy_building")
+	return String(building_types[bt - 1].get("label_zh", "building#%d" % bt))
+
+
+func building_family(bt: int) -> String:
+	if bt <= 0 or bt - 1 >= building_types.size():
+		return ""
+	return String(building_types[bt - 1].get("family", ""))
+
+
+func building_desc(bt: int) -> String:
+	if bt <= 0 or bt - 1 >= building_types.size():
+		return ""
+	return String(building_types[bt - 1].get("desc_zh", ""))
+
+
+func method_label(m: int) -> String:
+	if m <= 0 or m - 1 >= methods.size():
+		return JwText.t("ind.legacy_method")
+	return String(methods[m - 1].get("label_zh", "method#%d" % m))
+
+
+func method_desc(m: int) -> String:
+	if m <= 0 or m - 1 >= methods.size():
+		return ""
+	return String(methods[m - 1].get("desc_zh", ""))
+
+
+func partner_label(p: int) -> String:
+	if p < 0 or p >= partners.size():
+		return "partner#%d" % p
+	return String(partners[p].get("label_zh", "partner#%d" % p))
+
+
+## M2-7：建筑家族 → 图片路径模板（界面配置，不写进内容卡；资源仍待用户初审，未通过前返回空串）。
+func building_art(bt: int, era_hint: int) -> String:
+	var fam: String = building_family(bt)
+	if fam == "":
+		return ""
+	var map: Dictionary = config.get("building_art", {})
+	if not map.has(fam):
+		return ""
+	var tier: String = "early"
+	if era_hint >= 5:
+		tier = "modern"
+	elif era_hint >= 3:
+		tier = "industrial"
+	var path: String = String(map[fam]).replace("{era}", tier)
+	return path if ResourceLoader.exists(path) else ""
 
 
 ## 内容包里的全部剧本（按目录名升序）：[{name, label, mode, horizon_q, start_year}]。

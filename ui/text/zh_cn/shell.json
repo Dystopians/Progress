@@ -26,8 +26,9 @@
     "tab.overview": "1 国家总览",
     "tab.region": "2 地区",
     "tab.policy": "3 政策工作台",
-    "tab.society": "4 社会",
-    "tab.report": "5 季度报告",
+    "tab.industry": "4 产业与科技",
+    "tab.society": "5 社会",
+    "tab.report": "6 季度报告",
 
     "dock.no_game": "开始执政 ▸",
     "dock.stage1": "① 政策草案",

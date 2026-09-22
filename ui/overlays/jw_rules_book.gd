@@ -13,11 +13,13 @@ func build() -> void:
 	set_title(JwText.t("rb.title"))
 	var m: JwReadModel = session.model
 	var cat: JwCatalog = session.catalog
-	for i: int in range(1, 14):
+	for i: int in range(1, 15):
 		var sec: Dictionary = JwUi.section(JwText.t("rb.s%d" % i))
 		JwUi.tag(sec["root"], "RuleAnchor%d" % i)
 		var b: VBoxContainer = sec["body"]
 		match i:
+			14:
+				_section_industry(b, m, cat)
 			1:
 				for p: int in JwReadModel.POLICY_N:
 					var pd: Dictionary = cat.policy(p)
@@ -139,3 +141,59 @@ static func _find_tagged(n: Node, id: String) -> Control:
 		if f != null:
 			return f
 	return null
+
+
+## 第 14 章（docs/53 M2）：研究、建筑与生产方式、贸易伙伴。数值全部现取自内容表，界面不另存一份。
+func _section_industry(b: VBoxContainer, m: JwReadModel, cat: JwCatalog) -> void:
+	if m.sc("content.research.enabled") == 0:
+		b.add_child(JwUi.label(JwText.t("rb.body.14_term"), "body", "text.secondary", true))
+		return
+	b.add_child(JwUi.label(JwText.t("rb.body.14"), "body", "text.secondary", true))
+	for t: int in m.sc("content.tech.count"):
+		b.add_child(JwUi.label(JwText.render("rb.tech", {"label": cat.tech_label(t),
+				"cost": JwFormat.group3(m.at("content.tech.cost", t)),
+				"prereq": _mask_names(m.at("content.tech.prereq_mask", t), cat)}),
+				"body", "text.secondary", true))
+	for bt: int in range(1, m.sc("content.building.type_count")):
+		var sec: int = m.at("content.building.sector", bt)
+		b.add_child(JwUi.label(JwText.render("rb.building", {"label": cat.building_label(bt),
+				"sector": JwText.t("sector.%d" % sec),
+				"capacity": JwFormat.qty(m.at("content.building.unit_capacity_uqs", bt),
+						JwText.t("sector.unit.%d" % sec)),
+				"cost": JwFormat.u(m.at("content.building.cost_uu", bt)),
+				"quarters": JwFormat.quarters(m.at("content.building.quarters", bt)),
+				"opex": JwFormat.u(m.at("content.building.opex_uu", bt)),
+				"owners": _owner_names(m.at("content.building.owners_mask", bt))}),
+				"body", "text.secondary", true))
+	for mt: int in range(1, m.sc("content.method.count")):
+		b.add_child(JwUi.label(JwText.render("rb.method", {"label": cat.method_label(mt),
+				"building": cat.building_label(m.at("content.method.building", mt)),
+				"output": JwFormat.ratio(m.at("content.method.output_ppm", mt)),
+				"cost": JwFormat.u(m.at("content.method.retrofit_cost_uu", mt)),
+				"quarters": JwFormat.quarters(m.at("content.method.retrofit_quarters", mt)),
+				"frozen": JwFormat.pct(m.at("content.method.retrofit_frozen_ppm", mt))}),
+				"body", "text.secondary", true))
+	for p: int in m.sc("content.partner.count"):
+		b.add_child(JwUi.label(JwText.render("rb.partner", {"label": cat.partner_label(p),
+				"export": JwFormat.pct(m.at("state.partner.export_share_ppm", p)),
+				"import": JwFormat.pct(m.at("state.partner.import_share_ppm", p)),
+				"price": JwFormat.ratio(m.at("state.partner.price_mult_ppm", p)),
+				"relation": JwFormat.pct(m.at("state.partner.relation_ppm", p))}),
+				"body", "text.secondary", true))
+
+
+## 前置科技掩码 → 名字串；没有前置时给「无」。
+static func _mask_names(mask: int, cat: JwCatalog) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for t: int in cat.technologies.size():
+		if (mask >> t) & 1 == 1:
+			parts.append(cat.tech_label(t))
+	return JwText.t("rb.none") if parts.is_empty() else "、".join(parts)
+
+
+static func _owner_names(mask: int) -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for o: int in 2:
+		if (mask >> o) & 1 == 1:
+			parts.append(JwText.t("ind.owner.%d" % o))
+	return JwText.t("rb.none") if parts.is_empty() else "、".join(parts)

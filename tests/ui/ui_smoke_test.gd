@@ -7,7 +7,7 @@
 extends JWTest
 
 const SEED: int = 20260921
-const PAGE_IDS: PackedStringArray = ["overview", "region", "policy", "society", "report"]
+const PAGE_IDS: PackedStringArray = ["overview", "region", "policy", "industry", "society", "report"]
 const OVERLAY_IDS: PackedStringArray = ["newgame", "budget", "confirm", "settlement", "annual", "archive", "saves",
 		"ledger", "rule", "legend", "rules", "term"]
 
@@ -46,7 +46,7 @@ static func _session(n_adv: int) -> JwSession:
 
 
 static func _page_classes() -> Array:
-	return [JwOverviewPage, JwRegionPage, JwPolicyPage, JwSocietyPage, JwReportPage]
+	return [JwOverviewPage, JwRegionPage, JwPolicyPage, JwIndustryPage, JwSocietyPage, JwReportPage]
 
 
 static func _walk(n: Node, out: Array[Node]) -> void:
@@ -234,7 +234,7 @@ func test_region_and_society_numbers() -> void:
 			found_actual = true
 	check(found_actual, "region ladder renders derived lines")
 	rg.free()
-	var so: JwPage = _page(s, 3)
+	var so: JwPage = _page(s, 4)
 	var mx: Control = _find(so, "GroupMatrix")
 	check(mx != null, "society page has group matrix")
 	if mx != null:
@@ -486,7 +486,7 @@ func test_project_defer_flow() -> void:
 func test_glossary_terms_complete_and_first_seen() -> void:
 	var s: JwSession = _session(2)
 	var on_pages: Dictionary = {}
-	for k: int in 5:
+	for k: int in PAGE_IDS.size():
 		var pg: JwPage = _page(s, k)
 		check(_find(pg, "TermStrip") != null, "page %s has a term strip" % PAGE_IDS[k])
 		for n: Node in _nodes(pg):
@@ -502,7 +502,7 @@ func test_glossary_terms_complete_and_first_seen() -> void:
 			check(JwGlossary.definition(id) != "", "term %s has a one-line definition" % id)
 			check(JwGlossary.instance(id, s) != "", "term %s has an in-game instance" % id)
 			var a: int = JwGlossary.anchor(id)
-			check(a >= 1 and a <= 13 and JwText.has("rb.s%d" % a), "term %s links to a rules-book anchor" % id)
+			check(a >= 1 and a <= 14 and JwText.has("rb.s%d" % a), "term %s links to a rules-book anchor" % id)
 		pg.free()
 	for gid: String in JwGlossary.ids():
 		check(on_pages.has(gid), "glossary term %s appears on at least one page" % gid)
@@ -596,7 +596,7 @@ func test_commitment_timeline_matches_simcore() -> void:
 	check(ct != null and ct is JwChartFrame and (ct as JwChartFrame).get_chart_meta().missing().is_empty(),
 			"overview shows the commitment timeline with four annotations")
 	pg.free()
-	var rp: JwPage = _page(s, 4)
+	var rp: JwPage = _page(s, 5)
 	check(_find(rp, "CommitTimeline") != null, "quarterly report shows the commitment timeline")
 	rp.free()
 
@@ -668,7 +668,7 @@ func test_dock_never_disables_without_reason() -> void:
 
 func test_report_q2_shows_paid_but_zero_new_capacity() -> void:
 	var s: JwSession = _session(2)
-	var pg: JwPage = _page(s, 4)
+	var pg: JwPage = _page(s, 5)
 	var lag: Control = _find(pg, "LagBlock")
 	check(lag != null, "report has LagBlock")
 	var ok_row: bool = false
@@ -687,7 +687,7 @@ func test_report_q2_shows_paid_but_zero_new_capacity() -> void:
 func test_variance_table_compares_with_stored_intervals() -> void:
 	var s: JwSession = _session(1)
 	check(s.expectations.has("0"), "q0 expectations were stored before advancing (VT-1)")
-	var pg: JwPage = _page(s, 4)
+	var pg: JwPage = _page(s, 5)
 	var vt: Control = _find(pg, "VarianceTable")
 	check(vt != null, "variance table present")
 	var n_proj: int = 0

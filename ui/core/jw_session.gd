@@ -34,6 +34,12 @@ const K_DEFER: int = 6
 const K_ISSUE_BOND: int = 8
 const K_RESTRUCTURE: int = 9
 const K_GOAL: int = 12
+## M2 的五条命令（R-RESEARCH-01 / R-METHOD-01 / R-TRADE-01 / R-EVENTCHOICE-01）。
+const K_RESEARCH: int = 13
+const K_BUILD: int = 14
+const K_RETROFIT: int = 15
+const K_TRADE: int = 16
+const K_EVENT_CHOICE: int = 17
 const K_ADVANCE: int = 99
 
 var game: JWGame = null
@@ -338,6 +344,47 @@ func draft_launch(p: int, region: int, scale_ppm: int, funding: int) -> Dictiona
 
 
 ## R-CAP-01：命令参数是项目的稳定实体号；草案另记本季行号 project，只用于界面内的行匹配。
+## M2：设定研究方向（命令 13）。
+func draft_research(tech: int, label_text: String) -> Dictionary:
+	return {"kind": K_RESEARCH, "args": _args([tech]), "p": -1, "tech": tech,
+			"label": JwText.render("draft.label.research", {"tech": label_text})}
+
+
+## M2：新建建筑（命令 14）。cost_hint 让确认框的四季现金预测把它算进去。
+func draft_build(building_type: int, region: int, owner: int, method: int, label_text: String,
+		cost_uu: int) -> Dictionary:
+	return {"kind": K_BUILD, "args": _args([building_type, region, owner, method]), "p": -1,
+			"building": building_type, "region": region, "owner": owner, "method": method,
+			"cost_hint": cost_uu,
+			"label": JwText.render("draft.label.build", {"building": label_text,
+				"region": catalog.region_label(region),
+				"owner": JwText.t("ind.owner.%d" % owner)})}
+
+
+## M2：改造建筑堆的生产方式（命令 15）。
+func draft_retrofit(stack_entity: int, method: int, label_text: String, method_text: String,
+		cost_uu: int) -> Dictionary:
+	return {"kind": K_RETROFIT, "args": _args([stack_entity, method]), "p": -1,
+			"stack": stack_entity, "method": method, "cost_hint": cost_uu,
+			"label": JwText.render("draft.label.retrofit", {"building": label_text,
+				"method": method_text})}
+
+
+## M2：贸易安排（命令 16）。
+func draft_trade(partner: int, mode: int, up: int, label_text: String) -> Dictionary:
+	return {"kind": K_TRADE, "args": _args([partner, mode, up]), "p": -1, "partner": partner,
+			"label": JwText.render("draft.label.trade", {"partner": label_text,
+				"mode": JwText.t("ind.trade.mode.%d" % mode),
+				"dir": JwText.t("ind.trade.up.%d" % up)})}
+
+
+## M2：记下对某条选择型事件的选择（命令 17；本身没有经济效果）。
+func draft_event_choice(event: int, option: int, label_text: String) -> Dictionary:
+	return {"kind": K_EVENT_CHOICE, "args": _args([event, option]), "p": -1, "event": event,
+			"option": option,
+			"label": JwText.render("draft.label.event_choice", {"option": label_text})}
+
+
 func draft_cancel(project: int, label_text: String) -> Dictionary:
 	return {"kind": K_CANCEL, "args": _args([model.project_entity(project)]), "p": -1, "project": project,
 			"label": JwText.render("draft.label.cancel", {"project": label_text})}

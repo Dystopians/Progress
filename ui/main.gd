@@ -7,7 +7,7 @@
 class_name JwRoot
 extends Control
 
-const PAGE_IDS: PackedStringArray = ["overview", "region", "policy", "society", "report"]
+const PAGE_IDS: PackedStringArray = ["overview", "region", "policy", "industry", "society", "report"]
 
 var session: JwSession = null
 var ui_scale: float = 1.0
@@ -155,7 +155,8 @@ func _build_shell() -> void:
 	page_stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	body.add_child(page_stack)
-	var classes: Array = [JwOverviewPage, JwRegionPage, JwPolicyPage, JwSocietyPage, JwReportPage]
+	var classes: Array = [JwOverviewPage, JwRegionPage, JwPolicyPage, JwIndustryPage, JwSocietyPage,
+			JwReportPage]
 	for i: int in PAGE_IDS.size():
 		var pg: JwPage = (classes[i] as GDScript).new() as JwPage
 		pg.setup(session, self, PAGE_IDS[i])
