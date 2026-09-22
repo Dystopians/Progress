@@ -2450,6 +2450,11 @@ func _validate_bonds(st: JWSimState, doc: Dictionary, w: String) -> void:
 	_set_arr(st.bonds, 9, _zeros(JWUnits.BOND_CAP0), w + "/bonds#interest_remainder")
 	_set_arr(st.bonds, 10, _zeros(JWUnits.BOND_CAP0), w + "/bonds#writeoff")
 	_set_arr(st.bonds, 11, schedule, w + "/bonds#amort_schedule")
+	# R-CAP-01：开局存量债的稳定实体号取 −(序号+1)，与运行期从 0 起的 entity_seq 不相交。
+	var ent: PackedInt64Array = _zeros(JWUnits.BOND_CAP0)
+	for j: int in n:
+		ent[j] = -(j + 1)
+	_set_arr(st.bonds, 12, ent, w + "/bonds#entity")
 	_set_scalar(st.bonds, 0, n, w + "/bonds#count")
 	st.bonds.id = ids
 

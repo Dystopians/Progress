@@ -995,8 +995,8 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 
 	if kind == Kind.PROJECT_CANCEL or kind == Kind.PROJECT_DEFER:
 		var pj: int = c_arg[base + SLOT_PROJECT]
-		if pj < 0 or pj >= JWUnits.PROJECT_CAP0:
-			# 下标在容量内是形状；「这个项目存不存在、完没完工」是 S02 的 Reject.NOT_FOUND。
+		if pj < 0:
+			# R-CAP-01：参数是项目的稳定实体号（非负）；「这个项目存不存在、完没完工」是 S02 的 Reject.NOT_FOUND。
 			_last_reject_slot = SLOT_PROJECT
 			return JWResult.Reject.PARAM_RANGE
 		if kind == Kind.PROJECT_DEFER:
@@ -1042,10 +1042,7 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 		return JWResult.OK
 
 	if kind == Kind.DEBT_RESTRUCTURE:
-		var bd: int = c_arg[base + SLOT_BOND]
-		if bd < 0 or bd >= JWUnits.BOND_CAP0:
-			_last_reject_slot = SLOT_BOND
-			return JWResult.Reject.PARAM_RANGE
+		# R-CAP-01：参数是批次的稳定实体号（开局存量债为负数），存在与否由 S02 判 NOT_FOUND，这里不判形状。
 		var md: int = c_arg[base + SLOT_RESTRUCTURE_MODE]
 		if md < 0 or md >= RESTRUCTURE_MODE_N:
 			_last_reject_slot = SLOT_RESTRUCTURE_MODE

@@ -71,7 +71,7 @@ func test_defer_suspends_holds_slot_keeps_commitment_and_charges_fee() -> void:
 	check(fee_expect > 0, "夹具前提：剩余合同额 × 赔偿率 > 0")
 	var arrears0: int = st.treasury.arrears
 
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, DEFER_Q]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], DEFER_Q]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), 0, "延期受理")
 	eq_int(pq.status[p], JWUnits.ProjectStatus.SUSPENDED, "延期 ⇒ 挂起")
@@ -117,7 +117,7 @@ func test_defer_count_and_total_limits() -> void:
 
 	# 累计超限：一次 9 季（形状合法，≤ 16）→ 前置条件拒绝，状态不变。
 	var memo0: int = st.treasury.committed_memo
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, 9]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], 9]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), JWResult.Reject.PRECONDITION, "累计 9 季 > 8 ⇒ 拒绝")
 	eq_int(pq.defer_count[p], 0, "被拒不计次数")
@@ -126,16 +126,16 @@ func test_defer_count_and_total_limits() -> void:
 	check(st.treasury.committed_memo <= memo0, "承诺只因履约付款减少")
 
 	# 第一次：3 季，受理。
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, 3]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], 3]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), 0, "第一次延期受理")
 	# 延期中再延 → 拒绝。
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, 1]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], 1]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), JWResult.Reject.PRECONDITION, "延期中不能再延")
 	_advance(g)
 	# 到期复工后第二次：5 季（累计 8），受理。
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, 5]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], 5]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), 0, "复工后第二次延期受理（累计 8 季）")
 	eq_int(pq.defer_count[p], 2, "次数 2")
@@ -146,7 +146,7 @@ func test_defer_count_and_total_limits() -> void:
 		k += 1
 	check(pq.suspension_reason[p] != JWUnits.SuspendReason.DEFERRED, "第二次延期到期复工")
 	# 第三次：次数已满 → 拒绝。
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, 1]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], 1]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), JWResult.Reject.PRECONDITION, "次数已满 ⇒ 拒绝")
 	eq_int(pq.defer_count[p], 2, "次数仍为 2")
@@ -157,7 +157,7 @@ func test_cancel_during_deferral_and_save_roundtrip() -> void:
 	var p: int = _launch(g)
 	if p < 0:
 		return
-	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([p, DEFER_Q]))
+	g.submit_command(JWCommands.Kind.PROJECT_DEFER, _args([_st(g).projects.entity[p], DEFER_Q]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_DEFER), 0, "延期受理")
 	var st: JWSimState = _st(g)
@@ -178,7 +178,7 @@ func test_cancel_during_deferral_and_save_roundtrip() -> void:
 	check(st2.state_hash() == st.state_hash(), "读档后推进一季，与直接推进逐位一致")
 
 	# 延期中取消：合法（SUSPENDED → CANCELLED），释放槽位，剩余承诺冲销。
-	g.submit_command(JWCommands.Kind.PROJECT_CANCEL, _args([p]))
+	g.submit_command(JWCommands.Kind.PROJECT_CANCEL, _args([_st(g).projects.entity[p]]))
 	_advance(g)
 	eq_int(_last_result(g, JWCommands.Kind.PROJECT_CANCEL), 0, "延期中可以取消")
 	eq_int(st.projects.status[p], JWUnits.ProjectStatus.CANCELLED, "已取消")

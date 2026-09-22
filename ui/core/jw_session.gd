@@ -337,14 +337,15 @@ func draft_launch(p: int, region: int, scale_ppm: int, funding: int) -> Dictiona
 			"cost_hint": total}
 
 
+## R-CAP-01：命令参数是项目的稳定实体号；草案另记本季行号 project，只用于界面内的行匹配。
 func draft_cancel(project: int, label_text: String) -> Dictionary:
-	return {"kind": K_CANCEL, "args": _args([project]), "p": -1, "project": project,
+	return {"kind": K_CANCEL, "args": _args([model.project_entity(project)]), "p": -1, "project": project,
 			"label": JwText.render("draft.label.cancel", {"project": label_text})}
 
 
 ## 项目延期（命令 6，docs/18 R-DEFER-01）：quarters 季内不付款、不推进，槽位照占；赔偿当季付清。
 func draft_project_defer(project: int, quarters: int, label_text: String) -> Dictionary:
-	return {"kind": K_DEFER, "args": _args([project, quarters]), "p": -1, "project": project,
+	return {"kind": K_DEFER, "args": _args([model.project_entity(project), quarters]), "p": -1, "project": project,
 			"quarters": quarters, "label": JwText.render("draft.label.project_defer",
 				{"project": label_text, "quarters": JwFormat.quarters(quarters)})}
 

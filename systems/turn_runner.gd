@@ -413,6 +413,11 @@ func _step_s01(cmds: JWCommands) -> int:
 	_st.diag.log_reset_quarter()
 	cmds.log_reset_quarter()
 
+	# ── 第 4′ 条（R-CAP-01）：压实项目与债券的终态行 ──────────────────────
+	# 在日志重置之后（本季日志里没有旧行号）、命令执行之前（命令按稳定实体号引用）；只在用满四分之三时动。
+	_st.projects.compact_terminal()
+	_st.bonds.compact_terminal()
+
 	# 本季的跨步标记归零（它们不是状态，只是本类的步间中转）。
 	_cancel_region_mask = 0
 	_bond_default_flag = 0
@@ -616,20 +621,21 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 		JWCommands.Kind.PROJECT_LAUNCH:
 			rc = _cmd_project_launch(cmds, row)
 		JWCommands.Kind.PROJECT_CANCEL:
-			rc = _cmd_project_cancel(cmds.arg_at(row, JWCommands.SLOT_PROJECT))
+			# R-CAP-01：命令携带稳定实体号，这里解析成本季的行号（找不到 == −1 → NOT_FOUND）。
+			rc = _cmd_project_cancel(_st.projects.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_PROJECT)))
 		JWCommands.Kind.ISSUE_BOND:
 			rc = _cmd_issue_bond(cmds.arg_at(row, JWCommands.SLOT_BOND_AMOUNT),
 					cmds.arg_at(row, JWCommands.SLOT_BOND_TENOR),
 					cmds.arg_at(row, JWCommands.SLOT_BOND_HOLDER))
 		JWCommands.Kind.DEBT_RESTRUCTURE:
-			rc = _cmd_restructure(cmds.arg_at(row, JWCommands.SLOT_BOND),
+			rc = _cmd_restructure(_st.bonds.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_BOND)),
 					cmds.arg_at(row, JWCommands.SLOT_RESTRUCTURE_MODE))
 		JWCommands.Kind.SET_PAYMENT_PRIORITY:
 			rc = _cmd_payment_priority(cmds.arg_at(row, JWCommands.SLOT_PRIORITY_PACKED))
 		JWCommands.Kind.SELECT_MANDATE_GOAL:
 			rc = _cmd_mandate_goal(cmds.arg_at(row, JWCommands.SLOT_GOAL))
 		JWCommands.Kind.PROJECT_DEFER:
-			rc = _st.projects.defer(cmds.arg_at(row, JWCommands.SLOT_PROJECT),
+			rc = _st.projects.defer(_st.projects.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_PROJECT)),
 					cmds.arg_at(row, JWCommands.SLOT_DEFER_QUARTERS), _st.q, _st.params,
 					_st.treasury, _st.ledger, _st.accounts)
 		JWCommands.Kind.BUDGET_REALLOCATE, JWCommands.Kind.SET_STANDING_RULE:

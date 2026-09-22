@@ -10,6 +10,7 @@ const STATE_ARRAY_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND,
 	JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND,
 	JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND, JWUnits.SUBSYS_BOND,
+	JWUnits.SUBSYS_BOND,
 ]
 
 ## 稳定 ID 注册表：下标 == 数组序号，内容是 docs/10 的稳定 ID 字符串。
@@ -28,6 +29,8 @@ const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.bond.interest_remainder_ppmuu",
 	"state.bond.writeoff_uu",
 	"state.bond.amort_schedule",
+	# R-CAP-01：稳定实体号（运行期 == 发行时的 entity_seq；开局存量债为 −(序号+1)）。命令按它引用批次。
+	"state.bond.entity",
 ]
 const STATE_SCALAR_IDS: PackedStringArray = ["state.bond.count"]
 const FLOW_ARRAY_IDS: PackedStringArray = [
@@ -94,6 +97,8 @@ var writeoff: PackedInt64Array = PackedInt64Array()
 
 ## state.bond.amort_schedule[] —— μU，按 `batch * HORIZON_MAX + q` 稀疏存，发行时预生成
 var amort_schedule: PackedInt64Array = PackedInt64Array()
+## state.bond.entity —— 稳定实体号（R-CAP-01）。写入者 LOAD, S02, S04
+var entity: PackedInt64Array = PackedInt64Array()
 
 ## flow.bond.interest_due_uu[] —— μU，初值 0，写入者 S02
 var interest_due: PackedInt64Array = PackedInt64Array()
@@ -297,6 +302,7 @@ func issue(entity_seq: int, q: int, principal_uu: int, coupon_ppm_per_q: int,
 	if id.size() < JWUnits.BOND_CAP0:
 		id.resize(JWUnits.BOND_CAP0)
 	id[b] = "bond.q" + _q_tag(q) + "_" + _pad(entity_seq, 2)
+	entity[b] = entity_seq
 
 	count = b + 1
 	return b
@@ -675,6 +681,8 @@ func allocate() -> void:
 	writeoff.fill(0)
 	amort_schedule.resize(AMORT_LEN)
 	amort_schedule.fill(0)
+	entity.resize(n)
+	entity.fill(0)
 	interest_due.resize(n)
 	interest_due.fill(0)
 	principal_due.resize(n)
@@ -690,6 +698,73 @@ func allocate() -> void:
 	_base_armed = false
 	_base_q = 0
 	_base_debt = 0
+
+
+## R-CAP-01：按稳定实体号找批次（找不到返回 −1）。
+func slot_of_entity(e: int) -> int:
+	var b: int = 0
+	while b < count:
+		if entity[b] == e:
+			return b
+		b += 1
+	return -1
+
+
+## R-CAP-01：压实终态批次（已到期或已核销、剩余本金与欠息都为 0）。只在批次表用满四分之三时做；
+## 保持其余批次的相对顺序。返回移除的批次数。
+## 步骤：S01（流量清零与日志重置之后，任何命令执行之前）
+func compact_terminal() -> int:
+	if count * 4 <= JWUnits.BOND_CAP0 * 3:
+		return 0
+	var map: PackedInt64Array = PackedInt64Array()
+	map.resize(count)
+	var n_new: int = 0
+	for b: int in count:
+		var s_b: int = status[b]
+		var terminal: bool = (s_b == JWUnits.BondStatus.MATURED or s_b == JWUnits.BondStatus.WRITTEN_OFF) \
+				and principal_outstanding[b] == 0 and accrued_unpaid[b] == 0
+		if terminal:
+			map[b] = -1
+		else:
+			map[b] = n_new
+			n_new += 1
+	if n_new == count:
+		return 0
+	var n_old: int = count
+	for i: int in STATE_ARRAY_IDS.size():
+		var stride: int = HORIZON_MAX if i == 11 else 1
+		var fill: int = 0
+		if i == 7:
+			fill = JWUnits.BondStatus.ACTIVE
+		_compact_rows(state_array(i), stride, map, n_old, n_new, fill)
+	_compact_rows(_coupon_seal, 1, map, n_old, n_new, 0)
+	_compact_rows(interest_due, 1, map, n_old, n_new, 0)
+	_compact_rows(principal_due, 1, map, n_old, n_new, 0)
+	for b2: int in n_old:
+		if map[b2] >= 0 and map[b2] != b2:
+			id[map[b2]] = id[b2]
+	for b3: int in range(n_new, n_old):
+		id[b3] = ""
+	count = n_new
+	return n_old - n_new
+
+
+## R-CAP-01：按映射压实一列（map[p] == 新行号或 −1），stride 是每行元素数；腾出的尾部行填 fill。
+static func _compact_rows(arr: PackedInt64Array, stride: int, map: PackedInt64Array,
+		n_old: int, n_new: int, fill: int) -> void:
+	var p: int = 0
+	while p < n_old:
+		var t: int = map[p]
+		if t >= 0 and t != p:
+			var k: int = 0
+			while k < stride:
+				arr[t * stride + k] = arr[p * stride + k]
+				k += 1
+		p += 1
+	var e: int = n_new * stride
+	while e < n_old * stride:
+		arr[e] = fill
+		e += 1
 
 
 ## §1.6 状态块协议：只读取用（返回引用，调用方不得写）。
@@ -723,6 +798,8 @@ func state_array(i: int) -> PackedInt64Array:
 		return writeoff
 	if i == 11:
 		return amort_schedule
+	if i == 12:
+		return entity
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 	return PackedInt64Array()
 
@@ -770,8 +847,10 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 		interest_remainder = c
 	elif i == 10:
 		writeoff = c
-	else:
+	elif i == 11:
 		amort_schedule = c
+	else:
+		entity = c
 	return JWResult.OK
 
 

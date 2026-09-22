@@ -23,6 +23,7 @@ const STATE_ARRAY_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
 	JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT, JWUnits.SUBSYS_PROJECT,
+	JWUnits.SUBSYS_PROJECT,
 ]
 
 ## 稳定 ID 注册表：下标 == 数组序号，内容是 docs/10 的稳定 ID 字符串。
@@ -54,6 +55,8 @@ const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.project.defer_quarters_total",
 	"state.project.defer_until_q",
 	"state.project.defer_fee_uu",
+	# R-CAP-01：稳定实体号（== 立项时的 entity_seq）。命令按它引用项目；行号会因压实而变。
+	"state.project.entity",
 ]
 const STATE_SCALAR_IDS: PackedStringArray = [
 	"state.project.count",
@@ -152,6 +155,8 @@ var defer_q_total: PackedInt64Array = PackedInt64Array()
 var defer_until_q: PackedInt64Array = PackedInt64Array()
 ## state.project.defer_fee_uu —— 累计延期赔偿（μU；已付与转欠付之和）
 var defer_fee: PackedInt64Array = PackedInt64Array()
+## state.project.entity —— 稳定实体号（R-CAP-01），−1 == 空行。写入者 S02
+var entity: PackedInt64Array = PackedInt64Array()
 
 ## flow.region.construction_capacity_uqs：μQ_services，写入者 S05
 var f_construction_capacity: PackedInt64Array = PackedInt64Array()
@@ -284,6 +289,7 @@ func launch(entity_seq: int, policy_idx: int, region: int, defs: JWPolicyDef,
 
 	var p: int = count
 	id[p] = "project.q%03d_%d" % [q, entity_seq]
+	entity[p] = entity_seq
 	self.policy_idx[p] = pol
 	region_idx[p] = region
 	status[p] = JWUnits.ProjectStatus.PLANNED
@@ -727,6 +733,73 @@ func advance_progress(world: JWWorldMarket, ledger: JWLedger, accounts: JWAccoun
 ## 后置：status[p] == to；不合法则不改并返回错误
 ## 不变量：INV-090（完工充要条件由 JWAssetCommissioning 判定，本函数只执行跃迁）
 ## 失败：非法跃迁 → Fault.PHASE_VIOLATION
+## R-CAP-01：按稳定实体号找行（找不到返回 −1）。
+func slot_of_entity(e: int) -> int:
+	var p: int = 0
+	while p < count:
+		if entity[p] == e:
+			return p
+		p += 1
+	return -1
+
+
+## R-CAP-01：压实终态行（已投运或已取消、且不占施工槽位）。只在 SoA 用满四分之三时做；
+## 保持其余行的相对顺序（「按项目下标升序」的决胜规则因此不变）。返回移除的行数。
+## 步骤：S01（流量清零与日志重置之后，任何命令执行之前）
+func compact_terminal() -> int:
+	if count * 4 <= JWUnits.PROJECT_CAP0 * 3:
+		return 0
+	var map: PackedInt64Array = PackedInt64Array()
+	map.resize(count)
+	var n_new: int = 0
+	for p: int in count:
+		var st_p: int = status[p]
+		var terminal: bool = (st_p == JWUnits.ProjectStatus.COMMISSIONED
+				or st_p == JWUnits.ProjectStatus.CANCELLED) and slot_held[p] == 0
+		if terminal:
+			map[p] = -1
+		else:
+			map[p] = n_new
+			n_new += 1
+	if n_new == count:
+		return 0
+	var n_old: int = count
+	for i: int in STATE_ARRAY_IDS.size():
+		var arr: PackedInt64Array = state_array(i)
+		var stride: int = LINE_N if (i == 5 or i == 6) else 1
+		var fill: int = 0
+		if i == 15:
+			fill = -1
+		elif i == 23:
+			fill = -1
+		_compact_rows(arr, stride, map, n_old, n_new, fill)
+	for p2: int in n_old:
+		if map[p2] >= 0 and map[p2] != p2:
+			id[map[p2]] = id[p2]
+	for p3: int in range(n_new, n_old):
+		id[p3] = ""
+	count = n_new
+	return n_old - n_new
+
+
+## R-CAP-01：按映射压实一列（map[p] == 新行号或 −1），stride 是每行元素数；腾出的尾部行填 fill。
+static func _compact_rows(arr: PackedInt64Array, stride: int, map: PackedInt64Array,
+		n_old: int, n_new: int, fill: int) -> void:
+	var p: int = 0
+	while p < n_old:
+		var t: int = map[p]
+		if t >= 0 and t != p:
+			var k: int = 0
+			while k < stride:
+				arr[t * stride + k] = arr[p * stride + k]
+				k += 1
+		p += 1
+	var e: int = n_new * stride
+	while e < n_old * stride:
+		arr[e] = fill
+		e += 1
+
+
 func set_status(p: int, to: int, reason: int) -> int:
 	if p < 0 or p >= count:
 		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, p, count)
@@ -1066,6 +1139,8 @@ func allocate() -> void:
 	commissioned_q.resize(n)
 	# −1 == 未投运（docs/10 §8.1）。0 是合法的季号，不能拿来当哨兵。
 	commissioned_q.fill(-1)
+	entity.resize(n)
+	entity.fill(-1)
 	residual_value.resize(n)
 	residual_value.fill(0)
 	cancel_penalty.resize(n)
@@ -1157,6 +1232,8 @@ func state_array(i: int) -> PackedInt64Array:
 			return defer_until_q
 		22:
 			return defer_fee
+		23:
+			return entity
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 	return PackedInt64Array()
 
@@ -1227,6 +1304,8 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 			defer_until_q = d
 		22:
 			defer_fee = d
+		23:
+			entity = d
 	return JWResult.OK
 
 

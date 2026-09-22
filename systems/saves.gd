@@ -110,8 +110,30 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	ar["state.money.real_gdp_ring_uu"] = {JWSimState.SAVE_KEY_N: ring.size(),
 			JWSimState.SAVE_KEY_ENC: JWSimState.ENC_B64LE64,
 			JWSimState.SAVE_KEY_DATA: Marshalls.raw_to_base64(ring.to_byte_array())}
+	# R-CAP-01：稳定实体号。项目 ID 形如 project.q005_12、运行期债券形如 bond.q007_03，实体号取末段；
+	# 开局存量债（季号段为负）取 −(行号+1)，与载入期的约定相同。空行填 −1（项目）/ 0（债券），同 allocate。
+	var soa: Dictionary = out.get(JWSimState.SAVE_KEY_SOA, {})
+	ar["state.project.entity"] = _mig_entity_array(soa, "project", JWUnits.PROJECT_CAP0, -1)
+	ar["state.bond.entity"] = _mig_entity_array(soa, "bond", JWUnits.BOND_CAP0, 0)
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
+
+
+static func _mig_entity_array(soa: Dictionary, name: String, cap: int, empty: int) -> Dictionary:
+	var ent: PackedInt64Array = PackedInt64Array()
+	ent.resize(cap)
+	ent.fill(empty)
+	var rec: Dictionary = soa.get(name, {})
+	var ids: Array = rec.get(JWSimState.SAVE_KEY_IDS, [])
+	for i: int in mini(ids.size(), cap):
+		var sid: String = String(ids[i])
+		var us: int = sid.rfind("_")
+		if sid.contains(".q-"):
+			ent[i] = -(i + 1)
+		elif us >= 0:
+			ent[i] = sid.substr(us + 1).to_int()
+	return {JWSimState.SAVE_KEY_N: cap, JWSimState.SAVE_KEY_ENC: JWSimState.ENC_B64LE64,
+			JWSimState.SAVE_KEY_DATA: Marshalls.raw_to_base64(ent.to_byte_array())}
 
 # ── 上一次 load() 的判定结果（INV-134 的两半，供 JWGame 决定运行模式） ─────
 #

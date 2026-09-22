@@ -108,7 +108,7 @@ const ARRAY_IDS: PackedStringArray = [
 	"state.project.residual_value_uu", "state.project.cancel_penalty_uu",
 	"state.project.suspension_reason", "state.project.queue_slot_held",
 	"state.project.defer_count", "state.project.defer_quarters_total", "state.project.defer_until_q",
-	"state.project.defer_fee_uu",
+	"state.project.defer_fee_uu", "state.project.entity",
 	"state.policy.enabled", "state.policy.enacted_q", "state.policy.effective_from_q",
 	"state.policy.cooldown_until_q", "state.policy.exit_pending_q", "state.policy.params_ppm",
 	"state.policy.region_mask", "state.policy.toggle_count", "state.policy.budget_committed_uu",
@@ -203,6 +203,11 @@ func refresh() -> void:
 	derived = game.derived_snapshot() if game.has_method("derived_snapshot") else {}
 	rules = game.rule_params() if game.has_method("rule_params") else {}
 	cmdlog = game.command_log_copy() if game.has_method("command_log_copy") else {}
+
+
+## R-CAP-01：本季第 p 行项目的稳定实体号（命令参数用它，不用行号）。
+func project_entity(p: int) -> int:
+	return at("state.project.entity", p)
 
 
 func sc(id: String) -> int:

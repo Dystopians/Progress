@@ -1660,11 +1660,14 @@ func test_adv_c05_bond_batch_cap_and_no_reprice() -> void:
 	#    每季每个合法期限各发 1 μU，直到出现 E_CREDIT_LIMIT；任一季批次数都不得越过上限。
 	#    放在最后：表写满之后政府自己的规则发行也无处落批，续发失败、违约宽限用尽即合法终局——
 	#    那是这次攻击的真实代价，不是本条要测的闸门，所以一见到拒绝就停。
+	#    R-CAP-01 之后，已清偿的批次会在 S01 被压实腾出位置：1 μU 的批次首期即还清，用它刷表已不可能
+	#    （这条攻击被压实化解，实测批次数稳定在 250 上下）。要验证硬闸，发行额取 1000 μU，
+	#    使每期至少还 1 μU、到期前一直存续；期限 4—40 各一批，约 20 轮越过 512。轮数上限 48。
 	var q_guard: int = 0
-	while f.alive and f.rejects_total(JWResult.Reject.CREDIT_LIMIT) == 0 and q_guard < 24:
+	while f.alive and f.rejects_total(JWResult.Reject.CREDIT_LIMIT) == 0 and q_guard < 48:
 		var tn: int = TENOR_MIN
 		while tn <= TENOR_MAX:
-			f.submit(8, Fix.a6(1, tn, JWUnits.Holder.INVPOOL))
+			f.submit(8, Fix.a6(1000, tn, JWUnits.Holder.INVPOOL))
 			tn += 1
 		f.advance(1)
 		le_int(f.bond_count(), cap,
@@ -1710,7 +1713,7 @@ func test_adv_c06_writedown_is_not_income() -> void:
 	var nw_row_0: int = f.net_worth_of(JWIds.AGENT_ROW)
 
 	# 对开局存量债的第 0 批次提交减记。命令层只判形状；能不能减记归 S02。
-	eq_int(f.submit(9, Fix.a6(0, RESTRUCTURE_WRITEDOWN)), 0,
+	eq_int(f.submit(9, Fix.a6(f.st.bonds.entity[0], RESTRUCTURE_WRITEDOWN)), 0,
 			"ADV-C06：debt_restructure{bond=0, mode=writedown} 在形状与范围上必须合法")
 	f.advance(4)
 	if not f.alive:
@@ -1828,7 +1831,7 @@ func test_adv_f01_cancel_does_not_refund() -> void:
 	var committed_before: int = f.treasury_int("committed_memo")
 	var unpaid: int = f.project_planned(pid) - paid_before
 
-	eq_int(f.submit(5, Fix.a6(pid)), 0, "ADV-F01：project_cancel 在形状与范围上必须合法")
+	eq_int(f.submit(5, Fix.a6(f.st.projects.entity[pid])), 0, "ADV-F01：project_cancel 在形状与范围上必须合法")
 	f.advance(1)
 	if not f.alive:
 		return
@@ -1932,7 +1935,7 @@ func test_adv_f02_slot_churn_leaks_no_slot() -> void:
 		while p < f.project_count():
 			if f.st.projects.status[p] != JWUnits.ProjectStatus.CANCELLED \
 					and f.st.projects.status[p] != JWUnits.ProjectStatus.COMMISSIONED:
-				f.submit(5, Fix.a6(p))
+				f.submit(5, Fix.a6(f.st.projects.entity[p]))
 			p += 1
 		f.advance(1)
 		rounds += 1
@@ -2072,7 +2075,7 @@ func test_adv_f04_defer_has_a_ceiling() -> void:
 	var accepted: int = 0
 	var tries: int = 0
 	while tries < 8 and f.alive:
-		var rc: int = f.submit(6, Fix.a6(pid, 4))
+		var rc: int = f.submit(6, Fix.a6(f.st.projects.entity[pid], 4))
 		f.advance(1)
 		if not f.alive:
 			return
@@ -2215,7 +2218,7 @@ func test_adv_f06_residual_never_exceeds_paid() -> void:
 	var nw_before: int = f.net_worth_of(JWIds.AGENT_GOV)
 	var cash_before: int = f.cash_of(JWIds.AGENT_GOV)
 
-	eq_int(f.submit(5, Fix.a6(pid)), 0, "ADV-F06：project_cancel 在形状与范围上必须合法")
+	eq_int(f.submit(5, Fix.a6(f.st.projects.entity[pid])), 0, "ADV-F06：project_cancel 在形状与范围上必须合法")
 	f.advance(1)
 	if not f.alive:
 		return
