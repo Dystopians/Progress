@@ -278,6 +278,13 @@ Python 输出中文时设 `PYTHONIOENCODING=utf-8`，否则控制台乱码。
 
 格式：`日期 · 执行者 · 状态（进行中 / 完成 / 搁置）· 范围`，下面写：改动、验证、遗留。
 
+### 2026-09-22 · Codex · 进行中 · 扩充跨时代资源 B02—B04／E01
+
+- 用户肯定 B01 质量并要求继续完成尽可能多的资源；保持内置 imagegen 与现有风格，先补齐剩余 9 家族的 27 张建筑，再推进 6 张时代画。队列见 `assets/production_plan.json`，不是已冻结玩法合同。
+- 占用 `assets/buildings/b02/`—`b04/`、`assets/eras/e01/`、对应 `assets/prompts/`、`docs/_drafts/asset_review/` 批次目录、`assets/ASSETS.md`、资源生产清单；在 docs/51 维护自有资源状态。无游戏代码／content／工程配置改动，不占用 Claude 区域。
+- B01 风格与质量获用户认可；新增图仍待初审，原图及提示词入工程，未经初审不接入。每批检查实际 alpha、形体、时代特征、小图辨识与来源。
+- 验证和进度随实际产物回填，目标保持进行中，不把一个小批次当作全目标完成。
+
 ### 2026-09-22 · Claude · 完成 · 400 年改造 M0 技术评审
 
 - 新增 `docs/_drafts/52_claude_m0_technical_review.md`：

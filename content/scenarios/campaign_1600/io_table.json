@@ -1,0 +1,748 @@
+{
+  "schema_kind": "io_table",
+  "schema_version": 1,
+  "sectors": [
+    "sector.agri",
+    "sector.manu",
+    "sector.energy",
+    "sector.services"
+  ],
+  "_note_sectors": "顺序固定，与 10_variable_dictionary.md §0.5 的枚举表一致。服务部门含商业、物流、施工与住房；公共服务是它的非市场子账户，作为 4 个 pubserv 实体单列，不占本表的第五列。",
+  "_note_io_coeff_uqs_per_qs": "外层键是供给方（行），内层键是消耗方（列）；数值 = 生产 1 Q_s 列部门产品所需的行部门产品 μQ。方向以 V-IO-08 为准（energy_coeff[s] 必须等于 io_coeff[sector.energy][s]）。每列合计 315 000 / 585 000 / 360 000 / 355 000 ppm，均远小于 1 000 000（V-IO-01）。",
+  "io_coeff_uqs_per_qs": {
+    "sector.agri": {
+      "sector.agri": 60000,
+      "sector.manu": 120000,
+      "sector.energy": 0,
+      "sector.services": 25000
+    },
+    "sector.manu": {
+      "sector.agri": 130000,
+      "sector.manu": 260000,
+      "sector.energy": 210000,
+      "sector.services": 175000
+    },
+    "sector.energy": {
+      "sector.agri": 30000,
+      "sector.manu": 55000,
+      "sector.energy": 60000,
+      "sector.services": 35000
+    },
+    "sector.services": {
+      "sector.agri": 95000,
+      "sector.manu": 150000,
+      "sector.energy": 90000,
+      "sector.services": 120000
+    }
+  },
+  "_note_labor_coeff_persons_per_qs": "R-REGION-01（OQ-B 结案）起，16 个 cell 全部用单格覆盖 \"cell.<region>.<sector>\"——这是 docs/11 §5.5 既有的覆盖语法，载入器（systems/content_loader.gd 的 _expand_labor_coeff）与校验器（V-IO-06）早已支持，加载期展开成定长数组，无需改代码。每格每档的系数由剧本的在岗人数（population_init / cells_init 的 employment_persons，锚）与基年季度产量（cells_init 的 demand_expect_uqs）反推：c = floor(在岗 × 1e6 ÷ 产量)，若它在基年产量下使 S03 的 ceil(产量 × c / 1e6) 恰等于在岗人数就取它（不超过真实比值的最大整数），否则取 ceil(在岗 × 1e6 ÷ 产量)——后者只在整数系数无法精确命中时出现（产量大于 1 Q_s 时区间长度不足 1），需求比在岗多出 1…ceil(产量 / 1e6) 人，方向落在「不裁员」一侧。本版 48 档中 30 档精确相等，合计多 41 人、单档最多 6 人。系数因此随地区不同：同一部门的地区差异来自剧本的在岗结构（例如西岭能源是劳动密集的资源型产能），而不再是「全国统一技术 × 各区产量」——原取法与 population_init 的就业结构无法同时成立（见 cells_init 的 OQ-B）。\"*\" 默认档保留为按部门的全国参考值（农业低技能 270 708 见 _note_labor_coeff_agri_low_calibration），本剧本 16 格全部被覆盖、运行期不再读它，只在新增 cell 或另建剧本时作回退值。改在岗人数或基年产量必须重跑 tools/refit_regional.py；改系数会让 params_core.json 的 param.io_table_set 过期（V-PC-07）。",
+  "labor_coeff_persons_per_qs": {
+    "*": {
+      "sector.agri": {
+        "low": 270708,
+        "mid": 55000,
+        "high": 7000
+      },
+      "sector.manu": {
+        "low": 47000,
+        "mid": 65000,
+        "high": 17000
+      },
+      "sector.energy": {
+        "low": 15000,
+        "mid": 40000,
+        "high": 19000
+      },
+      "sector.services": {
+        "low": 95000,
+        "mid": 115000,
+        "high": 36000
+      }
+    },
+    "cell.beiyuan.agri": {
+      "low": 270709,
+      "mid": 84481,
+      "high": 9046
+    },
+    "cell.beiyuan.manu": {
+      "low": 57790,
+      "mid": 65972,
+      "high": 16220
+    },
+    "cell.beiyuan.energy": {
+      "low": 81559,
+      "mid": 103450,
+      "high": 42920
+    },
+    "cell.beiyuan.services": {
+      "low": 106525,
+      "mid": 106165,
+      "high": 33814
+    },
+    "cell.zhongzhou.agri": {
+      "low": 270709,
+      "mid": 182882,
+      "high": 51744
+    },
+    "cell.zhongzhou.manu": {
+      "low": 44844,
+      "mid": 75737,
+      "high": 37143
+    },
+    "cell.zhongzhou.energy": {
+      "low": 27346,
+      "mid": 86220,
+      "high": 73182
+    },
+    "cell.zhongzhou.services": {
+      "low": 87702,
+      "mid": 128545,
+      "high": 64504
+    },
+    "cell.haijia.agri": {
+      "low": 270709,
+      "mid": 129363,
+      "high": 26056
+    },
+    "cell.haijia.manu": {
+      "low": 51501,
+      "mid": 62018,
+      "high": 19829
+    },
+    "cell.haijia.energy": {
+      "low": 65664,
+      "mid": 100413,
+      "high": 50565
+    },
+    "cell.haijia.services": {
+      "low": 95908,
+      "mid": 107245,
+      "high": 33234
+    },
+    "cell.xiling.agri": {
+      "low": 270709,
+      "mid": 116182,
+      "high": 13707
+    },
+    "cell.xiling.manu": {
+      "low": 61014,
+      "mid": 64156,
+      "high": 16220
+    },
+    "cell.xiling.energy": {
+      "low": 96593,
+      "mid": 105193,
+      "high": 36378
+    },
+    "cell.xiling.services": {
+      "low": 136042,
+      "mid": 119297,
+      "high": 33234
+    }
+  },
+  "_note_energy_coeff_uqs_per_qs": "io_coeff_uqs_per_qs[sector.energy] 的冗余副本，供 V-IO-08 交叉校验；运行期只用 IO 表那一份。",
+  "energy_coeff_uqs_per_qs": [
+    30000,
+    55000,
+    60000,
+    35000
+  ],
+  "_note_spoilage_ppm": "首版基年取全零，登记为显式简化而非遗漏：非零损耗会让 spoil_in 进入中间消耗并压低增加值，而 spoil_in 的大小由 cells_init 的库存存量决定，于是本表与 cells_init 形成不动点，0 容差的基年 GDP 断言无法手工闭合。待 tools/solve_base_year.gd 就绪后再开启，建议届时取 [20000, 2000, 0, 0] 并同步上调各部门总产出。能源与服务的损耗率必须恒为 0，因为它们不入库存（INV-049）。",
+  "spoilage_ppm": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "_note_depreciation_ppm_per_q": "季度折旧率，产能轨与价值轨同率，按余额递减。等价年折旧率约 3.9% / 5.9% / 4.7% / 3.2%，对应资产平均寿命约 25 / 17 / 21 / 31 年；服务最长因为其中含建筑与住房。",
+  "depreciation_ppm_per_q": [
+    10000,
+    15000,
+    12000,
+    8000
+  ],
+  "_note_capacity_per_capital_uu_ppm": "每 μU 资本形成的季度产能（μQ_s/季），只在投运时使用一次。等价的资本／年总产出比约为 1.43 / 1.59 / 4.91 / 1.80：能源最资本密集，服务次之因为含住房存量，制造居中，农业最低。",
+  "capacity_per_capital_uu_ppm": [
+    200,
+    180,
+    55,
+    160
+  ],
+  "_note_emission_ppm": "单位产量排放系数，是相对指标，不冒充任何真实排放清单口径。能源部门显著高于其它部门，对应计划书 §05 中西岭「产业单一、环境修复负担集中」的设定。",
+  "emission_ppm": [
+    20000,
+    90000,
+    500000,
+    15000
+  ],
+  "_note_storable": "电力与服务当期使用、不跨季储存（计划书 §06），故 storable 必须为 0，期末产成品库存恒为 0（INV-049），且 cells_init 的 inventory_input_uqs 不得出现这两个部门（V-CELL-02）。",
+  "storable": [
+    1,
+    1,
+    0,
+    0
+  ],
+  "_note_base_year_accounting": {
+    "_status": "非规范附录。11_data_contract.md §5.5 的 IOTable schema 没有给基年核算留任何位置，而本任务要求给出基年总产出、增加值、最终使用与三口径对账。本块用 §3 明文允许的 _note_ 注释键承载：SimCore 的加载器不读它，content_hash 不含它，它不参与任何逻辑。请求在 schema_version 2 里把它提升为一等字段 base_year_accounting，或整体迁入 cells_init.json；在那之前它是设计文档，不是输入。",
+    "_unit": "金额单位 μU（裁定 R-SCALE-01：1 U = 1 000 000 000 μU），数量单位 μQ_s（1 Q_s = 1 000 000 μQ_s）。基年各部门价格均为 1 000 000 000 μU/Q_s，即 1 000 μU/μQ_s，故基年名义额与实物量成固定比例 1 000，本附录的金额列与数量列因此不是同一个数，读的时候不要互相代入。",
+    "_period": "基年全年，即 q=0..3 四季合计。四季平均分摊，见 quarterly_split。",
+    "_authority": "本表是离线求解的目标值，不是运行期输入。权威初值住在 cells_init.json / pubserv_init.json / government_init.json；OQ-203 指定的 tools/solve_base_year.gd 应以本表为目标反解各 cell 的初始产量。",
+    "product_unit_definition": {
+      "sector.agri": {
+        "label_zh": "农业",
+        "definition_zh": "1 Q_s = 基年可产出并按基年价成交的一篮子初级农产品与食品原料。",
+        "base_price_uu_per_qs": 1000000000
+      },
+      "sector.manu": {
+        "label_zh": "制造",
+        "definition_zh": "1 Q_s = 基年一篮子消费品、设备与工业材料。",
+        "base_price_uu_per_qs": 1000000000
+      },
+      "sector.energy": {
+        "label_zh": "能源",
+        "definition_zh": "1 Q_s = 基年一篮子电力与基础能源产品；当期供给当期使用，不入库存。",
+        "base_price_uu_per_qs": 1000000000
+      },
+      "sector.services": {
+        "label_zh": "服务",
+        "definition_zh": "1 Q_s = 基年一篮子商业、物流、施工与住房服务；当期交付，不入库存。",
+        "base_price_uu_per_qs": 1000000000
+      }
+    },
+    "sector_accounts": [
+      {
+        "sector_id": "sector.agri",
+        "label_zh": "农业",
+        "gross_output_uu": 25100000000,
+        "intermediate_input_uu": 7906500000,
+        "value_added_uu": 17193500000,
+        "compensation_of_employees_uu": 9585754016,
+        "operating_surplus_uu": 7607745984,
+        "depreciation_uu": 1418543640,
+        "profit_pretax_uu": 6189202344,
+        "capital_value_uu": 36000000000,
+        "capacity_active_uqs_per_q": 7200000,
+        "output_uqs_per_q": 6275000,
+        "capacity_utilisation_ppm": 871527,
+        "operating_cash_uu": 4374000000,
+        "employment_persons": {
+          "low": 1698699,
+          "mid": 611100,
+          "high": 86887,
+          "total": 2396686
+        }
+      },
+      {
+        "sector_id": "sector.manu",
+        "label_zh": "制造",
+        "gross_output_uu": 60400000000,
+        "intermediate_input_uu": 35334000000,
+        "value_added_uu": 25066000000,
+        "compensation_of_employees_uu": 10911309016,
+        "operating_surplus_uu": 14154690984,
+        "depreciation_uu": 5631691140,
+        "profit_pretax_uu": 8522999844,
+        "capital_value_uu": 96000000000,
+        "capacity_active_uqs_per_q": 17280000,
+        "output_uqs_per_q": 15100000,
+        "capacity_utilisation_ppm": 873842,
+        "operating_cash_uu": 11563000000,
+        "employment_persons": {
+          "low": 791542,
+          "mid": 993930,
+          "high": 333437,
+          "total": 2118909
+        }
+      },
+      {
+        "sector_id": "sector.energy",
+        "label_zh": "能源",
+        "gross_output_uu": 10800000000,
+        "intermediate_input_uu": 3888000000,
+        "value_added_uu": 6912000000,
+        "compensation_of_employees_uu": 3256246768,
+        "operating_surplus_uu": 3655753232,
+        "depreciation_uu": 2498573236,
+        "profit_pretax_uu": 1157179996,
+        "capital_value_uu": 53000000000,
+        "capacity_active_uqs_per_q": 2915000,
+        "output_uqs_per_q": 2700000,
+        "capacity_utilisation_ppm": 926243,
+        "operating_cash_uu": 1788000000,
+        "employment_persons": {
+          "low": 215587,
+          "mid": 274468,
+          "high": 120525,
+          "total": 610580
+        }
+      },
+      {
+        "sector_id": "sector.services",
+        "label_zh": "服务",
+        "gross_output_uu": 63300000000,
+        "intermediate_input_uu": 22471500000,
+        "value_added_uu": 40828500000,
+        "compensation_of_employees_uu": 21483261992,
+        "operating_surplus_uu": 19345238008,
+        "depreciation_uu": 3604457005,
+        "profit_pretax_uu": 15740781003,
+        "capital_value_uu": 114000000000,
+        "capacity_active_uqs_per_q": 18240000,
+        "output_uqs_per_q": 15825000,
+        "capacity_utilisation_ppm": 867598,
+        "operating_cash_uu": 10991000000,
+        "employment_persons": {
+          "low": 1573022,
+          "mid": 1842361,
+          "high": 721022,
+          "total": 4136405
+        }
+      }
+    ],
+    "intermediate_matrix_uu": {
+      "_note": "外层键 = 供给方（行），内层键 = 消耗方（列）。卖给公共服务的中间投入不在本矩阵里，单列于 final_use_uu.government_nonmarket_output。",
+      "matrix": {
+        "sector.agri": {
+          "sector.agri": 1506000000,
+          "sector.manu": 7248000000,
+          "sector.energy": 0,
+          "sector.services": 1582500000
+        },
+        "sector.manu": {
+          "sector.agri": 3263000000,
+          "sector.manu": 15704000000,
+          "sector.energy": 2268000000,
+          "sector.services": 11077500000
+        },
+        "sector.energy": {
+          "sector.agri": 753000000,
+          "sector.manu": 3322000000,
+          "sector.energy": 648000000,
+          "sector.services": 2215500000
+        },
+        "sector.services": {
+          "sector.agri": 2384500000,
+          "sector.manu": 9060000000,
+          "sector.energy": 972000000,
+          "sector.services": 7596000000
+        }
+      },
+      "row_total_to_market_uu": {
+        "sector.agri": 10336500000,
+        "sector.manu": 32312500000,
+        "sector.energy": 6938500000,
+        "sector.services": 20012500000
+      },
+      "column_total_uu": {
+        "sector.agri": 7906500000,
+        "sector.manu": 35334000000,
+        "sector.energy": 3888000000,
+        "sector.services": 22471500000
+      },
+      "grand_total_uu": 69600000000
+    },
+    "final_use_uu": {
+      "household_consumption": {
+        "by_product": {
+          "sector.agri": 13463500000,
+          "sector.manu": 15887500000,
+          "sector.energy": 2461500000,
+          "sector.services": 30187500000
+        },
+        "total_uu": 62000000000
+      },
+      "government_nonmarket_output": {
+        "_note": "公共非市场产出按成本计（12_simulation_contract.md §6.3）：工资 + 中间投入 + 折旧。不走市场销售，只进 GDP，避免重复核算（INV-101）。",
+        "compensation_uu": 9000000000,
+        "intermediate_by_product_uu": {
+          "sector.agri": 400000000,
+          "sector.manu": 1300000000,
+          "sector.energy": 900000000,
+          "sector.services": 1600000000
+        },
+        "intermediate_total_uu": 4200000000,
+        "depreciation_uu": 1000000000,
+        "output_uu": 14200000000,
+        "value_added_uu": 10000000000
+      },
+      "gross_capital_formation": {
+        "_note": "设备来自制造部门，建筑与安装来自服务部门；农业与能源产品不形成资本。基年没有在建政府项目，这 22 000 000 000 μU 全部是企业按 kind=7 capital_purchase 在市场上买走的，不走项目施工管线。",
+        "by_product": {
+          "sector.agri": 0,
+          "sector.manu": 12000000000,
+          "sector.energy": 0,
+          "sector.services": 10000000000
+        },
+        "total_uu": 22000000000
+      },
+      "inventory_change": {
+        "_note": "只有可库存部门可以有存货变动，能源与服务恒为 0。按基年价计值（kind=6 inventory_change）。",
+        "by_product": {
+          "sector.agri": 600000000,
+          "sector.manu": 1200000000,
+          "sector.energy": 0,
+          "sector.services": 0
+        },
+        "total_uu": 1800000000
+      },
+      "exports": {
+        "by_product": {
+          "sector.agri": 1500000000,
+          "sector.manu": 5200000000,
+          "sector.energy": 2300000000,
+          "sector.services": 2000000000
+        },
+        "total_uu": 11000000000
+      },
+      "imports": {
+        "_note": "进口在支出法中带负号，不产生任何总产出与增加值（kind=9，三口径分类全为 none）。基年出口等于进口，经常账户为 0，这是最保守的开局设定。",
+        "by_product": {
+          "sector.agri": 1200000000,
+          "sector.manu": 7500000000,
+          "sector.energy": 1800000000,
+          "sector.services": 500000000
+        },
+        "total_uu": 11000000000
+      },
+      "totals_uu": {
+        "household_consumption_uu": 62000000000,
+        "government_output_uu": 14200000000,
+        "gross_capital_formation_uu": 22000000000,
+        "inventory_change_uu": 1800000000,
+        "exports_uu": 11000000000,
+        "imports_uu": 11000000000
+      }
+    },
+    "accounting_checks": {
+      "_note": "三口径必须精确相等，容差 0（INV-118）。基年全部价格等于基年价，故 12_simulation_contract.md §6.4 的价差调节项 price_variance_total_uu 恒为 0，三法残差因此直接为 0，而不是等于调节项。",
+      "gdp_production_uu": {
+        "formula": "sum_s value_added_uu[s] + pubserv(compensation + depreciation)",
+        "value_added_by_sector": {
+          "sector.agri": 17193500000,
+          "sector.manu": 25066000000,
+          "sector.energy": 6912000000,
+          "sector.services": 40828500000
+        },
+        "value_added_market_total_uu": 90000000000,
+        "pubserv_value_added_uu": 10000000000,
+        "total_uu": 100000000000
+      },
+      "gdp_expenditure_uu": {
+        "formula": "household_consumption + government_output + gross_capital_formation + inventory_change + exports - imports",
+        "household_consumption_uu": 62000000000,
+        "government_output_uu": 14200000000,
+        "gross_capital_formation_uu": 22000000000,
+        "inventory_change_uu": 1800000000,
+        "exports_uu": 11000000000,
+        "imports_uu": 11000000000,
+        "total_uu": 100000000000
+      },
+      "gdp_income_uu": {
+        "formula": "sum_s (compensation + operating_surplus) + pubserv(compensation + depreciation)",
+        "compensation_market_uu": 45236571792,
+        "operating_surplus_market_uu": 44763428208,
+        "pubserv_compensation_uu": 9000000000,
+        "pubserv_depreciation_uu": 1000000000,
+        "total_uu": 100000000000,
+        "_note_zh": "劳动报酬不再是自由参数：它 == Σ_(部门,技能) population_init 的在岗人数 × scenario.json 的 wage_uu_per_person_q[技能]，逐部门精确成立。营业盈余是残差（增加值 − 劳动报酬），因此三口径 GDP 不受工资率重拟合影响。"
+      },
+      "price_variance_total_uu": 0,
+      "target_uu": 100000000000,
+      "residual_production_minus_expenditure_uu": 0,
+      "residual_production_minus_income_uu": 0,
+      "residual_production_minus_target_uu": 0,
+      "row_balance": [
+        {
+          "sector_id": "sector.agri",
+          "supply_uu": 26300000000,
+          "use_uu": 26300000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.manu",
+          "supply_uu": 67900000000,
+          "use_uu": 67900000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.energy",
+          "supply_uu": 12600000000,
+          "use_uu": 12600000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.services",
+          "supply_uu": 63800000000,
+          "use_uu": 63800000000,
+          "residual_uu": 0
+        }
+      ],
+      "column_balance": [
+        {
+          "sector_id": "sector.agri",
+          "gross_output_uu": 25100000000,
+          "intermediate_plus_value_added_uu": 25100000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.manu",
+          "gross_output_uu": 60400000000,
+          "intermediate_plus_value_added_uu": 60400000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.energy",
+          "gross_output_uu": 10800000000,
+          "intermediate_plus_value_added_uu": 10800000000,
+          "residual_uu": 0
+        },
+        {
+          "sector_id": "sector.services",
+          "gross_output_uu": 63300000000,
+          "intermediate_plus_value_added_uu": 63300000000,
+          "residual_uu": 0
+        }
+      ],
+      "intermediate_excluded_from_gdp": {
+        "_note": "中间投入不进入任何 GDP 口径（计划书 §06 [1]，INV-029/INV-113）。下式是它的显式对账：全部总产出加公共非市场产出，减去全部中间消耗，恰好等于生产法 GDP。",
+        "gross_output_total_uu": 159600000000,
+        "pubserv_output_uu": 14200000000,
+        "intermediate_market_uu": 69600000000,
+        "intermediate_pubserv_uu": 4200000000,
+        "residual_uu": 0
+      }
+    },
+    "quarterly_split": {
+      "_note": "四季平均分摊：各部门年总产出与年增加值均能被 4 整除，无需最大余数法，逐季市场增加值合计恰为 22 500 000 000 μU，加公共服务非市场增加值 2 500 000 000 μU，季度 GDP 25 000 000 000 μU，四季合计恰为 100 000 000 000 μU。scenario.json 的 season_factor_ppm.agri_output 在 12_simulation_contract.md 里没有任何消费者（S03 的 output_plan 只由滞后需求与库存缺口决定），故基年不做农业季节性；若将来接上该系数，必须同时按峰值季重算农业用工，否则第 3 季会被 bound_labor 卡住而使全年 GDP 低于 100 000 000 000 μU。",
+      "gross_output_uqs_per_q": {
+        "sector.agri": 6275000,
+        "sector.manu": 15100000,
+        "sector.energy": 2700000,
+        "sector.services": 15825000
+      },
+      "value_added_uu_per_q": {
+        "sector.agri": 4298375000,
+        "sector.manu": 6266500000,
+        "sector.energy": 1728000000,
+        "sector.services": 10207125000
+      },
+      "market_value_added_per_q_uu": 22500000000,
+      "gdp_per_q_uu": 25000000000,
+      "pubserv_depreciation_by_q_uu": [
+        253021000,
+        250997000,
+        248987000,
+        246995000
+      ],
+      "pubserv_depreciation_note": "公共服务折旧按余额递减，逐季 floor 后四季合计精确等于 1 000 000 000 μU，因此逐季增加值不是平的，但年度合计精确。逐单元数值见 pubserv_account_uu；该处的 _note_depreciation_scale_zh 记录了这组数在新刻度下的原生复算差额。"
+    },
+    "pubserv_account_uu": {
+      "_note": "公共服务是服务部门的非市场子账户，实体是 4 个 pubserv 单元。depreciation_ppm_per_q 与 employment_persons_total 两项旧值（8 000 000 与 1 000 000 000）是迁移器的连带损伤：本块的键名含 uu 词元，整棵子树被 ×1000，把一个 ppm 和一个人数也乘了进去；已改回 8 000 ppm 与在岗人数本身。在岗人数取 population_init / pubserv_init 两侧一致的 1 480 266 人（旧值 1 000 000 是本附录自己的另一套口径，与 V-POP-08 冲突，已废止）。compensation_annual_uu 9 000 000 000 现在**可由在岗人数与工资率精确复算**：298 668×810 + 711 327×1 354 + 470 271×2 222 = 2 250 000 000 μU/季，×4 == public_wages。",
+      "capital_value_uu": {
+        "pubserv.beiyuan": 9000000000,
+        "pubserv.zhongzhou": 10000000000,
+        "pubserv.haijia": 7000000000,
+        "pubserv.xiling": 5627646000,
+        "total": 31627646000
+      },
+      "depreciation_ppm_per_q": 8000,
+      "depreciation_annual_by_unit_uu": {
+        "pubserv.beiyuan": 284561000,
+        "pubserv.zhongzhou": 316180000,
+        "pubserv.haijia": 221325000,
+        "pubserv.xiling": 177934000
+      },
+      "depreciation_annual_total_uu": 1000000000,
+      "compensation_annual_uu": 9000000000,
+      "intermediate_annual_uu": 4200000000,
+      "output_annual_uu": 14200000000,
+      "value_added_annual_uu": 10000000000,
+      "employment_persons_total": 1480266,
+      "employment_persons_by_skill": {
+        "low": 298668,
+        "mid": 711327,
+        "high": 470271
+      },
+      "_note_depreciation_scale_zh": "depreciation_annual_by_unit_uu 与 quarterly_split.pubserv_depreciation_by_q_uu 仍是旧刻度整数 ×1000 的结果，四季合计精确等于 1 000 000 000（GDP 口径要求）。但在新刻度下按 capital × 8 000 ppm 逐季 floor 原生复算，四单元合计是 1 000 004 297 μU，比目标多 4 297 μU——因为西岭的资本额 5 627 646 000 当初是按**旧刻度**反解出来的唯一整数解。本文件不改这两处（改了 GDP 就不是 100 U），把它登记为 R-SCALE-01 的遗留项：pubserv_init.json 的 pubserv.xiling.capital_value_uu 应改为 5 627 510 080，届时本附录的逐单元与逐季折旧要一起重算。见 open_issues。"
+    },
+    "inventory_requirements": {
+      "_note": "可库存：农业与制造。不可库存：能源与服务，产出当期使用，期末库存恒为 0。初始库存必须足以让基年四季不被 bound_materials 卡住（OQ-203）；下列为全国合计，逐 cell 分摊由 cells_init 负责。",
+      "storable_flag": {
+        "sector.agri": 1,
+        "sector.manu": 1,
+        "sector.energy": 0,
+        "sector.services": 0
+      },
+      "input_consumption_uqs_per_q": {
+        "from_sector_agri": 2584125,
+        "from_sector_manu": 8078125,
+        "from_sector_energy": 1734625,
+        "from_sector_services": 5003125
+      },
+      "recommended_initial_input_inventory_uqs": {
+        "from_sector_agri": 3880000,
+        "from_sector_manu": 12120000,
+        "from_sector_energy": 0,
+        "from_sector_services": 0
+      },
+      "recommended_initial_output_inventory_uqs": {
+        "sector.agri": 3137500,
+        "sector.manu": 7550000,
+        "sector.energy": 0,
+        "sector.services": 0
+      },
+      "annual_inventory_change_uu": {
+        "sector.agri": 600000000,
+        "sector.manu": 1200000000,
+        "sector.energy": 0,
+        "sector.services": 0
+      },
+      "energy_and_services_note": "能源的季度中间需求 1 734 625 μQ 与服务的 5 003 125 μQ 必须靠当期供给满足，不能靠库存；能源已有 §5.2 的当期分配路径，服务没有，见 open_issues 第一条。"
+    },
+    "maintenance_and_capacity": {
+      "_note": "首版没有市场部门的独立维护账户：企业维护支出已经含在制造行与服务行的中间投入系数里，这是显式简化而不是遗漏。只有公共资产有单列的运行费 service_opex，欠拨只降 availability_ppm，不减资产也不删建筑（INV-055 / INV-102，计划书 §07）。产能上限 = mul_ppm(capital_value_uu, capacity_per_capital_uu_ppm)，V-CELL-03 要求二者误差不超过 1 μQ_s。",
+      "capacity_active_uqs_per_q": {
+        "sector.agri": 7200000,
+        "sector.manu": 17280000,
+        "sector.energy": 2915000,
+        "sector.services": 18240000
+      },
+      "capital_value_uu": {
+        "sector.agri": 36000000000,
+        "sector.manu": 96000000000,
+        "sector.energy": 53000000000,
+        "sector.services": 114000000000
+      },
+      "capital_market_total_uu": 299000000000,
+      "capital_including_pubserv_uu": 330627646000,
+      "capacity_utilisation_ppm": {
+        "sector.agri": 871527,
+        "sector.manu": 873842,
+        "sector.energy": 926243,
+        "sector.services": 867598
+      },
+      "gross_capital_formation_uu": 22000000000,
+      "_note_depreciation_total_uu": "口径是**市场四部门合计**，不含公共服务：1 418 543 640 + 5 631 691 140 + 2 498 573 236 + 3 604 457 005 = 13 153 265 021 μU。取市场口径是因为与它相减的 gross_capital_formation_uu 22 000 000 000 μU 也是市场口径（基年没有在建政府项目，公共资产没有对应的当年投资）。若要含公共服务，加 pubserv_account_uu.depreciation_annual_total_uu 1 000 000 000 μU，得 14 153 265 021 μU；那个数不能拿来减 22 000 000 000。本键名沿用 tools/refit_base_year.py 写入的键（mc[\"depreciation_total_uu\"] = DEPR_MARKET_YEAR），故只在此加注不改名。",
+      "depreciation_total_uu": 13153265021,
+      "net_capital_formation_uu": 8846734979,
+      "utilisation_note": "基年产能利用率 86.7%—92.6%，即产能在基年不是任何部门的紧约束。这是刻意的：计划书 §05 要求开局瓶颈出现在供电、住房与技能上，而不是全面产能不足。",
+      "_note_depreciation_scale_zh": "折旧按四季余额递减逐季 floor 后求和，在新刻度下原生复算（旧值是老刻度整数 ×1000，每个部门低估几百 μU）。折旧只在营业盈余内部把利润与折旧分开，不进任何一种 GDP 口径，因此这次修正不动三口径对账。"
+    },
+    "labor": {
+      "_note": "本块区分两件过去被混在一起的事：**在岗人数**（谁真的在工作，权威在 population_init.json，逐 (地区, 部门, 技能) 由 V-POP-08 与 cells_init / pubserv_init 交叉校验）与**技术口径的用工需求**（按基年产量与用工系数算出来的 ceil(产量 × 用工系数 / 1e6)）。R-REGION-01 之后用工系数逐 cell 由在岗人数与基年产量反推，labor_requirement_at_base_output_persons 是 16 个 cell 按各自单格系数的需求逐格求和：与在岗人数逐 (部门, 技能) 相等或只多出整数系数的取整余量（全国合计多 41 人），基年不再有 bound_labor 缺口，开局也不再按系数裁员。失业率必须由 population_init 反算（V-POP-05、INV-143），本附录只复述它必须落在哪里。",
+      "employment_by_sector_persons": {
+        "sector.agri": 2396686,
+        "sector.manu": 2118909,
+        "sector.energy": 610580,
+        "sector.services": 4136405
+      },
+      "employment_by_skill_persons": {
+        "low": 4278850,
+        "mid": 3721859,
+        "high": 1261871
+      },
+      "market_employment_persons": 9262580,
+      "pubserv_employment_persons": 1480266,
+      "pubserv_employment_by_skill_persons": {
+        "low": 298668,
+        "mid": 711327,
+        "high": 470271
+      },
+      "total_employment_persons": 10742846,
+      "implied_labor_force_persons": 11677007,
+      "implied_unemployed_persons": 934161,
+      "implied_unemployment_ppm": 80000,
+      "wage_uu_per_person_q": [
+        810,
+        1354,
+        2222
+      ],
+      "wage_bill_uu_per_q": 13559142948,
+      "compensation_by_sector_uu_per_year": {
+        "sector.agri": 9585754016,
+        "sector.manu": 10911309016,
+        "sector.energy": 3256246768,
+        "sector.services": 21483261992
+      },
+      "labor_share_of_gdp_ppm": 542365,
+      "labor_share_of_market_value_added_ppm": 502628,
+      "labor_requirement_at_base_output_persons": {
+        "sector.agri": {
+          "low": 1698700,
+          "mid": 611102,
+          "high": 86891,
+          "total": 2396693
+        },
+        "sector.manu": {
+          "low": 791551,
+          "mid": 993935,
+          "high": 333441,
+          "total": 2118927
+        },
+        "sector.energy": {
+          "low": 215588,
+          "mid": 274469,
+          "high": 120525,
+          "total": 610582
+        },
+        "sector.services": {
+          "low": 1573029,
+          "mid": 1842366,
+          "high": 721024,
+          "total": 4136419
+        }
+      },
+      "_note_labor_share_zh": "劳动报酬占 GDP 542 365 ppm（市场部门占市场增加值 502 628 ppm，公共服务按成本计价故占 900 000 ppm）。旧刻度下这个数是 745 612 ppm：那不是设计值，是工资率只能取 {1, 2, 3} μU 时被顶上去的。542 365 ppm 落在跨国劳动报酬份额的常见区间（约 450 000—620 000 ppm）内，且逐部门可辩护：农业 557 521（低技能密集、人多钱少）、制造 435 303、能源 471 100（最资本密集）、服务 526 182。三口径 GDP 不因此变动，因为营业盈余是残差。"
+    },
+    "interface_requirements": [
+      "cells_init.json：16 个 cell 的 capacity_active / capital_value / employment / inventory 逐部门合计，必须等于 sector_accounts 与 inventory_requirements 的全国值；cell 现金合计 28 716 000 000 μU 计入 scenario.total_cash_uu（INV-018；R-REGION-01 起每个 cell 不少于一季工资 + 中间投入，sector_accounts 的 operating_cash_uu 是它的逐部门合计）。",
+      "cells_init.json：schema 里缺 demand_expect_uqs 初值。12_simulation_contract.md §3.1 的 output_plan 只由 E_prev 与库存缺口决定；E_prev 初值若为 0，q=0 全国产量为 0，基年 GDP 归零。必须补该字段，建议逐 cell 取其季度产量（见 quarterly_split）。",
+      "pubserv_init.json：4 个单元在岗合计 1 480 266 人，逐 (地区, 技能) 与 population_init 的 pubserv 去向精确相等（V-POP-08）；工资总额 2 250 000 000 μU/季 == government_init 的 public_wages / 4。资本合计 31 627 646 000 μU 的四季折旧在新刻度下不再精确等于 1 000 000 000，见 open_issues。",
+      "government_init.json：annual_plan.expenditure_lines_uu.public_wages 必须等于 9 000 000 000（= 公共服务增加值 10 000 000 000 减折旧 1 000 000 000），且必须等于 Σ_技能 pubserv 在岗人数 × wage_uu_per_person_q[技能] × 4；procurement 对应公共服务中间投入 4 200 000 000。",
+      "population_init.json：working 组劳动力合计 11 677 007 人，在岗合计 10 742 846 人，反算失业率恰为 80 000 ppm，落在 V-POP-05 的 [79 500, 80 500] 内。",
+      "scenario.json：prices_init.sector_uu_per_qs 与 base_uu_per_qs 四项均为 1 000 000 000（R-SCALE-01 后的 INV-148 值）；prices_init.wage_uu_per_person_q 必须取 [810, 1354, 2222]，housing_rent_uu_per_unit_q 必须取 [223, 561, 413, 253]（由 population_init 的收入侧反解，见那里的 cross_file_check.from_scenario_json）；world_init.delivery_capacity_uqs 必须逐部门不小于季度出口量 [375 000, 1 300 000, 575 000, 500 000]。",
+      "params_core.json：param.engel_weight_ppm 建议取 [217153, 256250, 39702, 486895]（由本表居民消费的分产品结构按最大余数法反算，合计恰为 1 000 000）；param.io_table_set 的 value 必须是本表规范化哈希的前缀（V-PC-07）。"
+    ],
+    "provenance": {
+      "_status": "**本块不是参数身份证，任何工具都不得把它当卡读。** param.io_table_set 的唯一事实来源是 content/parameters/params_core.json 的 cards[]；本块是交给那份文件的**素材**，字段一律加 card_ 前缀或只作散文登记，因此不再具备卡的形状（既无 parameter_id 也无 value）。原先这里写的是一张形状完整的卡，藏在 _note_* 注释子树里：加载器按 11_data_contract.md §1.5 / §6.4 不读注释键，content_hash 也不含它，那张卡等于不存在，却会让「已建卡」的检查看起来通过——校验器的 E_PARAM_CARD 判得对，已按它的修复建议把卡从本文件撤出。两处若有出入，以 params_core.json 为准；本块只保留卡做不动的事：解释这张表为什么长这样、怎么校准它。",
+      "card_parameter_id": "param.io_table_set",
+      "card_value_spec": "params_core.json 里该卡的 value 是一个**整数**：本表规范化后哈希，取前 16 位十进制截断（V-PC-07）。规范化口径以那张卡的 derivation_expr 为准——递归删去全部 `_` 前缀键与展示文案键（label_zh / desc_zh / report_template_id），再 json.dumps(sort_keys=True, separators=(',',':'), ensure_ascii=False) 后取 sha256。**本块连同整个 _note_base_year_accounting 都是 `_` 前缀键，因此不进哈希**：改本附录的措辞不会让那张卡失效，改上面七组系数会。本文件刻意不抄那个整数——抄一份就是第二处事实来源。",
+      "card_unit": "mixed: uqs_per_qs / persons_per_qs / ppm / uqs_per_q",
+      "card_source_type": "design_assumption",
+      "card_source_ref": "计划书 §06「只做 4 部门的简化投入产出模型。现实资料不直接识别行为系数；初始技术系数与价格调整速度均为待校准假设」；§05 澄湾共和国开局数值（2400 万人、100 U 年 GDP、8% 失业率）；§19「本计划尚未导入数据」",
+      "card_reference_year": 0,
+      "card_valid_range": "卡上的 valid_range 管的是哈希整数的取值域（params_core.json 现取 [0, 9007199254740992]），它判不了这张表对不对。本表真正的合法域是下列结构条件，由 V-IO-01…08 逐条判、不由卡判：每列中间投入系数合计 < 1 000 000（V-IO-01）；全部系数 >= 0（V-IO-04）；io_coeff[energy][energy] < 1 000 000（V-IO-03）；storable[energy] == storable[services] == 0（V-IO-02）；capacity_per_capital_uu_ppm 各项 > 0（V-IO-07）。",
+      "card_confidence": "low",
+      "_note_key_names": "definition 与 calibration_note 两个键**刻意不加 card_ 前缀**：tools/refit_base_year.py 会按这两个键名就地改写本块（见该文件 patch_io_table()）。改名会让它静默写回一个平行键，造成两段互相矛盾的校准说明。谁要改名，必须同时改那支工具。",
+      "definition": "四部门技术系数、分技能用工系数、季度折旧率、产能折算率、排放系数与可库存标志的整表取值，以及使基年生产法、支出法、收入法三口径 GDP 精确等于 100 000 000 000 μU 的基年核算目标。",
+      "calibration_note": "这是虚构剧本的设计假设，不是任何真实国家的投入产出表，不得标注为 observed 或 literature（V-PC-04 要求首版 observed 条目数为 0）。校准顺序：先用 G1 的 40 季无冲击基线检查基年结构是否自行崩溃；再按计划书 §14 做单一干预，检查 P04 与 P07 的作用路径与时滞；敏感性优先改制造列与服务列的中间投入系数和用工系数，因为 GDP 结构对这两列最敏感。最脆弱的三个取值是能源自用系数 60 000、能源部门产能折算率 55、服务列中间投入合计 355 000，必须各做三档敏感性。任何改动都必须重跑本附录的 accounting_checks，三个 residual 仍须为 0。劳动报酬不再是本表的自由参数（见 labor 块），改工资率必须重跑 tools/refit_base_year.py。",
+      "structural_targets": {
+        "total_population_persons": 24000000,
+        "annual_nominal_gdp_uu": 100000000000,
+        "unemployment_ppm": 80000,
+        "consumption_index_ppm": 1000000
+      }
+    },
+    "open_issues": [
+      "阻塞级：12_simulation_contract.md §5.3 的材料约束循环写作 for j in [agri, manu, services]，会去读 state.cell.inventory_input_uqs[services]，而 V-CELL-02 禁止服务出现在 inventory_input_uqs（服务不可库存）。于是只要 io_coeff[sector.services][*] > 0，bound_materials 恒为 0，四个部门产量全部归零。本表保留服务作为中间投入（计划书 §06 明写农业「需要劳动力、灌溉服务与运输」、制造「需要技能劳动、能源与中间投入」），服务行的年中间需求为 20 012 500 000 μU，占服务部门自身年总产出 63 300 000 000 μU 的 31.6%（占全部门总产出 159 600 000 000 μU 的 12.5%），不能归零。建议修法与能源完全对称：服务按当期供给在市场闭合前分配，新增 bound_services，材料循环改为 for j in [agri, manu]。",
+      "阻塞级：12_simulation_contract.md §5.6 的可售供给公式无条件扣除 construction_capacity_uqs（= 服务产量 × param.construction_share_cap_ppm），而不是扣除项目实际占用量。基年没有任何在建政府项目，按 300 000 ppm 计，每季会凭空销毁 4 747 500 μQ 服务，全年约 18 990 000 000 μU，接近 19% 的 GDP。本表的 10 000 000 000 μU 建筑投资是企业按 kind=7 capital_purchase 在市场上买走的服务产品，不走项目施工管线，因此不需要这项扣除。建议把扣除项改为 construction_used_uqs，并保留 param.construction_share_cap_ppm 作为上限。",
+      "阻塞级：cells_init 的 schema 缺 demand_expect_uqs 初值（12_simulation_contract.md §3.1 的 E_prev）。E_prev 初值为 0 则 q=0 的 output_plan 为 0，基年第一季产量为 0，assert.base_year_gdp 必然失败。",
+      "R-SCALE-01 遗留：pubserv 的四季余额递减折旧在新刻度下不再精确等于 1 000 000 000 μU。西岭资本 5 627 646 000 当初是按旧刻度（整数 μU 为 1e-6 U）反解出来的唯一解；新刻度下逐单元原生复算的年折旧合计是 1 000 004 297，超出目标 4 297 μU。公共服务折旧直接进 GDP（非市场增加值 = 工资 + 折旧），所以这个差额会让生产法 GDP 不等于 100 U。修法：把 pubserv_init.json 的 pubserv.xiling.capital_value_uu 改为 5 627 510 080，再重算本附录的 depreciation_annual_by_unit_uu 与 quarterly_split.pubserv_depreciation_by_q_uu。本文件不单方面改（pubserv_init 不在本次分工内），也不动 depreciation_annual_total_uu（动了 GDP 就不是 100 U）。",
+      "【已结案 R-REGION-01】技术口径的用工需求与实际在岗结构不一致（原：全国统一系数 × 各 cell 产量，农业低技能短缺、能源富余几十万人且堆在西岭，开局按系数裁员）。按裁定 R-REGION-01，在岗人数为锚：能源全国产量按地区能源工资总额重分到地区，16 个 cell 的用工系数改为「在岗 ÷ 基年产量」的单格覆盖，labor_requirement_at_base_output_persons 已与在岗人数对齐（取整余量合计 41 人）。见 cells_init.json 的 OQ-B 与 tools/refit_regional.py。",
+      "11_data_contract.md §5.5 的 IOTable 示例自相矛盾：示例的 energy_coeff_uqs_per_qs = [30000, 150000, 20000, 50000] 与 io_coeff_uqs_per_qs[sector.energy] = {agri: 0, manu: 200000, energy: 50000, services: 80000} 不相等，按 V-IO-08 该示例本身会被拒绝加载。另外 10_variable_dictionary.md 把 content.io.energy_coeff_uqs_per_qs 的元素数记为 16，而 §5.5 与 V-IO-08 的用法都是 4。",
+      "spoilage_ppm 基年取零是显式简化，理由见 _note_spoilage_ppm：非零损耗让基年 GDP 依赖 cells_init 的库存存量，与本表形成不动点，0 容差断言无法手工闭合。开启损耗必须与 tools/solve_base_year.gd 一起上线，届时要同步上调各部门总产出以抵消 spoil_in 对增加值的侵蚀。",
+      "本附录借用 §3 允许的 _note_ 注释键承载基年核算，是因为 §5.5 的 IOTable schema 没有给它留位置；而 §1.5 又规定 _note_ 不进 content_hash，这意味着附录与系数之间的一致性没有机器校验，改了系数忘了改附录不会被发现。请求 schema_version 2 把它提升为一等字段，并新增 V-IO-09：附录的 gross_output_uu 必须等于 cells_init 各 cell 基年产量之和乘基年价。",
+      "交接项：param.io_table_set 的卡已从本文件撤出（校验器 E_PARAM_CARD @ /_note_base_year_accounting/provenance 判得对——藏在 _note_* 子树里的卡加载器读不到、content_hash 不含它，等于这张卡不存在）。权威卡已落在 content/parameters/params_core.json（paramset.baseline，value = 1428946661943071，即本表规范化哈希 sha256 前缀 1f978d2e… 的十进制前 16 位），本文件不再持有任何形状完整的卡。该卡的规范化口径递归删去全部 `_` 前缀键，而本附录整棵树都在 `_note_base_year_accounting` 之下，故改本附录不会让那张卡过期；改上面七组系数会，届时必须重算那张卡的 value。两条连带影响：一，content/parameters/registry.json 下次重跑 tools/build_param_registry.py 后会少这一张卡（它的 _origin_pointer 原本指向本文件的注释子树，那本身就是错的）；二，tools/refit_base_year.py 仍按 prov[\"definition\"] / prov[\"calibration_note\"] 就地改写本块，故这两个键名刻意保留，其余字段已加 card_ 前缀。谁把 parameter_id 或 value 加回本块，E_PARAM_CARD 就会立刻回来。",
+      "校验器 tools/validate_content.py 仍有三处停留在旧刻度：/unit_declaration 的 money_micro_per_unit 与 base_price_uu_per_qs 期望 1 000 000（应为 1 000 000 000），prices_init.sector_uu_per_qs / base_uu_per_qs 逐项期望 1 000 000（同上），以及对 wage_uu_per_person_q <= 3 的分辨率告警（R-SCALE-01 之后不再成立）。本次只修了 E_GDP_INIT 那一条（它直接判本包的 cells_init），其余三处属于 scenario.json 的分工，登记在此以免被当成剧本数据错误。"
+    ]
+  },
+  "_note_capacity_per_capital_uu_ppm_scale_ruling": "裁定 R-SCALE-01：本系数的单位是 μQ_s 每 μU 资本（ppm 定标），μU 是**分母**。1 U 由 1e6 μU 细化为 1e9 μU 后，本系数必须 ÷1000 才能保持产能不变；迁移器最初按「键名含 uu 即为金额」误将其 ×1000，已净修正 ÷1e6。迁移前 200000 → 现 200。遗留问题：本系数现在只有约 0.5%～1.8% 的整数粒度。基年校准实测该粒度**够用**：cells_init 的 16 个 cell 全部满足 capacity == floor(capital × 系数 / 1e6)，误差 0（V-CELL-03），因为求解方向是「先定产能再反解资本」，资本有 μU 级的调节余地。但若将来要固定资本反解产能（例如投资落地后按实际资本重算产能），这个粒度会把产能量化到 0.5%～1.8% 的台阶上；届时应提出契约修订（改为「每 1e3 μU」口径并改名），不得私自另立第二套比率刻度。",
+  "capital_goods_split_ppm": [
+    0,
+    545455,
+    0,
+    454545
+  ],
+  "_note_capital_goods_split_ppm": "R-INVEST-01：企业资本品购买按产品的构成，取自基年资本形成 final_use.gross_capital_formation.by_product （[0, 12000000000, 0, 10000000000] μU），最大余数法化为 ppm。设备来自制造、建安来自服务，农业与能源产品不形成资本。",
+  "_note_labor_coeff_agri_low_calibration": "基年校准：农业低技能用工系数由 400000 改为 270708（人/Q）。原值使四个农业 cell 的在岗低技能工人只够支撑基年产量的 67.7%～74%（剧本 cells_init 的注释早已记录），开局农业即被劳动约束压产。基年就业是剧本的既成状态，系数是待校准的设计假设——按标准校准做法由基年就业反推，取四个 cell 中最紧者。（R-REGION-01 之后：该值只留在 \"*\" 默认档作全国参考；16 个 cell 的实际系数由单格覆盖按「在岗 ÷ 基年产量」逐格给出，四个农业 cell 的低技能系数为 北原 270 709、中州 270 709、海岬 270 709、西岭 270 709 人/Q_s。）"
+}

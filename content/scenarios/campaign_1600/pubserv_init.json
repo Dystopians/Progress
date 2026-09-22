@@ -1,0 +1,101 @@
+{
+  "schema_kind": "pubserv_init",
+  "schema_version": 1,
+  "_note_schema_kind": "11_data_contract.md §5.8 的 PubservInit。4 个公共服务单元，一区一个，顺序与 regions 枚举一致。",
+  "_note_authority_zh": "公共服务是服务部门的非市场子账户（计划书 §06）。本文件的三处上游事实来源：(1) population_init.json 的 pubserv 就业分配与 base_service_delivery_index_ppm；(2) io_table.json 附录 pubserv_account_uu 的逐单元资本与折旧解；(3) io_table.json 附录的公共服务年产出 14 200 000 μU（工资 + 中间投入 + 折旧，按成本计，不走市场销售，INV-101）。",
+  "_note_derivation_zh": {
+    "capacity": "全国容量 3 550 000 μQ_s/季 = 年产出 14 200 000 μU ÷ 4 季 ÷ 基年价 1 000 000 μU/Q_s。逐区份额 = Σ_组 (人口 × base_service_delivery_index_ppm) 的地区合计，用最大余数法分摊：北原 1 135 272、中州 1 214 625、海岬 764 849、西岭 435 254 μQ_s/季。",
+    "service_capacity_split": "逐区三项服务的拆分比例 = 本区该项的 Σ(人口 × base_service_delivery_index_ppm[kind]) 在本区三项合计中的份额，最大余数法，逐区合计精确 1 000 000（V-CELL-05）。它使 12_simulation_contract.md §7.8 的 base_delivered_g 在基年由容量侧复现。",
+    "availability": "基年四单元均为 1 000 000 ppm：government_init.json 的 annual_plan 已为 service_opex 列支 1 680 000 μU/年，基年不欠拨。欠拨只降本字段、不减资产（INV-102，计划书 §07）。",
+    "staff": "teachers_persons 与 health_staff_persons 是在岗总人数按本单元 service_capacity_split_ppm 划出的教育岗与医疗岗，最大余数法；两者之和不超过 employment_persons 之和，差额是水电与行政岗。"
+  },
+  "_note_identities_zh": {
+    "employment_cross_check": "employment_persons 逐 (地区, 技能) 等于 population_init.json 的 pubserv 就业汇总，合计 1 480 266 人（V-POP-08 / INV-151）。",
+    "service_split": "四个单元的 service_capacity_split_ppm 各自合计 1 000 000（V-CELL-05）。",
+    "capital_and_depreciation": "资本合计 31 627 646 μU；按 depreciation_ppm_per_q = 8 000 余额递减，逐季 floor 后四季折旧合计精确 1 000 000 μU（北原 284 561 / 中州 316 180 / 海岬 221 325 / 西岭 177 934），与 io_table.json 附录 pubserv_account_uu 逐字一致。"
+  },
+  "_note_open_questions_zh": [
+    "OQ-H 公共服务的工资口径三方不一致：io_table.json 附录取 9 000 000 μU/年，government_init.json 的 annual_plan.expenditure_lines_uu.public_wages 取 8 400 000 μU/年，而 population_init.json 的 1 480 266 名 pubserv 在岗人员按 scenario.json 的工资率 [1,2,3] μU/人/季 算出的季度工资是 3 132 135 μU，即 12 528 540 μU/年。三者必须收敛到一条：要么下调 pubserv 就业，要么上调 public_wages，要么改工资率刻度。本文件按 V-POP-08 采用 population_init 的在岗人数，容量则按 io_table 附录的产出，因此「容量 3 550 000 μQ_s/季」与「工资 3 132 135 μU/季」之间目前没有会计闭合。",
+    "OQ-I param.p10_staff_per_capacity_persons_per_qs = 30 000 人/Q_s 与本文件的人均容量差一个量级：按本文件，1 480 266 名公共服务人员对应 3 550 000 μQ_s/季，约 417 000 人/Q_s。若 P10 按 30 000 人/Q_s 反算医护编制，会得到与初值相差 13 倍的数。需要确认 p10 的系数只覆盖医疗这一项服务，还是整个 pubserv 单元。",
+    "OQ-J teachers_persons 在基年约 497 903 人，按 param.student_teacher_ratio 折出的 max_seats 远大于 P05 的 seats_max 80 000 席，INV-081 的「没有教师就没有席位」在基年不会成为活约束（ADV-03 仍可由把 teachers_persons 置 0 的对抗测试覆盖）。若希望该约束在正常玩法中可感知，需要重新界定 teachers_persons 的口径（例如只计可承接职业培训的教师），或提高 P05 的席位规模。",
+    "OQ-K PubservInit schema 没有 queue_persons 与 base_delivered 的初值位置。§7.8 的 base_delivered_g 在 q=0 由剧本固定、之后只读，而它目前只存在于 population_init 的 _note_extensions 注释子树里，载入器读不到。建议在 schema_version 2 增加一等字段。"
+  ],
+  "units": [
+    {
+      "pubserv_id": "pubserv.beiyuan",
+      "_note_zh": "北原。容量 1135272 μQ_s/季，占全国公共服务容量 3 550 000 μQ_s/季 的 319794 ppm，份额按本区「人口 × population_init 的 base_service_delivery_index_ppm」求和后用最大余数法定出，从而复现开局的服务不平等。资本 9000000 μU 取自 io_table.json 附录 pubserv_account_uu，四单元按 8 000 ppm 余额递减折旧、逐季 floor 后四季合计精确等于 1 000 000 μU。在岗 low/mid/high = 84682/187972/103984 人，合计 376638 人，逐字等于 population_init 的 pubserv 就业汇总（V-POP-08）。teachers_persons 与 health_staff_persons 按本单元的 service_capacity_split_ppm 从在岗总人数中用最大余数法划出，剩余 125630 人是水电与行政岗。",
+      "capacity_active_uqs_per_q": 1135272,
+      "capital_value_uu": 9000000000,
+      "availability_ppm": 1000000,
+      "employment_persons": {
+        "low": 84682,
+        "mid": 187972,
+        "high": 103984
+      },
+      "teachers_persons": 125746,
+      "health_staff_persons": 125262,
+      "service_capacity_split_ppm": {
+        "health": 332579,
+        "education": 333864,
+        "utility": 333557
+      }
+    },
+    {
+      "pubserv_id": "pubserv.zhongzhou",
+      "_note_zh": "中州。容量 1214625 μQ_s/季，占全国公共服务容量 3 550 000 μQ_s/季 的 342147 ppm，份额按本区「人口 × population_init 的 base_service_delivery_index_ppm」求和后用最大余数法定出，从而复现开局的服务不平等。资本 10000000 μU 取自 io_table.json 附录 pubserv_account_uu，四单元按 8 000 ppm 余额递减折旧、逐季 floor 后四季合计精确等于 1 000 000 μU。在岗 low/mid/high = 132727/358664/287519 人，合计 778910 人，逐字等于 population_init 的 pubserv 就业汇总（V-POP-08）。teachers_persons 与 health_staff_persons 按本单元的 service_capacity_split_ppm 从在岗总人数中用最大余数法划出，剩余 256163 人是水电与行政岗。",
+      "capacity_active_uqs_per_q": 1214625,
+      "capital_value_uu": 10000000000,
+      "availability_ppm": 1000000,
+      "employment_persons": {
+        "low": 132727,
+        "mid": 358664,
+        "high": 287519
+      },
+      "teachers_persons": 267137,
+      "health_staff_persons": 255610,
+      "service_capacity_split_ppm": {
+        "health": 328163,
+        "education": 342963,
+        "utility": 328874
+      }
+    },
+    {
+      "pubserv_id": "pubserv.haijia",
+      "_note_zh": "海岬。容量 764849 μQ_s/季，占全国公共服务容量 3 550 000 μQ_s/季 的 215450 ppm，份额按本区「人口 × population_init 的 base_service_delivery_index_ppm」求和后用最大余数法定出，从而复现开局的服务不平等。资本 7000000 μU 取自 io_table.json 附录 pubserv_account_uu，四单元按 8 000 ppm 余额递减折旧、逐季 floor 后四季合计精确等于 1 000 000 μU。在岗 low/mid/high = 47432/108798/54787 人，合计 211017 人，逐字等于 population_init 的 pubserv 就业汇总（V-POP-08）。teachers_persons 与 health_staff_persons 按本单元的 service_capacity_split_ppm 从在岗总人数中用最大余数法划出，剩余 67421 人是水电与行政岗。",
+      "capacity_active_uqs_per_q": 764849,
+      "capital_value_uu": 7000000000,
+      "availability_ppm": 1000000,
+      "employment_persons": {
+        "low": 47432,
+        "mid": 108798,
+        "high": 54787
+      },
+      "teachers_persons": 70223,
+      "health_staff_persons": 73373,
+      "service_capacity_split_ppm": {
+        "health": 347709,
+        "education": 332785,
+        "utility": 319506
+      }
+    },
+    {
+      "pubserv_id": "pubserv.xiling",
+      "_note_zh": "西岭。容量 435254 μQ_s/季，占全国公共服务容量 3 550 000 μQ_s/季 的 122606 ppm，份额按本区「人口 × population_init 的 base_service_delivery_index_ppm」求和后用最大余数法定出，从而复现开局的服务不平等。资本 5627646 μU 取自 io_table.json 附录 pubserv_account_uu，四单元按 8 000 ppm 余额递减折旧、逐季 floor 后四季合计精确等于 1 000 000 μU。在岗 low/mid/high = 33827/55893/23981 人，合计 113701 人，逐字等于 population_init 的 pubserv 就业汇总（V-POP-08）。teachers_persons 与 health_staff_persons 按本单元的 service_capacity_split_ppm 从在岗总人数中用最大余数法划出，剩余 42012 人是水电与行政岗。",
+      "capacity_active_uqs_per_q": 435254,
+      "capital_value_uu": 5627646000,
+      "availability_ppm": 1000000,
+      "employment_persons": {
+        "low": 33827,
+        "mid": 55893,
+        "high": 23981
+      },
+      "teachers_persons": 34797,
+      "health_staff_persons": 36892,
+      "service_capacity_split_ppm": {
+        "health": 324466,
+        "education": 306040,
+        "utility": 369494
+      }
+    }
+  ]
+}

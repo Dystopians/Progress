@@ -61,8 +61,20 @@ var _total_cash_uu: int = 0
 
 # ── 内容包布局（docs/11 §2；新增文件必须先改 §2） ───────────────────────────
 
-## 剧本目录（首版只有一个剧本）。
-const SCENARIO_DIR: String = "scenarios/chengwan"
+## 默认剧本名（R-SCENARIO-01）：`load_all` 的根路径不带 `#剧本名` 后缀时用它。
+const DEFAULT_SCENARIO: String = "chengwan"
+
+## 剧本目录的父目录。每个剧本占一个子目录 `scenarios/<name>/`，文件集合相同（§2）。
+const SCENARIOS_ROOT: String = "scenarios"
+
+## 本次载入的剧本目录（`scenarios/<name>`）。R-SCENARIO-01 之前是常量。
+var _scenario_dir: String = SCENARIOS_ROOT + "/" + DEFAULT_SCENARIO
+
+## 调用方传入的原始根路径（可能带 `#剧本名`），`root_path()` 原样返回，重放与复制据此重载同一剧本。
+var _root_spec: String = ""
+
+## 剧本模式（R-SCENARIO-01）：单届（旧 40 季现代版）与战役（四百年）。
+const MODE_NAMES: PackedStringArray = ["term", "campaign"]
 
 ## 剧本目录下必须齐全的九份文件（§2）。顺序即加载顺序的依据。
 const SCENARIO_FILES: PackedStringArray = [
@@ -233,7 +245,7 @@ func ids() -> JWIds:
 ## 不变量：INV-134（内容包身份由 content_hash 把关，本函数只给出它的来源路径）
 ## 失败：无
 func root_path() -> String:
-	return _root
+	return _root_spec
 
 
 ## R-ACCESS-01 登记的 `content.pop.base_service_access_ppm[3]`（载入期算一次，之后只读）。
@@ -696,9 +708,34 @@ func _in_layout(rel: String) -> bool:
 		return _event_index("event." + rel.substr(13, rel.length() - 18)) >= 0
 	if rel.begins_with("shocks/shock_S") and rel.ends_with(".json"):
 		return _shock_index("shock." + rel.substr(13, rel.length() - 18)) >= 0
-	if rel.begins_with(SCENARIO_DIR + "/"):
-		return SCENARIO_FILES.has(rel.substr(SCENARIO_DIR.length() + 1))
+	if rel.begins_with(SCENARIOS_ROOT + "/"):
+		var parts: PackedStringArray = rel.split("/")
+		return parts.size() == 3 and _scenario_name_ok(parts[1]) and SCENARIO_FILES.has(parts[2])
 	return false
+
+
+## 剧本目录名：小写字母、数字、下划线，1—32 字符（R-SCENARIO-01）。
+static func _scenario_name_ok(name: String) -> bool:
+	if name.is_empty() or name.length() > 32:
+		return false
+	for i: int in name.length():
+		var c: int = name.unicode_at(i)
+		var ok: bool = (c >= 97 and c <= 122) or (c >= 48 and c <= 57) or c == 95
+		if not ok:
+			return false
+	return true
+
+
+## 拆分 `load_all` 的根路径参数：`res://content#campaign_1600` → [目录, 剧本名]。
+## 不带 `#` 时剧本名取 DEFAULT_SCENARIO。
+static func split_root_spec(spec: String) -> PackedStringArray:
+	var root: String = spec
+	var name: String = DEFAULT_SCENARIO
+	var h: int = spec.rfind("#")
+	if h >= 0:
+		root = spec.substr(0, h)
+		name = spec.substr(h + 1)
+	return PackedStringArray([root.trim_suffix("/"), name])
 
 
 ## 读一个文件：格式（UTF-8 无 BOM / LF / 末尾单换行） → JSON 解析 → 方言 → 头部。
@@ -763,7 +800,7 @@ func _doc_index(rel: String) -> int:
 
 ## 取某个剧本文件的文档（缺失返回空字典；缺失本身已在 _read_one 登记）。
 func _scenario_doc(name: String) -> Dictionary:
-	var i: int = _doc_index(SCENARIO_DIR + "/" + name)
+	var i: int = _doc_index(_scenario_dir + "/" + name)
 	if i < 0:
 		return {}
 	return _docs[i]
@@ -908,7 +945,12 @@ func _add_open(agent: int, code: int, amount_uu: int) -> void:
 ## 失败：返回第一条错误的 JWResult，`errors` 里是完整清单；**任何一条失败都拒绝启动**
 func load_all(root_path: String, st: JWSimState) -> JWResult:
 	_reset()
-	_root = root_path.trim_suffix("/")
+	_root_spec = root_path
+	var spec: PackedStringArray = split_root_spec(root_path)
+	_root = spec[0]
+	if not _scenario_name_ok(spec[1]):
+		return _fail(JWResult.Load.FILE_FORMAT, root_path + "#bad-scenario-name", 0, 0)
+	_scenario_dir = SCENARIOS_ROOT + "/" + spec[1]
 	if st == null:
 		return _fail(JWResult.Load.SCHEMA_HEADER, "#state-null", 0, 0)
 	if st.registry_size() == 0:
@@ -930,7 +972,7 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 
 	# ② 读取 → 格式 → 解析 → 方言 → 头部。必备文件缺一即错。
 	for i: int in SCENARIO_FILES.size():
-		_read_one(SCENARIO_DIR + "/" + SCENARIO_FILES[i])
+		_read_one(_scenario_dir + "/" + SCENARIO_FILES[i])
 	for p: int in JWUnits.POLICY_N:
 		_read_one("policies/policy_P" + _pad2(p + 1) + ".json")
 	for e: int in JWUnits.EVENT_N:
@@ -944,7 +986,7 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 
 	# ③ 文件位置与 schema_kind 必须对得上（放错目录的文件不能靠内容蒙混过关）。
 	for i: int in SCENARIO_FILES.size():
-		var idx: int = _doc_index(SCENARIO_DIR + "/" + SCENARIO_FILES[i])
+		var idx: int = _doc_index(_scenario_dir + "/" + SCENARIO_FILES[i])
 		if idx >= 0 and _kinds[idx] != SCENARIO_KINDS[i]:
 			_fail(JWResult.Load.SCHEMA_HEADER,
 					_paths[idx] + "#/schema_kind", i, 0)
@@ -1038,6 +1080,7 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 	"unit_declaration", "horizon_q", "param_set_ref", "param_set_version", "root_seed",
 	"includes", "enabled_policies", "baseline_policies", "enabled_events", "enabled_shocks", "season_factor_ppm",
 	"prices_init", "world_init", "mandate_goals", "total_cash_uu", "notes_zh",
+	"mode", "start_year",
 ]
 const MANDATE_GOAL_NAMES: PackedStringArray = ["industry", "livelihood", "fiscal"]
 const SEASON_KEYS: PackedStringArray = ["gov_receipts", "gov_primary", "agri_output"]
@@ -1048,7 +1091,7 @@ const INCLUDE_KEYS: PackedStringArray = [
 
 
 func _validate_scenario(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/scenario.json#"
+	var w: String = _scenario_dir + "/scenario.json#"
 	var doc: Dictionary = _scenario_doc("scenario.json")
 	if doc.is_empty():
 		return
@@ -1066,8 +1109,28 @@ func _validate_scenario(st: JWSimState) -> void:
 	_expect_int(ud, "ppm_scale", JWUnits.PPM, uw, JWResult.Load.UNIT_MISMATCH)
 	_expect_int(ud, "base_price_uu_per_qs", JWUnits.BASE_PRICE, uw, JWResult.Load.UNIT_MISMATCH)
 
+	# R-SCENARIO-01：mode 缺省为单届（旧剧本不写这个键）；start_year 缺省 0 = 不显示公历年份。
+	var mode: int = JWUnits.Mode.TERM
+	if doc.has("mode"):
+		mode = _name_index(MODE_NAMES, _get_str(doc, "mode", w, JWResult.Load.SCHEMA_HEADER))
+		if mode < 0:
+			_fail(JWResult.Load.SCHEMA_HEADER, w + "/mode", 0, 0)
+			mode = JWUnits.Mode.TERM
+	st.mode = mode
+	var start_year: int = 0
+	if doc.has("start_year"):
+		start_year = _get_int(doc, "start_year", w, JWResult.Load.SCHEMA_HEADER)
+		if start_year < 1 or start_year > 9999:
+			_fail(JWResult.Load.RANGE, w + "/start_year", start_year, 9999)
+			start_year = 0
+	st.start_year = start_year
+
+	# R-CLOCK-01：单届只认 40 / 120；战役为 4 的倍数，4—1600 季（最长四百年）。
 	var horizon: int = _get_int(doc, "horizon_q", w, JWResult.Load.SCHEMA_HEADER)
-	if horizon != 40 and horizon != 120:
+	var horizon_ok: bool = horizon == 40 or horizon == 120
+	if mode == JWUnits.Mode.CAMPAIGN:
+		horizon_ok = horizon >= 4 and horizon <= JWUnits.HORIZON_Q_MAX and horizon % 4 == 0
+	if not horizon_ok:
 		_fail(JWResult.Load.SCHEMA_HEADER, w + "/horizon_q", horizon, 40)
 	else:
 		st.horizon_q = horizon
@@ -1090,7 +1153,7 @@ func _validate_scenario(st: JWSimState) -> void:
 				JWResult.Load.SCHEMA_HEADER)
 		if fname.is_empty():
 			continue
-		if _doc_index(SCENARIO_DIR + "/" + fname) < 0:
+		if _doc_index(_scenario_dir + "/" + fname) < 0:
 			_fail(JWResult.Load.FILE_FORMAT,
 					w + "/includes/" + INCLUDE_KEYS[i] + "#dangling", 0, 0)
 
@@ -1261,7 +1324,7 @@ const IO_ALLOWED: PackedStringArray = [
 
 
 func _validate_io(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/io_table.json#"
+	var w: String = _scenario_dir + "/io_table.json#"
 	var doc: Dictionary = _scenario_doc("io_table.json")
 	if doc.is_empty():
 		return
@@ -1370,7 +1433,7 @@ var _region_population_decl: PackedInt64Array = PackedInt64Array()
 
 
 func _validate_regions(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/regions.json#"
+	var w: String = _scenario_dir + "/regions.json#"
 	var doc: Dictionary = _scenario_doc("regions.json")
 	if doc.is_empty():
 		return
@@ -1520,7 +1583,7 @@ var _group_deposit_total: int = 0
 
 
 func _validate_population(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/population_init.json#"
+	var w: String = _scenario_dir + "/population_init.json#"
 	var doc: Dictionary = _scenario_doc("population_init.json")
 	if doc.is_empty():
 		return
@@ -1811,7 +1874,7 @@ var _pubserv_employment: PackedInt64Array = PackedInt64Array()
 
 
 func _validate_cells(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/cells_init.json#"
+	var w: String = _scenario_dir + "/cells_init.json#"
 	var doc: Dictionary = _scenario_doc("cells_init.json")
 	if doc.is_empty():
 		return
@@ -1987,7 +2050,7 @@ const PUBSERV_ALLOWED: PackedStringArray = [
 
 
 func _validate_pubserv(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/pubserv_init.json#"
+	var w: String = _scenario_dir + "/pubserv_init.json#"
 	var doc: Dictionary = _scenario_doc("pubserv_init.json")
 	if doc.is_empty():
 		return
@@ -2111,7 +2174,7 @@ var _annual_procurement_uu: int = 0
 
 
 func _validate_government(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/government_init.json#"
+	var w: String = _scenario_dir + "/government_init.json#"
 	var doc: Dictionary = _scenario_doc("government_init.json")
 	if doc.is_empty():
 		return
@@ -2437,7 +2500,7 @@ const BLOC_ALLOWED: PackedStringArray = [
 
 
 func _validate_politics(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/politics_init.json#"
+	var w: String = _scenario_dir + "/politics_init.json#"
 	var doc: Dictionary = _scenario_doc("politics_init.json")
 	if doc.is_empty():
 		return
@@ -2851,7 +2914,7 @@ func _validate_policies(st: JWSimState) -> void:
 ## 计划书 §05 的基年财政（全年收入 20 U、支出 22 U 含法定转移）来自开局就在执行的制度；
 ## 若它们不在 q=0 生效，基年第一季的税收恒为 0，国库在第 0 季即被掏空。
 func _apply_baseline_policies(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/scenario.json#/baseline_policies"
+	var w: String = _scenario_dir + "/scenario.json#/baseline_policies"
 	var doc: Dictionary = _scenario_doc("scenario.json")
 	var list: Array = _get_array(doc, "baseline_policies", w, JWResult.Load.SCHEMA_HEADER)
 	var en: PackedInt64Array = _zeros(JWUnits.POLICY_N)
@@ -3519,7 +3582,7 @@ func _validate_shocks(st: JWSimState) -> void:
 ## 跨文件引用解析与冗余交叉校验（docs/11 §7 的第七段）。
 ## 这些检查**故意冗余**：同一个数在两份文件里各写一遍，对不上就说明有一份是手改的。
 func _resolve_cross_refs(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "#cross"
+	var w: String = _scenario_dir + "#cross"
 	if _group_population.size() != JWUnits.GROUP:
 		return
 
@@ -3588,7 +3651,7 @@ func _resolve_cross_refs(st: JWSimState) -> void:
 ##    与 ① 的判定互为交叉验证（对不上说明有一侧是手改的）。
 func check_scenario_assertions(st: JWSimState) -> JWResult:
 	var before: int = errors.size()
-	var w: String = SCENARIO_DIR + "#assertions"
+	var w: String = _scenario_dir + "#assertions"
 
 	# INV-141：Σ 人口 == 24 000 000，四地区 9/7/5/3 百万。
 	if _group_population.size() == JWUnits.GROUP:
@@ -3619,7 +3682,7 @@ func check_scenario_assertions(st: JWSimState) -> JWResult:
 ## 跑 `assertions.json`（§5.11）。`at == "load"` 的当场判；`q_end:<n>` 的只校验形态，
 ## 由季末的诊断层去判 —— 载入期判不了还没跑出来的量，硬判就是自欺。
 func _run_assertion_file(st: JWSimState) -> void:
-	var w: String = SCENARIO_DIR + "/assertions.json#"
+	var w: String = _scenario_dir + "/assertions.json#"
 	var doc: Dictionary = _scenario_doc("assertions.json")
 	if doc.is_empty():
 		return
@@ -4143,12 +4206,15 @@ func compute_content_hash(root_path: String) -> String:
 		var rel: String = files[i]
 		if rel == PARAMS_REGISTRY or not _in_layout(rel):
 			continue
+		# R-SCENARIO-01：别的剧本目录不进本剧本的内容指纹，改战役内容不会让旧剧本存档进只读。
+		if rel.begins_with(SCENARIOS_ROOT + "/") and not rel.begins_with(_scenario_dir + "/"):
+			continue
 		var parser: JSON = JSON.new()
 		if parser.parse(FileAccess.get_file_as_bytes(root + "/" + rel)
 				.get_string_from_utf8()) != OK:
 			continue
 		_canon_node(all_buf, rel, parser.data)
-		if rel.begins_with(SCENARIO_DIR + "/"):
+		if rel.begins_with(_scenario_dir + "/"):
 			_canon_node(scenario_buf, rel, parser.data)
 	# 空缓冲不做 sha256：HashingContext.update 对零长度输入会报错，而「一个文件都没读到」
 	# 本身已经是加载流水线里报过的错（布局与必备文件那两段）。此时返回空串，

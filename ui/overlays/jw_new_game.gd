@@ -5,6 +5,8 @@ extends JwOverlay
 var _seed_edit: LineEdit = null
 var _goal: int = -1
 var _goal_buttons: Array[Button] = []
+## 选中的剧本目录名（R-SCENARIO-01）；空串 = 沿用会话当前剧本。
+var _scenario: String = ""
 
 
 func _init() -> void:
@@ -15,11 +17,35 @@ func _init() -> void:
 
 func build() -> void:
 	set_title(JwText.t("ng.title"))
+	var list: Array[Dictionary] = JwCatalog.list_scenarios()
+	if list.size() > 1:
+		var rh: HBoxContainer = JwUi.hbox(10)
+		rh.add_child(JwUi.label(JwText.t("ng.scenario"), "body", "text.secondary"))
+		var so: OptionButton = OptionButton.new()
+		so.name = "ScenarioOption"
+		for i: int in list.size():
+			so.add_item(String(list[i]["label"]), i)
+			if String(list[i]["name"]) == session.catalog.scenario_name:
+				so.select(i)
+		so.item_selected.connect(func(i: int) -> void:
+			_scenario = String(list[i]["name"])
+			session.use_scenario(_scenario)
+			for c: Node in body.get_children():
+				body.remove_child(c)
+				c.queue_free()
+			_goal_buttons.clear()
+			build())
+		rh.add_child(so)
+		body.add_child(rh)
 	body.add_child(JwUi.label(JwText.render("ng.country", {"country": session.catalog.country_label()}), "title_page"))
 	var hq: int = session.catalog.horizon_q()
 	@warning_ignore("integer_division")
 	var years: int = hq / 4
-	body.add_child(JwUi.para(JwText.render("ng.intro", {"quarters": str(hq), "years": str(years)}), "text.secondary"))
+	if session.catalog.scenario_mode() == 1:
+		body.add_child(JwUi.para(JwText.render("ng.intro_campaign", {"start_year": str(session.catalog.start_year()),
+				"end_year": str(session.catalog.start_year() + years), "years": str(years)}), "text.secondary"))
+	else:
+		body.add_child(JwUi.para(JwText.render("ng.intro", {"quarters": str(hq), "years": str(years)}), "text.secondary"))
 	body.add_child(JwUi.para(JwText.t("ng.disclaimer"), "text.muted"))
 	var sh: HBoxContainer = JwUi.hbox(10)
 	sh.add_child(JwUi.label(JwText.t("ng.seed"), "body", "text.secondary"))
@@ -81,7 +107,7 @@ func _start() -> void:
 	var seed_v: int = _seed_edit.text.to_int() if _seed_edit.text.is_valid_int() else 1
 	if seed_v == 0:
 		seed_v = 1
-	var r: Dictionary = session.start_new(seed_v, _goal)
+	var r: Dictionary = session.start_new(seed_v, _goal, _scenario)
 	if bool(r.get("ok", false)):
 		close()
 		if root_ui != null:

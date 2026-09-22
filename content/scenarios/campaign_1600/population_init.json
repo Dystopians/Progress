@@ -1,0 +1,3900 @@
+{
+  "schema_kind": "population_init",
+  "schema_version": 1,
+  "_note_schema_kind": "结构按 11_data_contract.md §5.7 PopulationInit；文件路径为契约 §2 规定的 content/scenarios/chengwan/population_init.json，与 scenario.json 的 /includes/population_init 逐字一致。",
+  "_note_toplevel_keys_zh": "顶层只含 §5.7 声明的四个键（schema_kind / schema_version / groups / demography_rates），groups[] 与 demography_rates 内部也严格只含 §5.7 的键。原先的 _note_derived_check 与 extensions 两个顶层键违反 §3「对象键必须是 schema 已声明的键」，现改名为 _note__note_derived_check 与 _note_extensions 注释键：内容一字未删、一个数未改，但按 §1.5 与 §6.4，注释键不进加载器、不进 content_hash，因此它们不再是可被校验器核对的事实来源。由此产生的两个缺口登记在 _note_open_questions_zh。",
+  "_note_open_questions_zh": {
+    "oq__note_derived_check_has_no_authoritative_home": "_note__note_derived_check 内的逐项算据（分年龄人口、失业率反算的分子与分母、V-POP-08 的 (地区,去向,技能) 就业交叉表、住房与支持度的复核值）降级为注释后，只剩人工与离线脚本可读。契约 §5.11 指定的载入期冗余断言载体是 assertions.json，而该文件尚未落地（校验器现报 E_CONTENT_LAYOUT「不存在」）。在它落地并把这些期望值写成 checks[] 之前，V-POP-08 的「群组侧就业 == cells_init / pubserv_init 侧在岗人数」两侧都没有权威输入。要求：assertions.json 补齐后把期望值搬过去，不要两处并存，也不要在本文件重新提升为顶层键。",
+    "oq_extensions_has_no_schema_slot": "_note_extensions 内的 groups_ext（36 组）与 source_cards（21 张）承载计划书 §08 与 §14 要求、而 §5.7 schema 没有位置安放的内容：收入来源构成、可支配收入、服务交付指数、住房负担、迁移倾向、队列去向，以及每一族数值的来源登记。它们既不能留在顶层（§3 拒绝未声明键），也不能搬进 parameters/params_core.json（§5.15 的分界线明写：剧本初值属内容数据，不建也不允许建 param.* 卡；故这些卡用 card_id 而非 parameter_id）。缺口在契约一侧，本文件不自行扩 schema：需要 §5.7 为这些字段正式登记位置，或 §5.15 为「内容数据的集合级来源登记」给出载体。在裁定之前，改这些数值不会被任何校验器发现。",
+    "oq_generator_paths_stale": "tools/gen_population.py（本文件的生成脚本）与 tools/verify_population.py（独立复核脚本）仍写死旧路径 content/scenarios/chengwan/population.json，且 gen_population.py 仍会输出 _note_derived_check / extensions 两个顶层键；content/parameters/registry.json 的 21 条 location 也仍指向旧路径与旧键名。本次修复按「只改这一个内容文件」的分工执行，未动这三份文件——在它们同步之前，重跑生成脚本会原样撤销本次修复。",
+    "oq_scenario_json_must_follow": "本次重拟合求出的 prices_init.wage_uu_per_person_q = [810, 1354, 2222] 与 prices_init.housing_rent_uu_per_unit_q = [223, 561, 413, 253] 的权威位置在 content/scenarios/chengwan/scenario.json，不在本文件，且不属于本次分工。在 scenario.json 同步之前，本文件的收入侧（工资总额、可支配收入、住房支出、人均基准）与价格侧不一致：scenario.json 仍写 [1000, 2000, 3000] 与 [1000, 1000, 1000, 1000]。同时 scenario.json 的 _note_prices_init 整段正文（「撞上了记账单位的分辨率下限」云云）在 R-SCALE-01 之后已经不成立，必须重写。",
+    "oq_base_per_capita_period_conflict": "base_per_capita_real_income_uu 的**期间**在契约里没有写死，两处默认互相矛盾：docs/18 R-SCALE-01 的分辨率表把它记为「人均实际收入约 3 100」（= 全国年可支配收入 / 人口，年口径，也是本文件一直采用的口径）；docs/12 §8.1 却写 per_capita_uu = idiv_floor(real_income_uu[g], pop)，而 real_income_uu 来自 derived.group.disposable_income_uu——那是**季度**流量。两者差 4 倍。按 §8.1 现行写法，基年 real_income_norm_ppm 只有 249 513..250 000 ppm 而不是 1 000 000，乘收入权重 500 000 ppm 后，living_index 在第 0 季末即比剧本登记的基年值 1 000 000 低约 375 000 ppm（约 37.5 个百分点），R-SUPPORT-01 的 Δliving 于是在开局凭空产生一次大幅负冲击。本文件按既有登记的年口径取值（docs/18 优先级最高），并请求契约在 §8.1 与 §5.7 里**写明期间**；同时请求把归一化改成 per_capita_resolution_check.proposed_fused_norm_expr 的融合形式，以消掉人均中间取整。裁定之前不要单方面改本字段的口径。",
+    "oq_statutory_transfer_mismatch": "government_init.json 的 annual_plan.expenditure_lines_uu.statutory_transfers 现为 4 000 000 000/年，而本文件的收入侧一直按 900 000 000/季 = 3 600 000 000/年 记账（card.statutory_transfer_base_year 也写 3 600 000）。差 400 000 000/年。本次分工不写 government_init，按既有收入侧取值保持不变，登记备查：两侧必须有一侧改。",
+    "oq_cash_allocation_frozen": "groups[].cash_uu 的登记derivation（card.household_cash）是「按基年可支配收入用最大余数法分配 9 000 000 000 μU」。本次工资重拟合改变了可支配收入，严格重跑会改动 36 个 cash_uu。本文件**刻意冻结**这 36 个值：现金是存量，它的分配权重是设计选择而非会计恒等式，重分配只会在不增加任何正确性的前提下动 36 个规范字段，并可能碰到本文件看不见的引用。合计仍精确等于 9 000 000 000（INV-018 不受影响）。若将来要重分配，必须与 scenario.json 的 total_cash_uu 一起复核。"
+  },
+  "groups": [
+    {
+      "group_id": "group.beiyuan.minor.low",
+      "population_persons": 1053000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 289343000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 351000,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1795,
+      "expectation_ppm": 960000,
+      "trust_ppm": 520000,
+      "support_ppm": 520000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 396837,
+      "base_delivered_service_uqs": {
+        "health": 28448,
+        "education": 137294,
+        "utility": 44305
+      }
+    },
+    {
+      "group_id": "group.beiyuan.minor.mid",
+      "population_persons": 1053000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 289343000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 351000,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1795,
+      "expectation_ppm": 1020000,
+      "trust_ppm": 560000,
+      "support_ppm": 540000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 396837,
+      "base_delivered_service_uqs": {
+        "health": 28448,
+        "education": 137294,
+        "utility": 44305
+      }
+    },
+    {
+      "group_id": "group.beiyuan.minor.high",
+      "population_persons": 234000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 64298000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 78000,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1795,
+      "expectation_ppm": 1090000,
+      "trust_ppm": 610000,
+      "support_ppm": 570000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 88186,
+      "base_delivered_service_uqs": {
+        "health": 6322,
+        "education": 30510,
+        "utility": 9846
+      }
+    },
+    {
+      "group_id": "group.beiyuan.working.low",
+      "population_persons": 3402000,
+      "participation_ppm": 700000,
+      "employed_persons": {
+        "sector.agri": 1333741,
+        "sector.manu": 211705,
+        "sector.energy": 42341,
+        "sector.services": 444580,
+        "pubserv": 84682
+      },
+      "cash_uu": 773165000,
+      "deposit_uu": 2188226000,
+      "housing_units_occupied": 1134000,
+      "support_out_weight_ppm": 320000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1610,
+      "expectation_ppm": 900000,
+      "trust_ppm": 520000,
+      "support_ppm": 520000,
+      "bloc_affiliation_ppm": [
+        441000,
+        40000,
+        112000
+      ],
+      "base_real_consumption_uqs": 1149951,
+      "base_delivered_service_uqs": {
+        "health": 131298,
+        "education": 44357,
+        "utility": 143140
+      }
+    },
+    {
+      "group_id": "group.beiyuan.working.mid",
+      "population_persons": 1814400,
+      "participation_ppm": 800000,
+      "employed_persons": {
+        "sector.agri": 416223,
+        "sector.manu": 241678,
+        "sector.energy": 53706,
+        "sector.services": 443077,
+        "pubserv": 187972
+      },
+      "cash_uu": 853092000,
+      "deposit_uu": 3501161000,
+      "housing_units_occupied": 604800,
+      "support_out_weight_ppm": 320000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2825,
+      "expectation_ppm": 960000,
+      "trust_ppm": 560000,
+      "support_ppm": 540000,
+      "bloc_affiliation_ppm": [
+        216999,
+        120000,
+        256000
+      ],
+      "base_real_consumption_uqs": 1076144,
+      "base_delivered_service_uqs": {
+        "health": 70025,
+        "education": 23657,
+        "utility": 76342
+      }
+    },
+    {
+      "group_id": "group.beiyuan.working.high",
+      "population_persons": 453600,
+      "participation_ppm": 860000,
+      "employed_persons": {
+        "sector.agri": 44565,
+        "sector.manu": 59420,
+        "sector.energy": 22282,
+        "sector.services": 141121,
+        "pubserv": 103984
+      },
+      "cash_uu": 318154000,
+      "deposit_uu": 2334108000,
+      "housing_units_occupied": 151200,
+      "support_out_weight_ppm": 320000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 4623,
+      "expectation_ppm": 1030000,
+      "trust_ppm": 610000,
+      "support_ppm": 570000,
+      "bloc_affiliation_ppm": [
+        84000,
+        320000,
+        352000
+      ],
+      "base_real_consumption_uqs": 440267,
+      "base_delivered_service_uqs": {
+        "health": 17506,
+        "education": 5914,
+        "utility": 19086
+      }
+    },
+    {
+      "group_id": "group.beiyuan.elder.low",
+      "population_persons": 712800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 210714000,
+      "deposit_uu": 916971000,
+      "housing_units_occupied": 237600,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2112,
+      "expectation_ppm": 820000,
+      "trust_ppm": 560000,
+      "support_ppm": 540000,
+      "bloc_affiliation_ppm": [
+        364000,
+        24000,
+        80000
+      ],
+      "base_real_consumption_uqs": 316068,
+      "base_delivered_service_uqs": {
+        "health": 68775,
+        "education": 0,
+        "utility": 29991
+      }
+    },
+    {
+      "group_id": "group.beiyuan.elder.mid",
+      "population_persons": 237600,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 77663000,
+      "deposit_uu": 764142000,
+      "housing_units_occupied": 79200,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2587,
+      "expectation_ppm": 880000,
+      "trust_ppm": 600000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        364000,
+        72000,
+        80000
+      ],
+      "base_real_consumption_uqs": 129051,
+      "base_delivered_service_uqs": {
+        "health": 22925,
+        "education": 0,
+        "utility": 9997
+      }
+    },
+    {
+      "group_id": "group.beiyuan.elder.high",
+      "population_persons": 39600,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 15832000,
+      "deposit_uu": 305657000,
+      "housing_units_occupied": 13200,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 3697,
+      "expectation_ppm": 950000,
+      "trust_ppm": 650000,
+      "support_ppm": 590000,
+      "bloc_affiliation_ppm": [
+        364000,
+        192000,
+        80000
+      ],
+      "base_real_consumption_uqs": 30737,
+      "base_delivered_service_uqs": {
+        "health": 3821,
+        "education": 0,
+        "utility": 1666
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.minor.low",
+      "population_persons": 385000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 142495000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 123200,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2446,
+      "expectation_ppm": 1040000,
+      "trust_ppm": 580000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 197713,
+      "base_delivered_service_uqs": {
+        "health": 13592,
+        "education": 80391,
+        "utility": 21970
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.minor.mid",
+      "population_persons": 739200,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 273591000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 236544,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2446,
+      "expectation_ppm": 1100000,
+      "trust_ppm": 620000,
+      "support_ppm": 580000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 379610,
+      "base_delivered_service_uqs": {
+        "health": 26098,
+        "education": 154350,
+        "utility": 42183
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.minor.high",
+      "population_persons": 415800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 153895000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 133056,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2446,
+      "expectation_ppm": 1170000,
+      "trust_ppm": 670000,
+      "support_ppm": 610000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 213531,
+      "base_delivered_service_uqs": {
+        "health": 14680,
+        "education": 86822,
+        "utility": 23728
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.working.low",
+      "population_persons": 1592500,
+      "participation_ppm": 660000,
+      "employed_persons": {
+        "sector.agri": 132727,
+        "sector.manu": 132727,
+        "sector.energy": 9480,
+        "sector.services": 540387,
+        "pubserv": 132727
+      },
+      "cash_uu": 357717000,
+      "deposit_uu": 1536486000,
+      "housing_units_occupied": 509600,
+      "support_out_weight_ppm": 300000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1620,
+      "expectation_ppm": 980000,
+      "trust_ppm": 580000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        98000,
+        100000,
+        224000
+      ],
+      "base_real_consumption_uqs": 541643,
+      "base_delivered_service_uqs": {
+        "health": 80319,
+        "education": 33253,
+        "utility": 90877
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.working.mid",
+      "population_persons": 1956500,
+      "participation_ppm": 810000,
+      "employed_persons": {
+        "sector.agri": 89666,
+        "sector.manu": 224165,
+        "sector.energy": 29889,
+        "sector.services": 792050,
+        "pubserv": 358664
+      },
+      "cash_uu": 987427000,
+      "deposit_uu": 5663047000,
+      "housing_units_occupied": 626080,
+      "support_out_weight_ppm": 300000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 3115,
+      "expectation_ppm": 1040000,
+      "trust_ppm": 620000,
+      "support_ppm": 580000,
+      "bloc_affiliation_ppm": [
+        41999,
+        180000,
+        311999
+      ],
+      "base_real_consumption_uqs": 1279549,
+      "base_delivered_service_uqs": {
+        "health": 98678,
+        "education": 40853,
+        "utility": 111649
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.working.high",
+      "population_persons": 1001000,
+      "participation_ppm": 880000,
+      "employed_persons": {
+        "sector.agri": 25370,
+        "sector.manu": 109934,
+        "sector.energy": 25369,
+        "sector.services": 397453,
+        "pubserv": 287519
+      },
+      "cash_uu": 770696000,
+      "deposit_uu": 7726328000,
+      "housing_units_occupied": 320320,
+      "support_out_weight_ppm": 300000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 5306,
+      "expectation_ppm": 1110000,
+      "trust_ppm": 670000,
+      "support_ppm": 610000,
+      "bloc_affiliation_ppm": [
+        21000,
+        380000,
+        375999
+      ],
+      "base_real_consumption_uqs": 1115117,
+      "base_delivered_service_uqs": {
+        "health": 50486,
+        "education": 20902,
+        "utility": 57123
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.elder.low",
+      "population_persons": 436800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 175318000,
+      "deposit_uu": 842872000,
+      "housing_units_occupied": 139776,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2922,
+      "expectation_ppm": 900000,
+      "trust_ppm": 620000,
+      "support_ppm": 580000,
+      "bloc_affiliation_ppm": [
+        84000,
+        60000,
+        80000
+      ],
+      "base_real_consumption_uqs": 267967,
+      "base_delivered_service_uqs": {
+        "health": 55076,
+        "education": 0,
+        "utility": 24926
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.elder.mid",
+      "population_persons": 345800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 155004000,
+      "deposit_uu": 1668185000,
+      "housing_units_occupied": 110656,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 3635,
+      "expectation_ppm": 960000,
+      "trust_ppm": 660000,
+      "support_ppm": 600000,
+      "bloc_affiliation_ppm": [
+        84000,
+        108000,
+        80000
+      ],
+      "base_real_consumption_uqs": 263905,
+      "base_delivered_service_uqs": {
+        "health": 43602,
+        "education": 0,
+        "utility": 19733
+      }
+    },
+    {
+      "group_id": "group.zhongzhou.elder.high",
+      "population_persons": 127400,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 71041000,
+      "deposit_uu": 1475026000,
+      "housing_units_occupied": 40768,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 5300,
+      "expectation_ppm": 1030000,
+      "trust_ppm": 710000,
+      "support_ppm": 630000,
+      "bloc_affiliation_ppm": [
+        84000,
+        228000,
+        80000
+      ],
+      "base_real_consumption_uqs": 141763,
+      "base_delivered_service_uqs": {
+        "health": 16064,
+        "education": 0,
+        "utility": 7270
+      }
+    },
+    {
+      "group_id": "group.haijia.minor.low",
+      "population_persons": 385000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 134519000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 124740,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2276,
+      "expectation_ppm": 1080000,
+      "trust_ppm": 550000,
+      "support_ppm": 540000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 183972,
+      "base_delivered_service_uqs": {
+        "health": 13043,
+        "education": 68288,
+        "utility": 18817
+      }
+    },
+    {
+      "group_id": "group.haijia.minor.mid",
+      "population_persons": 528000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 184483000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 171072,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2276,
+      "expectation_ppm": 1140000,
+      "trust_ppm": 590000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 252305,
+      "base_delivered_service_uqs": {
+        "health": 17888,
+        "education": 93653,
+        "utility": 25806
+      }
+    },
+    {
+      "group_id": "group.haijia.minor.high",
+      "population_persons": 187000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 65338000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 60588,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2276,
+      "expectation_ppm": 1210000,
+      "trust_ppm": 640000,
+      "support_ppm": 590000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 89358,
+      "base_delivered_service_uqs": {
+        "health": 6335,
+        "education": 33169,
+        "utility": 9140
+      }
+    },
+    {
+      "group_id": "group.haijia.working.low",
+      "population_persons": 1507500,
+      "participation_ppm": 690000,
+      "employed_persons": {
+        "sector.agri": 113837,
+        "sector.manu": 379456,
+        "sector.energy": 28459,
+        "sector.services": 379456,
+        "pubserv": 47432
+      },
+      "cash_uu": 356198000,
+      "deposit_uu": 1272666000,
+      "housing_units_occupied": 488430,
+      "support_out_weight_ppm": 290000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1685,
+      "expectation_ppm": 1020000,
+      "trust_ppm": 550000,
+      "support_ppm": 540000,
+      "bloc_affiliation_ppm": [
+        84000,
+        100000,
+        360000
+      ],
+      "base_real_consumption_uqs": 533306,
+      "base_delivered_service_uqs": {
+        "health": 72959,
+        "education": 26739,
+        "utility": 73679
+      }
+    },
+    {
+      "group_id": "group.haijia.working.mid",
+      "population_persons": 1407000,
+      "participation_ppm": 820000,
+      "employed_persons": {
+        "sector.agri": 54399,
+        "sector.manu": 456950,
+        "sector.energy": 43519,
+        "sector.services": 424311,
+        "pubserv": 108798
+      },
+      "cash_uu": 722704000,
+      "deposit_uu": 3563465000,
+      "housing_units_occupied": 455868,
+      "support_out_weight_ppm": 290000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 3129,
+      "expectation_ppm": 1080000,
+      "trust_ppm": 590000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        35000,
+        180000,
+        415999
+      ],
+      "base_real_consumption_uqs": 924312,
+      "base_delivered_service_uqs": {
+        "health": 68096,
+        "education": 24956,
+        "utility": 68767
+      }
+    },
+    {
+      "group_id": "group.haijia.working.high",
+      "population_persons": 435500,
+      "participation_ppm": 870000,
+      "employed_persons": {
+        "sector.agri": 10957,
+        "sector.manu": 146098,
+        "sector.energy": 21915,
+        "sector.services": 131489,
+        "pubserv": 54787
+      },
+      "cash_uu": 332556000,
+      "deposit_uu": 2941273000,
+      "housing_units_occupied": 141102,
+      "support_out_weight_ppm": 290000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 5174,
+      "expectation_ppm": 1150000,
+      "trust_ppm": 640000,
+      "support_ppm": 590000,
+      "bloc_affiliation_ppm": [
+        20998,
+        380000,
+        439999
+      ],
+      "base_real_consumption_uqs": 473079,
+      "base_delivered_service_uqs": {
+        "health": 21077,
+        "education": 7725,
+        "utility": 21285
+      }
+    },
+    {
+      "group_id": "group.haijia.elder.low",
+      "population_persons": 319000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 120182000,
+      "deposit_uu": 538614000,
+      "housing_units_occupied": 103356,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2693,
+      "expectation_ppm": 940000,
+      "trust_ppm": 590000,
+      "support_ppm": 560000,
+      "bloc_affiliation_ppm": [
+        63000,
+        60000,
+        80000
+      ],
+      "base_real_consumption_uqs": 180362,
+      "base_delivered_service_uqs": {
+        "health": 38597,
+        "education": 0,
+        "utility": 15591
+      }
+    },
+    {
+      "group_id": "group.haijia.elder.mid",
+      "population_persons": 187000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 78122000,
+      "deposit_uu": 789348000,
+      "housing_units_occupied": 60588,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 3317,
+      "expectation_ppm": 1000000,
+      "trust_ppm": 630000,
+      "support_ppm": 580000,
+      "bloc_affiliation_ppm": [
+        63000,
+        108000,
+        80000
+      ],
+      "base_real_consumption_uqs": 130229,
+      "base_delivered_service_uqs": {
+        "health": 22626,
+        "education": 0,
+        "utility": 9139
+      }
+    },
+    {
+      "group_id": "group.haijia.elder.high",
+      "population_persons": 44000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 22593000,
+      "deposit_uu": 445750000,
+      "housing_units_occupied": 14256,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 4773,
+      "expectation_ppm": 1070000,
+      "trust_ppm": 680000,
+      "support_ppm": 610000,
+      "bloc_affiliation_ppm": [
+        63000,
+        228000,
+        80000
+      ],
+      "base_real_consumption_uqs": 44092,
+      "base_delivered_service_uqs": {
+        "health": 5324,
+        "education": 0,
+        "utility": 2150
+      }
+    },
+    {
+      "group_id": "group.xiling.minor.low",
+      "population_persons": 277200,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 79025000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 92400,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1866,
+      "expectation_ppm": 880000,
+      "trust_ppm": 460000,
+      "support_ppm": 450000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 108599,
+      "base_delivered_service_uqs": {
+        "health": 7781,
+        "education": 43646,
+        "utility": 14860
+      }
+    },
+    {
+      "group_id": "group.xiling.minor.mid",
+      "population_persons": 297000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 84669000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 99000,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1866,
+      "expectation_ppm": 940000,
+      "trust_ppm": 500000,
+      "support_ppm": 470000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 116356,
+      "base_delivered_service_uqs": {
+        "health": 8337,
+        "education": 46763,
+        "utility": 15922
+      }
+    },
+    {
+      "group_id": "group.xiling.minor.high",
+      "population_persons": 85800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 24460000,
+      "deposit_uu": 0,
+      "housing_units_occupied": 28600,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1866,
+      "expectation_ppm": 1010000,
+      "trust_ppm": 550000,
+      "support_ppm": 500000,
+      "bloc_affiliation_ppm": [
+        0,
+        0,
+        0
+      ],
+      "base_real_consumption_uqs": 33614,
+      "base_delivered_service_uqs": {
+        "health": 2408,
+        "education": 13509,
+        "utility": 4600
+      }
+    },
+    {
+      "group_id": "group.xiling.working.low",
+      "population_persons": 967200,
+      "participation_ppm": 670000,
+      "employed_persons": {
+        "sector.agri": 118394,
+        "sector.manu": 67654,
+        "sector.energy": 135307,
+        "sector.services": 208599,
+        "pubserv": 33827
+      },
+      "cash_uu": 208459000,
+      "deposit_uu": 699885000,
+      "housing_units_occupied": 322400,
+      "support_out_weight_ppm": 330000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 1543,
+      "expectation_ppm": 820000,
+      "trust_ppm": 460000,
+      "support_ppm": 450000,
+      "bloc_affiliation_ppm": [
+        146999,
+        40000,
+        144000
+      ],
+      "base_real_consumption_uqs": 313329,
+      "base_delivered_service_uqs": {
+        "health": 38783,
+        "education": 15229,
+        "utility": 51850
+      }
+    },
+    {
+      "group_id": "group.xiling.working.mid",
+      "population_persons": 706800,
+      "participation_ppm": 790000,
+      "employed_persons": {
+        "sector.agri": 50812,
+        "sector.manu": 71137,
+        "sector.energy": 147354,
+        "sector.services": 182923,
+        "pubserv": 55893
+      },
+      "cash_uu": 323194000,
+      "deposit_uu": 1534363000,
+      "housing_units_occupied": 235600,
+      "support_out_weight_ppm": 330000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2786,
+      "expectation_ppm": 880000,
+      "trust_ppm": 500000,
+      "support_ppm": 470000,
+      "bloc_affiliation_ppm": [
+        70000,
+        120000,
+        200000
+      ],
+      "base_real_consumption_uqs": 413425,
+      "base_delivered_service_uqs": {
+        "health": 28341,
+        "education": 11129,
+        "utility": 37890
+      }
+    },
+    {
+      "group_id": "group.xiling.working.high",
+      "population_persons": 186000,
+      "participation_ppm": 850000,
+      "employed_persons": {
+        "sector.agri": 5995,
+        "sector.manu": 17985,
+        "sector.energy": 50959,
+        "sector.services": 50959,
+        "pubserv": 23981
+      },
+      "cash_uu": 128182000,
+      "deposit_uu": 1076746000,
+      "housing_units_occupied": 62000,
+      "support_out_weight_ppm": 330000,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 4612,
+      "expectation_ppm": 950000,
+      "trust_ppm": 550000,
+      "support_ppm": 500000,
+      "bloc_affiliation_ppm": [
+        27998,
+        320000,
+        223999
+      ],
+      "base_real_consumption_uqs": 180103,
+      "base_delivered_service_uqs": {
+        "health": 7458,
+        "education": 2929,
+        "utility": 9971
+      }
+    },
+    {
+      "group_id": "group.xiling.elder.low",
+      "population_persons": 307200,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 94777000,
+      "deposit_uu": 444592000,
+      "housing_units_occupied": 102400,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2223,
+      "expectation_ppm": 740000,
+      "trust_ppm": 500000,
+      "support_ppm": 470000,
+      "bloc_affiliation_ppm": [
+        126000,
+        24000,
+        80000
+      ],
+      "base_real_consumption_uqs": 143377,
+      "base_delivered_service_uqs": {
+        "health": 30795,
+        "education": 0,
+        "utility": 16468
+      }
+    },
+    {
+      "group_id": "group.xiling.elder.mid",
+      "population_persons": 144000,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 49490000,
+      "deposit_uu": 521006000,
+      "housing_units_occupied": 48000,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 2758,
+      "expectation_ppm": 800000,
+      "trust_ppm": 540000,
+      "support_ppm": 490000,
+      "bloc_affiliation_ppm": [
+        126000,
+        72000,
+        80000
+      ],
+      "base_real_consumption_uqs": 83383,
+      "base_delivered_service_uqs": {
+        "health": 14435,
+        "education": 0,
+        "utility": 7719
+      }
+    },
+    {
+      "group_id": "group.xiling.elder.high",
+      "population_persons": 28800,
+      "participation_ppm": 0,
+      "employed_persons": {
+        "sector.agri": 0,
+        "sector.manu": 0,
+        "sector.energy": 0,
+        "sector.services": 0,
+        "pubserv": 0
+      },
+      "cash_uu": 12261000,
+      "deposit_uu": 250083000,
+      "housing_units_occupied": 9600,
+      "support_out_weight_ppm": 0,
+      "service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "consumption_index_ppm": 1000000,
+      "living_index_ppm": 1000000,
+      "base_per_capita_real_income_uu": 4006,
+      "expectation_ppm": 870000,
+      "trust_ppm": 590000,
+      "support_ppm": 520000,
+      "bloc_affiliation_ppm": [
+        126000,
+        192000,
+        80000
+      ],
+      "base_real_consumption_uqs": 24223,
+      "base_delivered_service_uqs": {
+        "health": 2887,
+        "education": 0,
+        "utility": 1544
+      }
+    }
+  ],
+  "demography_rates": {
+    "birth_ppm_per_q": {
+      "region.beiyuan": 5400,
+      "region.zhongzhou": 4400,
+      "region.haijia": 4600,
+      "region.xiling": 4800
+    },
+    "death_ppm_per_q": {
+      "minor": 80,
+      "working": 320,
+      "elder": 20000
+    },
+    "age_out_ppm_per_q": {
+      "minor": 13889,
+      "working": 5319
+    },
+    "birth_target_skill": "low"
+  },
+  "_note_derived_check": {
+    "_note_zh": "本块是载入期冗余校验的算据，供人工与离线脚本复核；SimCore 不得从这里读任何值（INV-143）。原为顶层键 derived_check，因 §3「additionalProperties: false」不接受未声明键而改名为注释键；按 §1.5／§6.4 它不进加载器、不进 content_hash。权威的载入期冗余断言载体是 §5.11 的 assertions.json，该文件落地后本块应整体迁过去。",
+    "total_population_persons": 24000000,
+    "population_by_region_persons": {
+      "region.beiyuan": 9000000,
+      "region.zhongzhou": 7000000,
+      "region.haijia": 5000000,
+      "region.xiling": 3000000
+    },
+    "population_by_age_persons": {
+      "minor": 5640000,
+      "working": 15430000,
+      "elder": 2930000
+    },
+    "unemployment": {
+      "formula": "labor_force_g = idiv_floor(population_persons_g * participation_ppm_g, 1000000)  [仅 working 组]；employed_g = Σ_dest employed_persons[dest]；unemployed_g = labor_force_g - employed_g；unemployment_ppm = idiv_floor(Σ_g unemployed_g * 1000000, Σ_g labor_force_g)",
+      "numerator_unemployed_persons": 934161,
+      "denominator_labor_force_persons": 11677007,
+      "product_numerator_times_1e6": 934161000000,
+      "unemployment_ppm": 80000,
+      "expect_ppm": 80000,
+      "labor_force_by_region_skill_persons": {
+        "region.beiyuan|low": 2381400,
+        "region.beiyuan|mid": 1451520,
+        "region.beiyuan|high": 390096,
+        "region.zhongzhou|low": 1051050,
+        "region.zhongzhou|mid": 1584765,
+        "region.zhongzhou|high": 880880,
+        "region.haijia|low": 1040175,
+        "region.haijia|mid": 1153740,
+        "region.haijia|high": 378885,
+        "region.xiling|low": 648024,
+        "region.xiling|mid": 558372,
+        "region.xiling|high": 158100
+      },
+      "employed_by_region_skill_persons": {
+        "region.beiyuan|low": 2117049,
+        "region.beiyuan|mid": 1342656,
+        "region.beiyuan|high": 371372,
+        "region.zhongzhou|low": 948048,
+        "region.zhongzhou|mid": 1494434,
+        "region.zhongzhou|high": 845645,
+        "region.haijia|low": 948640,
+        "region.haijia|mid": 1087977,
+        "region.haijia|high": 365246,
+        "region.xiling|low": 563781,
+        "region.xiling|mid": 508119,
+        "region.xiling|high": 149879
+      },
+      "participation_rate_national_ppm": 756772,
+      "employment_rate_of_population_ppm": 447618
+    },
+    "employment_cross_check_for_cells_init": {
+      "_note_zh": "V-POP-08 的对账表：cells_init.employment_persons 与 pubserv_init.employment_persons 必须逐项等于此表。",
+      "by_region_dest_skill_persons": {
+        "region.beiyuan|sector.agri|low": 1333741,
+        "region.beiyuan|sector.manu|low": 211705,
+        "region.beiyuan|sector.energy|low": 42341,
+        "region.beiyuan|sector.services|low": 444580,
+        "region.beiyuan|pubserv|low": 84682,
+        "region.beiyuan|sector.agri|mid": 416223,
+        "region.beiyuan|sector.manu|mid": 241678,
+        "region.beiyuan|sector.energy|mid": 53706,
+        "region.beiyuan|sector.services|mid": 443077,
+        "region.beiyuan|pubserv|mid": 187972,
+        "region.beiyuan|sector.agri|high": 44565,
+        "region.beiyuan|sector.manu|high": 59420,
+        "region.beiyuan|sector.energy|high": 22282,
+        "region.beiyuan|sector.services|high": 141121,
+        "region.beiyuan|pubserv|high": 103984,
+        "region.zhongzhou|sector.agri|low": 132727,
+        "region.zhongzhou|sector.manu|low": 132727,
+        "region.zhongzhou|sector.energy|low": 9480,
+        "region.zhongzhou|sector.services|low": 540387,
+        "region.zhongzhou|pubserv|low": 132727,
+        "region.zhongzhou|sector.agri|mid": 89666,
+        "region.zhongzhou|sector.manu|mid": 224165,
+        "region.zhongzhou|sector.energy|mid": 29889,
+        "region.zhongzhou|sector.services|mid": 792050,
+        "region.zhongzhou|pubserv|mid": 358664,
+        "region.zhongzhou|sector.agri|high": 25370,
+        "region.zhongzhou|sector.manu|high": 109934,
+        "region.zhongzhou|sector.energy|high": 25369,
+        "region.zhongzhou|sector.services|high": 397453,
+        "region.zhongzhou|pubserv|high": 287519,
+        "region.haijia|sector.agri|low": 113837,
+        "region.haijia|sector.manu|low": 379456,
+        "region.haijia|sector.energy|low": 28459,
+        "region.haijia|sector.services|low": 379456,
+        "region.haijia|pubserv|low": 47432,
+        "region.haijia|sector.agri|mid": 54399,
+        "region.haijia|sector.manu|mid": 456950,
+        "region.haijia|sector.energy|mid": 43519,
+        "region.haijia|sector.services|mid": 424311,
+        "region.haijia|pubserv|mid": 108798,
+        "region.haijia|sector.agri|high": 10957,
+        "region.haijia|sector.manu|high": 146098,
+        "region.haijia|sector.energy|high": 21915,
+        "region.haijia|sector.services|high": 131489,
+        "region.haijia|pubserv|high": 54787,
+        "region.xiling|sector.agri|low": 118394,
+        "region.xiling|sector.manu|low": 67654,
+        "region.xiling|sector.energy|low": 135307,
+        "region.xiling|sector.services|low": 208599,
+        "region.xiling|pubserv|low": 33827,
+        "region.xiling|sector.agri|mid": 50812,
+        "region.xiling|sector.manu|mid": 71137,
+        "region.xiling|sector.energy|mid": 147354,
+        "region.xiling|sector.services|mid": 182923,
+        "region.xiling|pubserv|mid": 55893,
+        "region.xiling|sector.agri|high": 5995,
+        "region.xiling|sector.manu|high": 17985,
+        "region.xiling|sector.energy|high": 50959,
+        "region.xiling|sector.services|high": 50959,
+        "region.xiling|pubserv|high": 23981
+      },
+      "by_dest_persons": {
+        "sector.agri": 2396686,
+        "sector.manu": 2118909,
+        "sector.energy": 610580,
+        "sector.services": 4136405,
+        "pubserv": 1480266
+      },
+      "total_employed_persons": 10742846
+    },
+    "housing_cross_check_for_regions_init": {
+      "_note_zh": "V-POP-06 要求逐地区 Σ housing_units_occupied ≤ regions.json 的 housing_stock_units。",
+      "occupied_units_by_region": {
+        "region.beiyuan": 3000000,
+        "region.zhongzhou": 2240000,
+        "region.haijia": 1620000,
+        "region.xiling": 1000000
+      },
+      "total_occupied_units": 7860000,
+      "persons_per_housing_unit_assumed": 3
+    },
+    "index_base_check": {
+      "_note_zh": "V-POP-07：三项服务可及性与两个指数的人口加权值必须精确等于 1000000。因 service_access_ppm 的区间上限也是 1000000（10 号文件 §6.3），两条约束联立的唯一解是 36 组全为 1000000；开局服务不平等改由 _note_extensions.groups_ext[].base_service_delivery_index_ppm 承载。",
+      "weighted_sum_population_persons": 24000000,
+      "weighted_service_access_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "weighted_service_access_numerator": {
+        "health": 24000000000000,
+        "education": 24000000000000,
+        "utility": 24000000000000
+      },
+      "weighted_base_service_delivery_index_ppm": {
+        "health": 1000000,
+        "education": 1000000,
+        "utility": 1000000
+      },
+      "weighted_consumption_index_ppm": 1000000,
+      "weighted_living_index_ppm": 1000000
+    },
+    "housing_rent_resolution_check": {
+      "_note_zh": "R-SCALE-01 之后本块从「刻度挤压的证据」改为「租金拟合的算据」。1 U = 1 000 000 000 μU 之后，租金的最小可表达值 1 μU/套/季 只相当于全国季度可支配收入的 521 ppm，设计目标折算出的逐地区租金第一次落在合法区间内部而不是被 floor 成 0。逐地区租金 = idiv_floor(设计目标负担率 × 地区季度可支配收入, 1e6 × 地区占用套数)，取整方向 floor（docs/10 §0「总额 → 每套」：少收租优于向居民多收）。",
+      "solved_rent_uu_per_unit_q": {
+        "region.beiyuan": 223,
+        "region.zhongzhou": 561,
+        "region.haijia": 413,
+        "region.xiling": 253
+      },
+      "design_target_burden_ppm_by_region": {
+        "region.beiyuan": 140000,
+        "region.zhongzhou": 240000,
+        "region.haijia": 200000,
+        "region.xiling": 150000
+      },
+      "achieved_burden_ppm_by_region": {
+        "region.beiyuan": 139586,
+        "region.zhongzhou": 239757,
+        "region.haijia": 199843,
+        "region.xiling": 149974
+      },
+      "disposable_income_by_region_uu_per_q": {
+        "region.beiyuan": 4792732523,
+        "region.zhongzhou": 5241288188,
+        "region.haijia": 3347924543,
+        "region.xiling": 1686954809
+      },
+      "occupied_units_by_region": {
+        "region.beiyuan": 3000000,
+        "region.zhongzhou": 2240000,
+        "region.haijia": 1620000,
+        "region.xiling": 1000000
+      },
+      "total_occupied_units": 7860000,
+      "national_housing_cost_uu_per_q": 2847700000,
+      "national_disposable_income_uu_per_q": 15068900063,
+      "national_housing_burden_ppm": 188978,
+      "_note_tightness_zh": "档位次序直接来自住房紧张程度，不是凭空排的：中州（存量 2 240 000 套 < 人口/3 = 2 333 334 套，缺口 4.0%，迁移闸 cap_housing 为 0）最高 561 μU；海岬（存量 1 620 000 < 1 666 667，缺口 2.8%，cap_housing 同为 0）次之 413 μU；西岭（占用率 98.0%，有余量）253 μU；北原（存量最大、占用率 98.4%）最低 223 μU。全国住房支出占居民可支配收入 188 978 ppm，落在 140 000—240 000 ppm 的逐地区设计目标之内，也落在「住房支出占可支配收入」的可辩护区间（约 150 000—300 000 ppm）里；旧刻度下这个数是 421 997 ppm，是被 1 μU 的整数下限顶出来的，不是设计值。",
+      "_note_group_spread_zh": "逐地区目标是按**地区**可支配收入定的，逐组实得负担率必然分散（64 310..443 140 ppm）：未成年与老年组自己没有工资收入，其住房支出由组间赡养转移覆盖，因此这些组的负担率高于本地区均值是口径结果，不是取值错误。"
+    },
+    "per_capita_resolution_check": {
+      "_note_zh": "base_per_capita_real_income_uu[g] = idiv_floor(4 × base_disposable_income_uu_per_q[g], population_persons[g])，即**年**人均实际可支配收入，与 docs/18 R-SCALE-01 「人均实际收入约 3 100（4 位有效数字）」同口径。旧刻度下 floor 把它压成 1…6 六个取值；新刻度下 36 组有 28 个互异取值，最小 1 543、最大 5 306，全部 4 位有效数字。注意：docs/12 §8.1 的 per_capita_uu 用的是**季度**可支配收入，两者差 4 倍，该口径冲突登记在 oq_base_per_capita_period_conflict，必须由契约裁定，本文件不自行改口径。",
+      "national_annual_disposable_income_uu": 60275600252,
+      "national_population_persons": 24000000,
+      "national_annual_per_capita_uu": 2511,
+      "base_per_capita_real_income_uu_min": 1543,
+      "base_per_capita_real_income_uu_max": 5306,
+      "distinct_values_count": 28,
+      "proposed_fused_norm_expr": "real_income_norm_ppm[g] = clamp_i(mul_div_floor(mul(real_income_uu[g], 4), 1000000, max(mul(content.base_per_capita_real_income_uu[g], state.group.population_persons[g]), 1)), 0, 3000000)",
+      "_note_fused_zh": "融合表达式消掉 docs/12 §8.1 的 per_capita_uu = idiv_floor(real_income, pop) 这一步中间取整：人均量只有 2 511 级，一个 floor 单位就是约 398 ppm 的量化台阶，乘 living 的收入权重 500 000 ppm 后仍有约 199 ppm，会让生活指数只能跳着走。融合后分辨率回到 1 ppm。溢出：real_income ≤ AMOUNT_MAX 4e15，×4 = 1.6e16，再经 mul_div_floor 拆商余后与 1e6 相乘不溢出（INV-007）；分母 base_pci × pop ≤ 约 127 344 000 000，恒 > 0。",
+      "fused_norm_base_year_ppm_min": 1000003,
+      "fused_norm_base_year_ppm_max": 1000426,
+      "legacy_norm_base_year_ppm_min": 249513,
+      "legacy_norm_base_year_ppm_max": 250000,
+      "_note_legacy_zh": "对照：照 docs/12 §8.1 现行写法（季度人均 ÷ 年人均基准）算，基年 real_income_norm_ppm 只有 249 513..250 000 ppm 而不是 1 000 000；乘收入权重 500 000 ppm 后，living_index 在第 0 季末就会比剧本登记的基年值 1 000 000 低约 375 000 ppm，R-SUPPORT-01 的 Δliving 因此在开局凭空产生一次大幅负冲击。这不是本文件的取值问题，是 §8.1 与本字段的期间口径不一致，见 _note_open_questions_zh.oq_base_per_capita_period_conflict。"
+    },
+    "deposit_cross_check_for_government_init": {
+      "_note_zh": "V-FIN-09 / INV-024：Σ group.deposit_uu 必须等于 invpool.cash_uu + Σ(holder==invpool) principal_outstanding_uu。",
+      "sum_group_deposit_uu": 43000000000,
+      "required_invpool_cash_plus_bondhold_uu": 43000000000
+    },
+    "cash_cross_check_for_scenario": {
+      "_note_zh": "INV-018：scenario.total_cash_uu 必须包含此项。",
+      "sum_group_cash_uu": 9000000000
+    },
+    "cross_file_check": {
+      "_note_zh": "本块登记本文件读取过的兄弟文件取值；任一方改动而另一方未改，这里就会对不上。SimCore 不得从这里读值（INV-143）。",
+      "from_regions_json": {
+        "housing_stock_units": {
+          "region.beiyuan": 3050000,
+          "region.zhongzhou": 2240000,
+          "region.haijia": 1620000,
+          "region.xiling": 1020000
+        },
+        "occupied_units_written_here": {
+          "region.beiyuan": 3000000,
+          "region.zhongzhou": 2240000,
+          "region.haijia": 1620000,
+          "region.xiling": 1000000
+        },
+        "occupancy_ratio_ppm": {
+          "region.beiyuan": 983606,
+          "region.zhongzhou": 1000000,
+          "region.haijia": 1000000,
+          "region.xiling": 980392
+        },
+        "implied_persons_per_occupied_unit_ppm": {
+          "region.beiyuan": 3000000,
+          "region.zhongzhou": 3125000,
+          "region.haijia": 3086419,
+          "region.xiling": 3000000
+        },
+        "migration_cap_housing_persons": {
+          "region.beiyuan": 150000,
+          "region.zhongzhou": 0,
+          "region.haijia": 0,
+          "region.xiling": 60000
+        },
+        "_note_zh": "中州与海岬的住房存量低于「人口 / 3」，占用被存量顶住，实际户均人数 > 3；同时 12 号文件 §7.5 的 cap_housing = stock×3 − 人口 在这两区为 0，即开局不接受任何净迁入。这是 regions.json 取值的直接后果，登记备查。"
+      },
+      "from_government_init_json": {
+        "invpool_cash_uu": 9000000000,
+        "invpool_bondhold_uu": 34000000000,
+        "required_sum_group_deposit_uu": 43000000000,
+        "actual_sum_group_deposit_uu": 43000000000,
+        "invpool_quarterly_coupon_uu": 317500000,
+        "income_tax_quarter_uu": 2600000000,
+        "profit_tax_quarter_uu": 1800000000,
+        "statutory_transfers_quarter_uu": 900000000,
+        "public_wages_quarter_uu": 2250000000,
+        "actual_pubserv_wage_bill_uu_per_q": 2250000000,
+        "_note_zh": "public_wages_quarter_uu 与 actual_pubserv_wage_bill_uu_per_q 必须精确相等——这是本次重拟合修回来的恒等式（旧工资率下两者差 882 135 000 μU/季）。statutory_transfers_quarter_uu 取 900 000 000 是按 3 600 000 000/年 记的；government_init 现写 4 000 000 000/年，差 400 000 000，见 oq_statutory_transfer_mismatch。"
+      },
+      "from_scenario_json": {
+        "wage_uu_per_person_q": [
+          810,
+          1354,
+          2222
+        ],
+        "housing_rent_uu_per_unit_q": [
+          223,
+          561,
+          413,
+          253
+        ],
+        "implied_wage_bill_uu_per_q": 13559142948,
+        "implied_labor_share_of_quarterly_gdp_ppm": 542365,
+        "residual_gross_operating_surplus_uu_per_q": 11440857052,
+        "sum_group_cash_uu_for_total_cash_reconciliation": 9000000000,
+        "_note_zh": "**这两个数组的权威副本在 scenario.json /prices_init，不在本文件**；本次分工不写那个文件，求解结果登记在此供交接：scenario.json 必须同步改成上面两行，否则收入侧与价格侧脱节。工资率 [810, 1354, 2222] 是「公共部门工资总额 == government_init 的 public_wages / 4」这条恒等式在技能溢价结构带内的**唯一**整数解。该方程的解在 (a, b, c) 上是一条二维格，格距 156 757 / 237 109，因此在 c > b > a > 0 且 c ≤ 8a 的全域只有 5 组解：[(425, 1355, 2465), (487, 1762, 1810), (748, 947, 2877), (810, 1354, 2222), (1195, 1353, 1979)]；另外四组的溢价结构分别是 3.19x/5.80x、3.62x/3.72x、1.27x/3.85x、1.13x/1.66x，要么中档溢价高得不像技能差距，要么中档几乎没有溢价，全部落在结构带外。旧值 [1000, 2000, 3000] 给出 3 132 135 000 μU/季，比 2 250 000 000 高 39.2%，那条恒等式在迁移后是破的。溢价结构：中档 / 低档 = 1 354 / 810 = +67.2%，高档 / 中档 = 2 222 / 1 354 = +64.1%，两级近似等比，对应「每上一档技能约 +65% 的工资溢价」这一条可辩护的结构假设。"
+      }
+    },
+    "base_income_identity_uu_per_q": {
+      "_note_zh": "基年每季居民收入分解；各项之和逐项精确对账（拆分均用最大余数法）。",
+      "wage": 13559142948,
+      "business_distribution": 2892257115,
+      "transfer": 900000000,
+      "other_property_income": 317500000,
+      "gross_household_income": 17668900063,
+      "income_tax_paid": 2600000000,
+      "household_support_in": 4464381163,
+      "household_support_out": 4464381163,
+      "disposable_income": 15068900063,
+      "housing_cost": 2847700000,
+      "quarterly_nominal_gdp_reference_uu": 25000000000,
+      "wage_share_of_quarterly_gdp_ppm": 542365,
+      "_note_wage_share_zh": "本键旧值 745 612 000 是迁移器的连带损伤：键名 base_income_identity_uu_per_q 含 uu 词元，整棵子树被 ×1000，把一个 ppm 也乘了进去。ppm 与货币刻度无关，已改回 ppm 量纲。"
+    },
+    "support_national_check": {
+      "population_weighted_support_ppm": 544118,
+      "adult_weighted_support_ppm": 544127,
+      "support_ppm_if_recomputed_by_s08_formula": {
+        "population_weighted": 865816,
+        "adult_weighted": 860215,
+        "_note_zh": "12 号文件 §8 的 support = Σ w_i × (living, expectation, trust)。因 living_index_ppm 的基年值就是 1000000（满分口径），该式在第 0 季末会把支持度从剧本给定的约 54% 直接推到约 87%，与 politics_init 的席位占比脱节。这是公式口径问题，不是本文件的初值问题，已登记为待决问题。"
+      },
+      "seats_reference": {
+        "seats_total": 101,
+        "seats_gov": 56,
+        "seats_gov_share_ppm": 554455
+      },
+      "_note_zh": "与 politics_init.seats_gov / seats_total 的席位占比应处在同一量级；未成年组是否计入支持度加权见待决问题（本文件同时给出含/不含未成年的两个口径）。"
+    },
+    "demography_flow_check_persons_per_q": {
+      "births": 74976,
+      "deaths": 63978,
+      "minor_to_working": 78331,
+      "working_to_elder": 82066,
+      "_note_zh": "首版人口不要求平稳：净自然增长为正、老年组缓慢变大，是剧本有意保留的结构压力。"
+    }
+  },
+  "_note_extensions": {
+    "_note_zh": "本块不进 SimCore 状态。它承载计划书 §08 与 §14 要求、而 §5.7 schema 目前没有位置安放的内容：收入来源构成、住房负担、服务交付指数、迁移倾向、队列参数的逐组落点，以及每一族数值的来源登记。原为顶层键 extensions，因 §3「additionalProperties: false」不接受未声明键而改名为 _note_extensions；内容一字未改，但由此明确不是加载器输入，也不进 content_hash。source_cards 用 card_id 而非 parameter_id：它们是内容数据的来源登记，不是 §5.15 的 param.* 参数卡，故不迁往 parameters/params_core.json。",
+    "extension_version": 1,
+    "_note_base_service_delivery_index_zh": "12 号文件 §7.8 的 base_delivered_g 口径：1000000 = 基年全国人均交付水平，人口加权和精确等于 1000000。本指数承载开局的服务不平等；state.group.service_access_ppm 本身受 0..1000000 区间与 V-POP-07 双重约束，基年只能恒为 1000000。pubserv_init 的容量与地区分配应复现本指数。",
+    "_note_housing_zh": "租金由 scenario.json 的 housing_rent_uu_per_unit_q 给出（OQ-244：首版固定不更新）。R-SCALE-01 之后租金第一次可表达：逐地区取 [223, 561, 413, 253] μU/套/季（北原/中州/海岬/西岭），由各区设计目标负担率与本文件的地区可支配收入反解，算据与紧张程度依据见 _note_derived_check.housing_rent_resolution_check。旧刻度下租金只能取最小值 1 μU/套/季，住房负担被顶到 421 997 ppm，那是刻度产物不是设计值。",
+    "_note_migration_zh": "迁移的拉力/推力权重与阈值是全局 param.migration_*（12 号文件 §7.5 只按地区对计算）。relative_propensity_ppm 是逐组的相对迁移倾向乘数，首版 SimCore 未消费，登记为待决扩展。",
+    "_note_cohort_zh": "skill_up_ppm_per_q 恒为 0：计划书 §08「教育按队列结业，不在拨款当季让全民升级」，12 号文件 §7.6 规定技能档变化只能来自 education_cohort 的到期配对。该字段保留为口径说明，不是可调速率。出生/死亡/成年/退休的实际速率在 demography_rates，此处逐组重列只为满足「每组的队列参数都有来源与去向」的可读性要求。",
+    "groups_ext": [
+      {
+        "group_id": "group.beiyuan.minor.low",
+        "label_zh": "北原·未成年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 472585095,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 472585095,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 813016,
+          "education": 815098,
+          "utility": 815516
+        },
+        "housing": {
+          "units_occupied": 351000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 78273000,
+          "housing_burden_ppm": 165627,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.beiyuan.working.low",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.minor.mid"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.minor.mid",
+        "label_zh": "北原·未成年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 472585095,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 472585095,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 893016,
+          "education": 895099,
+          "utility": 895516
+        },
+        "housing": {
+          "units_occupied": 351000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 78273000,
+          "housing_burden_ppm": 165627,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.beiyuan.working.mid",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.minor.high"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.minor.high",
+        "label_zh": "北原·未成年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 105018910,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 105018910,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 993016,
+          "education": 995099,
+          "utility": 995516
+        },
+        "housing": {
+          "units_occupied": 78000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 17394000,
+          "housing_burden_ppm": 165627,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.beiyuan.working.high",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.working.low",
+        "label_zh": "北原·劳动年龄·低",
+        "in_labor_force": 1,
+        "labor_force_persons": 2381400,
+        "employed_persons_total": 2117049,
+        "unemployed_persons": 264351,
+        "unemployment_ppm_derived": 111006,
+        "base_income_lines_uu_per_q": {
+          "wage": 1714809690,
+          "business_distribution": 147183992,
+          "transfer": 254684043,
+          "other_property_income": 16157250,
+          "household_support_in": 0,
+          "household_support_out": 644653721,
+          "income_tax_paid": 118292095
+        },
+        "base_disposable_income_uu_per_q": 1369889159,
+        "base_equity_share_ppm": 50889,
+        "base_service_delivery_index_ppm": {
+          "health": 807454,
+          "education": 812723,
+          "utility": 809954
+        },
+        "housing": {
+          "units_occupied": 1134000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 252882000,
+          "housing_burden_ppm": 184600,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1200000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 5400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.beiyuan.elder.low",
+          "age_in_source": "group.beiyuan.minor.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.working.mid"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.working.mid",
+        "label_zh": "北原·劳动年龄·中",
+        "in_labor_force": 1,
+        "labor_force_persons": 1451520,
+        "employed_persons_total": 1342656,
+        "unemployed_persons": 108864,
+        "unemployment_ppm_derived": 75000,
+        "base_income_lines_uu_per_q": {
+          "wage": 1817956224,
+          "business_distribution": 235494388,
+          "transfer": 104882991,
+          "other_property_income": 25851596,
+          "household_support_in": 0,
+          "household_support_out": 603118766,
+          "income_tax_paid": 299439055
+        },
+        "base_disposable_income_uu_per_q": 1281627378,
+        "base_equity_share_ppm": 81422,
+        "base_service_delivery_index_ppm": {
+          "health": 893016,
+          "education": 895099,
+          "utility": 895516
+        },
+        "housing": {
+          "units_occupied": 604800,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 134870400,
+          "housing_burden_ppm": 105233,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1000000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 5400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.beiyuan.elder.mid",
+          "age_in_source": "group.beiyuan.minor.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.working.high"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.working.high",
+        "label_zh": "北原·劳动年龄·高",
+        "in_labor_force": 1,
+        "labor_force_persons": 390096,
+        "employed_persons_total": 371372,
+        "unemployed_persons": 18724,
+        "unemployment_ppm_derived": 47998,
+        "base_income_lines_uu_per_q": {
+          "wage": 825188584,
+          "business_distribution": 156996258,
+          "transfer": 18039289,
+          "other_property_income": 17234402,
+          "household_support_in": 0,
+          "household_support_out": 246727387,
+          "income_tax_paid": 246435447
+        },
+        "base_disposable_income_uu_per_q": 524295699,
+        "base_equity_share_ppm": 54282,
+        "base_service_delivery_index_ppm": {
+          "health": 993016,
+          "education": 995099,
+          "utility": 995516
+        },
+        "housing": {
+          "units_occupied": 151200,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 33717600,
+          "housing_burden_ppm": 64310,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 800000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 5400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.beiyuan.elder.high",
+          "age_in_source": "group.beiyuan.minor.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.elder.low",
+        "label_zh": "北原·老年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 61677101,
+          "transfer": 0,
+          "other_property_income": 6770658,
+          "household_support_in": 319903757,
+          "household_support_out": 0,
+          "income_tax_paid": 11946029
+        },
+        "base_disposable_income_uu_per_q": 376405487,
+        "base_equity_share_ppm": 21325,
+        "base_service_delivery_index_ppm": {
+          "health": 793016,
+          "education": 795099,
+          "utility": 795516
+        },
+        "housing": {
+          "units_occupied": 237600,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 52984800,
+          "housing_burden_ppm": 140765,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.beiyuan.working.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.elder.mid"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.elder.mid",
+        "label_zh": "北原·老年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 51397585,
+          "transfer": 0,
+          "other_property_income": 5642211,
+          "household_support_in": 106634586,
+          "household_support_out": 0,
+          "income_tax_paid": 9955023
+        },
+        "base_disposable_income_uu_per_q": 153719359,
+        "base_equity_share_ppm": 17771,
+        "base_service_delivery_index_ppm": {
+          "health": 873016,
+          "education": 875099,
+          "utility": 875516
+        },
+        "housing": {
+          "units_occupied": 79200,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 17661600,
+          "housing_burden_ppm": 114895,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.beiyuan.working.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.beiyuan.elder.high"
+        }
+      },
+      {
+        "group_id": "group.beiyuan.elder.high",
+        "label_zh": "北原·老年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 20559034,
+          "transfer": 0,
+          "other_property_income": 2256886,
+          "household_support_in": 17772431,
+          "household_support_out": 0,
+          "income_tax_paid": 3982010
+        },
+        "base_disposable_income_uu_per_q": 36606341,
+        "base_equity_share_ppm": 7108,
+        "base_service_delivery_index_ppm": {
+          "health": 973016,
+          "education": 975099,
+          "utility": 975516
+        },
+        "housing": {
+          "units_occupied": 13200,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 223,
+          "housing_cost_uu_per_q": 2943600,
+          "housing_burden_ppm": 80412,
+          "housing_burden_design_target_ppm": 140000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.beiyuan.working.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.minor.low",
+        "label_zh": "中州·未成年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 235510369,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 235510369,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1083016,
+          "education": 1135099,
+          "utility": 1085516
+        },
+        "housing": {
+          "units_occupied": 123200,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 69115200,
+          "housing_burden_ppm": 293469,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.zhongzhou.working.low",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.minor.mid"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.minor.mid",
+        "label_zh": "中州·未成年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 452179909,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 452179909,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1163016,
+          "education": 1215099,
+          "utility": 1165516
+        },
+        "housing": {
+          "units_occupied": 236544,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 132701184,
+          "housing_burden_ppm": 293469,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.zhongzhou.working.mid",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.minor.high"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.minor.high",
+        "label_zh": "中州·未成年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 254351199,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 254351199,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1263016,
+          "education": 1315099,
+          "utility": 1265516
+        },
+        "housing": {
+          "units_occupied": 133056,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 74644416,
+          "housing_burden_ppm": 293469,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.zhongzhou.working.high",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.working.low",
+        "label_zh": "中州·劳动年龄·低",
+        "in_labor_force": 1,
+        "labor_force_persons": 1051050,
+        "employed_persons_total": 948048,
+        "unemployed_persons": 103002,
+        "unemployment_ppm_derived": 97999,
+        "base_income_lines_uu_per_q": {
+          "wage": 767918880,
+          "business_distribution": 103346785,
+          "transfer": 99235357,
+          "other_property_income": 11344984,
+          "household_support_in": 0,
+          "household_support_out": 276486656,
+          "income_tax_paid": 60223819
+        },
+        "base_disposable_income_uu_per_q": 645135531,
+        "base_equity_share_ppm": 35732,
+        "base_service_delivery_index_ppm": {
+          "health": 1083016,
+          "education": 1135099,
+          "utility": 1085516
+        },
+        "housing": {
+          "units_occupied": 509600,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 285885600,
+          "housing_burden_ppm": 443140,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1200000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.zhongzhou.elder.low",
+          "age_in_source": "group.zhongzhou.minor.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.working.mid"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.working.mid",
+        "label_zh": "中州·劳动年龄·中",
+        "in_labor_force": 1,
+        "labor_force_persons": 1584765,
+        "employed_persons_total": 1494434,
+        "unemployed_persons": 90331,
+        "unemployment_ppm_derived": 56999,
+        "base_income_lines_uu_per_q": {
+          "wage": 2023463636,
+          "business_distribution": 380906721,
+          "transfer": 87027718,
+          "other_property_income": 41814359,
+          "household_support_in": 0,
+          "household_support_out": 653074671,
+          "income_tax_paid": 356296861
+        },
+        "base_disposable_income_uu_per_q": 1523840902,
+        "base_equity_share_ppm": 131699,
+        "base_service_delivery_index_ppm": {
+          "health": 1163016,
+          "education": 1215098,
+          "utility": 1165516
+        },
+        "housing": {
+          "units_occupied": 626080,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 351230880,
+          "housing_burden_ppm": 230490,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1000000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.zhongzhou.elder.mid",
+          "age_in_source": "group.zhongzhou.minor.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.working.high"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.working.high",
+        "label_zh": "中州·劳动年龄·高",
+        "in_labor_force": 1,
+        "labor_force_persons": 880880,
+        "employed_persons_total": 845645,
+        "unemployed_persons": 35235,
+        "unemployment_ppm_derived": 39999,
+        "base_income_lines_uu_per_q": {
+          "wage": 1879023190,
+          "business_distribution": 519686689,
+          "transfer": 33946504,
+          "other_property_income": 57049050,
+          "household_support_in": 0,
+          "household_support_out": 569141023,
+          "income_tax_paid": 592568689
+        },
+        "base_disposable_income_uu_per_q": 1327995721,
+        "base_equity_share_ppm": 179682,
+        "base_service_delivery_index_ppm": {
+          "health": 1263016,
+          "education": 1315099,
+          "utility": 1265516
+        },
+        "housing": {
+          "units_occupied": 320320,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 179699520,
+          "housing_burden_ppm": 135316,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 800000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4400,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.zhongzhou.elder.high",
+          "age_in_source": "group.zhongzhou.minor.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.elder.low",
+        "label_zh": "中州·老年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 56693093,
+          "transfer": 0,
+          "other_property_income": 6223532,
+          "household_support_in": 267197219,
+          "household_support_out": 0,
+          "income_tax_paid": 10980693
+        },
+        "base_disposable_income_uu_per_q": 319133151,
+        "base_equity_share_ppm": 19602,
+        "base_service_delivery_index_ppm": {
+          "health": 1063016,
+          "education": 1115099,
+          "utility": 1065516
+        },
+        "housing": {
+          "units_occupied": 139776,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 78414336,
+          "housing_burden_ppm": 245710,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.zhongzhou.working.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.elder.mid"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.elder.mid",
+        "label_zh": "中州·老年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 112205081,
+          "transfer": 0,
+          "other_property_income": 12317412,
+          "household_support_in": 211531132,
+          "household_support_out": 0,
+          "income_tax_paid": 21732622
+        },
+        "base_disposable_income_uu_per_q": 314321003,
+        "base_equity_share_ppm": 38795,
+        "base_service_delivery_index_ppm": {
+          "health": 1143016,
+          "education": 1195099,
+          "utility": 1145516
+        },
+        "housing": {
+          "units_occupied": 110656,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 62078016,
+          "housing_burden_ppm": 197498,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.zhongzhou.working.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.zhongzhou.elder.high"
+        }
+      },
+      {
+        "group_id": "group.zhongzhou.elder.high",
+        "label_zh": "中州·老年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 99212913,
+          "transfer": 0,
+          "other_property_income": 10891180,
+          "household_support_in": 77932522,
+          "household_support_out": 0,
+          "income_tax_paid": 19216212
+        },
+        "base_disposable_income_uu_per_q": 168820403,
+        "base_equity_share_ppm": 34303,
+        "base_service_delivery_index_ppm": {
+          "health": 1243016,
+          "education": 1295099,
+          "utility": 1245516
+        },
+        "housing": {
+          "units_occupied": 40768,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 561,
+          "housing_cost_uu_per_q": 22870848,
+          "housing_burden_ppm": 135474,
+          "housing_burden_design_target_ppm": 240000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.zhongzhou.working.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.haijia.minor.low",
+        "label_zh": "海岬·未成年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 219147451,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 219147451,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1023016,
+          "education": 975099,
+          "utility": 935516
+        },
+        "housing": {
+          "units_occupied": 124740,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 51517620,
+          "housing_burden_ppm": 235081,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.haijia.working.low",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.minor.mid"
+        }
+      },
+      {
+        "group_id": "group.haijia.minor.mid",
+        "label_zh": "海岬·未成年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 300545075,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 300545075,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1103016,
+          "education": 1055099,
+          "utility": 1015516
+        },
+        "housing": {
+          "units_occupied": 171072,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 70652736,
+          "housing_burden_ppm": 235081,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.haijia.working.mid",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.minor.high"
+        }
+      },
+      {
+        "group_id": "group.haijia.minor.high",
+        "label_zh": "海岬·未成年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 106443048,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 106443048,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1203016,
+          "education": 1155099,
+          "utility": 1115516
+        },
+        "housing": {
+          "units_occupied": 60588,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 25022844,
+          "housing_burden_ppm": 235081,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.haijia.working.high",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.haijia.working.low",
+        "label_zh": "海岬·劳动年龄·低",
+        "in_labor_force": 1,
+        "labor_force_persons": 1040175,
+        "employed_persons_total": 948640,
+        "unemployed_persons": 91535,
+        "unemployment_ppm_derived": 87999,
+        "base_income_lines_uu_per_q": {
+          "wage": 768398400,
+          "business_distribution": 85601801,
+          "transfer": 88187689,
+          "other_property_income": 9397011,
+          "household_support_in": 0,
+          "household_support_out": 259484153,
+          "income_tax_paid": 56811959
+        },
+        "base_disposable_income_uu_per_q": 635288789,
+        "base_equity_share_ppm": 29597,
+        "base_service_delivery_index_ppm": {
+          "health": 1023016,
+          "education": 975099,
+          "utility": 935516
+        },
+        "housing": {
+          "units_occupied": 488430,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 201721590,
+          "housing_burden_ppm": 317527,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1200000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4600,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.haijia.elder.low",
+          "age_in_source": "group.haijia.minor.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.working.mid"
+        }
+      },
+      {
+        "group_id": "group.haijia.working.mid",
+        "label_zh": "海岬·劳动年龄·中",
+        "in_labor_force": 1,
+        "labor_force_persons": 1153740,
+        "employed_persons_total": 1087977,
+        "unemployed_persons": 65763,
+        "unemployment_ppm_derived": 56999,
+        "base_income_lines_uu_per_q": {
+          "wage": 1473120858,
+          "business_distribution": 239685043,
+          "transfer": 63358136,
+          "other_property_income": 26311631,
+          "household_support_in": 0,
+          "household_support_out": 449607761,
+          "income_tax_paid": 252104075
+        },
+        "base_disposable_income_uu_per_q": 1100763832,
+        "base_equity_share_ppm": 82871,
+        "base_service_delivery_index_ppm": {
+          "health": 1103016,
+          "education": 1055099,
+          "utility": 1015516
+        },
+        "housing": {
+          "units_occupied": 455868,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 188273484,
+          "housing_burden_ppm": 171038,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1000000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4600,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.haijia.elder.mid",
+          "age_in_source": "group.haijia.minor.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.working.high"
+        }
+      },
+      {
+        "group_id": "group.haijia.working.high",
+        "label_zh": "海岬·劳动年龄·高",
+        "in_labor_force": 1,
+        "labor_force_persons": 378885,
+        "employed_persons_total": 365246,
+        "unemployed_persons": 13639,
+        "unemployment_ppm_derived": 35997,
+        "base_income_lines_uu_per_q": {
+          "wage": 811576612,
+          "business_distribution": 197835274,
+          "transfer": 13140240,
+          "other_property_income": 21717539,
+          "household_support_in": 0,
+          "household_support_out": 230111446,
+          "income_tax_paid": 250781918
+        },
+        "base_disposable_income_uu_per_q": 563376301,
+        "base_equity_share_ppm": 68402,
+        "base_service_delivery_index_ppm": {
+          "health": 1203016,
+          "education": 1173644,
+          "utility": 1115516
+        },
+        "housing": {
+          "units_occupied": 141102,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 58275126,
+          "housing_burden_ppm": 103439,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 800000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4600,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.haijia.elder.high",
+          "age_in_source": "group.haijia.minor.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.haijia.elder.low",
+        "label_zh": "海岬·老年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 36228159,
+          "transfer": 0,
+          "other_property_income": 3976975,
+          "household_support_in": 181579316,
+          "household_support_out": 0,
+          "income_tax_paid": 7016909
+        },
+        "base_disposable_income_uu_per_q": 214767541,
+        "base_equity_share_ppm": 12526,
+        "base_service_delivery_index_ppm": {
+          "health": 1003016,
+          "education": 955099,
+          "utility": 915516
+        },
+        "housing": {
+          "units_occupied": 103356,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 42686028,
+          "housing_burden_ppm": 198754,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.haijia.working.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.elder.mid"
+        }
+      },
+      {
+        "group_id": "group.haijia.elder.mid",
+        "label_zh": "海岬·老年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 53092991,
+          "transfer": 0,
+          "other_property_income": 5828325,
+          "household_support_in": 106443047,
+          "household_support_out": 0,
+          "income_tax_paid": 10283401
+        },
+        "base_disposable_income_uu_per_q": 155080962,
+        "base_equity_share_ppm": 18357,
+        "base_service_delivery_index_ppm": {
+          "health": 1083016,
+          "education": 1035099,
+          "utility": 995516
+        },
+        "housing": {
+          "units_occupied": 60588,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 25022844,
+          "housing_burden_ppm": 161353,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.haijia.working.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.haijia.elder.high"
+        }
+      },
+      {
+        "group_id": "group.haijia.elder.high",
+        "label_zh": "海岬·老年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 29981924,
+          "transfer": 0,
+          "other_property_income": 3291294,
+          "household_support_in": 25045423,
+          "household_support_out": 0,
+          "income_tax_paid": 5807097
+        },
+        "base_disposable_income_uu_per_q": 52511544,
+        "base_equity_share_ppm": 10366,
+        "base_service_delivery_index_ppm": {
+          "health": 1183016,
+          "education": 1135099,
+          "utility": 1095516
+        },
+        "housing": {
+          "units_occupied": 14256,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 413,
+          "housing_cost_uu_per_q": 5887728,
+          "housing_burden_ppm": 112122,
+          "housing_burden_design_target_ppm": 200000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.haijia.working.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.xiling.minor.low",
+        "label_zh": "西岭·未成年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 129354062,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 129354062,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 903016,
+          "education": 855099,
+          "utility": 1035516
+        },
+        "housing": {
+          "units_occupied": 92400,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 23377200,
+          "housing_burden_ppm": 180722,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.xiling.working.low",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.minor.mid"
+        }
+      },
+      {
+        "group_id": "group.xiling.minor.mid",
+        "label_zh": "西岭·未成年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 138593638,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 138593638,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 983016,
+          "education": 935099,
+          "utility": 1115516
+        },
+        "housing": {
+          "units_occupied": 99000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 25047000,
+          "housing_burden_ppm": 180722,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.xiling.working.mid",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.minor.high"
+        }
+      },
+      {
+        "group_id": "group.xiling.minor.high",
+        "label_zh": "西岭·未成年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 0,
+          "transfer": 0,
+          "other_property_income": 0,
+          "household_support_in": 40038162,
+          "household_support_out": 0,
+          "income_tax_paid": 0
+        },
+        "base_disposable_income_uu_per_q": 40038162,
+        "base_equity_share_ppm": 0,
+        "base_service_delivery_index_ppm": {
+          "health": 1083016,
+          "education": 1035099,
+          "utility": 1215516
+        },
+        "housing": {
+          "units_occupied": 28600,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 7235800,
+          "housing_burden_ppm": 180722,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 80,
+          "age_out_ppm_per_q": 13889,
+          "age_out_target": "group.xiling.working.high",
+          "age_in_source": "birth",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.xiling.working.low",
+        "label_zh": "西岭·劳动年龄·低",
+        "in_labor_force": 1,
+        "labor_force_persons": 648024,
+        "employed_persons_total": 563781,
+        "unemployed_persons": 84243,
+        "unemployment_ppm_derived": 129999,
+        "base_income_lines_uu_per_q": {
+          "wage": 456662610,
+          "business_distribution": 47075515,
+          "transfer": 81162348,
+          "other_property_income": 5167756,
+          "household_support_in": 0,
+          "household_support_out": 183823283,
+          "income_tax_paid": 33027977
+        },
+        "base_disposable_income_uu_per_q": 373216969,
+        "base_equity_share_ppm": 16276,
+        "base_service_delivery_index_ppm": {
+          "health": 922561,
+          "education": 855099,
+          "utility": 1055061
+        },
+        "housing": {
+          "units_occupied": 322400,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 81567200,
+          "housing_burden_ppm": 218551,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1200000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4800,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.xiling.elder.low",
+          "age_in_source": "group.xiling.minor.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.working.mid"
+        }
+      },
+      {
+        "group_id": "group.xiling.working.mid",
+        "label_zh": "西岭·劳动年龄·中",
+        "in_labor_force": 1,
+        "labor_force_persons": 558372,
+        "employed_persons_total": 508119,
+        "unemployed_persons": 50253,
+        "unemployment_ppm_derived": 89999,
+        "base_income_lines_uu_per_q": {
+          "wage": 687993126,
+          "business_distribution": 103204014,
+          "transfer": 48415316,
+          "other_property_income": 11329308,
+          "household_support_in": 0,
+          "household_support_out": 242514839,
+          "income_tax_paid": 116048310
+        },
+        "base_disposable_income_uu_per_q": 492378615,
+        "base_equity_share_ppm": 35683,
+        "base_service_delivery_index_ppm": {
+          "health": 983016,
+          "education": 935099,
+          "utility": 1115516
+        },
+        "housing": {
+          "units_occupied": 235600,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 59606800,
+          "housing_burden_ppm": 121058,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 1000000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4800,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.xiling.elder.mid",
+          "age_in_source": "group.xiling.minor.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.working.high"
+        }
+      },
+      {
+        "group_id": "group.xiling.working.high",
+        "label_zh": "西岭·劳动年龄·高",
+        "in_labor_force": 1,
+        "labor_force_persons": 158100,
+        "employed_persons_total": 149879,
+        "unemployed_persons": 8221,
+        "unemployment_ppm_derived": 51998,
+        "base_income_lines_uu_per_q": {
+          "wage": 333031138,
+          "business_distribution": 72423869,
+          "transfer": 7920369,
+          "other_property_income": 7950392,
+          "household_support_in": 0,
+          "household_support_out": 105637457,
+          "income_tax_paid": 101212261
+        },
+        "base_disposable_income_uu_per_q": 214476050,
+        "base_equity_share_ppm": 25041,
+        "base_service_delivery_index_ppm": {
+          "health": 1083016,
+          "education": 1035098,
+          "utility": 1215516
+        },
+        "housing": {
+          "units_occupied": 62000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 15686000,
+          "housing_burden_ppm": 73136,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 1,
+          "relative_propensity_ppm": 800000,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 4800,
+          "death_ppm_per_q": 320,
+          "age_out_ppm_per_q": 5319,
+          "age_out_target": "group.xiling.elder.high",
+          "age_in_source": "group.xiling.minor.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      },
+      {
+        "group_id": "group.xiling.elder.low",
+        "label_zh": "西岭·老年·低",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 29904049,
+          "transfer": 0,
+          "other_property_income": 3282743,
+          "household_support_in": 143353419,
+          "household_support_out": 0,
+          "income_tax_paid": 5792014
+        },
+        "base_disposable_income_uu_per_q": 170748197,
+        "base_equity_share_ppm": 10339,
+        "base_service_delivery_index_ppm": {
+          "health": 883016,
+          "education": 835099,
+          "utility": 1015516
+        },
+        "housing": {
+          "units_occupied": 102400,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 25907200,
+          "housing_burden_ppm": 151727,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.xiling.working.low",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.elder.mid"
+        }
+      },
+      {
+        "group_id": "group.xiling.elder.mid",
+        "label_zh": "西岭·老年·中",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 35043808,
+          "transfer": 0,
+          "other_property_income": 3846963,
+          "household_support_in": 67196915,
+          "household_support_out": 0,
+          "income_tax_paid": 6787516
+        },
+        "base_disposable_income_uu_per_q": 99300170,
+        "base_equity_share_ppm": 12116,
+        "base_service_delivery_index_ppm": {
+          "health": 963016,
+          "education": 915099,
+          "utility": 1095516
+        },
+        "housing": {
+          "units_occupied": 48000,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 12144000,
+          "housing_burden_ppm": 122295,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.xiling.working.mid",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "group.xiling.elder.high"
+        }
+      },
+      {
+        "group_id": "group.xiling.elder.high",
+        "label_zh": "西岭·老年·高",
+        "in_labor_force": 0,
+        "labor_force_persons": 0,
+        "employed_persons_total": 0,
+        "unemployed_persons": 0,
+        "unemployment_ppm_derived": 0,
+        "base_income_lines_uu_per_q": {
+          "wage": 0,
+          "business_distribution": 16821028,
+          "transfer": 0,
+          "other_property_income": 1846543,
+          "household_support_in": 13439383,
+          "household_support_out": 0,
+          "income_tax_paid": 3258008
+        },
+        "base_disposable_income_uu_per_q": 28848946,
+        "base_equity_share_ppm": 5816,
+        "base_service_delivery_index_ppm": {
+          "health": 1063016,
+          "education": 1015099,
+          "utility": 1195516
+        },
+        "housing": {
+          "units_occupied": 9600,
+          "persons_per_unit_assumed": 3,
+          "rent_uu_per_unit_q": 253,
+          "housing_cost_uu_per_q": 2428800,
+          "housing_burden_ppm": 84190,
+          "housing_burden_design_target_ppm": 150000
+        },
+        "migration": {
+          "eligible_for_migration": 0,
+          "relative_propensity_ppm": 0,
+          "housing_gate_units_needed_per_1000_movers": 334
+        },
+        "cohort_rates_ppm_per_q": {
+          "birth_ppm_per_q": 0,
+          "death_ppm_per_q": 20000,
+          "age_out_ppm_per_q": 0,
+          "age_out_target": "none",
+          "age_in_source": "group.xiling.working.high",
+          "skill_up_ppm_per_q": 0,
+          "skill_up_target": "none"
+        }
+      }
+    ],
+    "source_cards": [
+      {
+        "card_id": "card.population_region_split",
+        "scope": "groups[].population_persons（地区层）",
+        "value": [
+          9000000,
+          7000000,
+          5000000,
+          3000000
+        ],
+        "unit": "persons",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05「地区 人口：北原 900 万 / 中州 700 万 / 海岬 500 万 / 西岭 300 万」",
+        "reference_year": 0,
+        "definition": "四地区常住人口，合计 2400 万；是剧本硬约束，不是可调参数。",
+        "valid_range": [
+          [
+            9000000,
+            9000000
+          ],
+          [
+            7000000,
+            7000000
+          ],
+          [
+            5000000,
+            5000000
+          ],
+          [
+            3000000,
+            3000000
+          ]
+        ],
+        "confidence": "high",
+        "calibration_note": "计划书锁定值，任何改动都是剧本变更而非校准；由 V-POP-02 与 assert.region_population 守住。"
+      },
+      {
+        "card_id": "card.age_structure",
+        "scope": "groups[].population_persons（年龄层）",
+        "value": [
+          5640000,
+          15430000,
+          2930000
+        ],
+        "unit": "persons",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「年龄层为未成年、劳动年龄与老年」；§14「宽年龄组只适合首版近似」",
+        "reference_year": 0,
+        "definition": "全国未成年 / 劳动年龄 / 老年人口（分别 23.50% / 64.29% / 12.21%），按地区经济性质差异化：北原最年轻、西岭最老。",
+        "valid_range": [
+          [
+            4800000,
+            6600000
+          ],
+          [
+            14400000,
+            16800000
+          ],
+          [
+            1920000,
+            4080000
+          ]
+        ],
+        "confidence": "low",
+        "calibration_note": "校准顺序：先固定 age_out_ppm_per_q 对应的年龄跨度（18 年 / 47 年），再看 40 季末老年占比是否落在 15%—18%；偏离则先动本卡而非动死亡率。"
+      },
+      {
+        "card_id": "card.skill_structure",
+        "scope": "groups[].population_persons（技能/教育准备度层）",
+        "value": [
+          0,
+          0,
+          0
+        ],
+        "unit": "persons",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05 各地区「优势」与「开局主要约束」；§08「儿童档位代表教育准备程度，不代表劳动技能」",
+        "reference_year": 0,
+        "definition": "劳动年龄组按受教育程度分低/中/高；未成年组的档位是教育准备程度；老年组反映历史受教育水平（低于当前劳动年龄组）。具体逐组取值见 groups[]。",
+        "valid_range": [
+          [
+            0,
+            24000000
+          ],
+          [
+            0,
+            24000000
+          ],
+          [
+            0,
+            24000000
+          ]
+        ],
+        "confidence": "low",
+        "calibration_note": "与 io_table 的 labor_coeff_persons_per_qs 联调：若某 cell 的 bound_labor 在 q=0 就是最紧约束且不是剧本有意设计的瓶颈，先查本卡而非改系数。"
+      },
+      {
+        "card_id": "card.participation",
+        "scope": "groups[].participation_ppm",
+        "value": [
+          660000,
+          880000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05「失业率 8%，分母是劳动力，不是总人口；由初始就业分配反算」；[3] ILOSTAT 作为口径来源（数据尚未导入）",
+        "reference_year": 0,
+        "definition": "劳动年龄组的劳动参与率（劳动力 / 该组人口）区间；非劳动年龄组恒为 0。全国加权参与率见 _note_derived_check。",
+        "valid_range": [
+          400000,
+          950000
+        ],
+        "confidence": "low",
+        "calibration_note": "本卡与 card.employment_allocation 共同决定失业率；调参时先固定参与率，再调就业分配，避免两头同时动导致 8% 反算失效。"
+      },
+      {
+        "card_id": "card.employment_allocation",
+        "scope": "groups[].employed_persons",
+        "value": 10742846,
+        "unit": "persons",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05「由初始就业分配反算」；§03「36 群组；就业在组内用比例记录」",
+        "reference_year": 0,
+        "definition": "全国在岗人数；逐 (地区, 技能) 按部门比例分配到 4 个市场部门与 pubserv，残差显式落在 pubserv，不做静默丢弃。",
+        "valid_range": [
+          9000000,
+          12000000
+        ],
+        "confidence": "low",
+        "calibration_note": "改动本卡必须同步改 cells_init / pubserv_init（V-POP-08 逐项交叉校验），并重跑失业率反算（V-POP-05）。"
+      },
+      {
+        "card_id": "card.wage_income_base_year",
+        "scope": "_note_extensions.groups_ext[].base_income_lines_uu_per_q.wage",
+        "value": [
+          810,
+          1354,
+          2222
+        ],
+        "unit": "μU/人/季",
+        "source_type": "derived",
+        "source_ref": "scenario.json prices_init.wage_uu_per_person_q；计划书 §06 收入法分解",
+        "reference_year": 0,
+        "definition": "基年群组工资收入。derivation_expr: wage[g] = employed_persons_total[g] × wage_uu_per_person_q[skill]，与 12 号文件 S04 的算法逐字一致，因此不产生任何拆分余数。工资率本身不是自由参数：它由「Σ_技能 pubserv 在岗人数 × wage[技能] == government_init 的 public_wages / 4」这条恒等式唯一确定——该方程在 c > b > a > 0 且 c ≤ 8a 的全域只有 5 组整数解，落在技能溢价结构带 （中/低 ∈ [1.30, 2.05]，高/低 ∈ [1.90, 3.30]）内的只有 [810, 1354, 2222] 一组。求解与全部自检见 tools/refit_base_year.py。",
+        "valid_range": [
+          [
+            425,
+            1195
+          ],
+          [
+            947,
+            1762
+          ],
+          [
+            1810,
+            2877
+          ]
+        ],
+        "confidence": "low",
+        "calibration_note": "本卡的值不是本文件选的，而是 scenario.json 给的；工资率一改，本文件必须重新生成。R-SCALE-01 之后旧值 [1000, 2000, 3000] 已被废弃：它是旧刻度下 [1, 2, 3] 的机械迁移，1x/2x/3x 的技能溢价是整数下限的产物，而且使公共部门工资总额比 public_wages 高 39.2%，使劳动报酬占 GDP 达 745 612 ppm。现值的溢价是两级各约 +65% 的等比结构（中/低 = 1 354/810，高/中 = 2 222/1 354），劳动报酬占 GDP 542 365 ppm。保守性：取整方向不介入——本卡三个数是方程的精确整数解，没有 floor 也没有 ceil。",
+        "_note_valid_range_zh": "valid_range 不是一个可自由取值的区间，而是「公共部门工资总额 == public_wages / 4」这条恒等式的**全部整数解**（c > b > a > 0 且 c ≤ 8a）在各档上的包络：[(425, 1355, 2465), (487, 1762, 1810), (748, 947, 2877), (810, 1354, 2222), (1195, 1353, 1979)]。三档必须整组取自同一个解，不能逐档独立取值。旧 valid_range [[1, 20000000], …] 来自 param.wage_floor_uu / wage_ceil_uu 的旧刻度值，那两个参数比本剧本的实际工资率高 4 到 7 个数量级（policy_P12 的 OQ-P12-02 已登记），迁移后只会更离谱，本卡不再引用它们。"
+      },
+      {
+        "card_id": "card.household_wealth_weight",
+        "scope": "groups[].deposit_uu 与 _note_extensions.groups_ext[].base_equity_share_ppm",
+        "value": 43000000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §07「居民投资池或外部债权人买入政府债券」；11 号文件 V-FIN-09",
+        "reference_year": 0,
+        "definition": "居民对投资池的存款债权总额（= 43 U = invpool.cash_uu 9 U + invpool 持债 34 U，约为基年名义 GDP 的 43%）；按 (人口 × 年龄技能财富权重 × 地区财富权重) 最大余数法分配。同一组权重也用作企业持股份额（OQ-205）。",
+        "valid_range": [
+          20000000000,
+          80000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "必须与 government_init 的 invpool.cash_uu 与 invpool 持债之和逐 μU 相等；两边不一致时改 government_init，不改本卡的分配方式。",
+        "_note_scale_fix_zh": "R-SCALE-01：本卡 unit 是 μU，但 source_cards 用 card_id 而非 parameter_id，migrate_currency_scale.py 的参数卡规则没有覆盖它，value 与 valid_range 一直停在旧刻度。已按 1 U = 1 000 000 000 μU 改正为绝对值。"
+      },
+      {
+        "card_id": "card.household_cash",
+        "scope": "groups[].cash_uu",
+        "value": 9000000000,
+        "unit": "μU",
+        "source_type": "design_assumption",
+        "source_ref": "12 号文件 S-14「居民可支配预算 = 已到手工资 + 转移 + 赡养净额 + dissave 比例的存款，且不超过当前现金」",
+        "reference_year": 0,
+        "definition": "开局居民手持现金合计（约等于基年一个季度可支配收入的 597 256 ppm），按各组可支配收入最大余数法分配。必须计入 scenario.total_cash_uu（INV-018）。注意：本次工资重拟合后，36 个 cash_uu 被**刻意冻结**在重拟合前的分配上，见 _note_open_questions_zh.oq_cash_allocation_frozen；合计仍精确为 9 000 000 000 μU。",
+        "valid_range": [
+          2000000000,
+          15000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "若 q=0 出现大量 flow.group.unmet_consumption_uu 且原因是现金不足而非配给，先提高本卡再查消费规则。",
+        "_note_scale_fix_zh": "R-SCALE-01：本卡 unit 是 μU，但 source_cards 用 card_id 而非 parameter_id，migrate_currency_scale.py 的参数卡规则没有覆盖它，value 与 valid_range 一直停在旧刻度。已按 1 U = 1 000 000 000 μU 改正为绝对值。"
+      },
+      {
+        "card_id": "card.income_tax_base_year",
+        "scope": "_note_extensions.groups_ext[].base_income_lines_uu_per_q.income_tax_paid",
+        "value": 2600000000,
+        "unit": "μU",
+        "source_type": "derived",
+        "source_ref": "government_init.json annual_plan.receipt_lines_uu.income_tax = 10 400 000 000 / 年；计划书 §05「全年收入 20 U」",
+        "reference_year": 0,
+        "definition": "基年每季个人所得税。derivation_expr: idiv_floor(government_init.annual_plan.receipt_lines_uu.income_tax, 4)。按 (工资 × 技能累进权重 60/160/300 + 资本性收入 × 200) 最大余数法分配到组，实际累进程度为派生结果。",
+        "valid_range": [
+          1500000000,
+          4000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "本卡取值必须与 government_init.annual_plan.receipt_lines_uu.income_tax 一致；P01 生效后此值不再使用，只作为基年对账基准。",
+        "_note_scale_fix_zh": "R-SCALE-01：本卡 unit 是 μU，但 source_cards 用 card_id 而非 parameter_id，migrate_currency_scale.py 的参数卡规则没有覆盖它，value 与 valid_range 一直停在旧刻度。已按 1 U = 1 000 000 000 μU 改正为绝对值。"
+      },
+      {
+        "card_id": "card.statutory_transfer_base_year",
+        "scope": "_note_extensions.groups_ext[].base_income_lines_uu_per_q.transfer",
+        "value": 900000000,
+        "unit": "μU",
+        "source_type": "derived",
+        "source_ref": "government_init.json annual_plan.expenditure_lines_uu.statutory_transfers（本文件按 3 600 000 000 / 年 记账，该文件现写 4 000 000 000 / 年，差额见 oq_statutory_transfer_mismatch）；OQ-225「养老金为 0」；计划书 §09 P03「失业保障：资格、替代比例与持续期」",
+        "reference_year": 0,
+        "definition": "基年每季法定转移支付。derivation_expr: idiv_floor(statutory_transfers, 4)。按 OQ-225 老年组养老金为 0，故基年转移全部解释为已存在的基本失业救济（P03 改的是它的参数，不是从零创设），按各组失业人数最大余数法分配。",
+        "valid_range": [
+          0,
+          4000000000
+        ],
+        "confidence": "low",
+        "calibration_note": "若剧本意图是基年零转移，必须把 government_init 的该行改为 0 并重新生成本文件；两边不能一边有预算一边无受益人。",
+        "_note_scale_fix_zh": "R-SCALE-01：本卡 unit 是 μU，但 source_cards 用 card_id 而非 parameter_id，migrate_currency_scale.py 的参数卡规则没有覆盖它，value 与 valid_range 一直停在旧刻度。已按 1 U = 1 000 000 000 μU 改正为绝对值。"
+      },
+      {
+        "card_id": "card.business_distribution_base_year",
+        "scope": "_note_extensions.groups_ext[].base_income_lines_uu_per_q.business_distribution",
+        "value": 300000,
+        "unit": "ppm",
+        "source_type": "derived",
+        "source_ref": "param.payout_ratio_ppm（11 号文件 §5.15）；government_init.json receipt_lines_uu.profit_tax",
+        "reference_year": 0,
+        "definition": "企业向居民分配的经营性收入。derivation_expr: mul_ppm(季度名义 GDP − 工资总额 − 季度利润税, param.payout_ratio_ppm)，再按财富权重最大余数法分配。",
+        "valid_range": [
+          100000,
+          600000
+        ],
+        "confidence": "low",
+        "calibration_note": "工资率一改，残差营业盈余随之变化；本卡只固定分配比例，不固定金额。本次重拟合后 derivation_expr 的输入变成：季度名义 GDP 25 000 000 000 − 工资总额 13 559 142 948 − 季度利润税 1 800 000 000，×300 000 ppm = 2 892 257 115 μU/季（旧值 1 367 905 000）。若 q=0 结算出的 flow.cell.distributed_uu 与此偏离，先查 io_table 与工资率。"
+      },
+      {
+        "card_id": "card.support_out_weight",
+        "scope": "groups[].support_out_weight_ppm",
+        "value": [
+          290000,
+          330000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "10 号文件 §6.2 裁定「显式的组间赡养转移」；OQ-225「养老金为 0，老年组消费能力完全来自组间赡养转移」",
+        "reference_year": 0,
+        "definition": "劳动年龄组每季转出给同地区未成年与老年组的可支配收入比例；按地区抚养比差异化（北原 320000 / 中州 300000 / 海岬 290000 / 西岭 330000）。",
+        "valid_range": [
+          100000,
+          500000
+        ],
+        "confidence": "low",
+        "calibration_note": "OQ-225 的验证口径：40 季跑完后若 elder 组 living_index_ppm 系统性塌陷，先提高本卡，再考虑引入养老金政策（走 §03 范围闸门）。"
+      },
+      {
+        "card_id": "card.service_access_init",
+        "scope": "groups[].service_access_ppm",
+        "value": 1000000,
+        "unit": "ppm",
+        "source_type": "derived",
+        "source_ref": "10 号文件 §6.3（区间 0..1000000）与 11 号文件 V-POP-07（人口加权 == 1000000）联立",
+        "reference_year": 0,
+        "definition": "基年三项服务可及率。derivation_expr: 区间上限 == 加权均值 ⇒ 逐组唯一解 1000000。口径同 12 号文件 §7.8：access = 本组实获服务 / 本组基年基准，基年恒为满值。",
+        "valid_range": [
+          1000000,
+          1000000
+        ],
+        "confidence": "high",
+        "calibration_note": "本值不可调：任何一组低于 1000000 都会使 V-POP-07 失败。要表达开局服务不平等，改 card.service_delivery_dispersion，不要改这里。"
+      },
+      {
+        "card_id": "card.service_delivery_dispersion",
+        "scope": "_note_extensions.groups_ext[].base_service_delivery_index_ppm",
+        "value": [
+          660000,
+          1240000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05 各地区开局约束（北原技能岗位少、中州公共服务承压、海岬电网可靠性不足）；§08「公共服务可及性在组内记录」",
+        "reference_year": 0,
+        "definition": "基年人均服务交付基准指数，1000000 = 全国人均水平，人口加权和精确等于 1000000。地区效应 + 技能效应 + 年龄效应三项叠加后做整数修正。它是 12 号文件 §7.8 里 base_delivered_g 的口径，也是 pubserv_init 容量与地区分配必须复现的目标。",
+        "valid_range": [
+          300000,
+          1800000
+        ],
+        "confidence": "low",
+        "calibration_note": "改动任一组即破坏人口加权恒等式；必须用同一段修正程序重算全部 36 组，不得手工改单组。与 pubserv_init.service_capacity_split_ppm 联调。"
+      },
+      {
+        "card_id": "card.housing_burden_target",
+        "scope": "_note_extensions.groups_ext[].housing.housing_burden_design_target_ppm",
+        "value": [
+          140000,
+          240000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §05「中州：住房容量紧张」；§04「查原因：地区差异、家庭负担」；OQ-244「租金固定，由剧本给出」",
+        "reference_year": 0,
+        "definition": "设计目标的住房支出占可支配收入比重（北原 140000 / 西岭 150000 / 海岬 200000 / 中州 240000）。R-SCALE-01 之后可用 > 0 的整数租金实现：rent[r] = idiv_floor(目标 ppm × 地区季度可支配收入, 1e6 × 地区占用套数) = [223, 561, 413, 253]，实得逐地区负担率 [139586, 239757, 199843, 149974] ppm，全国 188 978 ppm。",
+        "valid_range": [
+          80000,
+          350000
+        ],
+        "confidence": "low",
+        "calibration_note": "取整方向 floor（docs/10 §0「总额 → 每套」：少收租优于向居民多收），因此实得负担率必然略低于目标，逐地区偏差 [414, 243, 157, 26] ppm，全部是同一个方向——这是刻意的保守性，不是配平误差。目标本身的排序依据是住房紧张程度（中州与海岬的存量低于「人口 / 3」，迁移闸 cap_housing 为 0），不是收入水平。租金的权威副本在 scenario.json，改它必须重跑 tools/refit_base_year.py。"
+      },
+      {
+        "card_id": "card.attitude_init",
+        "scope": "groups[].expectation_ppm / trust_ppm / support_ppm",
+        "value": [
+          880000,
+          1150000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「民众不是一个『满意度』：至少区分当期生活、未来预期与程序信任」",
+        "reference_year": 0,
+        "definition": "开局未来预期区间（信任区间 460000—710000，支持度区间 450000—630000）。三者分开存储，不合成为单一满意度。support_ppm 是剧本直接给定值，与 politics_init 的席位占比同量级；它不由 living/expectation/trust 回推，原因见 _note_derived_check.support_national_check。",
+        "valid_range": [
+          0,
+          2000000
+        ],
+        "confidence": "low",
+        "calibration_note": "本卡假定的三项权重必须与 param.support_weight_ppm 一致（OQ-222）；不一致时以 param 为准并重生成本文件，不要在文件里手工对齐。"
+      },
+      {
+        "card_id": "card.bloc_affiliation",
+        "scope": "groups[].bloc_affiliation_ppm",
+        "value": [
+          0,
+          1000000
+        ],
+        "unit": "ppm",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08 三个利益集团及「成员可同时属于其他利益网络」",
+        "reference_year": 0,
+        "definition": "该组人口分别属于 [农业合作联盟, 工商业联盟, 劳动与公共服务联盟] 的比例；三项之和允许超过 1000000。农合比例由该组农业就业占比折出，劳公比例由制造业与公共部门就业占比折出，工商比例按技能档与地区给定。未成年组一律为 0。",
+        "valid_range": [
+          0,
+          1000000
+        ],
+        "confidence": "low",
+        "calibration_note": "OQ-223 登记了重叠计数问题；若 derived.bloc.membership_persons 之和明显超过成年人口且导致组织力失真，先改本卡的折算系数。"
+      },
+      {
+        "card_id": "card.birth_rate",
+        "scope": "demography_rates.birth_ppm_per_q",
+        "value": [
+          4400,
+          5400
+        ],
+        "unit": "ppm/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08「出生、死亡、成年、退休、技能转变和迁移必须有来源与去向」；§14「宽年龄组只适合首版近似，不用于精确人口预测」",
+        "reference_year": 0,
+        "definition": "每季出生人数 = 该地区劳动年龄人口 × 本率（分母是劳动年龄人口，不是总人口）。对应全国粗出生率约 12.5‰/年。新生儿全部落入 group.<r>.minor.low。",
+        "valid_range": [
+          1000,
+          12000
+        ],
+        "confidence": "low",
+        "calibration_note": "校验方式：_note_derived_check.demography_flow_check_persons_per_q 的 births 与 deaths 之差应在 ±0.5%/年 之内；超出先查本卡与 card.death_rate 的搭配。"
+      },
+      {
+        "card_id": "card.death_rate",
+        "scope": "demography_rates.death_ppm_per_q",
+        "value": [
+          80,
+          320,
+          20000
+        ],
+        "unit": "ppm/季",
+        "source_type": "design_assumption",
+        "source_ref": "计划书 §08；§17 质量门槛「出生死亡单独登记」",
+        "reference_year": 0,
+        "definition": "未成年 / 劳动年龄 / 老年的季度死亡率。老年 20000 ppm/季 对应约 8%/年，即 65 岁后余命约 12.5 年。死亡是唯一允许的净流出。",
+        "valid_range": [
+          [
+            0,
+            500
+          ],
+          [
+            0,
+            1500
+          ],
+          [
+            5000,
+            40000
+          ]
+        ],
+        "confidence": "low",
+        "calibration_note": "粗死亡率目标 8‰—11‰/年；若 120 季压测中老年组人口单调爆炸，先提高老年死亡率，再考虑改年龄跨度。"
+      },
+      {
+        "card_id": "card.age_out_rate",
+        "scope": "demography_rates.age_out_ppm_per_q",
+        "value": [
+          13889,
+          5319
+        ],
+        "unit": "ppm/季",
+        "source_type": "derived",
+        "source_ref": "由「未成年 18 年 = 72 季、劳动年龄 47 年 = 188 季」的年龄跨度假设倒算",
+        "reference_year": 0,
+        "definition": "成年转出（minor→working）与退休转出（working→elder）的季度比例。derivation_expr: idiv_floor(1000000 * 1, 72) 与 idiv_floor(1000000 * 1, 188)，分别得 13888.9→13889（向上取整以免年龄跨度被拉长）与 5319。",
+        "valid_range": [
+          [
+            8000,
+            20000
+          ],
+          [
+            3000,
+            9000
+          ]
+        ],
+        "confidence": "low",
+        "calibration_note": "derivation_expr 可复算：72 季 ≈ 18 岁成年，188 季 ≈ 65 岁退休。改年龄跨度必须同时改本卡与 card.age_structure，否则年龄结构会与流量率相互矛盾。"
+      },
+      {
+        "card_id": "card.housing_occupancy",
+        "scope": "groups[].housing_units_occupied",
+        "value": 3,
+        "unit": "persons/unit",
+        "source_type": "design_assumption",
+        "source_ref": "param.persons_per_housing_unit（11 号文件 §5.15 首版必备参数最小集）",
+        "reference_year": 0,
+        "definition": "每套住房居住人数。逐地区占用套数 = idiv_floor(地区人口, 3)，再按各组人口用最大余数法分到 9 个组；未成年与老年组同样占用套数，其住房支出由组间赡养转移覆盖。",
+        "valid_range": [
+          2,
+          5
+        ],
+        "confidence": "low",
+        "calibration_note": "本卡必须与 param.persons_per_housing_unit 取同一个值，否则迁移的 cap_housing 闸与初始占用会自相矛盾；regions.json 的 housing_stock_units 必须 ≥ _note_derived_check 给出的逐地区占用数。"
+      },
+      {
+        "card_id": "card.per_capita_real_income_base",
+        "scope": "groups[].base_per_capita_real_income_uu",
+        "value": [
+          1543,
+          5306
+        ],
+        "unit": "μU/人/年",
+        "source_type": "derived",
+        "source_ref": "12_simulation_contract.md §8.1 real_income_norm_ppm；docs/18 R-SCALE-01「人均实际收入约 3 100（4 位有效数字）」",
+        "reference_year": 0,
+        "definition": "基年人均实际可支配收入基准，living_index 收入分量的归一化分母。derivation_expr: idiv_floor(4 × base_disposable_income_uu_per_q[g], population_persons[g])。全国年人均 2 511 μU；36 组取值 1 543..5 306，互异取值 28 个。",
+        "valid_range": [
+          1,
+          100000
+        ],
+        "confidence": "low",
+        "calibration_note": "取整方向 floor（docs/10 §0「总额 → 人均」：少算优于高估民生）。旧刻度下 floor 把 36 组压成 1…6 六个取值，归一化只剩约 1 位有效数字，floor 与 ceil 的差别能占满量程；新刻度下每组都是 4 位有效数字，floor 的偏置退回可忽略。**期间口径未经裁定**：本卡按年，docs/12 §8.1 的 per_capita_uu 按季，两者差 4 倍，见 _note_open_questions_zh.oq_base_per_capita_period_conflict。本字段 q=0 之后只读，任何运行期写入即 FAULT。"
+      }
+    ]
+  },
+  "_note_living_baselines_zh": "R-LIVING-01（tools/refit_living.py 生成，勿手改）：base_delivered_service_uqs = 地区公共服务产能按 service_capacity_split_ppm 拆到三类服务，再按「人口 × 年龄权重」拆到本地区群组（医疗 未成年/成年/老年 = 0.7/1/2.5，教育 = 1/0.1/0，公用 = 1/1/1，设计假设）；基年可用率 100% 时交付量恰等于基准，可及率 100%，与开局 service_access_ppm 一致。base_real_consumption_uqs = 全国基年居民商品消费（15500000000 μU/季 减基年租金 2847700000 μU/季，按基价折 μQ）按「人口 × 基年人均实际收入」拆到群组；消费指数只进报告，不进支持度。"
+}

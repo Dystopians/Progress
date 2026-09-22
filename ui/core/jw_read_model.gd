@@ -71,7 +71,8 @@ const RJ_COMMAND_ORDER: int = 1018
 const ELECTION_QS: PackedInt64Array = [15, 31]
 
 const SCALAR_IDS: PackedStringArray = [
-	"state.time.q", "state.time.horizon_q", "state.meta.run_terminated",
+	"state.time.q", "state.time.horizon_q", "state.time.start_year", "state.meta.mode",
+	"state.meta.run_terminated",
 	"state.meta.termination_reason", "state.meta.command_seq",
 	"state.gov.arrears_uu", "state.gov.committed_memo_uu", "state.gov.reserved_memo_uu",
 	"state.gov.service_opex_committed_uu", "state.gov.tax_capacity_ppm",
@@ -196,6 +197,8 @@ func refresh() -> void:
 		var c2: int = code(id2)
 		a[id2] = view.array_copy(c2) if c2 >= 0 else PackedInt64Array()
 	q = view.q()
+	# R-CLOCK-01：战役剧本按公历显示季度（「1623 年 春」）；旧剧本 start_year == 0，仍显示「第 N 季」。
+	JwFormat.start_year = sc("state.time.start_year")
 	terminated = view.run_terminated()
 	derived = game.derived_snapshot() if game.has_method("derived_snapshot") else {}
 	rules = game.rule_params() if game.has_method("rule_params") else {}

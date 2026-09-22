@@ -90,12 +90,14 @@ func has_game() -> bool:
 # ── 开局、读档、存档 ─────────────────────────────────────────────────────
 
 ## 开新局。goal ∈ {0,1,2} 时把「选择任期目标」放进第 1 季草案（命令 12 只在 q == 0 受理）。
-func start_new(seed_v: int, goal: int = -1) -> Dictionary:
+func start_new(seed_v: int, goal: int = -1, scenario: String = "") -> Dictionary:
 	if settling:
 		return {"ok": false, "code": JwReadModel.RJ_PHASE_BUSY, "a": 0, "b": 0}
 	_wait_dryrun()
+	if scenario != "":
+		use_scenario(scenario)
 	var g: JWGame = JWGame.new()
-	var r: RefCounted = g.new_game(CONTENT_ROOT, seed_v, catalog.horizon_q())
+	var r: RefCounted = g.new_game(_content_spec(), seed_v, catalog.horizon_q())
 	var rr: Dictionary = res(r)
 	if not bool(rr["ok"]):
 		last_error = rr
@@ -151,7 +153,7 @@ func load_slot(slot: String) -> Dictionary:
 	var g: JWGame = game
 	if g == null:
 		g = JWGame.new()
-		var r0: Dictionary = res(g.new_game(CONTENT_ROOT, 1, catalog.horizon_q()))
+		var r0: Dictionary = res(g.new_game(_content_spec(), 1, catalog.horizon_q()))
 		if not bool(r0["ok"]):
 			return r0
 	var rr: Dictionary = res(g.load_game(slot))
@@ -159,6 +161,10 @@ func load_slot(slot: String) -> Dictionary:
 	if not bool(rr["ok"]):
 		last_error = rr
 		return rr
+	# 存档可能属于另一个剧本（JWGame.load_game 已按 manifest 换了内容包），目录跟着换。
+	var sid: String = g.view().scenario_id()
+	if sid.begins_with("scenario."):
+		use_scenario(sid.substr(9))
 	game = g
 	read_only = g.read_only_mode
 	current_slot = slot
@@ -173,6 +179,21 @@ func load_slot(slot: String) -> Dictionary:
 	state_changed.emit()
 	request_dryrun(true)
 	return rr
+
+
+## 切换内容目录到另一个剧本（R-SCENARIO-01）。同名不重载。
+func use_scenario(name: String) -> void:
+	if name == "" or name == catalog.scenario_name:
+		return
+	var c: JwCatalog = JwCatalog.new()
+	c.scenario_name = name
+	c.load_all()
+	catalog = c
+
+
+## 交给 JWGame 的内容根：旧剧本不带后缀，其他剧本带 `#<name>`。
+func _content_spec() -> String:
+	return CONTENT_ROOT if catalog.scenario_name == "chengwan" else CONTENT_ROOT + "#" + catalog.scenario_name
 
 
 func list_saves() -> Array[Dictionary]:

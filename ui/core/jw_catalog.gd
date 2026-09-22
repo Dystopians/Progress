@@ -23,6 +23,9 @@ const SECTOR_IDS: PackedStringArray = ["agri", "manu", "energy", "services"]
 const AGE_IDS: PackedStringArray = ["child", "working", "elder"]
 const SKILL_IDS: PackedStringArray = ["low", "mid", "high"]
 
+## 当前剧本目录名（R-SCENARIO-01；`content/scenarios/<name>/`）。
+var scenario_name: String = "chengwan"
+
 var policies: Array[Dictionary] = []
 var regions: Array[Dictionary] = []
 var blocs: Array[Dictionary] = []
@@ -40,9 +43,10 @@ func load_all() -> void:
 		return
 	loaded = true
 	config = _json(CONFIG_PATH)
-	scenario = _json(CONTENT_ROOT + "/scenarios/chengwan/scenario.json")
-	base_plan = _json(CONTENT_ROOT + "/scenarios/chengwan/government_init.json").get("annual_plan", {})
-	var reg: Dictionary = _json(CONTENT_ROOT + "/scenarios/chengwan/regions.json")
+	var sdir: String = CONTENT_ROOT + "/scenarios/" + scenario_name
+	scenario = _json(sdir + "/scenario.json")
+	base_plan = _json(sdir + "/government_init.json").get("annual_plan", {})
+	var reg: Dictionary = _json(sdir + "/regions.json")
 	var themes: Array = config.get("region_themes", [])
 	var i: int = 0
 	for r: Variant in reg.get("regions", []):
@@ -56,7 +60,7 @@ func load_all() -> void:
 			"theme": String(themes[i]) if i < themes.size() else "",
 		})
 		i += 1
-	var pol: Dictionary = _json(CONTENT_ROOT + "/scenarios/chengwan/politics_init.json")
+	var pol: Dictionary = _json(sdir + "/politics_init.json")
 	for b: Variant in pol.get("blocs", []):
 		var bd: Dictionary = b
 		blocs.append({
@@ -313,6 +317,36 @@ func country_label() -> String:
 
 func horizon_q() -> int:
 	return int(scenario.get("horizon_q", 40))
+
+
+## 剧本模式：0 单届 1 战役（R-SCENARIO-01；旧剧本不写 mode 即单届）。
+func scenario_mode() -> int:
+	return 1 if String(scenario.get("mode", "term")) == "campaign" else 0
+
+
+## 第 0 季所在公历年（0 = 不显示年份）。
+func start_year() -> int:
+	return int(scenario.get("start_year", 0))
+
+
+## 内容包里的全部剧本（按目录名升序）：[{name, label, mode, horizon_q, start_year}]。
+static func list_scenarios() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var dirs: PackedStringArray = DirAccess.get_directories_at(CONTENT_ROOT + "/scenarios")
+	dirs.sort()
+	for d: String in dirs:
+		var f: FileAccess = FileAccess.open(CONTENT_ROOT + "/scenarios/" + d + "/scenario.json", FileAccess.READ)
+		if f == null:
+			continue
+		var v: Variant = JSON.parse_string(f.get_as_text())
+		f.close()
+		if not (v is Dictionary):
+			continue
+		var sd: Dictionary = v
+		out.append({"name": d, "label": String(sd.get("label_zh", d)),
+				"mode": 1 if String(sd.get("mode", "term")) == "campaign" else 0,
+				"horizon_q": int(sd.get("horizon_q", 40)), "start_year": int(sd.get("start_year", 0))})
+	return out
 
 
 static func _json(path: String) -> Dictionary:

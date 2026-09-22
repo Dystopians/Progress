@@ -114,6 +114,10 @@ enum Sector { AGRI = 0, MANU = 1, ENERGY = 2, SERVICES = 3 }
 enum Age { MINOR = 0, WORKING = 1, ELDER = 2 }
 enum Skill { LOW = 0, MID = 1, HIGH = 2 }
 enum ServiceKind { HEALTH = 0, EDUCATION = 1, UTILITY = 2 }
+## 剧本模式（R-SCENARIO-01）：0 单届（旧 40 季现代版）1 战役（四百年）
+enum Mode { TERM = 0, CAMPAIGN = 1 }
+## 战役剧本的季数上限（R-CLOCK-01：1600—2000 年 = 1600 季）
+const HORIZON_Q_MAX: int = 1600
 enum Phase { IDLE = 0, S01 = 1, S02 = 2, S03 = 3, S04 = 4, S05 = 5, S06 = 6, S07 = 7, S08 = 8 }
 enum Binding { PLAN = 0, CAPACITY = 1, LABOR = 2, ENERGY = 3, MATERIALS = 4 }
 # R-INVEST-01：FIRM_CAPITAL 排在出口之后——资本品购买是最可推迟的需求，短缺时最后满足。

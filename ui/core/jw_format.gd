@@ -175,6 +175,10 @@ static func quarter(q: int) -> String:
 	if q < -1:
 		push_error("JwFormat.quarter: bad quarter index " + str(q))
 		return JwText.t("fmt.quarter_open")
+	if start_year > 0:
+		@warning_ignore("integer_division")
+		var y: int = start_year + q / 4
+		return JwText.render("fmt.quarter_cal", {"year": str(y), "season": JwText.t("fmt.season.%d" % (q % 4))})
 	return JwText.render("fmt.quarter", {"n": str(q + 1)})
 
 
@@ -189,6 +193,10 @@ static func quarters(n: int) -> String:
 	if n == 0:
 		return JwText.t("fmt.quarters_zero")
 	return JwText.render("fmt.quarters", {"n": str(n)})
+
+
+## 第 0 季所在公历年；0 = 不显示公历（旧剧本）。由 JwReadModel.refresh 从状态写入（R-CLOCK-01）。
+static var start_year: int = 0
 
 
 ## 年内第几季（显示用）：内部 q → (年, 季)。

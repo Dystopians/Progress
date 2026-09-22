@@ -1,0 +1,258 @@
+{
+  "goal": "尽可能扩充经纬 1600—2000 资源，保持已认可的 B01 质量",
+  "status": "in_progress",
+  "existing_buildings": 9,
+  "building_target": 36,
+  "era_art_target": 6,
+  "remaining_buildings": [
+    {
+      "batch": "b02",
+      "id": "farm_early",
+      "label": "综合农庄",
+      "family": "农业生产",
+      "era": "早期",
+      "subject": "A pre-industrial mixed farm: one compact timber-and-pale-stone barn with a steep slate roof, two clearly separated small dry crop plots, a hay stack rendered neutral gray beige, wooden hand plough and a simple fence. No waterwheel or irrigation channel, no tractors. Crop plots are part of the facility, not a rectangular decorative pedestal.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "farm_industrial",
+      "label": "商品化农场",
+      "family": "农业生产",
+      "era": "工业期",
+      "subject": "A nineteenth-century commercial grain farm: long practical barn, paired tall grain storage bins, small loading platform and a parked wooden farm cart. Three short organized crop rows. Distinct from a hand farm and from an industrial factory; no modern tractor, no power lines.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "farm_modern",
+      "label": "机械化农场",
+      "family": "农业生产",
+      "era": "现代期",
+      "subject": "A late twentieth-century mechanized farm: low wide machinery shed with open bay, a clearly identifiable small teal tractor with large rear tires, one cylindrical grain silo and two neat crop strips. No solar panels, no futuristic robots. All as one compact agricultural installation.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "mine_early",
+      "label": "地表采掘场",
+      "family": "矿业资源",
+      "era": "早期",
+      "subject": "A shallow pre-industrial quarry: low stepped exposed neutral-gray rock face, timber-supported mine opening, simple wooden hand winch and a small two-wheel ore cart with gray ore. Clear exposed rock silhouette, no large chimney, no buildings resembling a school, no explosives.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "mine_industrial",
+      "label": "深井矿场",
+      "family": "矿业资源",
+      "era": "工业期",
+      "subject": "An industrial deep-shaft mine: prominent tall timber-and-iron headframe with a large winding wheel over the shaft, a small stone engine house and two low ore wagons on one short rail segment. Strong triangular headframe silhouette, no open-pit excavator, no landscape.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "mine_modern",
+      "label": "机械采掘场",
+      "family": "矿业资源",
+      "era": "现代期",
+      "subject": "A mechanized twentieth-century mining installation: compact tracked excavator beside a low stepped rock face, inclined conveyor belt leading to a small ore hopper, two chunky rock piles. Teal-gray machinery, no yellow hazard stripes or orange equipment. Read as mining, not construction scaffolding.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "power_early",
+      "label": "水力动力站",
+      "family": "动力设施",
+      "era": "早期",
+      "subject": "A pre-electric hydraulic power mill: large overshot wooden waterwheel mounted on the side of a stout low stone machinery house, exposed horizontal drive shaft and gears, one narrow headrace and tailrace. NO crop plots, NO terraces: this produces mechanical power, not irrigation. Clear compact wheel-and-gear silhouette.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "power_industrial",
+      "label": "热力动力站",
+      "family": "动力设施",
+      "era": "工业期",
+      "subject": "A compact industrial steam power station: squat masonry boiler house with a wide arched machine bay revealing one horizontal boiler, two slim tall chimney stacks, external large flywheel and short steam pipe. No waterwheel, no crop plots, no cooling tower, no smoke clouds or flames.",
+      "status": "queued"
+    },
+    {
+      "batch": "b02",
+      "id": "power_modern",
+      "label": "电力变电站",
+      "family": "动力设施",
+      "era": "现代期",
+      "subject": "A twentieth-century electric substation: two clearly identifiable ribbed transformers, ceramic insulator stacks and a simple steel overhead busbar frame, with small flat-roof control room. Quiet teal-gray metal and pale ceramic. No nuclear cooling towers, no warning signs, no glowing electrical effects.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "transport_early",
+      "label": "驿路节点",
+      "family": "交通枢纽",
+      "era": "早期",
+      "subject": "A pre-industrial postal-road relay station: long low stone stable with timber gate, a parked simple covered wagon with wooden wheels, small canopy beside a short cobbled road fragment. No horses or people, no text, no rails. Functional silhouette distinct from a farm.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "transport_industrial",
+      "label": "铁路枢纽",
+      "family": "交通枢纽",
+      "era": "工业期",
+      "subject": "A nineteenth-century railway freight station: one short steam locomotive next to a low station building with a curved platform canopy, two short parallel rail segments and compact freight platform. No smoke, no signs, no clock numbers, no modern cars. Entire station fits the square.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "transport_modern",
+      "label": "综合物流站",
+      "family": "交通枢纽",
+      "era": "现代期",
+      "subject": "A late twentieth-century integrated logistics terminal: broad flat-roof distribution warehouse, two loading dock doors, a parked small articulated delivery truck and a short freight rail siding. A few neutral gray and muted teal cargo containers. No text, logos, hazard stripes or people.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "port_early",
+      "label": "河港仓栈",
+      "family": "港口仓储",
+      "era": "早期",
+      "subject": "A pre-industrial river warehouse landing: compact gabled timber-and-stone warehouse, L-shaped timber pier, small flat-bottom river cargo boat alongside, two barrels and simple hand-operated lifting derrick. A small contained muted teal water surface only directly around the pier; rest transparent.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "port_industrial",
+      "label": "商贸港区",
+      "family": "港口仓储",
+      "era": "工业期",
+      "subject": "An industrial merchant port: tall brick-and-stone warehouse with slate roof, one unmistakable iron dock crane with hook over a short masonry quay, a compact steam cargo boat bow alongside. A few crates. Water only as a small functional teal patch by quay, no ocean background, no flags.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "port_modern",
+      "label": "机械化港区",
+      "family": "港口仓储",
+      "era": "现代期",
+      "subject": "A modern container port terminal: one prominent simplified ship-to-shore gantry crane, three neat cargo containers, low logistics control cabin and the edge of a compact cargo barge by a short quay. Crane, containers and water in teal-gray, NO yellow machinery. Transparent around compact port footprint.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "housing_early",
+      "label": "集镇住宅",
+      "family": "居住设施",
+      "era": "早期",
+      "subject": "A small pre-industrial town housing cluster: three modest attached pale stone and timber homes with varied pitched slate roofs around a tiny shared courtyard, simple front steps and low walls. No grand public building, no waterwheel, no surrounding town or street scenery.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "housing_industrial",
+      "label": "工人住宅",
+      "family": "居住设施",
+      "era": "工业期",
+      "subject": "An industrial-era workers housing block: three connected narrow four-story masonry rowhouses, repetitive windows and pitched slate roofs, small shared service yard and simple rear stair. Dense practical residential silhouette, no factory chimney or luxury mansion details.",
+      "status": "queued"
+    },
+    {
+      "batch": "b03",
+      "id": "housing_modern",
+      "label": "配套社区",
+      "family": "居住设施",
+      "era": "现代期",
+      "subject": "A late twentieth-century residential community: two compact mid-rise apartment slabs of different heights, clearly visible balconies, a low community-service annex and tiny planted shared courtyard. Pale concrete, blue-gray roofs and teal balcony accents. No glass office tower, no cars or people.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "health_early",
+      "label": "地方诊所",
+      "family": "医疗设施",
+      "era": "早期",
+      "subject": "A modest pre-industrial community clinic: small one-story pale stone building with pitched slate roof, wide open double doorway showing a simple bed silhouette, sheltered side porch, two small herb planters. NO medical crosses, letters or signs; architecture is modest and caring, not a temple.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "health_industrial",
+      "label": "公共医院",
+      "family": "医疗设施",
+      "era": "工业期",
+      "subject": "An industrial-era public hospital: symmetrical two-story masonry ward building with long wings, tall regular windows, central covered entrance and small enclosed sanitary garden. A modest ventilating roof lantern, no religious tower, no crosses or text, no ambulance.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "health_modern",
+      "label": "区域医疗中心",
+      "family": "医疗设施",
+      "era": "现代期",
+      "subject": "A late twentieth-century regional medical center: compact mid-rise hospital ward tower adjoining a low clinical wing and broad ambulance-bay canopy, one plain small unmarked white medical van. Roof mechanical ventilation boxes. NO red cross, logos, H symbols, text, helipad or people.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "utility_early",
+      "label": "水井与排水",
+      "family": "城市公用",
+      "era": "早期",
+      "subject": "A pre-industrial communal well and drainage installation: large round pale-stone well under a simple slate-roof wooden canopy with visible hand winch and bucket, short open stone drain with grated crossing and a small settling trough. No waterwheel, no farmland or house cluster.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "utility_industrial",
+      "label": "供水卫生设施",
+      "family": "城市公用",
+      "era": "工业期",
+      "subject": "An industrial municipal waterworks: slender elevated cylindrical water tank on a stout four-legged masonry-and-iron tower, small pitched-roof pumping house, one circular settling basin and exposed pipe. No crop plots, no waterwheel, no smokestack. Clean legible water-tower silhouette.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "utility_modern",
+      "label": "综合公用设施",
+      "family": "城市公用",
+      "era": "现代期",
+      "subject": "A modern municipal water-treatment utility: two small circular clarifier basins with visible central sweep arms, low flat-roof service building, three large connecting pipes and a compact filter tank. Muted teal water. No farmland, no nuclear cooling towers, no text or yellow stripes.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "administration_early",
+      "label": "地方登记所",
+      "family": "财政行政",
+      "era": "早期",
+      "subject": "A pre-industrial local registry office: modest formal two-story stone building with central recessed entrance, short front steps, steep slate roof, side archive room with barred windows, a small visible stack of closed ledger volumes by the sheltered doorway. No text, flags, symbols, crowns or people.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "administration_industrial",
+      "label": "税关核算所",
+      "family": "财政行政",
+      "era": "工业期",
+      "subject": "An industrial-era customs and accounting office: compact formal masonry civic building with balanced tall windows and a central archway passage, adjoining low inspection shed, large cargo weighing scale under canopy and two crates. No flags, coats of arms, text, clock or temple columns.",
+      "status": "queued"
+    },
+    {
+      "batch": "b04",
+      "id": "administration_modern",
+      "label": "现代行政中心",
+      "family": "财政行政",
+      "era": "现代期",
+      "subject": "A twentieth-century public administration center: formal compact rectangular civic office block with horizontal window bands, broad accessible entrance canopy, low side archive wing and neat paved entry forecourt. Restrained pale concrete and teal glass. No corporate logo, flags, text, clock, monumental dome or skyscraper.",
+      "status": "queued"
+    }
+  ],
+  "notes": [
+    "优先补足主稿 12 家族 × 3 形态，共36建筑候选；随后制作6时代章节画。",
+    "科技节点符号沿用现有矢量体系，节点尚未冻结，不先制作48个未定义图标。",
+    "数量是工作队列而不是机制已冻结；新资源不绑定科技ID或强制升级路线。",
+    "B01风格与质量获用户肯定。新增批次待初审，不修改Claude实现文件。"
+  ]
+}

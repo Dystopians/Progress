@@ -1,0 +1,176 @@
+{
+  "schema_kind": "scenario",
+  "schema_version": 1,
+  "scenario_id": "scenario.campaign_1600",
+  "label_zh": "四百年战役（M1 骨架）",
+  "reference_year": 0,
+  "unit_declaration": {
+    "money_micro_per_unit": 1000000000,
+    "quantity_micro_per_qs": 1000000,
+    "ppm_scale": 1000000,
+    "base_price_uu_per_qs": 1000000000
+  },
+  "_note_unit_declaration": "四个常量存在的唯一目的是让换算错的剧本在载入期就死掉，取值逐条对 sim/jw_units.gd：money_micro_per_unit == JWUnits.U_SCALE == 1 000 000 000（裁定 R-SCALE-01），quantity_micro_per_qs == JWUnits.Q_SCALE == 1 000 000，ppm_scale == JWUnits.PPM == 1 000 000，base_price_uu_per_qs == JWUnits.BASE_PRICE == 1 000 000 000（INV-148）。R-SCALE-01 之后这四个数不再同值（1e9 / 1e6 / 1e6 / 1e9），11_data_contract.md §5.4 的字段表已由一行拆成三行。**本次改正**：money_micro_per_unit 上一版仍写 1 000 000。tools/migrate_currency_scale.py 的迁移规则是「键名含 uu 词元者其子树 ×1000」，这个键名里没有 uu，因而被整批迁移漏掉（11_data_contract.md §10.5 第 2 条已点名登记）。它与同一对象里已经是 1e9 的 base_price_uu_per_qs 自相矛盾：一个声称 1 U = 1e6 μU，另一个声称基年价 1e9 μU/Q_s == 1 U，两者不可能同时为真。",
+  "horizon_q": 1600,
+  "mode": "campaign",
+  "start_year": 1600,
+  "_note_campaign_m1": "M1 骨架剧本：经济数据暂为现代剧本的副本，只用于验证长时钟、批量推进、价格水平与危机状态机（docs/53 §3）。M1-3 按数值尺度预算缩小起步规模；M2 换成 1600 年的内容。",
+  "param_set_ref": "paramset.baseline",
+  "param_set_version": 1,
+  "_note_param_set_ref": "指向 11_data_contract.md §5.4 与 §5.15 约定的参数集 ID。content/parameters/params_core.json 已落地（schema_kind = parameter_set、param_set_id = paramset.baseline、param_set_version = 1、73 张参数卡），本处两个字段与之逐字相符，上一版登记的 E_NOT_FOUND（悬空的参数集引用）已销案。content/parameters/registry.json 是 tools/build_param_registry.py 的生成产物与只读索引（schema_kind = parameter_registry，裁定 R-SCHEMA-01），不是参数集也不是事实来源；两者冲突时以 params_core.json 为准并重跑生成器。按裁定 R-PARAM-01，只有 param.* 建正式卡片，剧本初值一律用 _note_* 注释键登记来源与推导，本文件因此不出现任何参数身份证。",
+  "root_seed": 0,
+  "_note_root_seed": "0 表示运行时注入。命令流与冲击流使用互相独立的计数器式随机流（按 10_variable_dictionary.md 的随机流表：rng.shock 在季度结算第 01 步抽、rng.event 在第 08 步抽；此处的 S01/S08 指 12_simulation_contract.md §1.1 的八步顺序编号，不是 shock.S01 这类冲击 ID），盐值在 param.rng_salt[6] 中声明，本文件不重复声明，避免出现第二处事实来源。",
+  "includes": {
+    "io_table": "io_table.json",
+    "regions": "regions.json",
+    "population_init": "population_init.json",
+    "cells_init": "cells_init.json",
+    "pubserv_init": "pubserv_init.json",
+    "government_init": "government_init.json",
+    "politics_init": "politics_init.json",
+    "assertions": "assertions.json"
+  },
+  "_note_includes": "八个文件名逐字取自 11_data_contract.md §2 的内容包布局与 §5.4 的 Scenario 示例，不是本文件可自行选择的字符串。本次复核时磁盘现状：八份全部就位（cells_init.json 与 pubserv_init.json 已补齐，原先以 politics.json 存在的文件已改名为 politics_init.json），/includes 下不再有悬空引用。连带效果是两条整包对账第一次真的跑起来而不是报「无法核对」：INV-018 现金总量对账通过（见 _note_total_cash_uu），基年全年名义 GDP 复算等于 100 U 通过。反过来把本处的 includes 改成磁盘上的别名，等于在 scenario.json 里为文件布局另立一处事实来源并让加载器接受别名——11_data_contract.md §2 与 §4 规则 1 都禁止。",
+  "_note_includes_world_json": "同目录下的 world.json 既不在本 includes 里，也不在 §2 布局里，其 schema_kind = world_init 不属于 §5 的类型集合，校验器对它报 E_CONTENT_LAYOUT 与 E_SCHEMA_HEADER。外部世界的初值按 §5.4 就写在本文件的 world_init 段内，这里是唯一权威副本；world.json 的 /world_init_mirror 是它对本段的逐字复述（该文件自己的 mirror_rule_zh 也是这么写的），不是第二处事实来源。处置方式只有两条：把 world.json 的可结算内容并入本文件的 world_init 与 shocks/，或先升 content.schema_version 把 world_init 正式写进 §2 布局与本 includes。在契约作出裁定之前，本文件不擅自把它加进 includes——加进去只会把一个未定义类型变成必读文件。注意本轮没有改动 /world_init 的任何取值，mirror 因此仍然逐字相等；world.json 建议的 E_WORLD_MIRROR 与 tools/check_world_mirror.gd 尚未实现，单方面改本段会让两侧静默脱节（另见 _note_world_init_delivery_conflict）。",
+  "enabled_policies": [
+    "policy.P01",
+    "policy.P02",
+    "policy.P03",
+    "policy.P04",
+    "policy.P05",
+    "policy.P06",
+    "policy.P07",
+    "policy.P08",
+    "policy.P09",
+    "policy.P10",
+    "policy.P11",
+    "policy.P12"
+  ],
+  "baseline_policies": [
+    "policy.P01",
+    "policy.P02",
+    "policy.P03"
+  ],
+  "_note_baseline_policies": "R-BASELINE-01：开局已在执行的现行制度，参数取各政策模板 player_params 的 default。计划书 §09 中玩家对这三项改变的是「级距与免征额」「适用税率」「资格与替代比例」，即修改既有制度而非新设；计划书 §05 的基年财政（全年收入 20 U、支出 22 U 含法定转移）也只能由它们在 q=0 生效才成立。P04—P12 是新举措，开局未通过。",
+  "enabled_events": [
+    "event.E01",
+    "event.E02",
+    "event.E03",
+    "event.E04",
+    "event.E05",
+    "event.E06",
+    "event.E07",
+    "event.E08",
+    "event.E09",
+    "event.E10",
+    "event.E11",
+    "event.E12"
+  ],
+  "enabled_shocks": [
+    "shock.S01",
+    "shock.S02",
+    "shock.S03"
+  ],
+  "season_factor_ppm": {
+    "gov_receipts": [
+      230000,
+      245000,
+      250000,
+      275000
+    ],
+    "gov_primary": [
+      240000,
+      250000,
+      255000,
+      255000
+    ],
+    "agri_output": [
+      175000,
+      275000,
+      350000,
+      200000
+    ]
+  },
+  "_note_season_factor_ppm": "三条系数各自合计 1000000（INV-042）。gov_receipts 的年内上升表示汇算清缴集中在第 4 季；gov_primary 的第 3、4 季偏高表示施工季与年末结算；agri_output 第 3 季为收获峰值。口径按裁定 R-SEASON-01：季节系数只作用于「年度支出 − 全年利息 − 全年到期本金」，即基本支出 gov_primary；利息与到期本金由 bond_book 逐批次逐季单算，不受季节系数支配。按最大余数法（11_data_contract.md §5.2，并列时按季下标升序）拆 government_init.json 的基年计划，全部为 μU：收入 20 000 000 000 拆为 4 600 000 000 / 4 900 000 000 / 5 000 000 000 / 5 500 000 000；基本支出的拆分基数是「年度支出 22 000 000 000 减全年利息 2 033 700 000 等于 19 966 300 000」，拆为 4 791 912 000 / 4 991 575 000 / 5 091 406 500 / 5 091 406 500。**本次改正两处**：（一）上一版的六组数是旧刻度（1 U = 1e6 μU）下的值，已按 R-SCALE-01 全部重算；（二）上一版写的「余 1 μU 按并列时下标升序给到第 3 季」在新刻度下已作废——19 966 300 000 × 255 000 / 1e6 整除，四季拆分没有余数，四项直接精确合计 19 966 300 000。这两点与 12_simulation_contract.md §2.1 的 02.0 复核表逐项一致，该文件 §16.7 第 11 条正是要求本段改这两处。全年到期本金 3 600 000 000 μU（两笔 level_principal，每季合计 900 000 000 μU），现金口径的年计划 = 22 000 000 000 + 3 600 000 000 = 25 600 000 000 μU，与「四季基本支出 19 966 300 000 + 全年利息 2 033 700 000 + 全年还本 3 600 000 000」恒等。",
+  "_note_season_factor_ppm_contract_status": "销案记录。上一版在此登记一条 P1 缺口：「12_simulation_contract.md 全文检索 season_factor 与 annual_plan 均为零命中，本段三条数组没有任何结算步读取，INV-042 因此退化为只校验四项和等于 1e6 的空断言」。该缺口已由 docs/12 §2.1 新增的 02.0「年度计划分季」填上（该文件 §16.4 是其同步记录）：02.0 是本段与 government_init.json 的 annual_plan 唯一的读取点，给出 split_largest_remainder 的调用式、flow.gov.primary_budget_q_uu 的写入，以及三条必须同时成立的校验式（四季合计 == 基本支出年额；四季合计 + 利息 + 还本 == 现金口径年计划；四季合计 + 利息 == 支出口径年计划），前三条每季 S02 末检查，不成立即 Fault.LEDGER_IMBALANCE。本条因此从「缺口」转为「已闭合」。**遗留一项，不在本文件范围内**：02.0 新增的流量字段 flow.gov.primary_budget_q_uu 尚未在 11_data_contract.md §4 与 10_variable_dictionary.md §5 建条目（docs/12 §16.7 第 1 条）。",
+  "prices_init": {
+    "sector_uu_per_qs": [
+      1000000000,
+      1000000000,
+      1000000000,
+      1000000000
+    ],
+    "base_uu_per_qs": [
+      1000000000,
+      1000000000,
+      1000000000,
+      1000000000
+    ],
+    "wage_uu_per_person_q": [
+      810,
+      1354,
+      2222
+    ],
+    "housing_rent_uu_per_unit_q": [
+      223,
+      561,
+      413,
+      253
+    ]
+  },
+  "_note_prices_init": "基年四部门现价与基年价均为 1 000 000 000 μU/Q_s（INV-148 在 R-SCALE-01 之后的值），即 1 000 μU/μQ_s，故基年名义等于实际。wage_uu_per_person_q 与 housing_rent_uu_per_unit_q 不是可自由选取的设计起点，而是两条恒等式的解：前者由「公共部门季度工资总额 == government_init.json 的 annual_plan.expenditure_lines_uu.public_wages ÷ 4」反解，后者由 population_init.json 的逐地区季度可支配收入与逐地区设计目标住房负担率反解。两组值的求解式、复算与备选解见下两条。**本次改正**：上一版写 [1000, 2000, 3000] 与 [1000, 1000, 1000, 1000]，那是旧刻度的 [1, 2, 3] 与 [1, 1, 1, 1] 被 tools/migrate_currency_scale.py 机械 ×1000 的结果——刻度对了不等于数对了，两条恒等式在迁移后都是破的。上一版 _note_prices_init 正文里「撞上了记账单位的分辨率下限」整段论证是旧刻度下的正确结论，在 R-SCALE-01 之后已不成立，一并重写，销案记录见 _note_prices_init_resolution_status。",
+  "_note_prices_init_wage_fit": "工资率 [810, 1354, 2222] μU/人/季（low / mid / high）是恒等式的解，不是挑出来的格点。约束式：Σ_技能 pubserv 在岗人数 × wage[技能] × 4 == public_wages == 9 000 000 000 μU/年。population_init.json 的 36 组 pubserv 在岗人数按技能合计为 low 298 668 / mid 711 327 / high 470 271，代入得 298 668 × 810 = 241 921 080，711 327 × 1354 = 963 136 758，470 271 × 2222 = 1 044 942 162，合计 2 250 000 000 μU/季，×4 精确等于 9 000 000 000 μU/年（本文件作者按 population_init.json 与 government_init.json 独立复算，不是转抄兄弟文件的结论）。该方程在 (a, b, c) 上是二维格；population_init.json 的 _note_derived_check.cross_file_check.from_scenario_json 记录：在 c > b > a > 0 且 c ≤ 8a 的全域只有 5 组解 [(425, 1355, 2465), (487, 1762, 1810), (748, 947, 2877), (810, 1354, 2222), (1195, 1353, 1979)]，另外四组的两级溢价分别是 3.19x/5.80x、3.62x/3.72x、1.27x/3.85x、1.13x/1.66x，要么中档溢价高得不像技能差距，要么中档几乎没有溢价，全部落在结构带外。取本组的理由是两级溢价近似等比（1354/810 = +67.2%，2222/1354 = +64.1%），对应「每上一档技能约 +65% 工资溢价」这一条可辩护的结构假设，并让 P01 的级距、P05 的培训收益、param.migration_w_wage_ppm 的工资拉力三条机制同时有落差可观察。连带成立的量（均已复算）：市场部门季度劳动报酬 4 278 850 × 810 + 3 721 859 × 1354 + 1 261 871 × 2222 = 11 309 142 948 μU/季，加公共部门 2 250 000 000 μU/季 得全社会工资总额 13 559 142 948 μU/季，占季度名义 GDP 25 000 000 000 μU 的 542 365 ppm；逐部门也与 io_table.json 的 compensation_of_employees_uu 逐 μU 相等，例如农业 1 698 699 × 810 + 611 100 × 1354 + 86 887 × 2222 = 2 396 438 504 μU/季，×4 = 9 585 754 016 μU/年。上一版的 [1000, 2000, 3000] 给出的公共部门工资总额是 3 132 135 000 μU/季，比 2 250 000 000 高 39.2%，公共工资那条恒等式当时是破的。改动本段必须同时重跑 tools/refit_base_year.py 并回写 io_table.json 的 labor 块与 population_init.json 的收入侧。",
+  "_note_prices_init_housing_rent_fit": "住房租金 [223, 561, 413, 253] μU/套/季（北原 / 中州 / 海岬 / 西岭）由 population_init.json 的 _note_derived_check.housing_rent_resolution_check 反解，求解式：rent[r] = idiv_floor(设计目标负担率_ppm[r] × 地区季度可支配收入_uu, 1e6 × 地区占用套数)，取整方向 floor（10_variable_dictionary.md §0「总额 → 每套」的下取整方向：少收租优于向居民多收）。设计目标负担率按住房紧张程度排序而不是按收入排序：中州 240 000 > 海岬 200 000 > 西岭 150 000 > 北原 140 000 ppm；依据是 regions.json 的存量与 population_init.json 的占用——中州 2 240 000 套 < 人口/3 = 2 333 334 套、海岬 1 620 000 < 1 666 667，这两地 12_simulation_contract.md §7.5 的 cap_housing 为 0，开局不接受任何净迁入。代入逐地区季度可支配收入 4 792 732 523 / 5 241 288 188 / 3 347 924 543 / 1 686 954 809 μU 与占用套数 3 000 000 / 2 240 000 / 1 620 000 / 1 000 000 套，复算得 223 / 561 / 413 / 253（本文件作者逐项验算），实得负担率 [139 586, 239 757, 199 843, 149 974] ppm，逐地区比目标低 [414, 243, 157, 26] ppm，四个偏差方向全部相同——这是 floor 的刻意保守性，不是配平误差。全国住房支出 223 × 3 000 000 + 561 × 2 240 000 + 413 × 1 620 000 + 253 × 1 000 000 = 2 847 700 000 μU/季，占全国季度可支配收入 15 068 900 063 μU 的 188 978 ppm，落在 140 000—240 000 ppm 的逐地区目标带内；全年 11 390 800 000 μU 也远低于 io_table.json 的居民服务消费 30 187 500 000 μU/年。上一版的 [1000, 1000, 1000, 1000] 给出的全国住房支出是 7 860 000 000 μU/季、31 440 000 000 μU/年，比全部居民服务消费还多——那是旧刻度最小可表达值 1 μU/套/季 被机械 ×1000 的产物，不是设计值。逐组实得负担率必然分散（64 310..443 140 ppm）：目标是按地区定的，而未成年与老年组没有工资收入、住房支出由组间赡养转移覆盖，这是口径结果不是取值错误。按 OQ-244，首版租金固定不更新（S07 不写 state.price.housing_rent_uu_per_unit_q），因此这四个数一旦定下就是整局 40 季的常量，事件文案不得写成「租金上涨」（event_E03.json 的 rent_is_fixed_note_zh 已就此立规）。",
+  "_note_prices_init_resolution_status": "销案与遗留。上一版在此登记一条 G0 阻塞「按人、按套计价量的记账分辨率不足」，四条后果逐条复核如下，全部已由裁定 R-SCALE-01（1 U = 1 000 000 000 μU）解决：（1）上一版断言「任何正整数工资向量都无法复现 io_table 的分部门劳动报酬拆分」——旧刻度下成立，新刻度下已由 _note_prices_init_wage_fit 的农业复算证伪（逐部门逐 μU 相等）。（2）param.wage_step_max_ppm = 20000 作用在 810 / 1354 / 2222 上，mul_ppm(w, 20000) = idiv_floor(w, 50) 分别得 16 / 27 / 44 μU，INV-067 与 INV-070 的有界平滑在工资侧第一次真的能动；旧刻度下 w ≤ 3 时恒为 0，计划书 §06「价格与工资作有界、平滑的下一季调整」在工资侧是落空的。（3）租金已落在合法区间内部，最小可表达的 1 μU/套/季 只相当于全国季度可支配收入的约 521 ppm，不再出现「最小值本身就超过全部服务消费」。（4）region.migration_cost_uu 现取 2000 / 3000 / 4000 μU，档位之间第一次存在可用的中间值（旧刻度只有 2 / 3 / 4，相邻档之间无法插值）。**仍然遗留、且不在本文件范围内的两项**：其一，param.wage_floor_uu / param.wage_ceil_uu 现为 50 000 000 / 20 000 000 000 μU，比本段工资率高四到七个数量级，params_core.json 的这两张卡已自标 calibration_todo = 1，其 calibration_note 明写「加载后断言 wage_floor_uu < min(scenario.prices_init.wage_uu_per_person_q)，当前该断言必然为假」；在它们重新标定之前，任何按硬界夹工资的实现都会在第一季把工资夹死，这是参数卡的问题不是本段取值的问题。其二，io_table.json 的 labor_requirement_at_base_output_persons 仍高于实际在岗人数（农业 2 899 050 对 2 396 686），那是基年的 bound_labor 缺口，权威登记在该表的 open_issues，与价格侧无关。上一版提出的「增加按千人、按千套计价的派生单位」修复方向已被 R-SCALE-01 取代，不再需要。",
+  "world_init": {
+    "fx_rate_ppm": 1000000,
+    "export_demand_ppm": [
+      1000000,
+      1000000,
+      1000000,
+      1000000
+    ],
+    "import_price_ppm": [
+      1000000,
+      1000000,
+      1000000,
+      1000000
+    ],
+    "delivery_capacity_uqs": [
+      400000,
+      2400000,
+      600000,
+      550000
+    ],
+    "credit_limit_uu": 12000000000,
+    "sovereign_rate_ppm_per_q": 10000,
+    "cash_uu": 15000000000,
+    "base_export_uqs": [
+      375000,
+      1300000,
+      575000,
+      500000
+    ],
+    "_note_base_export_uqs": "R-EXPORT-01：基年季度出口量（μQ_s）= io_table 基年核算 final_use.exports.by_product（年，μU）÷ 4 ÷ 基年价 × Q_SCALE。年值 agri/manu/energy/services = [1500000000, 5200000000, 2300000000, 2000000000] μU，合计 11 U。",
+    "_note_delivery_capacity_services": "服务的外部交付能力由 0 改为 550 000 μQ/季：进口与出口各自独立受此上限约束（不共享额度池），而基年核算有服务出口 2 U/年（0.5 Q/季）、服务进口 0.5 U/年（0.125 Q/季）。原值 0 使基年服务出口在基年就不可能发生。取出口的 1.1 倍。",
+    "import_share_ppm": [
+      45627,
+      110456,
+      142857,
+      7836
+    ],
+    "_note_import_share_ppm": "R-IMPORT-01：各产品国内使用中由进口满足的固定份额 = 基年季度进口 ÷（基年季度国内总产出 + 进口），取自 io_table 基年核算（进口年值 [1200000000, 7500000000, 1800000000, 500000000] μU；季度产出 [6275000, 15100000, 2700000, 15825000] μQ）。市场配给前先按此份额把各买方类需求的一部分划为进口计划（出口与中央政府采购不进口），总量受本季交付能力余额封顶；国内可供量只对余下的国内需求配给。"
+  },
+  "_note_world_init": "固定汇率恒为 1 000 000（INV-105），玩家不得操纵汇率（计划书 §03）。delivery_capacity_uqs 是外部每季交付能力，按 10_variable_dictionary.md 与 12_simulation_contract.md §5.6，它同时是进口量上限（INV-104、INV-089）与出口量上限，两个方向各自独立受同一上限约束（不是两者之和受约束）。四项取值：农产品 400 000 μQ、设备与制成品 2 400 000 μQ（海岬「设备依赖进口」的上限由此形成）、能源 600 000 μQ、服务 0（首版服务不可跨境交付，与 world.json 的 export_demand.tradable = [1, 1, 1, 0] 一致，但与 io_table.json 的基年出口口径相抵，见下条）。credit_limit_uu 取 12 000 000 000 μU，低于开局外债余额 16 000 000 000 μU（government_init.json /bonds 中 holder == row 的两笔：bond.q-8_01 10 000 000 000 加 bond.q-2_01 6 000 000 000），用意是外部融资在开局即为稀缺资源。按裁定 R-CREDIT-01，该额度约束的是**新增**外部借款，存量外债不占用额度，因此 state.world.credit_used_uu 初值为 0 不是口径遗漏而是定义——存量外债的约束已经由还本付息的现金流表达，再占一次额度是重复计算；上一版把这一点登记为待决问题，现按 R-CREDIT-01 销案。sovereign_rate_ppm_per_q 取 10 000，与 param.market_rate_base_ppm 相同：12_simulation_contract.md §1.1 的 01.7 每季用 clamp(param.market_rate_base_ppm + mul_ppm(eff_ppm[S03], param.rate_sensitivity_ppm), 0, 100 000) 重算该字段，q=0 开局无冲击即 eff_ppm[S03] == 0，故首次重算结果必须恒等于初值，否则开局第一季利率就会无故跳变。cash_uu 取 15 000 000 000 μU，作为 agent.row 的初始现金进 total_cash_uu 的求和，并构成出口收入的付款上限（agent.row 现金恒 ≥ 0，INV-016）。",
+  "_note_world_init_delivery_conflict": "登记一条跨文件冲突，本文件仍不单方面裁定，但证据比上一版清楚了，故把裁定条件写死。冲突双方：（甲）io_table.json 的 _note_base_year_accounting.final_use_uu.exports 把基年出口定为全年 11 000 000 000 μU（农 1 500 000 000 / 制 5 200 000 000 / 能 2 300 000 000 / 服 2 000 000 000），按基年价 1 000 μU/μQ_s 折合每季 375 000 / 1 300 000 / 575 000 / 500 000 μQ，对应进口每季 300 000 / 1 875 000 / 450 000 / 125 000 μQ，并在该表的 interface_requirements 里要求本段四项逐部门不小于其中较大者；（乙）world.json 的 export_demand.tradable = [1, 1, 1, 0] 与 export_baseline_uqs_per_q = [100 000, 350 000, 50 000, 0]，全年出口 2 000 000 000 μU，与本段的服务 0 严格一致。本段现值对前三个部门都满足甲的要求（逐部门取进出口较大者后余量 6.7% / 28.0% / 4.3%），只有服务一项相抵。**本次不改本段，理由是可核对性而不是偏好**：本文件这一轮采纳了 io_table.json 提出的另外两条接口要求（工资率与住房租金），因为它们能对着**已加载**文件的字段独立复算并精确成立——public_wages 在 government_init.json、在岗人数与可支配收入在 population_init.json、占用套数在 regions.json；而基年出口额只写在 io_table.json 的 _note_ 注释键与不在 includes 里的 world.json 中，按 11_data_contract.md §1.5 与 §6.4 二者都不进载入器、不进 content_hash，没有任何已加载文件声明存在一条服务出口流，抬高上限等于凭空为它预留容量。另一条现实约束：world.json 的 world_init_mirror 目前与本段逐字相等，而它自己建议的 E_WORLD_MIRROR 与 tools/check_world_mirror.gd 尚未实现，单方面改本段会让两侧静默脱节而无人发现。**裁定条件（两条路各自的完整代价）**：若采纳甲的 11 000 000 000 μU/年 口径，本段第 4 项必须同时改为不小于 500 000 μQ，world.json 的 tradable 与 export_baseline_uqs_per_q 必须同步改，否则基年服务出口在 S05 被截断为 0，支出法 GDP 比生产法少 2 000 000 000 μU/年，而 INV-118 的容差是 0；若维持「服务不可跨境交付」，io_table.json 的 final_use 必须把这 2 000 000 000 μU 改记到别的最终使用项，其三口径对账要重新配平。两条路都要求改动本文件以外的文件，故留待契约裁定。",
+  "mandate_goals": [
+    "industry",
+    "livelihood",
+    "fiscal"
+  ],
+  "_note_rationing_priority": "登记一条 P2 缺口：12_simulation_contract.md §5.6 与 17_api_skeleton.md 都写「rationing_priority 来自内容配置」，且 §5.6 与裁定 S-13 都提到 gov.ration_mode 这个全比例切换开关，但前者在整个内容包里只在本注释键出现一次（即零个配置位），后者在 10_variable_dictionary.md 里没有字段。OQ-238 把配给顺序定死为「0 居民 大于 1 公共服务 大于 2 政府采购 大于 3 企业投入与补库 大于 4 出口」，这是一条对玩家可见且会被质疑的设计（「为什么国内缺货还在出口」），按计划书 §04 的信息设计底线（可以隐藏未来冲击，不隐藏当前规则）必须有数据归宿才能在报告里被解释。本文件不能直接加 rationing_priority 与 ration_mode 两个字段：11_data_contract.md §5.4 的 Scenario schema 未声明它们，而 §3 是 additionalProperties: false，加进去当场变成 E_UNKNOWN_FIELD，等于用一个新错误换掉一个缺口。修复顺序只能是先在 §5.4 登记这两个字段（rationing_priority 为 int[5]，校验「必须是 0..4 的全排列」，与 payment_priority 的 V-FIN-06 同构；ration_mode 取 0 或 1），再由本文件按 OQ-238 的顺序填 [0, 1, 2, 3, 4] 与 0。在那之前本键只承载事实登记，不参与任何逻辑。",
+  "total_cash_uu": 63716000000,
+  "_note_total_cash_uu": "63.716 U。全经济现金总量恒定（INV-018）。本字段不是可自由选取的参数，而是全部现金科目初值的求和结果，source_type = derived，单位 μU：agent.gov 2 000 000 000（government_init.json /gov/cash_uu，计划书 §05 锁定的国库现金 2 U）加 agent.invpool 9 000 000 000（government_init.json /invpool/cash_uu，OQ-201 取值）加 agent.row 15 000 000 000（本文件 /world_init/cash_uu，OQ-201 取值）加 36 个 agent.group 合计 9 000 000 000（population_init.json /groups[*]/cash_uu 实测求和）加 16 个 agent.cell 合计 28 716 000 000（cells_init.json /cells[*]/cash_uu 实测求和；按部门为农业 4 374 000 000、制造 11 563 000 000、能源 1 788 000 000、服务 10 991 000 000，与 io_table.json 基年核算的逐部门 operating_cash_uu 相等；R-REGION-01 之前为 20 000 000 000）加 agent.opening 0（OQ-217：开账分录的现金腿不经 agent.opening，其现金科目恒为 0），合计 63 716 000 000 μU。上一版的六项数字是旧刻度值，已按 R-SCALE-01 全部重算（更早的一版曾把本字段写成 80 000 000 000、群组记为 30 000 000 000、cell 记为 24 000 000 000，与实测各差 21 U 与 4 U，即凭空多出 25 U 现金；现金总量若不是一个可对账的常数，「没有无来源资金」这条底座——计划书 §15 G1 门槛、§16 人工评审要点——就没有检验手段）。**状态变化**：cells_init.json 落地后本条对账由「无法核对」转为通过，校验器现在真的在逐文件求和后与本字段比对；R-REGION-01 提高 cell 开局现金后本字段由 55 000 000 000 重新求和为当前值。",
+  "_note_total_cash_uu_headroom": "对账已通过，充足性是另一件事——不要混为一谈。63.716 U 约为基年全年名义 GDP 100 U 的 637 160 ppm。原 cell 侧 20 U（约为市场部门一季工资单的 1.77 倍）在 G1 无命令基线里被证明不够：全国一季工资 + 中间投入需 28 709 206 350 μU，西岭能源开局现金 0.17 U 而季度工资 0.42 U，付不起工资而停产（docs/18 R-REGION-01）。按 R-REGION-01，每个 cell 的开局现金不少于一季工资 + 中间投入（cells_init.json 的 step_7_cash）：先把富余 cell 的富余转给不足的 cell，仍不够才提高合计，cell 侧现在是 28 716 000 000 μU，约为市场部门一季工资单 11 309 142 948 μU 的 2 539 184 ppm。这是开局的**下限**，不保证此后各季的现金流为正；运行期是否出现虚假欠付仍只能由 G1 的无命令基线检验（tools/diag_baseline.gd、tools/diag_cashflow.gd）。这也不是为消除欠付而直接调高本值（那等于凭空造钱，属于计划书 §13 禁止的后处理补丁）：改的是 cells_init.json 的初值分配规则，本字段只是重新求和。注意 cell 侧的逐部门拆分同时写在 io_table.json 的 _note_base_year_accounting（注释键，载入器不读、不进 content_hash），那份副本由 tools/refit_regional.py 同步写出，但不被任何校验器自动传导，只能靠 cells_init.json 与本字段这一对被机器核对。",
+  "notes_zh": "澄湾共和国为虚构剧本。人口 2400 万、基年全年名义 GDP 100 U、政府债务 50 U、国库现金 2 U、基线年收入 20 U 与支出 22 U 来自计划书 §05，是锁定值；按裁定 R-SCALE-01，1 U = 1 000 000 000 μU，故基年全年名义 GDP = 100 000 000 000 μU、季度 25 000 000 000 μU，本文件与各初值文件的一切金额均按此刻度书写。prices_init 的工资率与住房租金不是设计起点而是求解结果（见 _note_prices_init_wage_fit 与 _note_prices_init_housing_rent_fit）；season_factor_ppm 的四季拆分同理，由 government_init.json 的年计划与 R-SEASON-01 的基数定义唯一决定。其余数值均为 design_assumption 的测试起点，不是现实国家数据，也不是已经跑出的结果。失业率 8% 不在任何 schema 中出现，只能由 population_init 的就业分配反算（V-POP-05、INV-143），现实测 80 000 ppm。首版 40 季；压力测试的 120 季由命令行 --horizon 覆盖，不改本文件（OQ-210）。"
+}

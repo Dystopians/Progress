@@ -56,6 +56,12 @@ class StateView extends RefCounted:
 	## 后置：不改状态
 	## 不变量：INV-012
 	## 失败：无
+	## 剧本 ID（`scenario.<name>`，R-SCENARIO-01）。
+	func scenario_id() -> String:
+		if _st == null:
+			return ""
+		return _st.scenario_id
+
 	func phase() -> int:
 		if _st == null:
 			return JWUnits.Phase.IDLE
@@ -513,6 +519,13 @@ func save_game(slot: String) -> JWResult:
 func load_game(slot: String) -> JWResult:
 	if _saves == null or _st == null or _cmds == null:
 		return JWResult.make_err(JWResult.Load.SAVE_CORRUPT, 0, 0)
+	# R-SCENARIO-01：存档属于另一个剧本 ⇒ 先按该剧本重新装配内容包，再读档。
+	var sid: String = _saves.peek_scenario_id(slot)
+	if sid.begins_with("scenario.") and sid != _st.scenario_id:
+		var root: String = JWContentLoader.split_root_spec(_loader.root_path())[0]
+		var rn: JWResult = new_game(root + "#" + sid.substr(9), 1, 0)
+		if rn == null or not rn.ok:
+			return rn if rn != null else JWResult.make_err(JWResult.Load.FILE_FORMAT, 0, 0)
 	var res: JWResult = _saves.load(slot, _st, _cmds, _loader)
 	if res == null:
 		return JWResult.make_err(JWResult.Load.SAVE_CORRUPT, 0, 0)

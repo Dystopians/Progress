@@ -7,7 +7,7 @@ extends RefCounted
 
 
 ## 状态形状版本，**单调整数**，迁移链的唯一依据。对应 docs/17 顶部的 skeleton_revision: 1。
-const CURRENT_SCHEMA_VERSION: int = 1
+const CURRENT_SCHEMA_VERSION: int = 2
 
 ## 大数组编码标识：`PackedInt64Array.to_byte_array()` 的 Base64（小端、每元素 8 字节）。
 ## **不用 `var_to_bytes()`**（其布局是引擎内部表示，跨版本不承诺，docs/17 §6.4）。
@@ -83,6 +83,24 @@ var slot_path: String = ""
 ## 逐版迁移函数链（`Dictionary → Dictionary` 的纯函数，**不允许跳版**）。
 ## 下标语义：`migrations[v]` 把 v 版升到 v+1 版。长度应为 `CURRENT_SCHEMA_VERSION`。
 var migrations: Array[Callable] = []
+
+
+func _init() -> void:
+	# 下标 0 没有「0 → 1」（首版就是 1）；下标 1 是四百年重构的第一次形状变更。
+	migrations = [Callable(), _mig_v1_to_v2]
+
+
+## v1 → v2（R-SCENARIO-01 / R-CLOCK-01）：新增 `state.meta.mode` 与 `state.time.start_year`。
+## v1 存档只可能来自单届剧本 chengwan：mode 取「单届」、start_year 取 0（不显示公历年份），
+## 两者的语义就是「旧剧本」，不属于 M-5 禁止的「用 0 冒充缺失值」。
+## M1 期间尚未发布 v2，M1 后续的形状变更继续并入本函数，不另起版本。
+func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
+	var out: Dictionary = src.duplicate(true)
+	var sc: Dictionary = out.get(JWSimState.SAVE_KEY_SCALARS, {})
+	sc["state.meta.mode"] = JWUnits.Mode.TERM
+	sc["state.time.start_year"] = 0
+	out[JWSimState.SAVE_KEY_SCALARS] = sc
+	return out
 
 # ── 上一次 load() 的判定结果（INV-134 的两半，供 JWGame 决定运行模式） ─────
 #
@@ -273,6 +291,18 @@ func autosave_append(st: JWSimState, cmds: JWCommands, slot: String) -> JWResult
 
 	slot_path = dir
 	return JWResult.make_ok()
+
+
+## 只读 manifest 里的剧本 ID（R-SCENARIO-01：读档前先按它装配对应剧本的内容包）。
+## 读不到返回空串，由后续 load() 报具体错误。
+func peek_scenario_id(slot: String) -> String:
+	if not _slot_name_ok(slot):
+		return ""
+	var man: Dictionary = {}
+	var rm: JWResult = _read_json_dict(_slot_dir(slot) + FILE_MANIFEST, man)
+	if not rm.ok:
+		return ""
+	return String(man.get(MK_SCENARIO_ID, ""))
 
 
 ## 读档（顺序固定，docs/11 §6.6）。

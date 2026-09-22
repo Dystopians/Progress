@@ -934,3 +934,28 @@ static func _strip_comment(line: String) -> String:
 		elif ch == "#" and not in_str:
 			return line.substr(0, i)
 	return line
+
+
+## R-SCENARIO-01 / R-CLOCK-01：开局覆盖层列出两个剧本；战役剧本按公历显示季度，切回旧剧本恢复「第 N 季」。
+func test_campaign_scenario_calendar() -> void:
+	var list: Array[Dictionary] = JwCatalog.list_scenarios()
+	var names: PackedStringArray = PackedStringArray()
+	for d: Dictionary in list:
+		names.append(String(d["name"]))
+	check(names.has("chengwan") and names.has("campaign_1600"), "剧本清单含旧剧本与战役剧本：%s" % str(names))
+	var s: JwSession = JwSession.new()
+	s.set_sync_mode(true)
+	var r: Dictionary = s.start_new(SEED, -1, "campaign_1600")
+	check(bool(r.get("ok", false)), "战役剧本开局（%s）" % str(r))
+	eq_int(s.catalog.scenario_mode(), 1, "目录切到战役剧本")
+	eq_str(JwFormat.quarter(0), "1600 年春", "第 0 季显示为 1600 年春")
+	eq_str(JwFormat.quarter(7), "1601 年冬", "第 7 季显示为 1601 年冬")
+	var ng: JwNewGame = JwNewGame.new()
+	ng.setup(s, null, "newgame", {})
+	ng.build()
+	check(ng.find_child("ScenarioOption", true, false) != null, "开局覆盖层有剧本选择")
+	ng.free()
+	var s2: JwSession = JwSession.new()
+	s2.set_sync_mode(true)
+	check(bool(s2.start_new(SEED, -1, "chengwan").get("ok", false)), "切回旧剧本开局")
+	eq_str(JwFormat.quarter(0), JwText.render("fmt.quarter", {"n": "1"}), "旧剧本仍显示「第 1 季」")

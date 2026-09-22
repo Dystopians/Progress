@@ -1,0 +1,133 @@
+{
+  "schema_kind": "regions",
+  "schema_version": 1,
+  "regions": [
+    {
+      "region_id": "region.beiyuan",
+      "label_zh": "北原",
+      "population_persons": 9000000,
+      "adjacency": [
+        "region.zhongzhou",
+        "region.haijia",
+        "region.xiling"
+      ],
+      "logistics_cost_ppm": {
+        "region.beiyuan": 0,
+        "region.zhongzhou": 60000,
+        "region.haijia": 250000,
+        "region.xiling": 140000
+      },
+      "migration_cost_uu": {
+        "region.beiyuan": 0,
+        "region.zhongzhou": 2000,
+        "region.haijia": 4000,
+        "region.xiling": 3000
+      },
+      "housing_capacity_units": 3200000,
+      "housing_stock_units": 3050000,
+      "grid_capacity_uqs_per_q": 900000,
+      "port_capacity_uqs_per_q": 0,
+      "irrigation_index_ppm": 620000,
+      "construction_slots_total": 2,
+      "area_index": 1400000,
+      "emissions_stock_uqe": 900000,
+      "env_exposure_ppm": 90000
+    },
+    {
+      "region_id": "region.zhongzhou",
+      "label_zh": "中州",
+      "population_persons": 7000000,
+      "adjacency": [
+        "region.beiyuan",
+        "region.haijia",
+        "region.xiling"
+      ],
+      "logistics_cost_ppm": {
+        "region.beiyuan": 60000,
+        "region.zhongzhou": 0,
+        "region.haijia": 45000,
+        "region.xiling": 110000
+      },
+      "migration_cost_uu": {
+        "region.beiyuan": 2000,
+        "region.zhongzhou": 0,
+        "region.haijia": 2000,
+        "region.xiling": 3000
+      },
+      "housing_capacity_units": 2300000,
+      "housing_stock_units": 2240000,
+      "grid_capacity_uqs_per_q": 1200000,
+      "port_capacity_uqs_per_q": 0,
+      "irrigation_index_ppm": 900000,
+      "construction_slots_total": 3,
+      "area_index": 900000,
+      "emissions_stock_uqe": 1100000,
+      "env_exposure_ppm": 140000
+    },
+    {
+      "region_id": "region.haijia",
+      "label_zh": "海岬",
+      "population_persons": 5000000,
+      "adjacency": [
+        "region.beiyuan",
+        "region.zhongzhou",
+        "region.xiling"
+      ],
+      "logistics_cost_ppm": {
+        "region.beiyuan": 250000,
+        "region.zhongzhou": 45000,
+        "region.haijia": 0,
+        "region.xiling": 160000
+      },
+      "migration_cost_uu": {
+        "region.beiyuan": 4000,
+        "region.zhongzhou": 2000,
+        "region.haijia": 0,
+        "region.xiling": 4000
+      },
+      "housing_capacity_units": 1700000,
+      "housing_stock_units": 1620000,
+      "grid_capacity_uqs_per_q": 600000,
+      "_note_grid_capacity_zh": "R-GRID-02（docs/18，OQ-G 结案）：计划书 §05「海岬电网可靠性不足」。原值 1 150 000 时海岬用电只占电网 50% 左右，电网从不成为约束，P04 海岬电网升级没有经济效果。取 600 000：开局略高于本地用电，随电网折旧约第 8 季起约束海岬制造；无命令基线仍满足 R-STATIONARY-01。",
+      "port_capacity_uqs_per_q": 2600000,
+      "irrigation_index_ppm": 850000,
+      "construction_slots_total": 2,
+      "area_index": 500000,
+      "emissions_stock_uqe": 1600000,
+      "env_exposure_ppm": 210000
+    },
+    {
+      "region_id": "region.xiling",
+      "label_zh": "西岭",
+      "population_persons": 3000000,
+      "adjacency": [
+        "region.beiyuan",
+        "region.zhongzhou",
+        "region.haijia"
+      ],
+      "logistics_cost_ppm": {
+        "region.beiyuan": 140000,
+        "region.zhongzhou": 110000,
+        "region.haijia": 160000,
+        "region.xiling": 0
+      },
+      "migration_cost_uu": {
+        "region.beiyuan": 3000,
+        "region.zhongzhou": 3000,
+        "region.haijia": 4000,
+        "region.xiling": 0
+      },
+      "housing_capacity_units": 1080000,
+      "housing_stock_units": 1020000,
+      "grid_capacity_uqs_per_q": 1150000,
+      "port_capacity_uqs_per_q": 0,
+      "irrigation_index_ppm": 700000,
+      "construction_slots_total": 1,
+      "area_index": 1200000,
+      "emissions_stock_uqe": 2800000,
+      "env_exposure_ppm": 380000
+    }
+  ],
+  "_note_regions": "固定邻接：中州是唯一与其它三区全部相邻的枢纽；北原与海岬不相邻，两者之间的货物必须经中州转手，首版不建模转运，因此二者之间不可直达交易（OQ-208）。邻接矩阵对称、无自环。logistics_cost_ppm 与 migration_cost_uu 对全部 4 个地区完备，自身为 0；北原与海岬之间的两项虽然填了值，但因不相邻在首版不会被使用，填高值以免将来打开邻接时被当成便宜通道。migration_cost_uu 的单位是 μU/人；基年季度工资率为 1..3 μU/人（见 scenario.json 的 _note_prices_init），因此 2..4 μU 相当于 1..3 个季度的低技能工资，这是本记账单位下唯一可表达的量级，代价是迁移成本只剩三档分辨率；11 号文件 §5.6 的示例值 250 至 400 与本剧本的单位尺度不自洽，未采用。人口 9000000/7000000/5000000/3000000 合计 24000000，是计划书 §05 的锁定值，与 population_init 的群组求和交叉校验（V-REG-05）。开局主要约束落在可结算的字段上而不是文案上：北原 irrigation_index_ppm 620000（灌溉薄弱，P07 的作用点）且无港口；中州 housing_stock_units 2240000 对应约 2333334 套的住房需求（按 param.persons_per_housing_unit = 3 折算），缺口约 4%，是「住房容量紧张」的可测形式；海岬 grid_capacity_uqs_per_q 1150000 是四区中相对其制造业用电最紧的一档，构成 P04 的问题面，港口 2600000 μQ/季 是全国唯一港口通行能力，构成 P08 的作用点；西岭 emissions_stock_uqe 2800000 与 env_exposure_ppm 380000 为四区最高（首版只记录与展示，不反馈到生产约束，INV-057/OQ-226），construction_slots_total 只有 1，使「施工拥堵」这条失败路径在西岭可被构造出来。全国并发项目槽位合计 8 个。housing_stock_units 全部不超过 housing_capacity_units（V-REG-03），全国住房存量 7930000 套对应约 8000000 套需求，缺口集中在中州与海岬。grid_capacity 与 port_capacity 的取值必须与 io_table 的用电系数、cells_init 的初始产量联合标定（见返回值中的待决问题）。",
+  "_note_adjacency_beiyuan_haijia": "R-ADJ-01 触发并执行：基年实测海岬制造业的农产品投入每季约 1.1 Q 买不到——北原占全国农业产出 79%，而北原与海岬不相邻、海岬本地与中州的农业产出不足以支撑海岬制造业。按 R-ADJ-01「优先补上这条邻边，而不是放宽物流成本约束」，补上北原—海岬邻边，物流成本沿用矩阵中早已写好的 250 000 ppm（25%，高于经中州中转，保留北原运输薄弱的设定；P07 可作用于此）。"
+}

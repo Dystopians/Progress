@@ -11,7 +11,7 @@ extends RefCounted
 
 ## state.meta.schema_version 的代码常量（docs/11 §6.7 的 save.schema_version）。
 ## 数组长度、下标顺序、单位、盐值、新增必填状态字段的任何改动都必须 +1 并写迁移函数（INV-136）。
-const SCHEMA_VERSION: int = 1
+const SCHEMA_VERSION: int = 2
 
 ## 规范化编码的类型标签（docs/10 §11 的 `uint8 type_tag`）。
 ## 契约只规定「有一个 uint8 类型标签」，没有钉死取值；这三个数一经发布即进哈希，
@@ -95,10 +95,13 @@ const SELF_STATE_SCALAR_IDS: PackedStringArray = [
 	"state.time.q",
 	"state.time.horizon_q",
 	"state.time.phase",
+	"state.meta.mode",
+	"state.time.start_year",
 ]
 const SELF_STATE_SCALAR_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_META, JWUnits.SUBSYS_META, JWUnits.SUBSYS_META, JWUnits.SUBSYS_META,
 	JWUnits.SUBSYS_META, JWUnits.SUBSYS_TIME, JWUnits.SUBSYS_TIME, JWUnits.SUBSYS_TIME,
+	JWUnits.SUBSYS_META, JWUnits.SUBSYS_TIME,
 ]
 
 ## 本对象自己持有的字符串状态标量（下标即 _self_string 的分派序号，不得重排）。
@@ -192,6 +195,10 @@ var q: int = 0
 var horizon_q: int = 40
 ## state.time.phase —— JWUnits.Phase。写入者：S01..S08
 var phase: int = JWUnits.Phase.IDLE
+## state.meta.mode —— JWUnits.Mode（R-SCENARIO-01）。写入者：LOAD
+var mode: int = JWUnits.Mode.TERM
+## state.time.start_year —— 第 0 季所在公历年，0 = 不显示年份（R-CLOCK-01）。写入者：LOAD
+var start_year: int = 0
 
 # ── 内容常量与参数 ─────────────────────────────────────────────────────────
 
@@ -756,6 +763,8 @@ func duplicate_state() -> JWSimState:
 	c.q = q
 	c.horizon_q = horizon_q
 	c.phase = phase
+	c.mode = mode
+	c.start_year = start_year
 	c.total_cash_uu = total_cash_uu
 	c.params = params.duplicate()
 
@@ -1139,6 +1148,10 @@ func _self_scalar(slot: int) -> int:
 		return horizon_q
 	if slot == 7:
 		return phase
+	if slot == 8:
+		return mode
+	if slot == 9:
+		return start_year
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, slot, SELF_STATE_SCALAR_IDS.size())
 	return 0
 
@@ -1166,6 +1179,10 @@ func _self_set_scalar(slot: int, v: int) -> void:
 		horizon_q = v
 	elif slot == 7:
 		phase = v
+	elif slot == 8:
+		mode = v
+	elif slot == 9:
+		start_year = v
 	else:
 		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, slot,
 				SELF_STATE_SCALAR_IDS.size())
