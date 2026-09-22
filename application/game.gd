@@ -333,10 +333,15 @@ func new_game(scenario_path: String, root_seed: int, horizon_q: int) -> JWResult
 
 
 ## 把当前局面写成自动存档槽的新起点（开局与读档之后各一次）。失败只登记 last_autosave_code，不影响开局。
-func _reset_autosave() -> void:
+## fresh ⇒ 新局，检查点从空开始；否则以 source 槽（刚读的存档）的检查点为起点。
+func _reset_autosave(fresh: bool = true, source: String = "") -> void:
 	if _saves == null or _st == null or _cmds == null:
 		return
+	_saves.checkpoint_fresh = fresh
+	_saves.checkpoint_source_slot = source
 	var r: JWResult = _saves.save(_st, _cmds, autosave_slot)
+	_saves.checkpoint_fresh = false
+	_saves.checkpoint_source_slot = ""
 	if r != null and not r.ok:
 		last_autosave_code = r.code
 
@@ -567,6 +572,8 @@ func fired_events_last() -> Array[Dictionary]:
 func save_game(slot: String) -> JWResult:
 	if _saves == null or _st == null or _cmds == null:
 		return JWResult.make_err(JWResult.Load.SAVE_CORRUPT, 0, 0)
+	# 新建的手动存档从自动存档槽搬运本局的逐季检查点，重放校验才有东西可比（不再空过）。
+	_saves.checkpoint_source_slot = autosave_slot if slot != autosave_slot else ""
 	return _saves.save(_st, _cmds, slot)
 
 
@@ -595,7 +602,7 @@ func load_game(slot: String) -> JWResult:
 		read_only_mode = _saves.read_only_required
 		# 读回的是另一局（或另一槽）：自动存档从读回的局面重新起头，否则此后每季追加都对不上。
 		if not read_only_mode and slot != autosave_slot:
-			_reset_autosave()
+			_reset_autosave(false, slot)
 	return res
 
 

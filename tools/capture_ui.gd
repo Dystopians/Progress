@@ -9,6 +9,7 @@ extends SceneTree
 var _out: String = ""
 var _wait: int = 90
 var _advance: int = 0
+var _batch: int = 0
 var _page: String = ""
 var _frames: int = 0
 var _main: Node = null
@@ -22,6 +23,9 @@ func _init() -> void:
 	_out = args[0] if args.size() > 0 else "user://capture.png"
 	_wait = int(args[1]) if args.size() > 1 and args[1].is_valid_int() else 90
 	_advance = int(args[2]) if args.size() > 2 and args[2].is_valid_int() else 0
+	# 「b<季数>」：经 JwSession.advance_batch() 一次批量推进（R-CLOCK-01；战役剧本的「推进一年 / 五年」）。
+	if args.size() > 2 and args[2].begins_with("b") and args[2].substr(1).is_valid_int():
+		_batch = int(args[2].substr(1))
 	_page = args[3] if args.size() > 3 and not args[3].begins_with("--") else ""
 	var packed: PackedScene = load("res://ui/main.tscn") as PackedScene
 	if packed == null:
@@ -45,6 +49,12 @@ func _on_frame() -> void:
 			var r: Variant = (session as Object).call("advance")
 			_advanced += 1
 			print("推进第 %d 季：%s" % [_advanced, str(r).substr(0, 160)])
+	if _batch > 0 and _frames == 20:
+		var s2: Object = _main.get("session") as Object
+		if s2 != null:
+			var rb: Variant = s2.call("advance_batch", _batch)
+			print("批量推进：%s" % str((rb as Dictionary).get("batch", {})))
+		_batch = 0
 	if _advanced < _advance:
 		return
 	if _done_frame < 0:

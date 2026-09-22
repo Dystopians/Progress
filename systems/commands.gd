@@ -432,6 +432,17 @@ func append_jsonl(path: String, index: int) -> JWResult:
 	return JWResult.make_ok()
 
 
+## 整条命令流的 JSON Lines 文本（每行一条，末尾换行）。存档一次写入用，逐行开关文件在长局里是 O(n) 次 I/O
+## （1600 季实测写一份存档 49 s，docs/53 M1-9）。行格式与 append_jsonl 逐字相同。
+func jsonl_text() -> String:
+	var parts: PackedStringArray = PackedStringArray()
+	for i: int in count:
+		parts.append(_line_of(i))
+	if parts.is_empty():
+		return ""
+	return "\n".join(parts) + "\n"
+
+
 ## JSON Lines 读入（冷路径）。
 ## 步骤：存档 / 读档
 ## 前置：路径存在；ID 在 LOAD 期经 JWIds 解析成下标

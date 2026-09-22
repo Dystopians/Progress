@@ -41,7 +41,8 @@ func _ready() -> void:
 	if seed_arg.is_valid_int():
 		autostart_seed = seed_arg.to_int()
 	if autostart_seed != 0:
-		session.start_new(autostart_seed, autostart_goal)
+		# R-SCENARIO-01：--jw-scenario=<剧本目录名> 指定开局剧本（缺省沿用当前剧本）。
+		session.start_new(autostart_seed, autostart_goal, JwScale.cmd_value("--jw-scenario="))
 	else:
 		open_overlay("newgame", {})
 	_on_resized()

@@ -197,6 +197,11 @@ var commands_ahead: int = 0
 ## 为空表示未注入，manifest 里照实写空串（不编造）。
 var scenario_hash: String = ""
 
+## 手动存档的检查点来源槽（本局的自动存档槽，由 JWGame 注入）。
+var checkpoint_source_slot: String = ""
+## true ⇒ 本次写出的检查点文件为空（新局的自动存档起点）。用后由调用方复位。
+var checkpoint_fresh: bool = false
+
 # ── 追加写游标（自动保存 O(1) 的前提，docs/11 §6.2） ──────────────────────
 
 ## commands.jsonl 已落盘的行数；-1 表示未知（需回读一次文件重建）。
@@ -245,21 +250,23 @@ func save(st: JWSimState, cmds: JWCommands, slot: String) -> JWResult:
 		_rm_recursive(tmp)
 		return JWResult.make_err(JWResult.Load.FILE_FORMAT, 1, 0)
 
-	# 2) commands.jsonl —— 自开局起全量，含被拒命令（INV-131）。
-	if not _write_text(tmp + FILE_COMMANDS, ""):
+	# 2) commands.jsonl —— 自开局起全量，含被拒命令（INV-131）。一次写入（行格式同 append_jsonl）。
+	if not _write_text(tmp + FILE_COMMANDS, cmds.jsonl_text()):
 		_rm_recursive(tmp)
 		return JWResult.make_err(JWResult.Load.FILE_FORMAT, 2, 0)
-	var i: int = 0
-	while i < cmds.count:
-		var rc: JWResult = cmds.append_jsonl(tmp + FILE_COMMANDS, i)
-		if rc == null or not rc.ok:
-			_rm_recursive(tmp)
-			return JWResult.make_err(JWResult.Load.FILE_FORMAT, 2, i)
-		i += 1
 
-	# 3) checkpoints.jsonl —— 从旧槽位整份搬运（没有旧档则是空文件）。
+	# 3) checkpoints.jsonl —— 从检查点来源槽（本局的自动存档槽）整份搬运；没有来源槽时沿用同名旧槽。
+	#    此前只搬同名旧槽，新建的手动存档得到空文件，重放校验因「没有可比对的东西」直接返回成功（空过）。
+	#    有来源槽时一律以它为准：同名旧槽可能属于另一局，搬它的检查点等于把别局的历史哈希混进来。
+	#    新局的自动存档（checkpoint_fresh）从空文件开始：此前它会把上一局留在同名槽里的检查点整份搬进来，
+	#    检查点逐局累积（1600 季的局里有 3200 行），重放校验比到的是别局的哈希。
 	var old_ck: String = ""
-	if FileAccess.file_exists(dst + FILE_CHECKPOINTS):
+	if checkpoint_fresh:
+		old_ck = ""
+	elif checkpoint_source_slot != "" and _slot_name_ok(checkpoint_source_slot) \
+			and FileAccess.file_exists(_slot_dir(checkpoint_source_slot) + FILE_CHECKPOINTS):
+		old_ck = FileAccess.get_file_as_string(_slot_dir(checkpoint_source_slot) + FILE_CHECKPOINTS)
+	elif FileAccess.file_exists(dst + FILE_CHECKPOINTS):
 		old_ck = FileAccess.get_file_as_string(dst + FILE_CHECKPOINTS)
 	if not _write_text(tmp + FILE_CHECKPOINTS, old_ck):
 		_rm_recursive(tmp)

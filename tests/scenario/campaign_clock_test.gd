@@ -73,6 +73,9 @@ func test_campaign_new_game_advances_and_replays() -> void:
 	eq_int(g.view().q(), 4, "推进一年")
 	var rs: JWResult = g.save_game("test_campaign_clock")
 	check(rs != null and rs.ok, "存档")
+	# 重放校验要有东西可比：手动存档必须带上本局 4 季的检查点（此前新槽是空文件，校验空过）。
+	var ck: String = FileAccess.get_file_as_string("user://saves/test_campaign_clock/checkpoints.jsonl")
+	eq_int(ck.strip_edges().split("\n", false).size(), 4, "手动存档带 4 条检查点（本局的，不含别局）")
 	var rv: JWResult = g.verify_replay("test_campaign_clock")
 	check(rv != null and rv.ok, "重放逐位一致（重放按 root_path 重载同一战役剧本）")
 
