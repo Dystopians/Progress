@@ -202,7 +202,7 @@ enum Kind { WAGE_PAYMENT = 1, PUBLIC_WAGE_PAYMENT = 2, HOUSEHOLD_CONSUMPTION = 3
 		MONEY_ISSUE = 33,
 		# R-OWNER-01：政府扶持私人——政府出资建成的设施移交给企业（资本转移，非现金，三口径全 none）。
 		CAPITAL_TRANSFER = 34,
-		# R-CREDIT-01：投资池 → 生产单元的资本贷款。三笔都是三口径全 none 的再分配 / 金融交易：
+		# R-INVCREDIT-01：投资池 → 生产单元的资本贷款。三笔都是三口径全 none 的再分配 / 金融交易：
 		# LOAN_DRAW 放款（现金与应收 / 应付同时增记，双方净值不变）、
 		# LOAN_INTEREST 付息（企业净值 −，投资池净值 +，再经存款利息回流住户）、
 		# LOAN_REPAY 还本（现金与应收 / 应付同时减记，双方净值不变）。

@@ -497,6 +497,55 @@ func record_fee_paid(g: int, amount: int) -> int:
 ## 后置：out_budget[g] <= accounts.cash_of(agent_of_group(g))；按恩格尔权重拆到 4 个产品
 ## 不变量：INV-063（未收到的预计收入不可支配）、INV-003
 ## 失败：无（预算为 0 是正常结果）
+## R-DISSAVE-01：开市前把要动用的存款取出来。
+##
+## 为什么必须有这一步：消费预算里本来就有「动用存款」一项（param.dissave_ppm，每季 5%），
+## 但预算随后被 `budget > cash` 一句按**手上现金**截断，而存款躺在投资池里——结果是居民
+## 名义上可以动用存款，实际上一分也花不出去。四十季旧剧本看不出来（存款存量小），四百年
+## 战役里居民存款涨到 80 U、手上现金恒为 7—9 U，总需求被死死钉在现金上：实测 16 个生产
+## 单元里有 13 个卡在「需求不足」，失业 30%，而资本存量几乎没掉。
+##
+## 做法：本步按与 consumption_budget_into 完全相同的公式先算一遍意向预算，现金不够的部分
+## 从自己的存款债权里取出来，受三重上限约束——本季可动用额度（存款 × dissave_ppm）、
+## 自己的存款余额、投资池的现金。取款走既有的 _post_deposit 四腿，Δcash + Δdeposit 不变，
+## INV-086 在 S06 照常成立。
+## 步骤：S05（collect_demand 之前）
+## 前置：本季工资与转移已过账
+## 后置：现金不足的群组取回不超过额度的存款；不足部分记 log.rounding
+## 不变量：INV-017、INV-019、INV-020、INV-086
+## 失败：过账被拒 → 该组不取款，继续下一组
+func withdraw_for_consumption(ledger: JWLedger, accounts: JWAccount,
+		params: PackedInt64Array) -> int:
+	if ledger == null or accounts == null:
+		return JWResult.raise_fault(JWResult.Fault.PHASE_VIOLATION, JWUnits.Phase.S05, 0)
+	var mpc_ppm: int = _param_of(params, JWUnits.Param.MPC_PPM)
+	var dissave_ppm: int = _param_of(params, JWUnits.Param.DISSAVE_PPM)
+	if dissave_ppm <= 0:
+		return 0
+	for g: int in JWUnits.GROUP:
+		var agent: int = JWIds.agent_of_group(g)
+		var deposit: int = accounts.get_balance(JWIds.idx_account(agent, JWIds.ACC_DEPOSIT_CLAIM))
+		if deposit <= 0:
+			continue
+		var allowance: int = JWMath.mul_ppm(deposit, dissave_ppm)
+		if allowance <= 0:
+			continue
+		var cash_avail: int = f_wage_income[g] + f_transfer_income[g] + f_support_in[g] \
+				- f_support_out[g] + _nonlabor_prev[g] - f_housing_cost[g] + allowance
+		var budget: int = JWMath.mul_ppm(cash_avail, mpc_ppm)
+		var cash: int = accounts.cash_of(agent)
+		var gap: int = budget - maxi(cash, 0)
+		if gap <= 0:
+			continue
+		var pool_cash: int = accounts.cash_of(JWIds.AGENT_INVPOOL)
+		var w: int = mini(gap, mini(allowance, mini(deposit, maxi(pool_cash, 0))))
+		if w <= 0:
+			continue
+		if _post_deposit(ledger, agent, -w, CAUSE_DEPOSIT_WITHDRAW, g) != 0:
+			continue
+	return 0
+
+
 func consumption_budget_into(out_budget_by_product: PackedInt64Array, accounts: JWAccount,
 		params: PackedInt64Array) -> int:
 	if out_budget_by_product.size() != JWUnits.GROUP_PROD_N:

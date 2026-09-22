@@ -216,7 +216,8 @@
       142857,
       7836
     ],
-    "_note_import_share_ppm": "R-IMPORT-01：各产品国内使用中由进口满足的固定份额 = 基年季度进口 ÷（基年季度国内总产出 + 进口），取自 io_table 基年核算（进口年值 [1200000000, 7500000000, 1800000000, 500000000] μU；季度产出 [6275000, 15100000, 2700000, 15825000] μQ）。市场配给前先按此份额把各买方类需求的一部分划为进口计划（出口与中央政府采购不进口），总量受本季交付能力余额封顶；国内可供量只对余下的国内需求配给。"
+    "_note_import_share_ppm": "R-IMPORT-01：各产品国内使用中由进口满足的固定份额 = 基年季度进口 ÷（基年季度国内总产出 + 进口），取自 io_table 基年核算（进口年值 [1200000000, 7500000000, 1800000000, 500000000] μU；季度产出 [6275000, 15100000, 2700000, 15825000] μQ）。市场配给前先按此份额把各买方类需求的一部分划为进口计划（出口与中央政府采购不进口），总量受本季交付能力余额封顶；国内可供量只对余下的国内需求配给。",
+    "trade_elasticity_ppm": 1000000
   },
   "_note_world_init": "固定汇率恒为 1 000 000（INV-105），玩家不得操纵汇率（计划书 §03）。delivery_capacity_uqs 是外部每季交付能力，按 10_variable_dictionary.md 与 12_simulation_contract.md §5.6，它同时是进口量上限（INV-104、INV-089）与出口量上限，两个方向各自独立受同一上限约束（不是两者之和受约束）。四项取值：农产品 400 000 μQ、设备与制成品 2 400 000 μQ（海岬「设备依赖进口」的上限由此形成）、能源 600 000 μQ、服务 0（首版服务不可跨境交付，与 world.json 的 export_demand.tradable = [1, 1, 1, 0] 一致，但与 io_table.json 的基年出口口径相抵，见下条）。credit_limit_uu 取 12 000 000 000 μU，低于开局外债余额 16 000 000 000 μU（government_init.json /bonds 中 holder == row 的两笔：bond.q-8_01 10 000 000 000 加 bond.q-2_01 6 000 000 000），用意是外部融资在开局即为稀缺资源。按裁定 R-CREDIT-01，该额度约束的是**新增**外部借款，存量外债不占用额度，因此 state.world.credit_used_uu 初值为 0 不是口径遗漏而是定义——存量外债的约束已经由还本付息的现金流表达，再占一次额度是重复计算；上一版把这一点登记为待决问题，现按 R-CREDIT-01 销案。sovereign_rate_ppm_per_q 取 10 000，与 param.market_rate_base_ppm 相同：12_simulation_contract.md §1.1 的 01.7 每季用 clamp(param.market_rate_base_ppm + mul_ppm(eff_ppm[S03], param.rate_sensitivity_ppm), 0, 100 000) 重算该字段，q=0 开局无冲击即 eff_ppm[S03] == 0，故首次重算结果必须恒等于初值，否则开局第一季利率就会无故跳变。cash_uu 取 15 000 000 000 μU，作为 agent.row 的初始现金进 total_cash_uu 的求和，并构成出口收入的付款上限（agent.row 现金恒 ≥ 0，INV-016）。",
   "_note_world_init_delivery_conflict": "登记一条跨文件冲突，本文件仍不单方面裁定，但证据比上一版清楚了，故把裁定条件写死。冲突双方：（甲）io_table.json 的 _note_base_year_accounting.final_use_uu.exports 把基年出口定为全年 11 000 000 000 μU（农 1 500 000 000 / 制 5 200 000 000 / 能 2 300 000 000 / 服 2 000 000 000），按基年价 1 000 μU/μQ_s 折合每季 375 000 / 1 300 000 / 575 000 / 500 000 μQ，对应进口每季 300 000 / 1 875 000 / 450 000 / 125 000 μQ，并在该表的 interface_requirements 里要求本段四项逐部门不小于其中较大者；（乙）world.json 的 export_demand.tradable = [1, 1, 1, 0] 与 export_baseline_uqs_per_q = [100 000, 350 000, 50 000, 0]，全年出口 2 000 000 000 μU，与本段的服务 0 严格一致。本段现值对前三个部门都满足甲的要求（逐部门取进出口较大者后余量 6.7% / 28.0% / 4.3%），只有服务一项相抵。**本次不改本段，理由是可核对性而不是偏好**：本文件这一轮采纳了 io_table.json 提出的另外两条接口要求（工资率与住房租金），因为它们能对着**已加载**文件的字段独立复算并精确成立——public_wages 在 government_init.json、在岗人数与可支配收入在 population_init.json、占用套数在 regions.json；而基年出口额只写在 io_table.json 的 _note_ 注释键与不在 includes 里的 world.json 中，按 11_data_contract.md §1.5 与 §6.4 二者都不进载入器、不进 content_hash，没有任何已加载文件声明存在一条服务出口流，抬高上限等于凭空为它预留容量。另一条现实约束：world.json 的 world_init_mirror 目前与本段逐字相等，而它自己建议的 E_WORLD_MIRROR 与 tools/check_world_mirror.gd 尚未实现，单方面改本段会让两侧静默脱节而无人发现。**裁定条件（两条路各自的完整代价）**：若采纳甲的 11 000 000 000 μU/年 口径，本段第 4 项必须同时改为不小于 500 000 μQ，world.json 的 tradable 与 export_baseline_uqs_per_q 必须同步改，否则基年服务出口在 S05 被截断为 0，支出法 GDP 比生产法少 2 000 000 000 μU/年，而 INV-118 的容差是 0；若维持「服务不可跨境交付」，io_table.json 的 final_use 必须把这 2 000 000 000 μU 改记到别的最终使用项，其三口径对账要重新配平。两条路都要求改动本文件以外的文件，故留待契约裁定。",
@@ -235,6 +236,7 @@
     "amortize_ppm": 25000,
     "max_leverage_ppm": 400000,
     "min_draw_uu": 1000000,
-    "pool_reserve_ppm": 100000
+    "pool_reserve_ppm": 100000,
+    "wc_cap_ppm": 1000000
   }
 }

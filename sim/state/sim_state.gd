@@ -71,7 +71,7 @@ const BLK_CRISIS: int = 24
 const BLK_RESEARCH: int = 25
 ## R-TRADE-01：贸易伙伴分账（战役模式）。
 const BLK_PARTNERS: int = 26
-## R-CREDIT-01：投资池对生产单元的资本放贷（战役模式；储蓄回到实体经济的唯一渠道）。
+## R-INVCREDIT-01：投资池对生产单元的资本放贷（战役模式；储蓄回到实体经济的唯一渠道）。
 const BLK_CREDIT: int = 27
 const BLOCK_N: int = 28
 

@@ -1,4 +1,4 @@
-## 投资池对生产单元的资本放贷（docs/18 R-CREDIT-01；docs/53 M2-8）。
+## 投资池对生产单元的资本放贷（docs/18 R-INVCREDIT-01；docs/53 M2-8）。
 ##
 ## 为什么需要这一块：住户的正储蓄全额存进投资池，而投资池此前只有三个出口——付存款利息、
 ## 买国债、住户负储蓄时取款。四十季旧剧本里政府持续赤字，正好把储蓄吸走；四百年战役里
@@ -17,7 +17,7 @@
 ## 于是 INV-019（Σ 应收 == Σ 应付）与 INV-020（资产负债表恒等）自动成立，无需新增科目。
 ## 利息进投资池现金，再由 S06 既有的存款利息分配腿按存款份额回流各住户组。
 ##
-## 违约不在本版：企业现金不足时少还本、少付息，欠款留在未偿本金里继续计息（R-CREDIT-01 第 6 条）。
+## 违约不在本版：企业现金不足时少还本、少付息，欠款留在未偿本金里继续计息（R-INVCREDIT-01 第 6 条）。
 ## 破产与坏账清理归 M3。
 ##
 ## 战役剧本才启用（剧本 `credit_rule`）；旧剧本 enabled == 0，本块恒为空转。
@@ -29,8 +29,11 @@ extends RefCounted
 const STATE_ARRAY_IDS: PackedStringArray = [
 	"state.credit.principal_uu",
 	"state.credit.arrears_uu",
+	"state.credit.wc_principal_uu",
 ]
-const STATE_ARRAY_SUBSYS: PackedInt64Array = [JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL]
+const STATE_ARRAY_SUBSYS: PackedInt64Array = [
+	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
+]
 const STATE_SCALAR_IDS: PackedStringArray = [
 	"content.credit.enabled",
 	"content.credit.spread_ppm_per_q",
@@ -38,10 +41,11 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 	"content.credit.max_leverage_ppm",
 	"content.credit.min_draw_uu",
 	"content.credit.pool_reserve_ppm",
+	"content.credit.wc_cap_ppm",
 ]
 const STATE_SCALAR_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
-	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
+	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
 ]
 const FLOW_ARRAY_IDS: PackedStringArray = [
 	"flow.credit.draw_uu",
@@ -60,6 +64,8 @@ const FLOW_SCALAR_SUBSYS: PackedInt64Array = []
 var principal: PackedInt64Array = PackedInt64Array()
 ## state.credit.arrears_uu[] —— 到期未付的利息与本金累计（留在账上，不核销）。写入者 S06
 var arrears: PackedInt64Array = PackedInt64Array()
+## state.credit.wc_principal_uu[] —— 周转资金的未偿余额（短期、每季尽量还清）。写入者 S05 / S06
+var wc_principal: PackedInt64Array = PackedInt64Array()
 
 # ── 内容常量（剧本 credit_rule） ──────────────────────────────────────────
 
@@ -74,6 +80,8 @@ var max_leverage_ppm: int = 0
 var min_draw_uu: int = 0
 ## 投资池必须留下的现金比例（按存款负债计），保证住户取款不会被放贷掏空。
 var pool_reserve_ppm: int = 0
+## 周转资金上限 = 上季中间投入 × 本系数（1e6 == 一个季度的投入额）。
+var wc_cap_ppm: int = 0
 
 # ── 流量 ───────────────────────────────────────────────────────────────────
 
@@ -88,6 +96,7 @@ var f_repay: PackedInt64Array = PackedInt64Array()
 func allocate() -> void:
 	principal = _zeros(JWUnits.CELL)
 	arrears = _zeros(JWUnits.CELL)
+	wc_principal = _zeros(JWUnits.CELL)
 	f_draw = _zeros(JWUnits.CELL)
 	f_interest = _zeros(JWUnits.CELL)
 	f_repay = _zeros(JWUnits.CELL)
@@ -97,6 +106,7 @@ func allocate() -> void:
 	max_leverage_ppm = 0
 	min_draw_uu = 0
 	pool_reserve_ppm = 0
+	wc_cap_ppm = 0
 
 
 static func _zeros(n: int) -> PackedInt64Array:
@@ -154,6 +164,45 @@ func draw_for(cell: int, intent_uu: int, cash_uu: int, capital_value_uu: int, bu
 	return x if x >= min_draw_uu else 0
 
 
+## R-INVCREDIT-01 第 10 条：周转资金。企业买不起中间投入时的短期垫款，
+## 上限是「上季中间投入 × wc_cap_ppm」，与资本贷款共用投资池的可贷额。
+## 它治的是流动性，不是清偿力：S06 一有现金就先还它，所以余额不会长期累积。
+## 步骤：S05（市场开市之前）
+## 前置：input_prev_uu 是上季该单元的中间投入额；cash_uu 是自有现金
+## 后置：不改状态
+## 失败：无
+func wc_draw_for(cell: int, input_prev_uu: int, cash_uu: int, budget_uu: int) -> int:
+	if enabled == 0 or wc_cap_ppm <= 0 or input_prev_uu <= 0 or budget_uu <= 0:
+		return 0
+	if cell < 0 or cell >= JWUnits.CELL:
+		return 0
+	var need: int = input_prev_uu - maxi(cash_uu, 0)
+	if need <= 0:
+		return 0
+	var cap: int = JWMath.mul_ppm(input_prev_uu, wc_cap_ppm)
+	var room: int = maxi(0, cap - wc_principal[cell])
+	var x: int = mini(need, mini(room, budget_uu))
+	return maxi(x, 0)
+
+
+func note_wc_draw(cell: int, amount_uu: int) -> int:
+	if cell < 0 or cell >= JWUnits.CELL or amount_uu < 0:
+		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, cell, JWUnits.CELL)
+	wc_principal[cell] = JWMath.check_amount(wc_principal[cell] + amount_uu)
+	f_draw[cell] = JWMath.check_amount(f_draw[cell] + amount_uu)
+	return JWResult.OK
+
+
+func note_wc_repay(cell: int, amount_uu: int) -> int:
+	if cell < 0 or cell >= JWUnits.CELL or amount_uu < 0:
+		return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, cell, JWUnits.CELL)
+	if amount_uu > wc_principal[cell]:
+		return JWResult.raise_fault(JWResult.Fault.STOCK_IDENTITY, amount_uu, wc_principal[cell])
+	wc_principal[cell] = wc_principal[cell] - amount_uu
+	f_repay[cell] = JWMath.check_amount(f_repay[cell] + amount_uu)
+	return JWResult.OK
+
+
 ## 记一笔放款（过账成功之后调用）。
 func note_draw(cell: int, amount_uu: int) -> int:
 	if cell < 0 or cell >= JWUnits.CELL or amount_uu < 0:
@@ -168,7 +217,8 @@ func interest_due(cell: int, sovereign_ppm_per_q: int) -> int:
 	if enabled == 0 or cell < 0 or cell >= JWUnits.CELL:
 		return 0
 	# rounding: floor, reason=利息只取整一次，少收优于多收
-	return JWMath.mul_ppm(principal[cell], loan_rate_ppm_per_q(sovereign_ppm_per_q))
+	return JWMath.mul_ppm(principal[cell] + wc_principal[cell],
+			loan_rate_ppm_per_q(sovereign_ppm_per_q))
 
 
 ## 本季应还本金（未偿本金 × 摊还率；不足 1 μU 时把余额一次还清，避免永远挂着零头）。
@@ -203,9 +253,14 @@ func note_repay(cell: int, paid_uu: int) -> int:
 	return JWResult.OK
 
 
-## 未偿本金合计（INV-C01 的左边）。
+## 未偿本金合计（资本贷款；INV-C01 的一半）。
 func principal_total() -> int:
 	return JWMath.sum(principal)
+
+
+## 周转资金余额合计。
+func wc_total() -> int:
+	return JWMath.sum(wc_principal)
 
 
 ## INV-C01：Σ 未偿本金 == 投资池的应收余额。
@@ -219,7 +274,7 @@ func check_consistency(accounts: JWAccount) -> int:
 	if accounts == null:
 		return JWResult.raise_fault(JWResult.Fault.PHASE_VIOLATION, 0, 0)
 	var claim: int = accounts.get_balance(JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_RECV))
-	var total: int = principal_total()
+	var total: int = principal_total() + wc_total()
 	if claim != total:
 		return JWResult.raise_fault(JWResult.Fault.STOCK_IDENTITY, total, claim - total)
 	return JWResult.OK
@@ -231,6 +286,7 @@ func state_array(i: int) -> PackedInt64Array:
 	match i:
 		0: return principal
 		1: return arrears
+		2: return wc_principal
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_ARRAY_IDS.size())
 	return PackedInt64Array()
 
@@ -244,6 +300,7 @@ func set_state_array(i: int, v: PackedInt64Array) -> int:
 	match i:
 		0: principal = d
 		1: arrears = d
+		2: wc_principal = d
 	return JWResult.OK
 
 
@@ -255,6 +312,7 @@ func state_scalar(i: int) -> int:
 		3: return max_leverage_ppm
 		4: return min_draw_uu
 		5: return pool_reserve_ppm
+		6: return wc_cap_ppm
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return 0
 
@@ -267,6 +325,7 @@ func set_state_scalar(i: int, v: int) -> int:
 		3: max_leverage_ppm = v
 		4: min_draw_uu = v
 		5: pool_reserve_ppm = v
+		6: wc_cap_ppm = v
 		_:
 			return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return JWResult.OK

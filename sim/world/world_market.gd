@@ -29,6 +29,10 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 	"state.world.credit_used_uu",
 	"state.world.sovereign_rate_ppm_per_q",
 	"state.world.current_account_uu",
+	# R-TRADE-PRICE-01：相对价格对贸易的作用（战役模式；弹性为 0 时两者恒为 1e6，旧剧本逐位不变）。
+	"state.world.export_competitiveness_ppm",
+	"state.world.import_attractiveness_ppm",
+	"content.world.trade_elasticity_ppm",
 ]
 const FLOW_ARRAY_IDS: PackedStringArray = [
 	"flow.world.exports_uqs",
@@ -38,6 +42,39 @@ const FLOW_SCALAR_IDS: PackedStringArray = [
 	"flow.world.exports_uu",
 	"flow.world.imports_uu",
 ]
+
+## `state.world.export_competitiveness_ppm`：出口量倍率。写入者 S01。
+## 国内价格相对基年越高，同样的外部需求买走的实物越少（外国买家的预算不因我们涨价而变大）。
+var export_competitiveness_ppm: int = JWUnits.PPM
+## `state.world.import_attractiveness_ppm`：进口份额倍率。写入者 S01。国内越贵，越多需求转向进口。
+var import_attractiveness_ppm: int = JWUnits.PPM
+## `content.world.trade_elasticity_ppm`：相对价格的传导强度（0 == 不传导，1e6 == 单位弹性）。写入者 LOAD。
+var trade_elasticity_ppm: int = 0
+
+## 两个倍率的护栏：再极端的价格也不会让贸易归零或膨胀到荒谬。
+const TRADE_MULT_MIN_PPM: int = 50_000
+const TRADE_MULT_MAX_PPM: int = 2_000_000
+
+
+## R-TRADE-PRICE-01：按当前价格水平重算两个倍率。
+## 步骤：S01
+## 前置：price_level_ppm 是本季价格水平（旧剧本恒为 1e6）
+## 后置：export_competitiveness_ppm 与 import_attractiveness_ppm 写入，均在护栏内
+## 失败：无
+func update_competitiveness(price_level_ppm: int) -> void:
+	if trade_elasticity_ppm <= 0:
+		export_competitiveness_ppm = JWUnits.PPM
+		import_attractiveness_ppm = JWUnits.PPM
+		return
+	# 弹性折算后的相对价格：偏离基年的部分按弹性打折。
+	var adj: int = JWUnits.PPM + JWMath.mul_ppm(price_level_ppm - JWUnits.PPM, trade_elasticity_ppm)
+	adj = maxi(adj, 1)
+	# rounding: floor, reason=倍率只取整一次，少算优于多算
+	export_competitiveness_ppm = JWMath.clamp_i(
+			JWMath.mul_div_floor(JWUnits.PPM, JWUnits.PPM, adj),
+			TRADE_MULT_MIN_PPM, TRADE_MULT_MAX_PPM)
+	import_attractiveness_ppm = JWMath.clamp_i(adj, TRADE_MULT_MIN_PPM, TRADE_MULT_MAX_PPM)
+
 
 ## `content.world.fx_rate_ppm`：汇率恒定（INV-105）。任何写入路径都不存在。
 const FX_RATE_PPM: int = JWUnits.FX_RATE_PPM
@@ -402,14 +439,17 @@ var partner_import_price_mult_ppm: int = JWUnits.PPM
 
 
 ## 出口需求（已含伙伴通道倍率）。R-TRADE-01：伙伴份额改变的是通道，不改变本国的产能与外国的基准需求。
+## 本季实际有效的外部需求：基础需求 × 伙伴通道倍率（R-TRADE-01）× 相对价格倍率（R-TRADE-PRICE-01）。
+## 需求侧与 record_export 的上限断言**必须**读同一个函数，否则断言会比实际成交更紧。
 func export_demand_with_partners(s: int) -> int:
 	if s < 0 or s >= export_demand_ppm.size():
 		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, s, export_demand_ppm.size())
 		return 0
-	if partner_export_mult_ppm == JWUnits.PPM:
+	if partner_export_mult_ppm == JWUnits.PPM and export_competitiveness_ppm == JWUnits.PPM:
 		return export_demand_ppm[s]
-	return JWMath.clamp_i(JWMath.mul_ppm(export_demand_ppm[s], partner_export_mult_ppm),
-			EXPORT_DEMAND_MIN_PPM, EXPORT_DEMAND_MAX_PPM)
+	var v: int = JWMath.mul_ppm(export_demand_ppm[s], partner_export_mult_ppm)
+	v = JWMath.mul_ppm(v, export_competitiveness_ppm)
+	return JWMath.clamp_i(v, EXPORT_DEMAND_MIN_PPM, EXPORT_DEMAND_MAX_PPM)
 
 
 func import_price(s: int) -> int:
@@ -507,6 +547,10 @@ func allocate() -> void:
 	credit_used = 0
 	sovereign_rate_ppm = 0
 	current_account = 0
+	# R-TRADE-PRICE-01：默认无传导（倍率恒为基准），由剧本的弹性打开。
+	export_competitiveness_ppm = JWUnits.PPM
+	import_attractiveness_ppm = JWUnits.PPM
+	trade_elasticity_ppm = 0
 	f_exports_uu = 0
 	f_imports_uu = 0
 	base_credit_limit = 0
@@ -568,6 +612,12 @@ func state_scalar(i: int) -> int:
 		return sovereign_rate_ppm
 	if i == 3:
 		return current_account
+	if i == 4:
+		return export_competitiveness_ppm
+	if i == 5:
+		return import_attractiveness_ppm
+	if i == 6:
+		return trade_elasticity_ppm
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return 0
 
@@ -590,6 +640,15 @@ func set_state_scalar(i: int, v: int) -> int:
 		return JWResult.OK
 	if i == 3:
 		current_account = v
+		return JWResult.OK
+	if i == 4:
+		export_competitiveness_ppm = v
+		return JWResult.OK
+	if i == 5:
+		import_attractiveness_ppm = v
+		return JWResult.OK
+	if i == 6:
+		trade_elasticity_ppm = v
 		return JWResult.OK
 	return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 

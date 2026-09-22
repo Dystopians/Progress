@@ -191,18 +191,24 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	ar["state.event.pending_until_q"] = _mig_encode(ez)
 	ar["state.event.chosen_option"] = _mig_encode(ez)
 	ar["state.event.choice_count"] = _mig_encode(e0)
-	# R-CREDIT-01：旧存档没有信贷，未偿本金与欠款为 0；内容标量由 enabled == 0 关掉整块。
+	# R-INVCREDIT-01：旧存档没有信贷，未偿本金与欠款为 0；内容标量由 enabled == 0 关掉整块。
 	var cz: PackedInt64Array = PackedInt64Array()
 	cz.resize(JWUnits.CELL)
 	cz.fill(0)
 	ar["state.credit.principal_uu"] = _mig_encode(cz)
 	ar["state.credit.arrears_uu"] = _mig_encode(cz)
+	ar["state.credit.wc_principal_uu"] = _mig_encode(cz)
 	sc["content.credit.enabled"] = 0
 	sc["content.credit.spread_ppm_per_q"] = 0
 	sc["content.credit.amortize_ppm"] = 0
 	sc["content.credit.max_leverage_ppm"] = 0
 	sc["content.credit.min_draw_uu"] = 0
 	sc["content.credit.pool_reserve_ppm"] = 0
+	sc["content.credit.wc_cap_ppm"] = 0
+	# R-TRADE-PRICE-01：旧存档不传导相对价格，两个倍率取基准、弹性为 0。
+	sc["state.world.export_competitiveness_ppm"] = JWUnits.PPM
+	sc["state.world.import_attractiveness_ppm"] = JWUnits.PPM
+	sc["content.world.trade_elasticity_ppm"] = 0
 	out[JWSimState.SAVE_KEY_SCALARS] = sc
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out

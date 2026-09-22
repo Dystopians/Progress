@@ -688,7 +688,10 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 	_export_demand.fill(0)
 	# R-IMPORT-01：缓存本季进口份额与交付余额（S05 入口已重置），供 ration() 划分进口计划。
 	for s0: int in JWUnits.S:
+		# R-TRADE-PRICE-01：国内越贵，越多需求转向进口（份额仍封顶在 1e6）。
 		_imp_share[s0] = world.import_share_ppm[s0] if s0 < world.import_share_ppm.size() else 0
+		_imp_share[s0] = mini(JWMath.mul_ppm(_imp_share[s0], world.import_attractiveness_ppm),
+				JWUnits.PPM)
 		_imp_room[s0] = world.delivery_remaining(s0)
 
 	# ── 可售供给（docs/12 §5.6）────────────────────────────────────────────
@@ -839,7 +842,8 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 			base_q = world.base_export_uqs[s]
 		if base_q <= 0:
 			continue
-		var want: int = JWMath.mul_ppm(base_q, world.export_demand(s))
+		# 有效外部需求（伙伴通道 × 相对价格）由 world 统一给出，与 record_export 的上限同源。
+		var want: int = JWMath.mul_ppm(base_q, world.export_demand_with_partners(s))
 		var cap: int = world.delivery_remaining(s)
 		if want > cap:
 			want = cap

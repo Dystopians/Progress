@@ -39,13 +39,13 @@ func _init() -> void:
 	loader.load_events_into(events, st)
 	JWResult.clear_pending()
 	var runner: JWTurnRunner = JWTurnRunner.new(st, events)
+	JWResult.trace_faults = true
 	if args.has("nofinal"):
 		st.crisis.final_window_q = 1 << 40
 	var a0: PackedInt64Array = PackedInt64Array()
 	a0.resize(JWCommands.ARG_SLOTS)
 
-	print("季  ┃ 现金存量(U)：住户   企业   政府   外部  投资池 ┃ 本季(U)：贸易差 发行 财政收 财政支 放款 还本 ┃ 实际GDP 失业% 价格水平 撞界")
-	var prev_issued: int = 0
+	print("季  ┃ 现金存量(U)：住户   企业   政府   外部  投资池 ┃ 本季(U)：贸易差 国内发行 外储补足 财政收 财政支 放款 还本 ┃ 实际GDP 失业% 价格水平 资本存量 投资 折旧 撞界 瓶颈分布")
 	var bound: int = 0
 	for q: int in n_q:
 		var gov0: int = st.accounts.cash_of(JWIds.AGENT_GOV)
@@ -64,11 +64,22 @@ func _init() -> void:
 			if p <= JWUnits.PRICE_MIN or p >= JWUnits.PRICE_MAX:
 				bound += 1
 		var trade: int = _trade_balance(st)
-		var issued: int = st.money.issued_total - prev_issued
-		prev_issued = st.money.issued_total
 		if q % step == step - 1 or q == n_q - 1:
 			var gov_in: int = 0
 			var gov_out: int = 0
+			var iss_dom: int = 0
+			var iss_row: int = 0
+			for i2: int in st.ledger.log_row_count():
+				if st.ledger.l_kind[i2] != JWUnits.Kind.MONEY_ISSUE:
+					continue
+				var acc2: int = st.ledger.l_account[i2]
+				var ag2: int = int(acc2 / ACC_STRIDE)
+				if acc2 - ag2 * ACC_STRIDE != JWIds.ACC_CASH or st.ledger.l_delta[i2] <= 0:
+					continue
+				if ag2 == JWIds.AGENT_ROW:
+					iss_row += st.ledger.l_delta[i2]
+				else:
+					iss_dom += st.ledger.l_delta[i2]
 			var nrow: int = st.ledger.log_row_count()
 			for i: int in nrow:
 				var acc: int = st.ledger.l_account[i]
@@ -80,14 +91,18 @@ func _init() -> void:
 					gov_in += d
 				else:
 					gov_out -= d
-			print("%4d ┃ %6.1f %6.1f %6.1f %6.1f %6.1f ┃ %+7.2f %6.2f %6.2f %6.2f %5.2f %5.2f ┃ %7.2f %5.1f %7.3f %4d" % [
+			print(("%4d ┃ %6.1f %6.1f %6.1f %6.1f %6.1f ┃ %+7.2f %8.2f %8.2f %6.2f %6.2f %5.2f %5.2f ┃ %7.2f %5.1f %7.3f %8.1f %5.2f %5.2f %4d" % [
 					q + 1,
 					_cash_hh(st) / U, _cash_firms(st) / U, st.accounts.cash_of(JWIds.AGENT_GOV) / U,
 					st.accounts.cash_of(JWIds.AGENT_ROW) / U, st.accounts.cash_of(JWIds.AGENT_INVPOOL) / U,
-					trade / U, issued / U, gov_in / U, gov_out / U,
+					trade / U, iss_dom / U, iss_row / U, gov_in / U, gov_out / U,
 					JWMath.sum(st.credit.f_draw) / U, JWMath.sum(st.credit.f_repay) / U,
 					st.diag.gdp_real / U, st.diag.unemployment_ppm / 1e4,
-					st.money.price_level_ppm / 1e6, bound])
+					st.money.price_level_ppm / 1e6,
+					JWMath.sum(st.capital.cell_capital_value) / U,
+					JWMath.sum(st.capital.f_cell_investment) / U,
+					JWMath.sum(st.capital.f_cell_dep_uu) / U,
+					bound]) + "  " + _binding_mix(st))
 	print("耗时 %d ms（%d 季）" % [Time.get_ticks_msec(), n_q])
 	quit(0)
 
@@ -104,6 +119,22 @@ static func _trade_balance(st: JWSimState) -> int:
 		# 外部现金减少 = 本国净出口。
 		t -= st.ledger.l_delta[i]
 	return t
+
+
+## 十六个生产单元本季各自被什么卡住（数量分布）。
+static func _binding_mix(st: JWSimState) -> String:
+	var names: PackedStringArray = ["计划", "产能", "劳动", "电力", "投入", "其它"]
+	var cnt: PackedInt64Array = PackedInt64Array()
+	cnt.resize(names.size())
+	cnt.fill(0)
+	for c: int in JWUnits.CELL:
+		var b: int = st.sectors.f_binding_code[c]
+		cnt[b if b >= 0 and b < names.size() else names.size() - 1] += 1
+	var parts: PackedStringArray = PackedStringArray()
+	for i: int in names.size():
+		if cnt[i] > 0:
+			parts.append("%s%d" % [names[i], cnt[i]])
+	return " ".join(parts)
 
 
 static func _cash_hh(st: JWSimState) -> int:

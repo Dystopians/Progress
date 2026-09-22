@@ -1189,9 +1189,10 @@ const PARTNER_KEYS: PackedStringArray = [
 	"relation_ppm",
 ]
 
-## R-CREDIT-01：剧本 credit_rule 的字段（只允许战役模式）。下标 == JWCredit 内容标量槽位 1..5。
+## R-INVCREDIT-01：剧本 credit_rule 的字段（只允许战役模式）。下标 == JWCredit 内容标量槽位 1..5。
 const CREDIT_RULE_KEYS: PackedStringArray = [
 	"spread_ppm_per_q", "amortize_ppm", "max_leverage_ppm", "min_draw_uu", "pool_reserve_ppm",
+	"wc_cap_ppm",
 ]
 
 ## R-RESEARCH-01：剧本 research_rule 的字段（只允许战役模式）。下标 == JWResearch 内容标量槽位 5、6。
@@ -1325,7 +1326,7 @@ func _validate_scenario(st: JWSimState) -> void:
 		_validate_credit_rule(st, doc, w)
 
 
-## R-CREDIT-01：投资池对生产单元的资本放贷（只允许战役模式）。
+## R-INVCREDIT-01：投资池对生产单元的资本放贷（只允许战役模式）。
 ## 约束：利差 ≥ 0；摊还率在 (0, 1e6]；杠杆上限 > 0；准备率在 [0, 1e6]；最小放款额 ≥ 0。
 func _validate_credit_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var cw: String = w + "/credit_rule"
@@ -1502,7 +1503,7 @@ func _validate_world(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var ww: String = w + "/world_init"
 	_check_keys(wi, PackedStringArray(["fx_rate_ppm", "export_demand_ppm", "import_price_ppm",
 			"delivery_capacity_uqs", "credit_limit_uu", "sovereign_rate_ppm_per_q", "cash_uu",
-			"base_export_uqs", "import_share_ppm"]), ww)
+			"base_export_uqs", "import_share_ppm", "trade_elasticity_ppm"]), ww)
 
 	# INV-105：汇率恒定，任何别的取值都会让「以基年价计的对外账」失去意义。
 	_expect_int(wi, "fx_rate_ppm", JWUnits.FX_RATE_PPM, ww, JWResult.Load.UNIT_MISMATCH)
@@ -1557,6 +1558,17 @@ func _validate_world(st: JWSimState, doc: Dictionary, w: String) -> void:
 		_fail(JWResult.Load.RANGE, ww + "/sovereign_rate_ppm_per_q", rate, 0)
 	_set_scalar(st.world, 2, rate, ww + "/sovereign_rate_ppm_per_q")
 	_set_scalar(st.world, 3, 0, ww + "#current_account")
+	# R-TRADE-PRICE-01：相对价格对贸易的传导强度。缺省 0 == 不传导（旧剧本逐位不变）。
+	_set_scalar(st.world, 4, JWUnits.PPM, ww + "#export_competitiveness")
+	_set_scalar(st.world, 5, JWUnits.PPM, ww + "#import_attractiveness")
+	var elast: int = 0
+	if wi.has("trade_elasticity_ppm"):
+		elast = _get_int(wi, "trade_elasticity_ppm", ww, JWResult.Load.SCHEMA_HEADER)
+		if elast < 0 or elast > 2 * JWUnits.PPM:
+			_fail(JWResult.Load.RANGE, ww + "/trade_elasticity_ppm", elast, 2 * JWUnits.PPM)
+		if st.mode != JWUnits.Mode.CAMPAIGN and elast != 0:
+			_fail(JWResult.Load.SCHEMA_HEADER, ww + "/trade_elasticity_ppm#term-mode", elast, 0)
+	_set_scalar(st.world, 6, elast, ww + "/trade_elasticity_ppm")
 
 	var row_cash: int = _get_int(wi, "cash_uu", ww, JWResult.Load.SCHEMA_HEADER)
 	if row_cash < 0 or row_cash > JWUnits.AMOUNT_MAX:
