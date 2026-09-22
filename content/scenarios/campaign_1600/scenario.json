@@ -27,7 +27,12 @@
     "row_cash_floor_ppm": 800000,
     "firm_excess_buffer_ppm": 2000000,
     "firm_excess_payout_ppm": 250000,
-    "level_weight_ppm": [300000, 300000, 100000, 300000]
+    "level_weight_ppm": [
+      300000,
+      300000,
+      100000,
+      300000
+    ]
   },
   "research_rule": {
     "points_per_edu_ppm": 200000,
@@ -37,12 +42,30 @@
     "quota_step_ppm": 100000,
     "treaty_price_bonus_ppm": 50000,
     "partners": [
-      {"partner_id": "partner.north_ports", "label_zh": "北方海港诸邦", "export_share_ppm": 400000,
-        "import_share_ppm": 350000, "price_mult_ppm": 1000000, "relation_ppm": 100000},
-      {"partner_id": "partner.south_isles", "label_zh": "南洋列岛", "export_share_ppm": 350000,
-        "import_share_ppm": 300000, "price_mult_ppm": 1050000, "relation_ppm": 0},
-      {"partner_id": "partner.inland_khanate", "label_zh": "内陆汗国", "export_share_ppm": 250000,
-        "import_share_ppm": 350000, "price_mult_ppm": 950000, "relation_ppm": -50000}
+      {
+        "partner_id": "partner.north_ports",
+        "label_zh": "北方海港诸邦",
+        "export_share_ppm": 400000,
+        "import_share_ppm": 350000,
+        "price_mult_ppm": 1000000,
+        "relation_ppm": 100000
+      },
+      {
+        "partner_id": "partner.south_isles",
+        "label_zh": "南洋列岛",
+        "export_share_ppm": 350000,
+        "import_share_ppm": 300000,
+        "price_mult_ppm": 1050000,
+        "relation_ppm": 0
+      },
+      {
+        "partner_id": "partner.inland_khanate",
+        "label_zh": "内陆汗国",
+        "export_share_ppm": 250000,
+        "import_share_ppm": 350000,
+        "price_mult_ppm": 950000,
+        "relation_ppm": -50000
+      }
     ]
   },
   "_note_trade_rule": "R-TRADE-01（docs/18）。三个伙伴是外部账户下的备查子账，不新增主体；份额之和 1 000 000 == 与无伙伴时相同的出口通道。命令 16 每次调一档 10%，贸易协定使该伙伴的进口价降 5%。占位数值，M2 标定时按 1600 年的贸易结构重定。",
@@ -206,5 +229,12 @@
   "total_cash_uu": 63716000000,
   "_note_total_cash_uu": "63.716 U。全经济现金总量恒定（INV-018）。本字段不是可自由选取的参数，而是全部现金科目初值的求和结果，source_type = derived，单位 μU：agent.gov 2 000 000 000（government_init.json /gov/cash_uu，计划书 §05 锁定的国库现金 2 U）加 agent.invpool 9 000 000 000（government_init.json /invpool/cash_uu，OQ-201 取值）加 agent.row 15 000 000 000（本文件 /world_init/cash_uu，OQ-201 取值）加 36 个 agent.group 合计 9 000 000 000（population_init.json /groups[*]/cash_uu 实测求和）加 16 个 agent.cell 合计 28 716 000 000（cells_init.json /cells[*]/cash_uu 实测求和；按部门为农业 4 374 000 000、制造 11 563 000 000、能源 1 788 000 000、服务 10 991 000 000，与 io_table.json 基年核算的逐部门 operating_cash_uu 相等；R-REGION-01 之前为 20 000 000 000）加 agent.opening 0（OQ-217：开账分录的现金腿不经 agent.opening，其现金科目恒为 0），合计 63 716 000 000 μU。上一版的六项数字是旧刻度值，已按 R-SCALE-01 全部重算（更早的一版曾把本字段写成 80 000 000 000、群组记为 30 000 000 000、cell 记为 24 000 000 000，与实测各差 21 U 与 4 U，即凭空多出 25 U 现金；现金总量若不是一个可对账的常数，「没有无来源资金」这条底座——计划书 §15 G1 门槛、§16 人工评审要点——就没有检验手段）。**状态变化**：cells_init.json 落地后本条对账由「无法核对」转为通过，校验器现在真的在逐文件求和后与本字段比对；R-REGION-01 提高 cell 开局现金后本字段由 55 000 000 000 重新求和为当前值。",
   "_note_total_cash_uu_headroom": "对账已通过，充足性是另一件事——不要混为一谈。63.716 U 约为基年全年名义 GDP 100 U 的 637 160 ppm。原 cell 侧 20 U（约为市场部门一季工资单的 1.77 倍）在 G1 无命令基线里被证明不够：全国一季工资 + 中间投入需 28 709 206 350 μU，西岭能源开局现金 0.17 U 而季度工资 0.42 U，付不起工资而停产（docs/18 R-REGION-01）。按 R-REGION-01，每个 cell 的开局现金不少于一季工资 + 中间投入（cells_init.json 的 step_7_cash）：先把富余 cell 的富余转给不足的 cell，仍不够才提高合计，cell 侧现在是 28 716 000 000 μU，约为市场部门一季工资单 11 309 142 948 μU 的 2 539 184 ppm。这是开局的**下限**，不保证此后各季的现金流为正；运行期是否出现虚假欠付仍只能由 G1 的无命令基线检验（tools/diag_baseline.gd、tools/diag_cashflow.gd）。这也不是为消除欠付而直接调高本值（那等于凭空造钱，属于计划书 §13 禁止的后处理补丁）：改的是 cells_init.json 的初值分配规则，本字段只是重新求和。注意 cell 侧的逐部门拆分同时写在 io_table.json 的 _note_base_year_accounting（注释键，载入器不读、不进 content_hash），那份副本由 tools/refit_regional.py 同步写出，但不被任何校验器自动传导，只能靠 cells_init.json 与本字段这一对被机器核对。",
-  "notes_zh": "澄湾共和国为虚构剧本。人口 2400 万、基年全年名义 GDP 100 U、政府债务 50 U、国库现金 2 U、基线年收入 20 U 与支出 22 U 来自计划书 §05，是锁定值；按裁定 R-SCALE-01，1 U = 1 000 000 000 μU，故基年全年名义 GDP = 100 000 000 000 μU、季度 25 000 000 000 μU，本文件与各初值文件的一切金额均按此刻度书写。prices_init 的工资率与住房租金不是设计起点而是求解结果（见 _note_prices_init_wage_fit 与 _note_prices_init_housing_rent_fit）；season_factor_ppm 的四季拆分同理，由 government_init.json 的年计划与 R-SEASON-01 的基数定义唯一决定。其余数值均为 design_assumption 的测试起点，不是现实国家数据，也不是已经跑出的结果。失业率 8% 不在任何 schema 中出现，只能由 population_init 的就业分配反算（V-POP-05、INV-143），现实测 80 000 ppm。首版 40 季；压力测试的 120 季由命令行 --horizon 覆盖，不改本文件（OQ-210）。"
+  "notes_zh": "澄湾共和国为虚构剧本。人口 2400 万、基年全年名义 GDP 100 U、政府债务 50 U、国库现金 2 U、基线年收入 20 U 与支出 22 U 来自计划书 §05，是锁定值；按裁定 R-SCALE-01，1 U = 1 000 000 000 μU，故基年全年名义 GDP = 100 000 000 000 μU、季度 25 000 000 000 μU，本文件与各初值文件的一切金额均按此刻度书写。prices_init 的工资率与住房租金不是设计起点而是求解结果（见 _note_prices_init_wage_fit 与 _note_prices_init_housing_rent_fit）；season_factor_ppm 的四季拆分同理，由 government_init.json 的年计划与 R-SEASON-01 的基数定义唯一决定。其余数值均为 design_assumption 的测试起点，不是现实国家数据，也不是已经跑出的结果。失业率 8% 不在任何 schema 中出现，只能由 population_init 的就业分配反算（V-POP-05、INV-143），现实测 80 000 ppm。首版 40 季；压力测试的 120 季由命令行 --horizon 覆盖，不改本文件（OQ-210）。",
+  "credit_rule": {
+    "spread_ppm_per_q": 3000,
+    "amortize_ppm": 25000,
+    "max_leverage_ppm": 400000,
+    "min_draw_uu": 1000000,
+    "pool_reserve_ppm": 100000
+  }
 }

@@ -1063,6 +1063,99 @@ func _issue_money() -> int:
 const EVENT_CHOICE_WINDOW_Q: int = 2
 
 
+## R-CREDIT-01：S05 放款。逐单元按「投资意愿 − 自有现金」借款，受杠杆上限与投资池可贷额约束；
+## 四腿过账（投资池现金 −、投资池应收 +、企业现金 +、企业应付 +），双方净值不变，现金总量不变。
+## 步骤：S05（add_capital_demand 之前）
+## 前置：f_invest_intent 已由 S03 算出；本季尚未放过款
+## 后置：credit.principal 与投资池应收同额增加；flow.credit.draw_uu 写入
+## 不变量：INV-017（Σ Δcash == 0）、INV-019、INV-020、INV-C01
+## 失败：过账被拒 → 该笔不放款，继续下一单元（不静默改账，也不中止本季）
+func _credit_draw() -> int:
+	if _st.credit.enabled == 0:
+		return JWResult.OK
+	var pool_cash: int = _st.accounts.cash_of(JWIds.AGENT_INVPOOL)
+	var dep_liab: int = _st.accounts.get_balance(
+			JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_DEPOSIT_LIAB))
+	var budget: int = _st.credit.lendable(pool_cash, dep_liab)
+	var c: int = 0
+	while c < JWUnits.CELL:
+		if budget <= 0:
+			break
+		var agent: int = JWIds.agent_of_cell(c)
+		var x: int = _st.credit.draw_for(c, _st.sectors.f_invest_intent[c],
+				_st.accounts.cash_of(agent), _st.capital.cell_capital_value[c], budget)
+		if x > 0:
+			_loan_legs_acc[0] = JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_CASH)
+			_loan_legs_d[0] = -x
+			_loan_legs_acc[1] = JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_RECV)
+			_loan_legs_d[1] = x
+			_loan_legs_acc[2] = JWIds.idx_account(agent, JWIds.ACC_CASH)
+			_loan_legs_d[2] = x
+			# 负债腿：行 delta 为负表示负债增加（account.gd §_apply_delta）。
+			_loan_legs_acc[3] = JWIds.idx_account(agent, JWIds.ACC_PAY)
+			_loan_legs_d[3] = -x
+			var rc: int = _st.ledger.post_multi(JWUnits.Kind.LOAN_DRAW, _loan_legs_acc, _loan_legs_d,
+					0, -1, CAUSE_RUNNER, c)
+			if rc == JWResult.OK:
+				rc = _st.credit.note_draw(c, x)
+				if rc != JWResult.OK:
+					return rc
+				budget -= x
+		c += 1
+	return JWResult.OK
+
+
+## R-CREDIT-01：S06 付息与还本。利息先于本金；现金不足时少付，差额进 credit.arrears 继续计息。
+## 步骤：S06（compute_distributable 之前）
+## 前置：本季销售与工资已过账
+## 后置：flow.credit.interest_uu / repay_uu 写入；principal 按实还额减少
+## 不变量：INV-017、INV-019、INV-020、INV-C01
+## 失败：过账被拒 → 该笔按未付处理（计入欠款），不中止本季
+func _credit_service() -> int:
+	if _st.credit.enabled == 0:
+		return JWResult.OK
+	var rate: int = _st.world.sovereign_rate_ppm
+	var c: int = 0
+	while c < JWUnits.CELL:
+		if _st.credit.principal[c] <= 0:
+			c += 1
+			continue
+		var agent: int = JWIds.agent_of_cell(c)
+		# ① 利息：企业现金 → 投资池现金（两腿；企业净值 −，投资池净值 +）。
+		var due_i: int = _st.credit.interest_due(c, rate)
+		var paid_i: int = mini(due_i, maxi(_st.accounts.cash_of(agent), 0))
+		if paid_i > 0:
+			var rc_i: int = _st.ledger.post(JWUnits.Kind.LOAN_INTEREST,
+					JWIds.idx_account(agent, JWIds.ACC_CASH),
+					JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_CASH),
+					paid_i, 0, -1, CAUSE_RUNNER, c)
+			if rc_i != JWResult.OK:
+				paid_i = 0
+		if due_i > 0:
+			var rc_n: int = _st.credit.note_interest(c, paid_i, due_i)
+			if rc_n != JWResult.OK:
+				return rc_n
+		# ② 本金：四腿反向（投资池现金 +、应收 −、企业现金 −、应付 −）。
+		var due_p: int = mini(_st.credit.principal_due(c), maxi(_st.accounts.cash_of(agent), 0))
+		if due_p > 0:
+			_loan_legs_acc[0] = JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_CASH)
+			_loan_legs_d[0] = due_p
+			_loan_legs_acc[1] = JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_RECV)
+			_loan_legs_d[1] = -due_p
+			_loan_legs_acc[2] = JWIds.idx_account(agent, JWIds.ACC_CASH)
+			_loan_legs_d[2] = -due_p
+			_loan_legs_acc[3] = JWIds.idx_account(agent, JWIds.ACC_PAY)
+			_loan_legs_d[3] = due_p
+			var rc_p: int = _st.ledger.post_multi(JWUnits.Kind.LOAN_REPAY, _loan_legs_acc,
+					_loan_legs_d, 0, -1, CAUSE_RUNNER, c)
+			if rc_p == JWResult.OK:
+				var rc_r: int = _st.credit.note_repay(c, due_p)
+				if rc_r != JWResult.OK:
+					return rc_r
+		c += 1
+	return JWResult.OK
+
+
 ## R-OWNER-01：把各生产单元可分配额里属于政府的那一份（按国有堆的有效产能份额）划给政府。
 ## 现金从企业走到政府，登记为政府的其他收入（进 INV-027 的收入项）；余下部分照常按股权分给居民。
 func _split_gov_surplus() -> int:
@@ -1117,6 +1210,9 @@ func _issue_row_reserves(row_cash: int) -> int:
 
 var _reserve_legs_acc: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
 var _reserve_legs_d: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+## R-CREDIT-01：贷款的四腿缓冲（投资池现金 / 应收、企业现金 / 应付）。
+var _loan_legs_acc: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
+var _loan_legs_d: PackedInt64Array = PackedInt64Array([0, 0, 0, 0])
 var _money_legs_acc: PackedInt64Array = PackedInt64Array([0, 0])
 var _money_legs_d: PackedInt64Array = PackedInt64Array([0, 0])
 
@@ -1709,6 +1805,10 @@ func _step_s05() -> int:
 			_st.pricing, _st.accounts, _st.params)
 	if rc != JWResult.OK:
 		return rc
+	# R-CREDIT-01：投资意愿超过自有现金的部分先向投资池借，借到的钱本季就能买资本品。
+	rc = _credit_draw()
+	if rc != JWResult.OK:
+		return rc
 	# R-INVEST-01：企业资本品需求（S03 的投资意愿按内容给定的资本品构成拆到产品）。
 	rc = _st.inventory.add_capital_demand(_st.sectors.f_invest_intent,
 			_st.io.capital_goods_split_ppm, _st.pricing)
@@ -1796,6 +1896,11 @@ func _step_s06() -> int:
 	if rc != JWResult.OK:
 		return rc
 
+	# R-CREDIT-01：先还贷款的息与本，剩下的才谈得上分配（债权人排在股东前面）。
+	rc = _credit_service()
+	if rc != JWResult.OK:
+		return rc
+
 	# 第 7 条：可分配利润（已按 payout_ratio 折算，调用方不再乘一次）。
 	rc = _st.sectors.compute_distributable(_sc_distributable, _st.params)
 	if rc != JWResult.OK:
@@ -1819,8 +1924,10 @@ func _step_s06() -> int:
 
 	# 第 8 条（前半，R-TAXBASE-01）：企业分配与存款利息先过账到户——§6.5 个税的税基是
 	# 「已过账的 wage + property」，分配排在个税之后等于本季财产收入永远不进税基。
+	# R-CREDIT-01：投资池本季收到的贷款利息与国债利息同口径，一起按存款份额分回各组。
 	rc = _st.pop.post_property_income(_sc_distributable,
-			_ledger_sum(JWUnits.Kind.BOND_INTEREST, JWIds.AGENT_INVPOOL, true),
+			_ledger_sum(JWUnits.Kind.BOND_INTEREST, JWIds.AGENT_INVPOOL, true)
+					+ _ledger_sum(JWUnits.Kind.LOAN_INTEREST, JWIds.AGENT_INVPOOL, true),
 			_st.ledger, _st.accounts)
 	if rc != JWResult.OK:
 		return rc

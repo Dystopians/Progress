@@ -201,14 +201,19 @@ enum Kind { WAGE_PAYMENT = 1, PUBLIC_WAGE_PAYMENT = 2, HOUSEHOLD_CONSUMPTION = 3
 		# 四百年重构（R-MONEY-01）：战役模式的货币发行，政府现金 + / 政府净值 +，三口径全 none。
 		MONEY_ISSUE = 33,
 		# R-OWNER-01：政府扶持私人——政府出资建成的设施移交给企业（资本转移，非现金，三口径全 none）。
-		CAPITAL_TRANSFER = 34 }
+		CAPITAL_TRANSFER = 34,
+		# R-CREDIT-01：投资池 → 生产单元的资本贷款。三笔都是三口径全 none 的再分配 / 金融交易：
+		# LOAN_DRAW 放款（现金与应收 / 应付同时增记，双方净值不变）、
+		# LOAN_INTEREST 付息（企业净值 −，投资池净值 +，再经存款利息回流住户）、
+		# LOAN_REPAY 还本（现金与应收 / 应付同时减记，双方净值不变）。
+		LOAN_DRAW = 35, LOAN_INTEREST = 36, LOAN_REPAY = 37 }
 enum ProdClass { NONE = 0, SALE_FINAL = 1, SALE_INTERMEDIATE = 2, INV_CHANGE = 3, VA_NONMARKET = 4 }
 enum ExpClass { NONE = 0, C = 1, G = 2, I = 3, DINV = 4, X = 5, M = 6 }
 enum IncClass { NONE = 0, COMPENSATION = 1, GROSS_OPERATING_SURPLUS = 2,
 		CONSUMPTION_OF_FIXED_CAPITAL = 3 }
 
 ## kind 数量上界（下标 0 为占位，不使用）
-const KIND_N: int = 35
+const KIND_N: int = 38
 
 # ── 子系统（subsystem_hash 与 WriteGuard 的粒度，docs/10 §11 的 15 个） ─────
 
@@ -315,7 +320,7 @@ const KIND_PROD_CLASS: PackedInt64Array = [
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
 	# R-MIGRATE-01：kind 25 迁移成本改为再分配（原 sale_final）。
 	0, 0, 0, 0, 0, 1, 0, 0,
-	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ## kind → 支出法分类（docs/11 §5.3）。下标 = Kind 值，长度 KIND_N。
@@ -325,7 +330,7 @@ const KIND_EXP_CLASS: PackedInt64Array = [
 	0, 0, 0, 0, 0, 0, 0, 0, 3, 2,
 	# R-MIGRATE-01：kind 25 迁移成本改为再分配（原 C）。
 	0, 0, 0, 0, 0, 2, 0, 0,
-	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ## kind → 收入法分类（docs/11 §5.3）。下标 = Kind 值，长度 KIND_N。
@@ -334,7 +339,7 @@ const KIND_INC_CLASS: PackedInt64Array = [
 	1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	3, 2, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0,
 ]
 
 ## kind 是否属于「三口径全 none 的再分配类」（10..18, 27, 28），供 INV-029 / INV-113 静态断言。
@@ -345,7 +350,7 @@ const KIND_IS_REDISTRIBUTION: PackedInt64Array = [
 	1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
 	# R-MIGRATE-01：kind 25 迁移成本是再分配类。
 	0, 0, 0, 0, 1, 0, 1, 1,
-	1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1,
 ]
 
 ## 每步允许写入的子系统位掩码，下标 = Phase 值（docs/12 每步「可写子集」行的机器化）。

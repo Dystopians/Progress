@@ -1179,7 +1179,7 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 	"unit_declaration", "horizon_q", "param_set_ref", "param_set_version", "root_seed",
 	"includes", "enabled_policies", "baseline_policies", "enabled_events", "enabled_shocks", "season_factor_ppm",
 	"prices_init", "world_init", "mandate_goals", "total_cash_uu", "notes_zh",
-	"mode", "start_year", "money_rule", "research_rule", "trade_rule",
+	"mode", "start_year", "money_rule", "research_rule", "trade_rule", "credit_rule",
 ]
 
 ## R-TRADE-01：剧本 trade_rule 的字段（只允许战役模式）。
@@ -1187,6 +1187,11 @@ const TRADE_RULE_KEYS: PackedStringArray = ["quota_step_ppm", "treaty_price_bonu
 const PARTNER_KEYS: PackedStringArray = [
 	"partner_id", "label_zh", "export_share_ppm", "import_share_ppm", "price_mult_ppm",
 	"relation_ppm",
+]
+
+## R-CREDIT-01：剧本 credit_rule 的字段（只允许战役模式）。下标 == JWCredit 内容标量槽位 1..5。
+const CREDIT_RULE_KEYS: PackedStringArray = [
+	"spread_ppm_per_q", "amortize_ppm", "max_leverage_ppm", "min_draw_uu", "pool_reserve_ppm",
 ]
 
 ## R-RESEARCH-01：剧本 research_rule 的字段（只允许战役模式）。下标 == JWResearch 内容标量槽位 5、6。
@@ -1316,6 +1321,35 @@ func _validate_scenario(st: JWSimState) -> void:
 		_validate_research_rule(st, doc, w)
 	if doc.has("trade_rule"):
 		_validate_trade_rule(st, doc, w)
+	if doc.has("credit_rule"):
+		_validate_credit_rule(st, doc, w)
+
+
+## R-CREDIT-01：投资池对生产单元的资本放贷（只允许战役模式）。
+## 约束：利差 ≥ 0；摊还率在 (0, 1e6]；杠杆上限 > 0；准备率在 [0, 1e6]；最小放款额 ≥ 0。
+func _validate_credit_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
+	var cw: String = w + "/credit_rule"
+	if st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, cw + "#term-mode", st.mode, JWUnits.Mode.CAMPAIGN)
+		return
+	var cr: Dictionary = _get_dict(doc, "credit_rule", w, JWResult.Load.SCHEMA_HEADER)
+	_check_keys(cr, CREDIT_RULE_KEYS, cw)
+	var vals: PackedInt64Array = PackedInt64Array()
+	for i: int in CREDIT_RULE_KEYS.size():
+		var v: int = _get_int(cr, CREDIT_RULE_KEYS[i], cw, JWResult.Load.SCHEMA_HEADER)
+		if v < 0:
+			_fail(JWResult.Load.RANGE, cw + "/" + CREDIT_RULE_KEYS[i], v, 0)
+		vals.append(v)
+	if vals.size() == CREDIT_RULE_KEYS.size():
+		if vals[1] <= 0 or vals[1] > JWUnits.PPM:
+			_fail(JWResult.Load.RANGE, cw + "/amortize_ppm", vals[1], JWUnits.PPM)
+		if vals[2] <= 0:
+			_fail(JWResult.Load.RANGE, cw + "/max_leverage_ppm", vals[2], 0)
+		if vals[4] > JWUnits.PPM:
+			_fail(JWResult.Load.RANGE, cw + "/pool_reserve_ppm", vals[4], JWUnits.PPM)
+		for i2: int in CREDIT_RULE_KEYS.size():
+			_set_scalar(st.credit, 1 + i2, vals[i2], cw + "/" + CREDIT_RULE_KEYS[i2])
+	_set_scalar(st.credit, 0, 1, cw + "#enabled")
 
 
 ## R-TRADE-01：贸易伙伴（只允许战役模式）。伙伴是外部账户下的备查子账，不新增主体。
