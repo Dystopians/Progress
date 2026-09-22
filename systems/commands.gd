@@ -30,6 +30,8 @@ enum Kind {
 	SET_PAYMENT_PRIORITY = 10,
 	SET_STANDING_RULE = 11,
 	SELECT_MANDATE_GOAL = 12,
+	# R-RESEARCH-01（M2）：设定研究方向；参数是科技下标，−1 == 撤销方向。
+	SET_RESEARCH_FOCUS = 13,
 	ADVANCE_QUARTER = 99,
 }
 
@@ -92,6 +94,8 @@ const SLOT_RULE: int = 0
 const SLOT_RULE_VALUE: int = 1
 ## kind 12 的施政目标槽。
 const SLOT_GOAL: int = 0
+## 命令 13 的参数槽：科技下标（−1 == 撤销）。
+const SLOT_TECH: int = 0
 
 
 ## 资金来源码。docs/11 §5.12 的 `funding_source` 枚举顺序 `["cash", "bond", "reallocation"]`
@@ -1060,6 +1064,14 @@ func _validate_row(i: int, defs: JWPolicyDef) -> int:
 			return JWResult.Reject.PARAM_RANGE
 		return JWResult.OK
 
+	if kind == Kind.SET_RESEARCH_FOCUS:
+		var tv: int = c_arg[base + SLOT_TECH]
+		# 形状：−1 或 [0, 科技表容量)。「这项科技存不存在、前置齐没齐」是 S02 的 Reject。
+		if tv < -1 or tv >= JWResearch.CAP0:
+			_last_reject_slot = SLOT_TECH
+			return JWResult.Reject.PARAM_RANGE
+		return JWResult.OK
+
 	if kind == Kind.SET_PAYMENT_PRIORITY:
 		var pk: int = c_arg[base + SLOT_PRIORITY_PACKED]
 		if pk < 0 or pk > PRIORITY_PACKED_MAX:
@@ -1162,6 +1174,8 @@ static func _arity_of(kind: int) -> int:
 	if kind == Kind.SET_STANDING_RULE:
 		return 2
 	if kind == Kind.SELECT_MANDATE_GOAL:
+		return 1
+	if kind == Kind.SET_RESEARCH_FOCUS:
 		return 1
 	if kind == Kind.ADVANCE_QUARTER:
 		return 0
@@ -1305,6 +1319,8 @@ static func _arg_keys(kind: int) -> PackedStringArray:
 		return PackedStringArray(["rule", "value"])
 	if kind == Kind.SELECT_MANDATE_GOAL:
 		return PackedStringArray(["goal"])
+	if kind == Kind.SET_RESEARCH_FOCUS:
+		return PackedStringArray(["tech"])
 	# kind 10 的 order[] 是数组形态，不走键名表；kind 99 无参数。
 	return PackedStringArray()
 

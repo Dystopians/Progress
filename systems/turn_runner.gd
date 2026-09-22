@@ -634,6 +634,8 @@ func _apply_command(cmds: JWCommands, row: int) -> int:
 			rc = _cmd_payment_priority(cmds.arg_at(row, JWCommands.SLOT_PRIORITY_PACKED))
 		JWCommands.Kind.SELECT_MANDATE_GOAL:
 			rc = _cmd_mandate_goal(cmds.arg_at(row, JWCommands.SLOT_GOAL))
+		JWCommands.Kind.SET_RESEARCH_FOCUS:
+			rc = _st.research.set_focus(cmds.arg_at(row, JWCommands.SLOT_TECH))
 		JWCommands.Kind.PROJECT_DEFER:
 			rc = _st.projects.defer(_st.projects.slot_of_entity(cmds.arg_at(row, JWCommands.SLOT_PROJECT)),
 					cmds.arg_at(row, JWCommands.SLOT_DEFER_QUARTERS), _st.q, _st.params,
@@ -1850,6 +1852,12 @@ func _step_s07() -> int:
 	rc = _build_delivered_to_group()
 	if rc != JWResult.OK:
 		return rc
+
+	# 第 10′ 条（R-RESEARCH-01，只在战役模式）：研究点来自本季实际交付的教育服务与在业高技能人数。
+	rc = _advance_research()
+	if rc != JWResult.OK:
+		return rc
+
 	rc = _st.pop.update_living_indices(_sc_group_svc)
 	if rc != JWResult.OK:
 		return rc
@@ -1860,6 +1868,23 @@ func _step_s07() -> int:
 		_sc_region[r] = _st.pop.region_population(r)
 		r += 1
 	return _st.capital.update_environment(_sc_region, _st.params)
+
+
+## R-RESEARCH-01：本季研究推进。教育交付量取 _build_delivered_to_group 刚算出的逐组教育分量之和；
+## 在业高技能人数取劳动市场的实际在岗（企业 + 公共服务）。两者都是**已经发生的事实**，不是计划量。
+func _advance_research() -> int:
+	if _st.research.enabled == 0:
+		return JWResult.OK
+	var edu: int = 0
+	for g: int in JWUnits.GROUP:
+		edu += _sc_group_svc[JWIds.idx_group_svc(g, JWUnits.ServiceKind.EDUCATION)]
+	var high: int = 0
+	var k_high: int = JWUnits.K - 1
+	for c: int in JWUnits.CELL:
+		high += _st.labor.cell_employment[JWIds.idx_emp(c, k_high)]
+	for r: int in JWUnits.R:
+		high += _st.labor.pub_employment[JWIds.idx_pubserv_emp(r, k_high)]
+	return _st.research.advance_research(_st.research.points_of(edu, high))
 
 
 ## S08 社会与报告。可写：GROUP（四个主观量）| POLITICS | META | PRICE（swap）| TIME | RNG

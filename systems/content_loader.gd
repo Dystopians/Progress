@@ -104,7 +104,13 @@ const SCHEMA_KINDS: PackedStringArray = [
 	"scenario", "io_table", "regions", "population_init", "cells_init", "pubserv_init",
 	"government_init", "politics_init", "assertions", "policy_definition", "event_template",
 	"shock_definition", "parameter_set", "parameter_registry",
+	# R-RESEARCH-01（M2）：科技卡。
+	"technology",
 ]
+
+## 科技目录与文件前缀（R-RESEARCH-01）。目录可以不存在（旧剧本没有科技）。
+const TECH_DIR: String = "technologies"
+const TECH_PREFIX: String = "tech_"
 
 # ── 枚举名 → 稠密下标（docs/10 §0.5 的枚举表，顺序不得改） ──────────────────
 
@@ -115,6 +121,10 @@ const REGION_NAMES_DEFAULT: PackedStringArray = ["beiyuan", "zhongzhou", "haijia
 var _region_names: PackedStringArray = REGION_NAMES_DEFAULT
 ## 计划书 §05 的锁定值只约束参考剧本 chengwan；其他剧本以自己的 assertions.json 为准（R-SCENARIO-02）。
 var _plan_locks: bool = true
+## 本次载入的科技卡文件（升序）。R-RESEARCH-01。
+var _tech_files: PackedStringArray = PackedStringArray()
+## 科技 ID → 下标（载入期解析前置与解锁引用用）。
+var _tech_index: Dictionary = {}
 const SECTOR_NAMES: PackedStringArray = ["agri", "manu", "energy", "services"]
 const AGE_NAMES: PackedStringArray = ["minor", "working", "elder"]
 const SKILL_NAMES: PackedStringArray = ["low", "mid", "high"]
@@ -714,6 +724,8 @@ func _in_layout(rel: String) -> bool:
 		return _event_index("event." + rel.substr(13, rel.length() - 18)) >= 0
 	if rel.begins_with("shocks/shock_S") and rel.ends_with(".json"):
 		return _shock_index("shock." + rel.substr(13, rel.length() - 18)) >= 0
+	if rel.begins_with(TECH_DIR + "/" + TECH_PREFIX) and rel.ends_with(".json"):
+		return true
 	if rel.begins_with(SCENARIOS_ROOT + "/"):
 		var parts: PackedStringArray = rel.split("/")
 		return parts.size() == 3 and _scenario_name_ok(parts[1]) and SCENARIO_FILES.has(parts[2])
@@ -1016,6 +1028,13 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	for k: int in JWUnits.SHOCK_N:
 		_read_one("shocks/shock_S" + _pad2(k + 1) + ".json")
 	_read_one(PARAMS_CORE)
+	# R-RESEARCH-01：科技卡按文件名升序读入，下标即顺序（前置引用必须指向更靠前的科技，见 _validate_technologies）。
+	_tech_files = PackedStringArray()
+	for i2: int in found.size():
+		if found[i2].begins_with(TECH_DIR + "/" + TECH_PREFIX) and found[i2].ends_with(".json"):
+			_tech_files.append(found[i2])
+	for i3: int in _tech_files.size():
+		_read_one(_tech_files[i3])
 	for i: int in OPTIONAL_FILES.size():
 		if FileAccess.file_exists(_root + "/" + OPTIONAL_FILES[i]):
 			_read_one(OPTIONAL_FILES[i])
@@ -1042,6 +1061,7 @@ func load_all(root_path: String, st: JWSimState) -> JWResult:
 	_validate_policies(st)
 	_derive_policy_domains(st)
 	_derive_wage_anchor(st)
+	_validate_technologies(st)
 	_validate_events()
 	_validate_shocks(st)
 
@@ -1107,6 +1127,8 @@ func _reset() -> void:
 	_unemployment_ppm = 0
 	_bond_coupon_year_uu = 0
 	_total_cash_uu = 0
+	_tech_files = PackedStringArray()
+	_tech_index = {}
 	_op_agent = PackedInt64Array()
 	_op_code = PackedInt64Array()
 	_op_amount = PackedInt64Array()
@@ -1123,7 +1145,12 @@ const SCENARIO_ALLOWED: PackedStringArray = [
 	"unit_declaration", "horizon_q", "param_set_ref", "param_set_version", "root_seed",
 	"includes", "enabled_policies", "baseline_policies", "enabled_events", "enabled_shocks", "season_factor_ppm",
 	"prices_init", "world_init", "mandate_goals", "total_cash_uu", "notes_zh",
-	"mode", "start_year", "money_rule",
+	"mode", "start_year", "money_rule", "research_rule",
+]
+
+## R-RESEARCH-01：剧本 research_rule 的字段（只允许战役模式）。下标 == JWResearch 内容标量槽位 5、6。
+const RESEARCH_RULE_KEYS: PackedStringArray = [
+	"points_per_edu_ppm", "points_per_high_skill_ppm",
 ]
 
 ## R-MONEY-01 / R-PRICE-LONG-01：剧本 money_rule 的字段（只允许战役模式）。下标 == JWMoney 的内容标量槽位。
@@ -1244,6 +1271,24 @@ func _validate_scenario(st: JWSimState) -> void:
 
 	if doc.has("money_rule"):
 		_validate_money_rule(st, doc, w)
+	if doc.has("research_rule"):
+		_validate_research_rule(st, doc, w)
+
+
+## R-RESEARCH-01：剧本的研究规则（只允许战役模式）。
+func _validate_research_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
+	var rw: String = w + "/research_rule"
+	if st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, rw + "#term-mode", st.mode, JWUnits.Mode.CAMPAIGN)
+		return
+	var rr: Dictionary = _get_dict(doc, "research_rule", w, JWResult.Load.SCHEMA_HEADER)
+	_check_keys(rr, RESEARCH_RULE_KEYS, rw)
+	for i: int in RESEARCH_RULE_KEYS.size():
+		var v: int = _get_int(rr, RESEARCH_RULE_KEYS[i], rw, JWResult.Load.SCHEMA_HEADER)
+		if v < 0:
+			_fail(JWResult.Load.RANGE, rw + "/" + RESEARCH_RULE_KEYS[i], v, 0)
+		_set_scalar(st.research, 5 + i, v, rw + "/" + RESEARCH_RULE_KEYS[i])
+	_set_scalar(st.research, 4, 1, rw + "#enabled")
 
 
 ## R-MONEY-01 / R-PRICE-LONG-01：战役模式的货币发行与长期上下限。
@@ -3809,6 +3854,70 @@ func check_scenario_assertions(st: JWSimState) -> JWResult:
 	if errors.size() == before:
 		return JWResult.make_ok()
 	return errors[before]
+
+
+## R-RESEARCH-01：科技卡校验与装载。下标 == 文件名升序；前置只能指向更靠前的科技（保证无环）。
+## 解锁的建筑类型与生产方式在 M2-2 的建筑表落地后解析，本轮只校验它们是字符串并登记为 0 掩码。
+const TECH_ALLOWED: PackedStringArray = [
+	"schema_kind", "schema_version", "tech_id", "label_zh", "desc_zh", "era_hint",
+	"research_cost", "prereqs", "unlocks", "requires", "placeholder",
+]
+const TECH_UNLOCK_KEYS: PackedStringArray = ["building_types", "methods"]
+
+
+func _validate_technologies(st: JWSimState) -> void:
+	var n: int = _tech_files.size()
+	if n == 0:
+		return
+	if n > JWResearch.CAP0:
+		_fail(JWResult.Load.SCHEMA_HEADER, TECH_DIR + "#count", n, JWResearch.CAP0)
+		return
+	var cost: PackedInt64Array = _zeros(JWResearch.CAP0)
+	var era: PackedInt64Array = _zeros(JWResearch.CAP0)
+	var prereq: PackedInt64Array = _zeros(JWResearch.CAP0)
+	_tech_index = {}
+	for t: int in n:
+		var rel: String = _tech_files[t]
+		var idx: int = _doc_index(rel)
+		if idx < 0:
+			continue
+		var doc: Dictionary = _docs[idx]
+		var w: String = rel + "#"
+		_check_keys(doc, TECH_ALLOWED, w)
+		var tid: String = _get_str(doc, "tech_id", w, JWResult.Load.SCHEMA_HEADER)
+		if not tid.begins_with("tech."):
+			_fail(JWResult.Load.ID_FORMAT, w + "/tech_id", 0, 0)
+		if _tech_index.has(tid):
+			_fail(JWResult.Load.DUP_ID, w + "/tech_id", t, int(_tech_index[tid]))
+		_tech_index[tid] = t
+		era[t] = _get_int(doc, "era_hint", w, JWResult.Load.SCHEMA_HEADER)
+		cost[t] = _get_int(doc, "research_cost", w, JWResult.Load.SCHEMA_HEADER)
+		if cost[t] <= 0:
+			_fail(JWResult.Load.RANGE, w + "/research_cost", cost[t], 1)
+		var pre: Array = _get_array(doc, "prereqs", w, JWResult.Load.SCHEMA_HEADER)
+		var mask: int = 0
+		for j: int in pre.size():
+			var pid: String = String(pre[j])
+			if not _tech_index.has(pid):
+				# 前置必须指向更靠前的科技：既保证无环，也让「下标即拓扑序」成立。
+				_fail(JWResult.Load.SCHEMA_HEADER, w + "/prereqs/" + str(j), t, -1)
+				continue
+			mask = mask | (1 << int(_tech_index[pid]))
+		prereq[t] = mask
+		var unl: Dictionary = _get_dict(doc, "unlocks", w, JWResult.Load.SCHEMA_HEADER)
+		_check_keys(unl, TECH_UNLOCK_KEYS, w + "/unlocks")
+		for k: int in TECH_UNLOCK_KEYS.size():
+			var lst: Array = _get_array(unl, TECH_UNLOCK_KEYS[k], w + "/unlocks",
+					JWResult.Load.SCHEMA_HEADER)
+			for m: int in lst.size():
+				if typeof(lst[m]) != TYPE_STRING:
+					_fail(JWResult.Load.ID_FORMAT, w + "/unlocks/" + TECH_UNLOCK_KEYS[k], m, 0)
+	_set_arr(st.research, 2, cost, TECH_DIR + "#cost")
+	_set_arr(st.research, 3, era, TECH_DIR + "#era_hint")
+	_set_arr(st.research, 4, prereq, TECH_DIR + "#prereq_mask")
+	_set_scalar(st.research, 3, n, TECH_DIR + "#count")
+	# 载入即刷新可研究状态（前置为空的科技一开始就可研究）。
+	st.research.advance_research(0)
 
 
 ## 跑 `assertions.json`（§5.11）。`at == "load"` 的当场判；`q_end:<n>` 的只校验形态，

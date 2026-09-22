@@ -143,6 +143,16 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	ar["state.crisis.since_q"] = _mig_encode(PackedInt64Array([-1, -1, -1, -1]))
 	sc["state.politics.gov_changes"] = 0
 	sc["state.politics.last_gov_change_q"] = -1
+	# R-RESEARCH-01：旧剧本没有科技树，进度与池子为 0、没有研究方向。
+	var zeros: PackedInt64Array = PackedInt64Array()
+	zeros.resize(JWResearch.CAP0)
+	zeros.fill(0)
+	ar["state.research.status"] = _mig_encode(zeros)
+	ar["state.research.progress"] = _mig_encode(zeros)
+	sc["state.research.points_pool"] = 0
+	sc["state.research.focus"] = JWResearch.NO_FOCUS
+	sc["state.research.completed_mask"] = 0
+	sc["flow.research.points_gained"] = 0
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out
 

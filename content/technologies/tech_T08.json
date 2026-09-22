@@ -1,0 +1,22 @@
+{
+  "schema_kind": "technology",
+  "schema_version": 1,
+  "tech_id": "tech.harbor_works",
+  "label_zh": "港务营造",
+  "desc_zh": "解决什么：外贸吞吐受限于旧码头。需要什么：复式记账。何时见效：解锁港务扩建。谁受影响：沿海地区与外贸。失败条件：无。能否退出：可以。",
+  "era_hint": 2,
+  "research_cost": 12000000,
+  "prereqs": [
+    "tech.bookkeeping"
+  ],
+  "unlocks": {
+    "building_types": [
+      "building.harbor_yard"
+    ],
+    "methods": []
+  },
+  "requires": {
+    "building_types": []
+  },
+  "placeholder": 1
+}

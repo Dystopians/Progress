@@ -1,0 +1,20 @@
+{
+  "schema_kind": "technology",
+  "schema_version": 1,
+  "tech_id": "tech.bookkeeping",
+  "label_zh": "复式记账",
+  "desc_zh": "解决什么：商号与官库账目不清，赋税与商贸都难扩张。需要什么：识字人口。何时见效：解锁市集与商行。谁受影响：商业与政府征收。失败条件：无。能否退出：可以。",
+  "era_hint": 1,
+  "research_cost": 3000000,
+  "prereqs": [],
+  "unlocks": {
+    "building_types": [
+      "building.market_hall"
+    ],
+    "methods": []
+  },
+  "requires": {
+    "building_types": []
+  },
+  "placeholder": 1
+}

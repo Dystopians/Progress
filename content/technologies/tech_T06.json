@@ -1,0 +1,23 @@
+{
+  "schema_kind": "technology",
+  "schema_version": 1,
+  "tech_id": "tech.water_power",
+  "label_zh": "水力机械",
+  "desc_zh": "解决什么：人力工场的规模上限。需要什么：水利营造与行会工场。何时见效：解锁水力工场方式，同等人力产出更高、需靠近水源。谁受影响：制造业与其雇工。失败条件：无。能否退出：可以，旧方式仍可用。",
+  "era_hint": 2,
+  "research_cost": 9000000,
+  "prereqs": [
+    "tech.water_management",
+    "tech.craft_guild"
+  ],
+  "unlocks": {
+    "building_types": [],
+    "methods": [
+      "method.workshop_water"
+    ]
+  },
+  "requires": {
+    "building_types": []
+  },
+  "placeholder": 1
+}
