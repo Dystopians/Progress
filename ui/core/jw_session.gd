@@ -385,6 +385,33 @@ func draft_event_choice(event: int, option: int, label_text: String) -> Dictiona
 			"label": JwText.render("draft.label.event_choice", {"option": label_text})}
 
 
+## R-EVENTCHOICE-01 / M2 审阅 G1：本季草案篮里是否已经为事件 e 选过选项（返回选项下标，−1 == 没有）。
+func event_choice_drafted(e: int) -> int:
+	for d: Dictionary in drafts:
+		if int(d.get("kind", -1)) == K_EVENT_CHOICE and int(d.get("event", -1)) == e:
+			return int(d.get("option", -1))
+	return -1
+
+
+## 选一个事件选项：把选项预填的普通命令（kind == 0 表示「不发命令，现状照旧」）连同命令 17 放进草案篮。
+## 同一事件同一季只能选一次；要改就先从草案篮里撤掉。
+func choose_event_option(e: int, option: int) -> void:
+	if event_choice_drafted(e) >= 0:
+		return
+	var choices: Array = catalog.event_choices.get(e, [])
+	if option < 0 or option >= choices.size():
+		return
+	var c: Dictionary = choices[option]
+	var label_text: String = String(c.get("label_zh", ""))
+	var dc: Dictionary = c.get("draft_command", {})
+	var k: int = int(dc.get("kind", 0))
+	if k > 0:
+		var args: Array = dc.get("args", [])
+		add_draft({"kind": k, "args": _args(args), "p": -1, "event": -1,
+				"label": JwText.render("draft.label.event_command", {"option": label_text})}, false)
+	add_draft(draft_event_choice(e, option, label_text))
+
+
 func draft_cancel(project: int, label_text: String) -> Dictionary:
 	return {"kind": K_CANCEL, "args": _args([model.project_entity(project)]), "p": -1, "project": project,
 			"label": JwText.render("draft.label.cancel", {"project": label_text})}

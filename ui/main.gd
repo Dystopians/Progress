@@ -248,6 +248,9 @@ func _on_settlement_finished(receipt: Dictionary) -> void:
 	# 先开回放覆盖层（模态，盖住页面），页面重建挪到下一帧：把收尾工作分到两帧，主线程单帧更短（TH-4）。
 	top_bar.refresh()
 	open_overlay("settlement", receipt)
+	# M2 审阅 G1：有待决的选择型事件就把抉择面板叠在结算回放之上（先看到要决定的事）。
+	if not JwEventChoice.pending_events(session).is_empty():
+		open_overlay("event_choice", {})
 	if is_inside_tree():
 		await get_tree().process_frame
 	refresh_all()
@@ -282,6 +285,8 @@ func open_overlay(id: String, ctx: Dictionary = {}) -> JwOverlay:
 			o = JwRulesBook.new()
 		"term":
 			o = JwTermCard.new()
+		"event_choice":
+			o = JwEventChoice.new()
 		_:
 			return null
 	var layer: Control = modal_layer if o.modal else overlay_layer

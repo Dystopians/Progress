@@ -717,14 +717,10 @@
     {
       "option_id": "opt.import_keep",
       "label_zh": "维持进口",
-      "desc_zh": "不调整额度。",
+      "desc_zh": "不调整额度。选这一项不发任何命令，现状照旧。",
       "draft_command": {
-        "kind": 16,
-        "args": [
-          2,
-          1,
-          1
-        ]
+        "kind": 0,
+        "args": []
       }
     }
   ]

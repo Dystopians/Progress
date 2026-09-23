@@ -748,14 +748,10 @@
     {
       "option_id": "opt.no_treaty",
       "label_zh": "不缔约",
-      "desc_zh": "维持现状。",
+      "desc_zh": "维持现状。选这一项不发任何命令，现状照旧。",
       "draft_command": {
-        "kind": 16,
-        "args": [
-          1,
-          0,
-          0
-        ]
+        "kind": 0,
+        "args": []
       }
     }
   ]

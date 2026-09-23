@@ -373,7 +373,8 @@ func pause_probe() -> Dictionary:
 	if _st == null:
 		return {}
 	return {"stages": _st.crisis.stage.duplicate(), "gov_changes": _st.crisis.gov_changes,
-			"term_index": _st.politics.term_index, "arrears": _st.treasury.arrears}
+			"term_index": _st.politics.term_index, "arrears": _st.treasury.arrears,
+			"pending": _st.politics.event_pending_until_q.duplicate()}
 
 
 ## 一季推进之后是否该停（按优先级：终局 > 危机升级 > 政府更替 > 选举 > 新增欠付）。
@@ -392,8 +393,12 @@ func pause_reason(before: Dictionary, advance_ok: bool) -> int:
 		return Pause.GOV_CHANGE
 	if _st.politics.term_index > int(before["term_index"]):
 		return Pause.ELECTION
-	if _st.politics.has_pending_choice():
-		return Pause.EVENT_CHOICE
+	# 只在有选择型事件**新开出**待决窗口的那一季停（窗口两季，停一次就够；M2 审阅 G1）。
+	var pend0: PackedInt64Array = before.get("pending", PackedInt64Array())
+	var pend1: PackedInt64Array = _st.politics.event_pending_until_q
+	for e: int in mini(pend0.size(), pend1.size()):
+		if pend1[e] > pend0[e]:
+			return Pause.EVENT_CHOICE
 	if _st.treasury.arrears > int(before["arrears"]):
 		return Pause.ARREARS
 	return Pause.NONE

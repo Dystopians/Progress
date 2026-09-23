@@ -2,7 +2,6 @@
   "schema_version": 1,
   "t": {
     "shell.min_size_notice": "当前显示设置低于最低支持尺寸 1280×720 逻辑单位；界面允许纵向滚动。",
-
     "ng.title": "开始执政",
     "ng.country": "{country}",
     "ng.intro": "你将执政 {quarters} 个季度（{years} 年）。每季先起草命令，经预算审查与确认后推进；结算由规则一次跑完，结果记入台账。经济下滑本身不导致执政结束；失去留任资格或财政重组失败会提前结束。",
@@ -31,13 +30,11 @@
     "ng.start": "开始执政",
     "ng.load": "读取存档",
     "ng.fail": "开局失败：错误码 {code}。请检查内容包是否完整。",
-
     "br.title": "预算审查 · {quarter}",
     "br.status.busy": "正在按规则试算……",
     "br.status.done": "试算完成：{runs} 次情景试算，用时 {ms} 毫秒。",
     "br.to_confirm": "去确认推进 ▸",
     "br.recompute": "重新试算",
-
     "ca.title": "确认推进 · {quarter}",
     "ca.wait": "试算尚未完成，完成后才可确认。",
     "ca.ack": "我已阅读全部 {n} 项提示",
@@ -50,7 +47,6 @@
     "ca.why.block": "存在 {n} 项阻断，需先处理或移出草案",
     "ca.why.gap": "存在未绑定处理路径的资金缺口",
     "ca.why.ack": "请先勾选已阅读全部 {n} 项提示",
-
     "sr.title": "结算回放 · {quarter}",
     "sr.fault": "结算中止：故障码 {code}。诊断文件：{dir}",
     "sr.step.0": "审核与融资（第 1–2 步）",
@@ -67,7 +63,6 @@
     "sr.no_interrupts": "本季没有被拒绝的命令、新增欠付或审查事项。",
     "sr.to_report": "查看季度报告 ▸",
     "sr.continue": "继续",
-
     "ar.title": "年度审查 · 第 {year} 年（截至{quarter}）",
     "ar.left.title": "本年收入（实）",
     "ar.col.item": "税种",
@@ -97,7 +92,6 @@
     "ar.verdict.rule": "推算 · 审查判据：赤字率不超过 {deficit}，欠付不超过 {arrears}；连续失败 {lost} 次失去执政资格，失去资格持续 {noconf} 即提前结束。",
     "ar.no_score": "年度审查不给出单一国力分数；收入与公共服务负担分开列示，不合成。",
     "ar.done": "知道了",
-
     "fa.title": "发展档案 · 截至{quarter}",
     "fa.headline": "{country} · 发展档案（截至{quarter}）",
     "fa.no_score": "档案分为生活、分配、能力、韧性、政治五个分区；分区之间不可互相换算，也不合成单一国力分数。",
@@ -135,7 +129,6 @@
     "fa.dim.politics": "政治",
     "fa.row.support": "支持度",
     "fa.politics": "实记 · 全国信任 {trust}；集团组织力：{blocs}；执政席位 {seats} / {total}。 ▸{citation}",
-
     "sv.title": "存档",
     "sv.col.slot": "档名",
     "sv.col.q": "季度",
@@ -169,7 +162,6 @@
     "sv.export_fail": "调试日志导出失败：无法写入日志目录。",
     "sv.note.delete": "首版不提供删除存档：应用层尚无删除接口（已登记接口请求）。",
     "sv.note.autosave": "开局与每季结算后自动写入 autosave 槽；autosave 不可手动覆盖。",
-
     "onb.q1": "新手引导 · 第 1 季",
     "onb.q2": "新手引导 · 第 2 季",
     "onb.q3": "新手引导 · 第 3 季",
@@ -185,6 +177,12 @@
     "onb.lead.q2.off": "在本页向下滚动到「三 · 在建项目与时滞」：钱已经付出，新增能力要等完工后的下一季。",
     "onb.lead.q3.off": "在本页向下滚动到「影响预览」的分组明细：草案的受益与受损按群组列出（情景区间）。",
     "onb.ok": "知道了",
-    "onb.never": "不再显示"
+    "onb.never": "不再显示",
+    "ev_choice.title": "需要你决定的事",
+    "ev_choice.intro": "选一个选项，它预填的命令会连同这次选择一起放进本季草案篮，确认推进时才生效，推进前都可以撤回。不选也可以——窗口到期自动作废，不会替你选。",
+    "ev_choice.none": "眼下没有需要决定的事件。",
+    "ev_choice.window": "最晚在{q}前决定",
+    "ev_choice.drafted": "已放进本季草案篮。要改选，先在草案篮里撤掉。",
+    "ov.pending_events": "有 {n} 件事需要你决定 ▸"
   }
 }

@@ -792,12 +792,10 @@
     {
       "option_id": "opt.research_keep",
       "label_zh": "维持原方向",
-      "desc_zh": "不改研究方向。",
+      "desc_zh": "不改研究方向。选这一项不发任何命令，现状照旧。",
       "draft_command": {
-        "kind": 13,
-        "args": [
-          -1
-        ]
+        "kind": 0,
+        "args": []
       }
     }
   ]

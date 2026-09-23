@@ -4,42 +4,34 @@
     "ind.empty.why": "还没有开局。",
     "ind.empty.when": "新建一局或读取存档后，这一页会列出可研究的科技、可建的设施与现有产业。",
     "ind.empty.rule": "本页只显示已开局的真实状态，不做演示数据。",
-
     "ind.term.why": "这一局是单届剧本，没有科技与建筑表。",
     "ind.term.when": "改用四百年战役剧本（1600 年开局）后，研究、建造、改造与贸易安排才会开放。",
     "ind.term.rule": "docs/18 R-SCENARIO-01：机制由剧本决定，不由界面假设。",
-
     "ind.research.title": "研究",
     "ind.research.summary": "本季新增研究点 {gained}，未用完的存量 {pool}；当前方向：{focus}。",
     "ind.research.no_focus": "尚未选定",
     "ind.research.source": "口径：研究点来自受教育人口与工业产出（S07 结算），没有方向时照常累积，不会作废。",
     "ind.research.current": "当前方向",
     "ind.research.set_focus": "设为方向",
-
     "ind.tech.state.0": "前置未齐",
     "ind.tech.state.1": "可研究",
     "ind.tech.state.2": "已完成",
     "ind.tech.progress": "{done} / {cost}",
-
     "ind.build.title": "可建设施",
     "ind.build.region": "建在：",
     "ind.build.none": "现在还没有已解锁的设施类型。先完成一项科技，再回到这里。",
     "ind.build.spec": "单位产能 {capacity} / 季 · 造价 {cost} · 工期 {quarters} · 运维 {opex} / 季",
     "ind.build.action": "由{owner}建造",
-
     "ind.owner.0": "企业",
     "ind.owner.1": "政府",
-
     "ind.legacy_building": "既有设施",
     "ind.legacy_method": "既有方式",
-
     "ind.stacks.title": "现有产业",
     "ind.stacks.note": "口径：产能按生产方式与在建冻结份额折算后，才计入该生产单元的产出上限（S01）。",
     "ind.stacks.none": "本局还没有可显示的产业设施。",
     "ind.stacks.cap": "第 {level} 级 · 产能 {cap} / 季",
     "ind.stacks.frozen": "改造中，冻结 {pct} 产能",
     "ind.stacks.retrofit": "改造为{method}",
-
     "ind.trade.title": "贸易伙伴",
     "ind.trade.none": "这一局没有外部贸易伙伴。",
     "ind.trade.shares": "出口额度 {export} · 进口额度 {import} · 价格系数 {price} · 关系 {relation} · 子账余额 {balance}",
@@ -53,11 +45,11 @@
     "ind.trade.mode.2": "贸易协定",
     "ind.trade.up.0": "调低",
     "ind.trade.up.1": "调高",
-
     "draft.label.research": "设定研究方向：{tech}",
     "draft.label.build": "建造：{building} · {region} · {owner}",
     "draft.label.retrofit": "改造：{building} → {method}",
     "draft.label.trade": "贸易安排：{partner} · {mode} {dir}",
-    "draft.label.event_choice": "事件选择：{option}"
+    "draft.label.event_choice": "事件选择：{option}",
+    "draft.label.event_command": "事件选项预填：{option}"
   }
 }

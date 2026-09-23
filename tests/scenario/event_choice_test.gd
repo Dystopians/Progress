@@ -86,13 +86,18 @@ func test_choice_rejections() -> void:
 				"非选择型事件 ⇒ 拒绝")
 
 
-func test_batch_pauses_on_pending_choice() -> void:
+func test_batch_pauses_only_when_a_choice_newly_opens() -> void:
 	var g: JWGame = _game(75)
 	var st: JWSimState = g.get("_st") as JWSimState
 	var e: int = 0
 	while e < JWUnits.EVENT_N and st.politics.event_choice_count[e] <= 0:
 		e += 1
-	st.politics.note_event_fired(e, st.q, 4)
-	var r: Dictionary = g.advance_batch(4)
-	eq_int(int(r["advanced"]), 1, "有事件等决定 ⇒ 推进一季就停")
-	eq_int(int(r["reason"]), JWGame.Pause.EVENT_CHOICE, "暂停原因是「需要选择的事件」")
+	# ① 本季新开出待决窗口 ⇒ 停（原因：需要选择的事件）。
+	var before: Dictionary = g.pause_probe()
+	st.politics.note_event_fired(e, st.q, 2)
+	eq_int(g.pause_reason(before, true), JWGame.Pause.EVENT_CHOICE, "窗口新开出的那一季停下")
+	# ② 窗口早已开着（批量推进开始前就在）⇒ 不为它反复停（M2 审阅 G1：窗口两季，停一次就够）。
+	var r: Dictionary = g.advance_batch(1)
+	eq_int(int(r["advanced"]), 1, "推进一季")
+	check(int(r["reason"]) != JWGame.Pause.EVENT_CHOICE or st.politics.event_pending_until_q[e] > st.q + 1,
+			"已开着的窗口不会让批量推进再停一次（除非本季又有新窗口）")

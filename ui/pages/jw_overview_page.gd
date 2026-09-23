@@ -31,6 +31,15 @@ func refresh() -> void:
 		return
 	var short: bool = hband == JwScale.HBand.SHORT
 	_root.add_child(term_strip())
+	# M2 审阅 G1：有待决的选择型事件时，页首给一个入口（批量推进也会在事件新出现时停下并弹出）。
+	var pend: Array[int] = JwEventChoice.pending_events(session)
+	if not pend.is_empty():
+		var eb: Button = JwUi.button(JwText.render("ov.pending_events", {"n": str(pend.size())}),
+				"PrimaryButton")
+		JwUi.tag(eb, "PendingEvents")
+		eb.pressed.connect(func() -> void:
+			open_overlay("event_choice", {}))
+		_root.add_child(eb)
 	_root.add_child(_pillars(short))
 	var main: HBoxContainer = JwUi.hbox(16)
 	main.name = "MainRow"

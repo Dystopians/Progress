@@ -9,7 +9,7 @@ extends JWTest
 const SEED: int = 20260921
 const PAGE_IDS: PackedStringArray = ["overview", "region", "policy", "industry", "society", "report"]
 const OVERLAY_IDS: PackedStringArray = ["newgame", "budget", "confirm", "settlement", "annual", "archive", "saves",
-		"ledger", "rule", "legend", "rules", "term"]
+		"ledger", "rule", "legend", "rules", "term", "event_choice"]
 
 ## 按推进季数缓存的会话（每个测试方法是新实例，静态变量跨实例共享）。
 static var _sessions: Dictionary = {}
@@ -99,6 +99,8 @@ static func _overlay(s: JwSession, id: String, ctx: Dictionary) -> JwOverlay:
 			o = JwRulesBook.new()
 		"term":
 			o = JwTermCard.new()
+		"event_choice":
+			o = JwEventChoice.new()
 	o.setup(s, null, id, ctx)
 	return o
 
@@ -490,6 +492,37 @@ func test_building_art_paths_exist() -> void:
 	ge_int(paths.size(), 15, "五个家族 × 三个时代都登记了配图")
 	for p: String in paths:
 		check(ResourceLoader.exists(p), "配图存在：" + p)
+
+
+## M2 审阅 G1：选择型事件必须有界面入口。强制开出一个待决事件，打开抉择面板，点第一个选项，
+## 草案篮里应出现「记下选择」（命令 17），选项若预填了命令也一并出现；同一事件不能重复选。
+func test_event_choice_overlay_drafts_the_choice() -> void:
+	var s: JwSession = JwSession.new()
+	s.set_sync_mode(true)
+	check(bool(s.start_new(SEED + 1, -1).get("ok", false)), "开局")
+	var st: JWSimState = s.game.get("_st") as JWSimState
+	var e: int = 0
+	while e < st.politics.event_choice_count.size() and st.politics.event_choice_count[e] <= 0:
+		e += 1
+	ge_int(st.politics.event_choice_count.size() - 1, e, "内容里有选择型事件")
+	st.politics.note_event_fired(e, st.q, 2)
+	s.model.refresh()
+	eq_int(JwEventChoice.pending_events(s).size(), 1, "有一件待决事件")
+	var o: JwOverlay = _overlay(s, "event_choice", {})
+	var b: Control = _find(o, "EventOption_%d_0" % e)
+	check(b != null and b is Button, "选项按钮存在")
+	(b as Button).pressed.emit()
+	eq_int(s.event_choice_drafted(e), 0, "草案篮记下了第 0 个选项")
+	var n_choice: int = 0
+	for d: Dictionary in s.drafts:
+		if int(d.get("kind", -1)) == JwSession.K_EVENT_CHOICE:
+			n_choice += 1
+	eq_int(n_choice, 1, "命令 17 恰好一条")
+	var before: int = s.drafts.size()
+	s.choose_event_option(e, 1)
+	eq_int(s.drafts.size(), before, "同一事件同一季不能重复选")
+	o.free()
+	s.free()
 
 
 ## AC-34（docs/20 §10.4 术语首见）：五页的「本页术语」签，每个都在术语表里有术语、一句定义、本局实例与规则锚点；

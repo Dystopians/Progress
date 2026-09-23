@@ -809,14 +809,10 @@
     {
       "option_id": "opt.wait",
       "label_zh": "按兵不动",
-      "desc_zh": "维持现状，不承担协定义务。",
+      "desc_zh": "维持现状，不承担协定义务。选这一项不发任何命令，现状照旧。",
       "draft_command": {
-        "kind": 16,
-        "args": [
-          0,
-          0,
-          0
-        ]
+        "kind": 0,
+        "args": []
       }
     }
   ]
