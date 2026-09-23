@@ -3,7 +3,7 @@
   "schema_version": 1,
   "tech_id": "tech.water_management",
   "label_zh": "水利营造",
-  "desc_zh": "解决什么：旱涝之年的产量波动。需要什么：土地清丈。何时见效：解锁地区级水利与灌溉耕作方式。谁受影响：农业与其雇工。失败条件：无。能否退出：可以。",
+  "desc_zh": "解决什么：旱涝之年的产量波动。需要什么：土地清丈。何时见效：解锁地区级水利、灌溉耕作方式与水力动力坊。谁受影响：农业与其雇工。失败条件：无。能否退出：可以。",
   "era_hint": 1,
   "research_cost": 4000000,
   "prereqs": [
@@ -11,7 +11,8 @@
   ],
   "unlocks": {
     "building_types": [
-      "building.irrigation_regional"
+      "building.irrigation_regional",
+      "building.power_water"
     ],
     "methods": [
       "method.farm_irrigated"

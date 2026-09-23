@@ -7,14 +7,15 @@
   "family": "family.harbor",
   "sector": "services",
   "owners_allowed": [
+    "private",
     "gov"
   ],
-  "unit_capacity_uqs_per_q": 90000,
+  "unit_capacity_uqs_per_q": 450000,
   "construction": {
-    "cost_uu": 700000000,
+    "cost_uu": 3500000000,
     "quarters": 6
   },
-  "opex_per_q_uu": 7000000,
+  "opex_per_q_uu": 35000000,
   "methods": [],
   "placeholder": 1
 }

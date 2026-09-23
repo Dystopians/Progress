@@ -1,0 +1,21 @@
+{
+  "schema_kind": "building_type",
+  "schema_version": 1,
+  "building_id": "building.power_water",
+  "label_zh": "水力动力坊",
+  "desc_zh": "解决什么：动力不足卡住各行各业（电力长期是最紧的约束之一）。需要什么：水利营造。何时见效：建成后本地区能源产能上升。谁受影响：所有用动力的生产单元。失败条件：无。能否退出：可改造。",
+  "family": "family.power",
+  "sector": "energy",
+  "owners_allowed": [
+    "private",
+    "gov"
+  ],
+  "unit_capacity_uqs_per_q": 200000,
+  "construction": {
+    "cost_uu": 3600000000,
+    "quarters": 6
+  },
+  "opex_per_q_uu": 30000000,
+  "methods": [],
+  "placeholder": 1
+}

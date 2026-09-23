@@ -7,14 +7,15 @@
   "family": "family.irrigation",
   "sector": "agri",
   "owners_allowed": [
+    "private",
     "gov"
   ],
-  "unit_capacity_uqs_per_q": 150000,
+  "unit_capacity_uqs_per_q": 750000,
   "construction": {
-    "cost_uu": 900000000,
+    "cost_uu": 4500000000,
     "quarters": 8
   },
-  "opex_per_q_uu": 9000000,
+  "opex_per_q_uu": 45000000,
   "methods": [
     "method.farm_irrigated"
   ],

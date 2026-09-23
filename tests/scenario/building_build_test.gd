@@ -45,7 +45,7 @@ func _complete(st: JWSimState, t: int) -> void:
 func test_cards_loaded() -> void:
 	var st: JWSimState = (_game(CAMPAIGN, 41).get("_st")) as JWSimState
 	var b: JWBuildings = st.buildings
-	eq_int(b.type_count, 7, "6 张建筑卡 + 既有设施 == 7 类")
+	eq_int(b.type_count, 8, "7 张建筑卡 + 既有设施 == 8 类")
 	eq_int(b.method_count, 5, "4 张方式卡 + 既有方式 == 5 种")
 	eq_int(b.m_output_ppm[0], JWUnits.PPM, "既有方式的倍率恒为 1e6")
 	for m: int in range(1, b.method_count):
@@ -157,7 +157,7 @@ func test_method_multipliers_reach_production() -> void:
 func test_term_mode_cannot_build() -> void:
 	var g: JWGame = _game("res://content", 46)
 	var st: JWSimState = g.get("_st") as JWSimState
-	eq_int(st.buildings.type_count, 7, "旧剧本也读到建筑卡（内容包公共区）")
+	eq_int(st.buildings.type_count, 8, "旧剧本也读到建筑卡（内容包公共区）")
 	g.submit_command(JWCommands.Kind.BUILD_BUILDING, _args([3, 1, JWBuildings.OWNER_GOV, 0]))
 	check(_advance(g).ok, "推进一季")
 	eq_int(_last_code(g, JWCommands.Kind.BUILD_BUILDING), JWResult.Reject.PRECONDITION,

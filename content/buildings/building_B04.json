@@ -10,12 +10,12 @@
     "private",
     "gov"
   ],
-  "unit_capacity_uqs_per_q": 40000,
+  "unit_capacity_uqs_per_q": 200000,
   "construction": {
-    "cost_uu": 420000000,
+    "cost_uu": 2100000000,
     "quarters": 6
   },
-  "opex_per_q_uu": 8000000,
+  "opex_per_q_uu": 40000000,
   "methods": [],
   "placeholder": 1
 }

@@ -3,7 +3,7 @@
   "schema_version": 1,
   "method_id": "method.farm_irrigated",
   "building_id": "building.irrigation_regional",
-  "group": "power",
+  "group": "crop",
   "requires_tech": [
     "tech.water_management"
   ],
@@ -18,7 +18,7 @@
   },
   "output_ppm": 1150000,
   "retrofit": {
-    "cost_uu": 120000000,
+    "cost_uu": 600000000,
     "quarters": 2,
     "capacity_frozen_ppm": 500000
   },

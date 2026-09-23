@@ -18,7 +18,7 @@
   },
   "output_ppm": 1120000,
   "retrofit": {
-    "cost_uu": 60000000,
+    "cost_uu": 300000000,
     "quarters": 1,
     "capacity_frozen_ppm": 500000
   },

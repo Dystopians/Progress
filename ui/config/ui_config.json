@@ -268,6 +268,11 @@
       "early": "res://assets/buildings/b03/port_early.png",
       "industrial": "res://assets/buildings/b03/port_industrial.png",
       "modern": "res://assets/buildings/b03/port_modern.png"
+    },
+    "family.power": {
+      "early": "res://assets/buildings/b02/power_early.png",
+      "industrial": "res://assets/buildings/b02/power_industrial.png",
+      "modern": "res://assets/buildings/b02/power_modern.png"
     }
   },
   "_note_building_art": "M2-7（R-METHOD-01 / 用户 2026-09-22 决定）：建筑卡的配图按家族取 Codex 的资源；{era} 由科技时代档替换为 early / industrial / modern。资源仍待用户初审，文件不存在时界面自动退回纯文字卡片。",
