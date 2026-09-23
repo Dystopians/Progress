@@ -90,6 +90,11 @@ const STATE_ARRAY_LEN: PackedInt64Array = [
 # ───────────────────────── 成员变量 ─────────────────────────
 
 ## state.policy.enabled[]：0/1，长度 12，初值 0，写入者 S02
+## R-NOMINAL-01（战役模式）：法定转移计价用的价格水平（ppm）。编排器每季付款前由
+## state.money.level_ring_ppm 的八季均值写入（与法定工资下限同一口径），不进状态。
+## 旧剧本恒为 1e6。
+var ref_level_ppm: int = JWUnits.PPM
+
 var enabled: PackedInt64Array = PackedInt64Array()
 ## state.policy.enacted_q[]：季，长度 12，初值 −1，写入者 S02
 var enacted_q: PackedInt64Array = PackedInt64Array()
@@ -618,6 +623,10 @@ func transfer_due_into(out_payee_agent: PackedInt64Array, out_due: PackedInt64Ar
 	var ref_wage: int = params[JWUnits.Param.WAGE_FLOOR_UU]
 	if ref_wage <= 0:
 		return JWResult.OK
+	if ref_level_ppm != JWUnits.PPM:
+		# R-NOMINAL-01：法定工资下限随价格水平上浮（R-PRICE-LONG-01），救济的计价基准跟着走，
+		# 否则物价 7 倍时救济实值只剩 1/7——四百年里自动稳定器会被通胀悄悄拆掉。
+		ref_wage = JWMath.mul_ppm(ref_wage, ref_level_ppm)
 
 	for p: int in JWUnits.POLICY_N:
 		if defs.kind[p] != JWPolicyDef.POLICY_KIND_TRANSFER:

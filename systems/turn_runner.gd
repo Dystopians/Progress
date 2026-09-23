@@ -112,13 +112,8 @@ var _sc_unmet_prev: PackedInt64Array = PackedInt64Array()
 var _sc_invest_prev: PackedInt64Array = PackedInt64Array()
 ## R-INVCREDIT-01：上季各单元的中间投入额（周转资金额度的基准）。
 var _sc_input_prev: PackedInt64Array = PackedInt64Array()
-## R-FISCAL-LONG-01：上季基本支出（国库现金缓冲的基准）与返还的拆分缓冲。
 ## R-INVCREDIT-01 第 12 条：上季各单元税前利润（偿债能力闸的基准）。
 var _sc_profit_prev: PackedInt64Array = PackedInt64Array()
-var _sc_primary_prev: int = 0
-var _sc_rebate_w: PackedInt64Array = PackedInt64Array()
-var _sc_rebate_tb: PackedInt64Array = PackedInt64Array()
-var _sc_rebate_out: PackedInt64Array = PackedInt64Array()
 
 ## 运行费应付清单（收款方 / 应付额），长 OPEX_N（JWTreasury._check_line_arity 对该档钉死长度）。
 var _sc_opex_payee: PackedInt64Array = PackedInt64Array()
@@ -238,9 +233,6 @@ func _init(st: JWSimState, events: JWEventEngine) -> void:
 	_alloc(_sc_invest_prev, JWUnits.CELL)
 	_alloc(_sc_input_prev, JWUnits.CELL)
 	_alloc(_sc_profit_prev, JWUnits.CELL)
-	_alloc(_sc_rebate_w, JWUnits.GROUP)
-	_alloc(_sc_rebate_tb, JWUnits.GROUP)
-	_alloc(_sc_rebate_out, JWUnits.GROUP)
 	_alloc(_sc_opex_payee, JWUnits.OPEX_N)
 	_alloc(_sc_opex_due, JWUnits.OPEX_N)
 	_alloc(_sc_tr_payee, JWUnits.GROUP)
@@ -405,9 +397,6 @@ func _step_s01(cmds: JWCommands) -> int:
 	# R-EXPECT-01：第 0 季没有「上季」，也就没有可用于更新预期的观测；
 	# 此时令 D_prev := E_prev（预期保持剧本给定的基年水平），而不是拿开局为 0 的流量把预期砍掉。
 	var no_prev_obs: bool = _st.q == 0
-	# R-FISCAL-LONG-01：上季基本支出（国库现金缓冲的基准）。第 0 季没有上季，取 0 == 不设缓冲，
-	# 但第 0 季国库也没有超额现金可返还，所以不会误触发。
-	_sc_primary_prev = 0 if no_prev_obs else _st.treasury.f_primary_paid
 	var cell: int = 0
 	while cell < JWUnits.CELL:
 		if no_prev_obs:
@@ -1046,6 +1035,10 @@ func _step_s04() -> int:
 	if rc != JWResult.OK:
 		return rc
 
+	# R-NOMINAL-01：法定转移的计价水平（战役模式随滞后价格水平；旧剧本恒为 1e6）。
+	_st.policy.ref_level_ppm = _st.money.wage_floor_level_ppm() \
+			if _st.mode == JWUnits.Mode.CAMPAIGN else JWUnits.PPM
+
 	# 第 2 条：按 payment_priority 遍历 8 档（INV-039：实际顺序必须与优先级一致）。
 	var t: int = 0
 	while t < JWUnits.PAY_LINE_N:
@@ -1054,11 +1047,6 @@ func _step_s04() -> int:
 		if rc != JWResult.OK and rc < JWResult.Reject.RUN_TERMINATED:
 			return rc
 		t += 1
-
-	# R-FISCAL-LONG-01：国库现金超过缓冲且无未偿国债时，把超出部分逐季返还居民。
-	rc = _rebate_excess_cash()
-	if rc != JWResult.OK:
-		return rc
 
 	# 第 3 条：组间赡养转移（Σ support_in == Σ support_out，INV-085）。
 	rc = _st.pop.pay_household_support(_st.ledger, _st.accounts, _st.params)
@@ -1095,65 +1083,6 @@ func _issue_money() -> int:
 
 ## R-EVENTCHOICE-01：选择型事件的待决窗口长度（季）。窗口内不选就作废，不替玩家选。
 const EVENT_CHOICE_WINDOW_Q: int = 2
-
-## R-FISCAL-LONG-01：国库现金缓冲（按上季基本支出的季数）与每季返还比例。
-const TREASURY_BUFFER_Q: int = 4
-const REBATE_SHARE_PPM: int = 250_000
-
-
-## R-FISCAL-LONG-01：国库不得无限囤积现金。
-##
-## 四百年战役里，无操作的政府会把税收一路囤起来——剧本的年度计划里本有「项目合同 1.8 U/年、
-## 补贴 0.4 U/年」，但不立项就不花，于是每季净收约 1.3 U 退出循环。实测第 180 季国库囤到 120 U，
-## 同期失业 57%。这一条给它一个出口：**没有未偿国债**且现金超过「上季基本支出 × 4 季」时，
-## 把超出部分的四分之一按人口份额返还居民（历史上的散财 / 减征），走 TRANSFER（三口径全 none）。
-## 玩家照样可以用政策把钱花在别处——返还只是兜底，不是最优解。
-## 步骤：S04（优先级付款之后、赡养转移之前）
-## 前置：本季优先级付款已完成；_sc_primary_prev 是上季基本支出
-## 后置：政府现金减少，居民现金增加同额；f_transfer_income 同步登记（INV-086）
-## 不变量：INV-017、INV-027、INV-086
-## 失败：过账被拒 → 本季不返还，不中止
-func _rebate_excess_cash() -> int:
-	if _st.mode != JWUnits.Mode.CAMPAIGN:
-		return JWResult.OK
-	var debt: int = 0
-	for b: int in _st.bonds.principal_outstanding.size():
-		debt += _st.bonds.principal_outstanding[b]
-	if debt > 0:
-		return JWResult.OK
-	var buffer: int = JWMath.mul(_sc_primary_prev, TREASURY_BUFFER_Q)
-	var cash: int = _st.accounts.cash_of(JWIds.AGENT_GOV)
-	var excess: int = cash - buffer
-	if excess <= 0:
-		return JWResult.OK
-	var pay: int = JWMath.mul_ppm(excess, REBATE_SHARE_PPM)
-	if pay <= 0:
-		return JWResult.OK
-	for g: int in JWUnits.GROUP:
-		_sc_rebate_w[g] = _st.pop.population[g]
-		_sc_rebate_tb[g] = g
-	var residual: int = JWMath.split_lr_into(pay, _sc_rebate_w, _sc_rebate_tb, _sc_rebate_out)
-	if JWMath._split_last_fault != 0:
-		return JWMath._split_last_fault
-	if residual != 0:
-		return JWResult.OK
-	for g2: int in JWUnits.GROUP:
-		var part: int = _sc_rebate_out[g2]
-		if part <= 0:
-			continue
-		var rc: int = _st.ledger.post(JWUnits.Kind.TRANSFER,
-				JWIds.idx_account(JWIds.AGENT_GOV, JWIds.ACC_CASH),
-				JWIds.idx_account(JWIds.agent_of_group(g2), JWIds.ACC_CASH),
-				part, 0, -1, CAUSE_RUNNER, g2)
-		if rc != JWResult.OK:
-			continue
-		rc = _st.pop.record_transfer_paid(g2, part)
-		if rc != JWResult.OK:
-			return rc
-		# 返还是真金白银出库，进基本支出（INV-027 的现金恒等式左右才相等）。
-		_st.treasury.f_primary_paid = JWMath.check_amount(_st.treasury.f_primary_paid + part)
-	return JWResult.OK
-
 
 ## R-INVCREDIT-01：S05 放款。逐单元按「投资意愿 − 自有现金」借款，受杠杆上限与投资池可贷额约束；
 ## 四腿过账（投资池现金 −、投资池应收 +、企业现金 +、企业应付 +），双方净值不变，现金总量不变。
@@ -1815,6 +1744,9 @@ func _reserve_procurement() -> int:
 	# R-PROCURE-01：年度计划的采购档（每季 = 年额 ÷ 4）按支付优先级在这里先融资（R-FINANCE-01），
 	# 再把「可用现金内的额度」核定为本季采购预算；实际付款在 S05 市场的买方类 2 成交时发生。
 	var budget: int = _st.treasury.procurement_budget_q_uu
+	if _st.mode == JWUnits.Mode.CAMPAIGN:
+		# R-NOMINAL-01：年度计划的采购额是开局的名义数，随滞后价格水平调整，保持实际采购量。
+		budget = JWMath.mul_ppm(budget, _st.money.wage_floor_level_ppm())
 	if budget <= 0:
 		return _st.treasury.authorize_procurement(0)
 	_sc_proc_due[0] = budget
