@@ -6,8 +6,9 @@
 ## 实际 GDP 掉到 0.4%、失业 83%）。本块补上唯一缺的那条渠道：储蓄经投资池贷给企业去投资。
 ##
 ## 三条纪律：
-## ① **只为资本支出放贷**。贷款额 = max(0, 本季投资意愿 − 自有现金)，不为工资与中间投入融资；
-##    否则周转现金会被包装成贷款，杠杆没有上限。
+## ① **两种贷款分开计额**：资本贷款 = max(0, 本季投资意愿 − 自有现金)，受杠杆上限约束；
+##    周转垫款覆盖投入与工资的短期缺口，上限是一个季度的经营现金需要（R-INVCREDIT-01 第 10、11 条）。
+##    两者额度不互通，周转现金不会被包装成长期贷款。
 ## ② **不凭空创造购买力**。放贷受投资池现金约束（它借不出它没有的钱），贷款只是把住户已经
 ##    存进去的钱转出去；全经济现金总量不变（INV-017 / INV-018 照常成立）。
 ## ③ **杠杆有上限**。单元未偿本金不得超过其资本价值 × max_leverage_ppm；到顶就借不到，
@@ -46,7 +47,7 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 ]
 const STATE_SCALAR_SUBSYS: PackedInt64Array = [
 	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
-	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
+	JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL, JWUnits.SUBSYS_CELL,
 ]
 const FLOW_ARRAY_IDS: PackedStringArray = [
 	"flow.credit.draw_uu",
@@ -137,14 +138,14 @@ func loan_rate_ppm_per_q(sovereign_ppm_per_q: int) -> int:
 ## 失败：无
 func service_headroom(cell: int, profit_prev_uu: int, sovereign_ppm_per_q: int) -> int:
 	if enabled == 0 or max_debt_service_ppm <= 0:
-		return 1 << 40
+		return JWUnits.AMOUNT_MAX
 	if cell < 0 or cell >= JWUnits.CELL:
 		return 0
 	if profit_prev_uu <= 0:
 		return 0
 	var rate: int = loan_rate_ppm_per_q(sovereign_ppm_per_q)
 	if rate <= 0:
-		return 1 << 40
+		return JWUnits.AMOUNT_MAX
 	# 可承受的利息 → 可承受的本金总额；减去已有本金即新增上限。
 	var max_interest: int = JWMath.mul_ppm(profit_prev_uu, max_debt_service_ppm)
 	var max_principal: int = JWMath.mul_div_floor(max_interest, JWUnits.PPM, rate)
@@ -195,8 +196,8 @@ func draw_for(cell: int, intent_uu: int, cash_uu: int, capital_value_uu: int, bu
 	return x if x >= min_draw_uu else 0
 
 
-## R-INVCREDIT-01 第 10 条：周转资金。企业买不起中间投入时的短期垫款，
-## 上限是「上季中间投入 × wc_cap_ppm」，与资本贷款共用投资池的可贷额。
+## R-INVCREDIT-01 第 10、11 条：周转资金。企业付不起投入与工资时的短期垫款，
+## 上限是「上季（中间投入 + 工资）× wc_cap_ppm」，与资本贷款共用投资池的可贷额。
 ## 它治的是流动性，不是清偿力：S06 一有现金就先还它，所以余额不会长期累积。
 ## 步骤：S05（市场开市之前）
 ## 前置：input_prev_uu 是上季该单元的中间投入额；cash_uu 是自有现金
@@ -311,6 +312,12 @@ func check_consistency(accounts: JWAccount) -> int:
 	var total: int = principal_total() + wc_total()
 	if claim != total:
 		return JWResult.raise_fault(JWResult.Fault.STOCK_IDENTITY, total, claim - total)
+	# 逐单元：生产单元的应付目前只来自投资池贷款，所以必须等于它自己的本金 + 周转余额。
+	for c: int in JWUnits.CELL:
+		var pay: int = accounts.get_balance(JWIds.idx_account(JWIds.agent_of_cell(c), JWIds.ACC_PAY))
+		var owe: int = principal[c] + wc_principal[c]
+		if pay != owe:
+			return JWResult.raise_fault(JWResult.Fault.STOCK_IDENTITY, c, pay - owe)
 	return JWResult.OK
 
 

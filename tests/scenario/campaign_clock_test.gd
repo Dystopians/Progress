@@ -94,24 +94,29 @@ func test_v1_save_migrates_to_v2() -> void:
 	var x: Array = _load("res://content")
 	var st: JWSimState = x[1]
 	var d: Dictionary = st.to_dict()
+	# 按 v1 基线提交导出的真实键表把当前存档裁成 v1 形状（tests/fixtures/v1_save_keys.json）。
+	# 此前是手工逐个删已知的新键，漏删一个就测不出来——信贷流量漏迁移就是这么溜过去的。
+	var fx: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/v1_save_keys.json"))
+	check(fx is Dictionary, "v1 键表夹具可读")
+	var v1: Dictionary = fx
+	var keep_sc: Dictionary = {}
+	for k: Variant in v1["scalars"]:
+		keep_sc[String(k)] = true
+	var keep_ar: Dictionary = {}
+	for k2: Variant in v1["arrays"]:
+		keep_ar[String(k2)] = true
 	var sc: Dictionary = d[JWSimState.SAVE_KEY_SCALARS]
-	check(sc.has("state.meta.mode") and sc.has("state.time.start_year"), "v2 存档含两个新标量")
-	sc.erase("state.meta.mode")
-	sc.erase("state.time.start_year")
-	for k: String in ["state.money.issued_total_uu", "state.money.price_level_ppm",
-			"state.money.target_level_ppm", "flow.gov.money_issued_uu"]:
-		sc.erase(k)
 	var arrs: Dictionary = d[JWSimState.SAVE_KEY_ARRAYS]
-	arrs.erase("state.money.real_gdp_ring_uu")
-	arrs.erase("state.project.entity")
-	arrs.erase("state.bond.entity")
-	for bid: String in JWBuildings.STATE_ARRAY_IDS:
-		arrs.erase(bid)
-	sc.erase("state.building.count")
-	arrs.erase("state.crisis.stage")
-	arrs.erase("state.crisis.since_q")
-	sc.erase("state.politics.gov_changes")
-	sc.erase("state.politics.last_gov_change_q")
+	var dropped: int = 0
+	for k3: Variant in sc.keys():
+		if not keep_sc.has(String(k3)):
+			sc.erase(k3)
+			dropped += 1
+	for k4: Variant in arrs.keys():
+		if not keep_ar.has(String(k4)):
+			arrs.erase(k4)
+			dropped += 1
+	ge_int(dropped, 1, "当前存档确实比 v1 多出新键（否则本测试没有意义）")
 	d[JWSimState.SAVE_KEY_SCHEMA] = 1
 	var sv: JWSaves = JWSaves.new()
 	var rm: JWResult = sv.migrate(d, 1)
@@ -120,7 +125,9 @@ func test_v1_save_migrates_to_v2() -> void:
 	var st2: JWSimState = JWSimState.new()
 	st2.allocate_all()
 	var rf: JWResult = st2.from_dict(d)
-	check(rf != null and rf.ok, "迁移后的字典可读入")
+	check(rf != null and rf.ok, "迁移后的字典可读入（任何新 ID 忘了写迁移都会在这里失败）")
+	if rf == null or not rf.ok:
+		return
 	eq_int(st2.mode, JWUnits.Mode.TERM, "v1 存档迁移为单届")
 	eq_int(st2.buildings.count, JWUnits.CELL, "v1 存档迁移出每个 cell 一个既有设施堆")
 	eq_int(st2.capital.check_buildings_consistency(), JWResult.OK, "迁移后 cell 三列 == 堆表求和")

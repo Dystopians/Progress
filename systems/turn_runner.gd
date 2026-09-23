@@ -387,9 +387,6 @@ func _step_s01(cmds: JWCommands) -> int:
 	if rc != JWResult.OK:
 		return rc
 
-	# R-TRADE-PRICE-01：按上季收盘的价格水平重算出口量倍率与进口吸引力（旧剧本弹性为 0，恒为基准）。
-	_st.world.update_competitiveness(_st.money.price_level_ppm)
-
 	# ── 第 8 条：命令判定（只判定不执行；被拒命令仍入档，INV-137）─────────
 	if cmds == null:
 		return JWResult.raise_fault(JWResult.Fault.PHASE_VIOLATION, JWUnits.Phase.S01, 0)
@@ -484,6 +481,9 @@ func _step_s01(cmds: JWCommands) -> int:
 	# ── 第 6″ 条（R-TRADE-01）：把伙伴份额折成本季的出口通道与进口价格倍率（旧剧本恒为 1e6）。
 	_st.world.partner_export_mult_ppm = _st.partners.export_multiplier_ppm()
 	_st.world.partner_import_price_mult_ppm = _st.partners.import_price_multiplier_ppm()
+	# R-TRADE-PRICE-01：按上季收盘的价格水平重算出口量倍率与进口吸引力（旧剧本弹性为 0，恒为基准）。
+	# 必须排在推进标记检查之后：被拒的推进「状态一位不改」（docs/17 §4.29）。
+	_st.world.update_competitiveness(_st.money.price_level_ppm)
 
 	# ── 第 7 条：completed → commissioned ───────────────────────────────
 	rc = _st.commissioning.promote_completed(_st.projects, _st.q)
@@ -1913,9 +1913,11 @@ func _step_s05() -> int:
 
 	# R-DISSAVE-01：开市前把居民本季要动用的存款取出来，否则预算被手上现金截断，
 	# 存款再多也花不出去（四百年长局里这是需求不足的主因）。
-	rc = _st.pop.withdraw_for_consumption(_st.ledger, _st.accounts, _st.params)
-	if rc != JWResult.OK:
-		return rc
+	# 只在战役模式：旧 40 季剧本已按原口径标定并由测试钉住，行为逐位不变（R-SCENARIO-01）。
+	if _st.mode == JWUnits.Mode.CAMPAIGN:
+		rc = _st.pop.withdraw_for_consumption(_st.ledger, _st.accounts, _st.params)
+		if rc != JWResult.OK:
+			return rc
 
 	# 第 7 条：先算全部需求再统一配给，最后成交（INV-059..064）。
 	rc = _st.inventory.collect_demand(_st.pop, _st.capital, _st.treasury, _st.world,

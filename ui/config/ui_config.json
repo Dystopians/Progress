@@ -243,11 +243,32 @@
   },
   "region_polygons_pending_owner": "content/scenarios/chengwan/regions.json 的地区轮廓（docs/20 §7.2.5「多边形顶点来自剧本配置」）",
   "building_art": {
-    "family.irrigation": "res://assets/buildings/b01/irrigation_{era}.png",
-    "family.workshop": "res://assets/buildings/b01/workshop_{era}.png",
-    "family.smelter": "res://assets/buildings/b07/steel_{era}.png",
-    "family.market": "res://assets/buildings/b10/market_{era}.png",
-    "family.harbor": "res://assets/buildings/b03/port_{era}.png"
+    "_note": "逐时代写明确路径，以 Codex 资源主清单（docs/_drafts/asset_review/v2/collection_manifest.json）的 file 字段为准，不按模板猜——修订版带 _v2/_v3 后缀。ui_smoke_test 断言这里每个路径都存在。",
+    "family.irrigation": {
+      "early": "res://assets/buildings/b01/irrigation_early.png",
+      "industrial": "res://assets/buildings/b01/irrigation_industrial.png",
+      "modern": "res://assets/buildings/b01/irrigation_modern.png"
+    },
+    "family.workshop": {
+      "early": "res://assets/buildings/b01/workshop_early.png",
+      "industrial": "res://assets/buildings/b01/workshop_industrial.png",
+      "modern": "res://assets/buildings/b01/workshop_modern.png"
+    },
+    "family.smelter": {
+      "early": "res://assets/buildings/b07/steel_early_v2.png",
+      "industrial": "res://assets/buildings/b07/steel_industrial_v2.png",
+      "modern": "res://assets/buildings/b07/steel_modern.png"
+    },
+    "family.market": {
+      "early": "res://assets/buildings/b10/market_early.png",
+      "industrial": "res://assets/buildings/b10/market_industrial.png",
+      "modern": "res://assets/buildings/b10/market_modern_v2.png"
+    },
+    "family.harbor": {
+      "early": "res://assets/buildings/b03/port_early.png",
+      "industrial": "res://assets/buildings/b03/port_industrial.png",
+      "modern": "res://assets/buildings/b03/port_modern.png"
+    }
   },
   "_note_building_art": "M2-7（R-METHOD-01 / 用户 2026-09-22 决定）：建筑卡的配图按家族取 Codex 的资源；{era} 由科技时代档替换为 early / industrial / modern。资源仍待用户初审，文件不存在时界面自动退回纯文字卡片。",
   "era_art": {

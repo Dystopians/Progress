@@ -1189,7 +1189,7 @@ const PARTNER_KEYS: PackedStringArray = [
 	"relation_ppm",
 ]
 
-## R-INVCREDIT-01：剧本 credit_rule 的字段（只允许战役模式）。下标 == JWCredit 内容标量槽位 1..5。
+## R-INVCREDIT-01：剧本 credit_rule 的字段（只允许战役模式）。下标 i == JWCredit 内容标量槽位 1 + i。
 const CREDIT_RULE_KEYS: PackedStringArray = [
 	"spread_ppm_per_q", "amortize_ppm", "max_leverage_ppm", "min_draw_uu", "pool_reserve_ppm",
 	"wc_cap_ppm", "max_debt_service_ppm",

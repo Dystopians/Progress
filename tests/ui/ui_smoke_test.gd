@@ -481,6 +481,17 @@ func test_project_defer_flow() -> void:
 	s.free()
 
 
+## M2-7：建筑配图配置里的每个路径都必须真实存在。缺图时界面会降级成纯文字卡——
+## 那是给「资源尚未交付」留的退路，不是给「路径写错了」打掩护。
+func test_building_art_paths_exist() -> void:
+	var cat: JwCatalog = JwCatalog.new()
+	cat.load_all()
+	var paths: PackedStringArray = cat.building_art_paths()
+	ge_int(paths.size(), 15, "五个家族 × 三个时代都登记了配图")
+	for p: String in paths:
+		check(ResourceLoader.exists(p), "配图存在：" + p)
+
+
 ## AC-34（docs/20 §10.4 术语首见）：五页的「本页术语」签，每个都在术语表里有术语、一句定义、本局实例与规则锚点；
 ## 术语表每条至少出现在一页上。未看过的术语带「新」角标，打开定义卡即视为看过，页面刷新后角标消失。
 func test_glossary_terms_complete_and_first_seen() -> void:

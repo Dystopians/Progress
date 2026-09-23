@@ -427,8 +427,24 @@ func building_art(bt: int, era_hint: int) -> String:
 		tier = "modern"
 	elif era_hint >= 3:
 		tier = "industrial"
-	var path: String = String(map[fam]).replace("{era}", tier)
-	return path if ResourceLoader.exists(path) else ""
+	# 逐时代的明确路径（不按模板猜：修订版带 _v2/_v3 后缀，以资源主清单为准）。
+	var entry: Variant = map[fam]
+	if not (entry is Dictionary):
+		return ""
+	var path: String = String((entry as Dictionary).get(tier, ""))
+	return path if path != "" and ResourceLoader.exists(path) else ""
+
+
+## 配置里登记的全部建筑配图路径（测试用：逐个断言文件存在，缺图不许静默降级）。
+func building_art_paths() -> PackedStringArray:
+	var out: PackedStringArray = PackedStringArray()
+	var map: Dictionary = config.get("building_art", {})
+	for k: Variant in map.keys():
+		var entry: Variant = map[k]
+		if entry is Dictionary:
+			for t: Variant in (entry as Dictionary).values():
+				out.append(String(t))
+	return out
 
 
 ## 内容包里的全部剧本（按目录名升序）：[{name, label, mode, horizon_q, start_year}]。

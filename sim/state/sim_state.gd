@@ -862,6 +862,10 @@ func check_all_p0() -> int:
 	rc = capital.check_buildings_consistency()
 	if rc != JWResult.OK:
 		return rc
+	# R-INVCREDIT-01 · INV-C01：Σ 未偿本金 + 周转余额 == 投资池应收；逐单元应付 == 该单元本金 + 周转余额。
+	rc = credit.check_consistency(accounts)
+	if rc != JWResult.OK:
+		return rc
 	rc = accounts.check_balance_sheet()
 	if rc != JWResult.OK:
 		return rc

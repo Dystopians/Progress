@@ -185,12 +185,9 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	var ez: PackedInt64Array = PackedInt64Array()
 	ez.resize(JWUnits.EVENT_N)
 	ez.fill(-1)
-	var e0: PackedInt64Array = PackedInt64Array()
-	e0.resize(JWUnits.EVENT_N)
-	e0.fill(0)
 	ar["state.event.pending_until_q"] = _mig_encode(ez)
 	ar["state.event.chosen_option"] = _mig_encode(ez)
-	ar["state.event.choice_count"] = _mig_encode(e0)
+	# content.event.choice_count 是内容量，不进存档（读档时由内容加载器给出），这里不写。
 	# R-INVCREDIT-01：旧存档没有信贷，未偿本金与欠款为 0；内容标量由 enabled == 0 关掉整块。
 	var cz: PackedInt64Array = PackedInt64Array()
 	cz.resize(JWUnits.CELL)
@@ -198,6 +195,10 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	ar["state.credit.principal_uu"] = _mig_encode(cz)
 	ar["state.credit.arrears_uu"] = _mig_encode(cz)
 	ar["state.credit.wc_principal_uu"] = _mig_encode(cz)
+	# 流量也进存档（from_dict 遇到缺失的数组判 SAVE_CORRUPT），旧档本季没有任何信贷流量。
+	ar["flow.credit.draw_uu"] = _mig_encode(cz)
+	ar["flow.credit.interest_uu"] = _mig_encode(cz)
+	ar["flow.credit.repay_uu"] = _mig_encode(cz)
 	sc["content.credit.enabled"] = 0
 	sc["content.credit.spread_ppm_per_q"] = 0
 	sc["content.credit.amortize_ppm"] = 0
