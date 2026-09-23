@@ -32,7 +32,8 @@
       300000,
       100000,
       300000
-    ]
+    ],
+    "price_cost_pull_ppm": 200000
   },
   "research_rule": {
     "points_per_edu_ppm": 200000,

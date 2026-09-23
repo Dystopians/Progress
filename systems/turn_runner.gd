@@ -1269,6 +1269,13 @@ func _price_demand() -> PackedInt64Array:
 		_sc_price_demand.resize(inv.m_demand.size())
 	for i: int in inv.m_demand.size():
 		_sc_price_demand[i] = maxi(0, inv.m_demand[i] - inv.m_cash_short[i])
+	# 能源：市场只见得到电网配给后的零售剩余。把电网本身的需求与交付加进来，按总供需定价——
+	# 电网吃紧时电价才会上涨，能源企业才有利润扩产（否则电力长期卡住三分之一的生产单元）。
+	var grid_dem: int = 0
+	for r: int in JWUnits.R:
+		grid_dem += _st.sectors.f_elec_demand[r]
+	var mi_e: int = JWIds.idx_market(JWUnits.Sector.ENERGY, JWUnits.BuyerClass.FIRM_INPUT)
+	_sc_price_demand[mi_e] = _sc_price_demand[mi_e] + grid_dem
 	return _sc_price_demand
 
 
@@ -1281,6 +1288,10 @@ func _price_supply() -> PackedInt64Array:
 		_sc_price_supply.resize(inv.m_supply.size())
 	for i: int in inv.m_supply.size():
 		_sc_price_supply[i] = inv.m_supply[i]
+	var grid_sup: int = 0
+	for c: int in JWUnits.CELL:
+		grid_sup += _st.sectors.f_elec_delivered[c]
+	_sc_price_supply[JWUnits.Sector.ENERGY] = _sc_price_supply[JWUnits.Sector.ENERGY] + grid_sup
 	return _sc_price_supply
 
 
@@ -1310,6 +1321,24 @@ func _operating_cash_target(agent: int, share: int) -> int:
 	if _st.mode == JWUnits.Mode.CAMPAIGN:
 		target += JWMath.mul_ppm(target, _st.params[JWUnits.Param.HIRING_FRICTION_PPM])
 	return target
+
+
+## R-FIRMCASH-01 第 2 条：季末还周转贷款时，每季只还超额现金的这个比例。
+const WC_REPAY_SHARE_PPM: int = 250_000
+
+
+## 一个生产单元按现有有效产能满负荷生产时的中间投入额（投入系数 × 产能 × 现价）。
+func _capacity_input_need(cell: int) -> int:
+	var cap: int = _st.capital.cell_capacity(cell)
+	var total: int = 0
+	for j: int in JWUnits.S:
+		var coeff: int = _st.io.input_of(cell, j)
+		if coeff <= 0:
+			continue
+		var qty: int = JWMath.mul_ppm(cap, coeff)
+		# rounding: floor, reason=金额折算只取整一次
+		total += JWMath.mul_div_floor(qty, _st.pricing.price_of(j), JWUnits.Q_SCALE)
+	return total
 
 
 ## 一个生产单元按现有有效产能满负荷生产时的工资总额（三档人数 × 各档工资）。
@@ -1348,18 +1377,22 @@ func _credit_rebalance_wc() -> int:
 	var c: int = 0
 	while c < JWUnits.CELL:
 		var agent: int = JWIds.agent_of_cell(c)
-		var need: int = _operating_cash_target(agent, share) + _st.sectors.f_intermediate[c]
+		# 经营需要按产能计（与留存目标同一口径），**不按上季实际投入**：后者是顺周期的——
+		# 活动一收缩，需要就变小，季末大举还款、现金更少、活动再收缩。实测一窗之内还了 5.26 U
+		# （平时约 0.2 U），随后 16 个单元全部买不起投入。
+		var need: int = _operating_cash_target(agent, share) + _capacity_input_need(c)
 		var cash: int = _st.accounts.cash_of(agent)
 		if cash > need and _st.credit.wc_principal[c] > 0:
-			# 富余：先还周转余额。
-			var rp: int = mini(cash - need, _st.credit.wc_principal[c])
+			# 富余：每季只还超额部分的四分之一，平滑去杠杆。
+			var rp: int = mini(JWMath.mul_ppm(cash - need, WC_REPAY_SHARE_PPM),
+					_st.credit.wc_principal[c])
 			if rp > 0 and _post_loan_repay(agent, c, rp) == JWResult.OK:
 				var rc_r: int = _st.credit.note_wc_repay(c, rp)
 				if rc_r != JWResult.OK:
 					return rc_r
 		elif cash < need and budget > 0:
-			# 不足：在「上季（投入 + 工资）× wc_cap」的额度内借。
-			var room: int = maxi(0, JWMath.mul_ppm(_sc_input_prev[c], _st.credit.wc_cap_ppm)
+			# 不足：在「产能口径的经营需要 × wc_cap」的额度内借。
+			var room: int = maxi(0, JWMath.mul_ppm(need, _st.credit.wc_cap_ppm)
 					- _st.credit.wc_principal[c])
 			var x: int = mini(need - cash, mini(room, budget))
 			if x > 0 and _post_loan_draw(agent, c, x) == JWResult.OK:
@@ -2037,7 +2070,12 @@ func _step_s05() -> int:
 			_st.io.capital_goods_split_ppm, _st.pricing)
 	if rc != JWResult.OK:
 		return rc
-	rc = _st.inventory.ration(JWInventory.RATION_MODE_PRIORITY, _st.rng)
+	# R-RATION-01（战役模式）：短缺时按各买方类的需求比例配给，而不是「居民先买、企业投入吃剩余」。
+	# 优先级配给在长局里是一个断崖开关：制造品一旦短缺，能源的制造品投入被居民消费挤到零，
+	# 发电停摆，所有部门缺电（tools/diag_cells.gd 实测：能源的投入约束三季内 0.86 → 0.01）。
+	# 按比例配给是契约里本就设计好的 gov.ration_mode == 1（docs/12 §5.6）。旧剧本不变。
+	var ration_mode: int = JWInventory.RATION_MODE_PROPORTIONAL 			if _st.mode == JWUnits.Mode.CAMPAIGN else JWInventory.RATION_MODE_PRIORITY
+	rc = _st.inventory.ration(ration_mode, _st.rng)
 	if rc != JWResult.OK:
 		return rc
 	rc = _st.inventory.execute_trades(_st.pop, _st.capital, _st.treasury, _st.world,

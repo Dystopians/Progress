@@ -1428,6 +1428,7 @@ func _validate_money_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var mr: Dictionary = _get_dict(doc, "money_rule", w, JWResult.Load.SCHEMA_HEADER)
 	var allowed: PackedStringArray = MONEY_RULE_KEYS.duplicate()
 	allowed.append("level_weight_ppm")
+	allowed.append("price_cost_pull_ppm")
 	_check_keys(mr, allowed, mw)
 	var vals: PackedInt64Array = PackedInt64Array()
 	for i: int in MONEY_RULE_KEYS.size():
@@ -1457,6 +1458,11 @@ func _validate_money_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var wi: Dictionary = doc.get("world_init", {})
 	_set_scalar(st.money, 14, int(wi.get("cash_uu", 0)), mw + "#base_row_cash")
 	_set_scalar(st.money, 3, 1, mw + "#enabled")
+	# R-PRICE-COST-01：成本锚收拢比例（可缺省；缺省 0 == 不启用）。
+	var pull: int = int(mr.get("price_cost_pull_ppm", 0))
+	if pull < 0 or pull > JWUnits.PPM:
+		_fail(JWResult.Load.RANGE, mw + "/price_cost_pull_ppm", pull, JWUnits.PPM)
+	st.pricing.cost_pull_ppm = pull
 
 
 func _validate_prices(st: JWSimState, doc: Dictionary, w: String) -> void:
@@ -1488,6 +1494,8 @@ func _validate_prices(st: JWSimState, doc: Dictionary, w: String) -> void:
 		if wage[k] <= 0:
 			_fail(JWResult.Load.RANGE, pw + "/wage_uu_per_person_q/" + str(k), wage[k], 1)
 	_set_arr(st.pricing, 2, wage, pw + "/wage_uu_per_person_q")
+	# R-PRICE-COST-01：基年工资是内容常量，与 base_price 一样整体赋值。
+	st.pricing.base_wage = wage.duplicate()
 	_set_arr(st.pricing, 3, wage, pw + "/wage_uu_per_person_q#pending")
 
 	var rent: PackedInt64Array = _get_int_array(pi, "housing_rent_uu_per_unit_q", JWUnits.R, pw,

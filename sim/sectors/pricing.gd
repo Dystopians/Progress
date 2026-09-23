@@ -68,6 +68,10 @@ var price_pending: PackedInt64Array = PackedInt64Array()
 ## content.price.base_uu_per_qs[] —— 长度 4，初值 1 000 000，单位 μU/Q_s。类 C，写入者 LOAD。
 ## 唯一合法值是 JWUnits.BASE_PRICE（INV-148）；用于基年价（实际 GDP）口径。
 var base_price: PackedInt64Array = PackedInt64Array()
+## R-PRICE-COST-01：基年三档工资（内容常量，与 base_price 同样不在注册表里，载入期整体赋值）。
+var base_wage: PackedInt64Array = PackedInt64Array()
+## R-PRICE-COST-01：每季向单位劳动成本锚收拢的比例（ppm；0 == 不启用）。内容常量，来自剧本 money_rule。
+var cost_pull_ppm: int = 0
 ## state.price.wage_uu_per_person_q[] —— 长度 3，初值来自剧本，单位 μU/人/季。类 S，写入者 **仅 S08（swap）**。
 var wage: PackedInt64Array = PackedInt64Array()
 ## state.price.wage_pending_uu_per_person_q[] —— 长度 3，初值 = wage，单位 μU/人/季。类 S，写入者 **仅 S07**。
@@ -232,6 +236,21 @@ var _lr_wage_level_ppm: int = JWUnits.PPM
 var _lr_level_prev_ppm: int = JWUnits.PPM
 
 
+## R-PRICE-COST-01：工资指数 = 当前三档工资之和 ÷ 基年三档工资之和（ppm）。
+## 首版按基年生产率计：生产方式提高劳动生产率之后单位成本应当下降，留待方式系数接入后细化。
+func wage_index_ppm() -> int:
+	var now: int = 0
+	var base: int = 0
+	for k: int in JWUnits.K:
+		now += wage[k]
+		if k < base_wage.size():
+			base += base_wage[k]
+	if base <= 0:
+		return JWUnits.PPM
+	# rounding: floor, reason=指数只取整一次
+	return maxi(1, JWMath.mul_div_floor(now, JWUnits.PPM, base))
+
+
 ## 写入本季的长期上下限参数（编排器 S07 调用；on == false 即关闭）。
 func set_long_run_bounds(on: bool, level_ppm: int, band_floor_ppm: int, band_ceil_ppm: int,
 		abs_floor_ppm: int, abs_ceil_ppm: int, wage_ceil_mult_ppm: int,
@@ -332,6 +351,12 @@ func update_prices(supply_uqs: PackedInt64Array, demand_uqs: PackedInt64Array,
 		# （T-U-PRICE-NEG-ROUNDING），不得改成向零截断，也不得事后补偿。
 		var p_cur: int = price[s]
 		var delta_raw: int = JWMath.mul_ppm(p_cur, gap)
+		if _lr_on and cost_pull_ppm > 0:
+			# R-PRICE-COST-01（战役模式）：再向单位劳动成本锚收拢一段。锚 = 基年价 × 工资指数。
+			# 供需缺口仍然决定短期稀缺溢价；成本锚决定价格的长期水平——没有它，价格只看缺口，
+			# 在供给受限时单边上涨、需求崩溃时也不回落，实际工资随之塌陷（docs/18 M2-8 待解问题）。
+			var anchor: int = JWMath.mul_ppm(base_price[s], wage_index_ppm())
+			delta_raw += JWMath.mul_ppm(anchor - p_cur, cost_pull_ppm)
 		var max_step: int = JWMath.mul_ppm(p_cur, step_max_ppm)
 		var delta: int = _clamp_logged(CLAMP_FIELD_PRICE_STEP * CLAMP_FIELD_STRIDE + s,
 				delta_raw, -max_step, max_step)
