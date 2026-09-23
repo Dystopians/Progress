@@ -33,6 +33,8 @@ const STATE_SCALAR_IDS: PackedStringArray = [
 	"state.world.export_competitiveness_ppm",
 	"state.world.import_attractiveness_ppm",
 	"content.world.trade_elasticity_ppm",
+	# R-ROW-BUDGET-01：外部按自己手里的本国货币花钱（战役模式；旧剧本恒为 1e6）。
+	"state.world.export_budget_ppm",
 ]
 const FLOW_ARRAY_IDS: PackedStringArray = [
 	"flow.world.exports_uqs",
@@ -50,6 +52,26 @@ var export_competitiveness_ppm: int = JWUnits.PPM
 var import_attractiveness_ppm: int = JWUnits.PPM
 ## `content.world.trade_elasticity_ppm`：相对价格的传导强度（0 == 不传导，1e6 == 单位弹性）。写入者 LOAD。
 var trade_elasticity_ppm: int = 0
+## `state.world.export_budget_ppm`：外部购买力倍率 = 外部现金 ÷ 开局外部现金（有界）。写入者 S01。
+## 外国人赚到的本国货币会花回来：手头宽裕就多买我们的出口，拮据就少买。固定汇率下这是贸易
+## 账户唯一的闭合——否则逆差的钱一直躺在国外（实测 15 年从 15 U 涨到 49 U），需求逐季漏出。
+var export_budget_ppm: int = JWUnits.PPM
+const EXPORT_BUDGET_MIN_PPM: int = 200_000
+const EXPORT_BUDGET_MAX_PPM: int = 3_000_000
+
+
+## R-ROW-BUDGET-01：按外部现金重算外部购买力倍率。
+## 步骤：S01
+## 前置：row_cash_uu 是季初外部现金；base_uu 是开局外部现金（0 == 不启用）
+## 后置：export_budget_ppm ∈ [0.2, 3.0] × 1e6
+## 失败：无
+func update_row_budget(row_cash_uu: int, base_uu: int) -> void:
+	if trade_elasticity_ppm <= 0 or base_uu <= 0:
+		export_budget_ppm = JWUnits.PPM
+		return
+	# rounding: floor, reason=倍率只取整一次
+	export_budget_ppm = JWMath.clamp_i(JWMath.mul_div_floor(maxi(row_cash_uu, 0), JWUnits.PPM, base_uu),
+			EXPORT_BUDGET_MIN_PPM, EXPORT_BUDGET_MAX_PPM)
 
 ## 两个倍率的护栏：再极端的价格也不会让贸易归零或膨胀到荒谬。
 const TRADE_MULT_MIN_PPM: int = 50_000
@@ -445,10 +467,12 @@ func export_demand_with_partners(s: int) -> int:
 	if s < 0 or s >= export_demand_ppm.size():
 		JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, s, export_demand_ppm.size())
 		return 0
-	if partner_export_mult_ppm == JWUnits.PPM and export_competitiveness_ppm == JWUnits.PPM:
+	if partner_export_mult_ppm == JWUnits.PPM and export_competitiveness_ppm == JWUnits.PPM \
+			and export_budget_ppm == JWUnits.PPM:
 		return export_demand_ppm[s]
 	var v: int = JWMath.mul_ppm(export_demand_ppm[s], partner_export_mult_ppm)
 	v = JWMath.mul_ppm(v, export_competitiveness_ppm)
+	v = JWMath.mul_ppm(v, export_budget_ppm)
 	return JWMath.clamp_i(v, EXPORT_DEMAND_MIN_PPM, EXPORT_DEMAND_MAX_PPM)
 
 
@@ -551,6 +575,7 @@ func allocate() -> void:
 	export_competitiveness_ppm = JWUnits.PPM
 	import_attractiveness_ppm = JWUnits.PPM
 	trade_elasticity_ppm = 0
+	export_budget_ppm = JWUnits.PPM
 	f_exports_uu = 0
 	f_imports_uu = 0
 	base_credit_limit = 0
@@ -618,6 +643,8 @@ func state_scalar(i: int) -> int:
 		return import_attractiveness_ppm
 	if i == 6:
 		return trade_elasticity_ppm
+	if i == 7:
+		return export_budget_ppm
 	JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 	return 0
 
@@ -649,6 +676,9 @@ func set_state_scalar(i: int, v: int) -> int:
 		return JWResult.OK
 	if i == 6:
 		trade_elasticity_ppm = v
+		return JWResult.OK
+	if i == 7:
+		export_budget_ppm = v
 		return JWResult.OK
 	return JWResult.raise_fault(JWResult.Fault.INDEX_OUT_OF_RANGE, i, STATE_SCALAR_IDS.size())
 

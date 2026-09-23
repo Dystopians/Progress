@@ -228,13 +228,17 @@ var _lr_abs_ceil_ppm: int = 0
 var _lr_wage_ceil_mult_ppm: int = JWUnits.PPM
 ## R-WAGEFLOOR-01：工资上下限跟随的滞后价格水平（价格带仍用当季水平）。
 var _lr_wage_level_ppm: int = JWUnits.PPM
+## R-WAGEINDEX-01：上季价格水平。编排器每季 S07 由 state.money.level_ring_ppm 取出写入。
+var _lr_level_prev_ppm: int = JWUnits.PPM
 
 
 ## 写入本季的长期上下限参数（编排器 S07 调用；on == false 即关闭）。
 func set_long_run_bounds(on: bool, level_ppm: int, band_floor_ppm: int, band_ceil_ppm: int,
 		abs_floor_ppm: int, abs_ceil_ppm: int, wage_ceil_mult_ppm: int,
-		wage_level_ppm: int = -1) -> void:
+		wage_level_ppm: int = -1, level_prev_ppm: int = -1) -> void:
 	_lr_on = on
+	# R-WAGEINDEX-01：上季价格水平（工资先按物价涨幅调整）；缺省视为无通胀。
+	_lr_level_prev_ppm = maxi(1, level_prev_ppm if level_prev_ppm > 0 else level_ppm)
 	_lr_level_ppm = maxi(1, level_ppm)
 	# R-WAGEFLOOR-01：法定工资上下限跟随的是**滞后**价格水平（缺省退回当季值）。
 	_lr_wage_level_ppm = maxi(1, wage_level_ppm if wage_level_ppm > 0 else level_ppm)
@@ -406,6 +410,9 @@ func update_wages(vacancies_persons: int, unemployed_persons: int,
 
 	for k: int in k_n:
 		var w_cur: int = wage[k]
+		# 试过「名义工资先随物价涨幅调整」（R-WAGEINDEX-01 草案）：价格没有成本锚时它立刻接成
+		# 工资—价格螺旋，三个种子都在第 40—80 季崩掉，已撤回。上季价格水平的通道保留给
+		# 价格形成改造之后再议（docs/53 M2-8 待解问题）。
 		# mul_ppm_2 == 契约的 mul_ppm(wage_cur, mul_ppm(tightness, wage_gain))：
 		# 先把两个 ppm 合成一个系数，再对 wage_cur 只取整一次（M2）。
 		var delta_raw: int = JWMath.mul_ppm_2(w_cur, tightness, wage_gain)

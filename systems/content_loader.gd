@@ -1569,6 +1569,7 @@ func _validate_world(st: JWSimState, doc: Dictionary, w: String) -> void:
 		if st.mode != JWUnits.Mode.CAMPAIGN and elast != 0:
 			_fail(JWResult.Load.SCHEMA_HEADER, ww + "/trade_elasticity_ppm#term-mode", elast, 0)
 	_set_scalar(st.world, 6, elast, ww + "/trade_elasticity_ppm")
+	_set_scalar(st.world, 7, JWUnits.PPM, ww + "#export_budget")
 
 	var row_cash: int = _get_int(wi, "cash_uu", ww, JWResult.Load.SCHEMA_HEADER)
 	if row_cash < 0 or row_cash > JWUnits.AMOUNT_MAX:

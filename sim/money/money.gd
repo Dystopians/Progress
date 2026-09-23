@@ -195,6 +195,13 @@ func wage_floor_level_ppm() -> int:
 	return maxi(1, JWMath.floor_div(sum, LEVEL_RING_N))
 
 
+## R-WAGEINDEX-01：上季价格水平（第 0 季取基年 1e6）。取自滞后环，进存档，读档后与连续运行一致。
+func level_prev_ppm(q: int) -> int:
+	if q <= 0 or level_ring.size() != LEVEL_RING_N:
+		return JWUnits.PPM
+	return maxi(1, level_ring[(q - 1) % LEVEL_RING_N])
+
+
 ## S07：把本季价格水平写进滞后环。
 func note_level(q: int) -> void:
 	if level_ring.size() != LEVEL_RING_N:

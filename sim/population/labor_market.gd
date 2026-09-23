@@ -79,6 +79,9 @@ var f_pub_wage_bill: PackedInt64Array = PackedInt64Array()
 
 ## derived.labor.unemployment_ppm，ppm。写入者 S03（反算，不是参数）。
 var _unemployment_ppm: int = 0
+## R-FIRMCASH-01 第 3 条（战役模式）：招聘上限按需求而不是只按现有人数计。编排器每季 S03 前写入，
+## 不进状态（由 state.meta.mode 决定，逐季重算）。旧剧本为 false，行为逐位不变。
+var hire_by_need: bool = false
 ## 空缺岗位数，人（S07 工资调整用）。写入者 S03。
 var _vacancies_persons: int = 0
 ## 48，S03 入口快照（摩擦上限与 hires/separations 的基线）。
@@ -190,7 +193,10 @@ func hire_and_fire(output_plan_uqs: PackedInt64Array, io: JWIoTable, pricing: JW
 				need_k = JWMath.ceil_div(JWMath.mul(plan_uqs, coeff), JWUnits.PPM)
 			_need[idx] = need_k
 			var prev_k: int = _prev_employment[idx]
-			var max_hire_k: int = JWMath.mul_ppm(prev_k, hiring_friction_ppm) + 1
+			# 旧口径「上季人数 × 摩擦 + 1」在单元雇员归零后变成吸收态：每季只能多招 1 人，
+			# 回到百万级要 145 季。战役模式改按需求与现有人数的较大者计。
+			var hire_base_k: int = maxi(prev_k, need_k) if hire_by_need else prev_k
+			var max_hire_k: int = JWMath.mul_ppm(hire_base_k, hiring_friction_ppm) + 1
 			var max_fire_k: int = JWMath.mul_ppm(prev_k, firing_friction_ppm)
 			var raw_delta: int = need_k - prev_k
 			var delta_k: int = JWMath.clamp_i(raw_delta, -max_fire_k, max_hire_k)

@@ -216,6 +216,7 @@ func _mig_v1_to_v2(src: Dictionary) -> Dictionary:
 	sc["state.world.export_competitiveness_ppm"] = JWUnits.PPM
 	sc["state.world.import_attractiveness_ppm"] = JWUnits.PPM
 	sc["content.world.trade_elasticity_ppm"] = 0
+	sc["state.world.export_budget_ppm"] = JWUnits.PPM
 	out[JWSimState.SAVE_KEY_SCALARS] = sc
 	out[JWSimState.SAVE_KEY_ARRAYS] = ar
 	return out

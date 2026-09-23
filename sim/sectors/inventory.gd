@@ -117,6 +117,9 @@ var f_capital_bought: PackedInt64Array = PackedInt64Array()
 var m_supply: PackedInt64Array = PackedInt64Array()
 ## flow.market.demand_uqs[] —— 长度 20（按 idx_market），初值 0，μQ_s。类 F，写入者 S05。
 var m_demand: PackedInt64Array = PackedInt64Array()
+## R-PRICE-EFF-01：本季各市场里「买方付不起」的需求量（μQ）。季内暂存，S05 市场开市时清零、
+## S07 定价时读取，二者都在同一季内，不跨季、不进存档。定价用 m_demand − m_cash_short。
+var m_cash_short: PackedInt64Array = PackedInt64Array()
 ## flow.market.traded_uqs[] —— 长度 20，初值 0，μQ_s。类 F，写入者 S05。
 var m_traded: PackedInt64Array = PackedInt64Array()
 ## flow.market.unmet_demand_uqs[] —— 长度 20，初值 0，μQ_s。类 F，写入者 S05。
@@ -447,6 +450,10 @@ func _trade_one(s: int, buyer_class: int, buyer_agent: int, buyer_region: int, b
 			if rem < cash:
 				cash = rem
 		var qty_eff: int = _affordable_qty(qty, price, logistics, cash)
+		# R-PRICE-EFF-01：付不起的部分不是有效需求，记下来，定价时剔除。
+		if qty_eff < qty:
+			var mi_s: int = JWIds.idx_market(s, buyer_class)
+			m_cash_short[mi_s] = m_cash_short[mi_s] + (qty - maxi(qty_eff, 0))
 		if qty_eff <= 0:
 			continue
 		var value: int = _trade_value(qty_eff, price, logistics)
@@ -677,6 +684,7 @@ func collect_demand(pop: JWPopulation, capital: JWCapital, treasury: JWTreasury,
 				params.size(), JWUnits.PARAM_N)
 	_fault = 0
 	m_demand.fill(0)
+	m_cash_short.fill(0)
 	_group_demand.fill(0)
 	_firm_demand.fill(0)
 	# 资本品需求与成交在本季由 add_capital_demand / execute_trades 重新累计，开市前清零。
@@ -1511,6 +1519,8 @@ func allocate() -> void:
 	f_capital_bought.fill(0)
 	m_supply.resize(JWUnits.S)
 	m_demand.resize(JWUnits.MARKET_N)
+	m_cash_short.resize(JWUnits.MARKET_N)
+	m_cash_short.fill(0)
 	m_traded.resize(JWUnits.MARKET_N)
 	m_unmet.resize(JWUnits.MARKET_N)
 	m_rule.resize(JWUnits.S)

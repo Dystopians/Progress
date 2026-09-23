@@ -484,6 +484,8 @@ func _step_s01(cmds: JWCommands) -> int:
 	# R-TRADE-PRICE-01：按上季收盘的价格水平重算出口量倍率与进口吸引力（旧剧本弹性为 0，恒为基准）。
 	# 必须排在推进标记检查之后：被拒的推进「状态一位不改」（docs/17 §4.29）。
 	_st.world.update_competitiveness(_st.money.price_level_ppm)
+	# R-ROW-BUDGET-01：外部按季初手里的本国货币花钱。
+	_st.world.update_row_budget(_st.accounts.cash_of(JWIds.AGENT_ROW), _st.money.base_row_cash_uu)
 
 	# ── 第 7 条：completed → commissioned ───────────────────────────────
 	rc = _st.commissioning.promote_completed(_st.projects, _st.q)
@@ -1009,6 +1011,7 @@ func _step_s03() -> int:
 			_st.inventory, _st.io, _st.params)
 	if rc != JWResult.OK:
 		return rc
+	_st.labor.hire_by_need = _st.mode == JWUnits.Mode.CAMPAIGN
 	rc = _st.labor.hire_and_fire(_st.sectors.f_output_plan, _st.io, _st.pricing,
 			_st.pop, _st.accounts, _st.params)
 	if rc != JWResult.OK:
@@ -1179,15 +1182,6 @@ func _credit_draw() -> int:
 			if rc != JWResult.OK:
 				return rc
 			budget -= x
-		# 周转资金：买不起上季那么多中间投入时的短期垫款（第 10 条）。
-		var wc: int = _st.credit.wc_draw_for(c, _sc_input_prev[c],
-				_st.accounts.cash_of(agent), budget, _sc_profit_prev[c],
-				_st.world.sovereign_rate_ppm)
-		if wc > 0 and _post_loan_draw(agent, c, wc) == JWResult.OK:
-			var rc2: int = _st.credit.note_wc_draw(c, wc)
-			if rc2 != JWResult.OK:
-				return rc2
-			budget -= wc
 		c += 1
 	return JWResult.OK
 
@@ -1251,18 +1245,128 @@ func _credit_service() -> int:
 			var rc_n: int = _st.credit.note_interest(c, paid_i, due_i)
 			if rc_n != JWResult.OK:
 				return rc_n
-		# ② 周转资金先还：它是短期垫款，一有现金就清，不许滚成长期负债。
-		var due_w: int = mini(_st.credit.wc_principal[c], maxi(_st.accounts.cash_of(agent), 0))
-		if due_w > 0 and _post_loan_repay(agent, c, due_w) == JWResult.OK:
-			var rc_w: int = _st.credit.note_wc_repay(c, due_w)
-			if rc_w != JWResult.OK:
-				return rc_w
+		# ② 周转余额不在这里还：季末再平衡（_credit_rebalance_wc）只还超出下季经营需要的部分。
 		# ③ 资本贷款按摊还率还本。
 		var due_p: int = mini(_st.credit.principal_due(c), maxi(_st.accounts.cash_of(agent), 0))
 		if due_p > 0 and _post_loan_repay(agent, c, due_p) == JWResult.OK:
 			var rc_r: int = _st.credit.note_repay(c, due_p)
 			if rc_r != JWResult.OK:
 				return rc_r
+		c += 1
+	return JWResult.OK
+
+
+## R-PRICE-EFF-01：定价用的需求口径（只在战役模式改变；旧剧本原样传 m_demand）。
+##
+## 旧口径把买方付不起的需求也算作需求：萧条里企业现金枯竭，补货需求按全额登记却大半成交不了，
+## 这些「虚需求」让供需缺口持续为正，价格在产出萎缩时反而上涨，再经工资下限与贸易相对价格
+## 把收缩放大（M2 审阅 E4）。改为只用有现金支撑的需求：m_demand − m_cash_short。
+func _price_demand() -> PackedInt64Array:
+	var inv: JWInventory = _st.inventory
+	if _st.mode != JWUnits.Mode.CAMPAIGN:
+		return inv.m_demand
+	if _sc_price_demand.size() != inv.m_demand.size():
+		_sc_price_demand.resize(inv.m_demand.size())
+	for i: int in inv.m_demand.size():
+		_sc_price_demand[i] = maxi(0, inv.m_demand[i] - inv.m_cash_short[i])
+	return _sc_price_demand
+
+
+## R-PRICE-EFF-01：定价用的供给口径（战役模式把电网交付计入能源供给）。
+func _price_supply() -> PackedInt64Array:
+	var inv: JWInventory = _st.inventory
+	if _st.mode != JWUnits.Mode.CAMPAIGN:
+		return inv.m_supply
+	if _sc_price_supply.size() != inv.m_supply.size():
+		_sc_price_supply.resize(inv.m_supply.size())
+	for i: int in inv.m_supply.size():
+		_sc_price_supply[i] = inv.m_supply[i]
+	return _sc_price_supply
+
+
+var _sc_price_demand: PackedInt64Array = PackedInt64Array()
+var _sc_price_supply: PackedInt64Array = PackedInt64Array()
+
+
+## R-FIRMCASH-01 第 1 条：企业分红前必须留下的现金。
+##
+## 旧口径是「本季实付工资 ÷ wage_cash_share」——恰好够下季按原人数、原工资再发一季。
+## 而下季招工上限正是「季初现金 × wage_cash_share ÷ 工资」，两者一对，就业在结构上**只能维持或
+## 下降、不可能增长**（利润全分、亏损直接吃现金）。M2 审阅把它定为长局收缩的主因。
+## 战役模式改为留出「按招聘摩擦上限扩张」所需的余量：目标 × (1 + hiring_friction)。
+## 旧剧本不变。
+func _operating_cash_target(agent: int, share: int) -> int:
+	var wage_bill: int = _ledger_sum(JWUnits.Kind.WAGE_PAYMENT, agent, false)
+	if _st.mode == JWUnits.Mode.CAMPAIGN:
+		# 按「现有产能满负荷运转所需的工资」与本季实付工资的较大者留存。部门现金流量表显示：
+		# 目标跟着本季工资走时，裁员 → 目标变小 → 可分配变多 → 分掉 → 更招不起人，
+		# 分红在收缩期反而从 5.8 涨到 9.4 U/季，同期工资从 17.4 掉到 8.5。资本存量变化慢，
+		# 按它定目标，目标就不会随裁员塌下去。
+		var cell: int = JWIds.cell_of_agent(agent)
+		if cell >= 0 and cell < JWUnits.CELL:
+			wage_bill = maxi(wage_bill, _capacity_wage_need(cell))
+	# rounding: floor, reason=目标只取整一次
+	var target: int = JWMath.mul_div_floor(wage_bill, JWUnits.PPM, share)
+	if _st.mode == JWUnits.Mode.CAMPAIGN:
+		target += JWMath.mul_ppm(target, _st.params[JWUnits.Param.HIRING_FRICTION_PPM])
+	return target
+
+
+## 一个生产单元按现有有效产能满负荷生产时的工资总额（三档人数 × 各档工资）。
+func _capacity_wage_need(cell: int) -> int:
+	var cap: int = _st.capital.cell_capacity(cell)
+	var total: int = 0
+	for k: int in JWUnits.K:
+		var coeff: int = _st.io.labor_of(cell, k)
+		if coeff <= 0:
+			continue
+		# rounding: ceil, reason=与招工口径一致，不少算用工（docs/12 §3.2 (a)）
+		var persons: int = JWMath.ceil_div(JWMath.mul(cap, coeff), JWUnits.PPM)
+		total += JWMath.mul(persons, _st.pricing.wage_of(k))
+	return total
+
+
+## R-FIRMCASH-01 第 2 条 / R-INVCREDIT-01 第 10、11 条：季末周转额度再平衡。
+##
+## 旧做法是 S05 放周转垫款、S06 一有现金就全还——下季 S03 招工、S04 发薪时这笔钱已经不在，
+## 「额度含工资」在时序上兑现不了。改为在 S06 季末（企业本季现金已定）做一次再平衡：
+## 下季经营需要 = 留存目标 + 上季中间投入；现金不足就在额度内借，富余就先还周转余额。
+## 于是周转垫款成了真正的循环额度：需要时一直挂着、按季计息，宽裕了就还。
+## 步骤：S06（储蓄结算之后）
+## 前置：本季分配、税、息都已过账
+## 后置：各单元现金 ≥ min(下季经营需要, 现金 + 可借余量)；wc_principal 同步
+## 不变量：INV-017、INV-019、INV-020、INV-C01
+## 失败：过账被拒 → 该单元本季不调整，不中止
+func _credit_rebalance_wc() -> int:
+	if _st.credit.enabled == 0 or _st.credit.wc_cap_ppm <= 0:
+		return JWResult.OK
+	var share: int = maxi(1, _st.params[JWUnits.Param.WAGE_CASH_SHARE_PPM])
+	var pool_cash: int = _st.accounts.cash_of(JWIds.AGENT_INVPOOL)
+	var dep_liab: int = _st.accounts.get_balance(
+			JWIds.idx_account(JWIds.AGENT_INVPOOL, JWIds.ACC_DEPOSIT_LIAB))
+	var budget: int = _st.credit.lendable(pool_cash, dep_liab)
+	var c: int = 0
+	while c < JWUnits.CELL:
+		var agent: int = JWIds.agent_of_cell(c)
+		var need: int = _operating_cash_target(agent, share) + _st.sectors.f_intermediate[c]
+		var cash: int = _st.accounts.cash_of(agent)
+		if cash > need and _st.credit.wc_principal[c] > 0:
+			# 富余：先还周转余额。
+			var rp: int = mini(cash - need, _st.credit.wc_principal[c])
+			if rp > 0 and _post_loan_repay(agent, c, rp) == JWResult.OK:
+				var rc_r: int = _st.credit.note_wc_repay(c, rp)
+				if rc_r != JWResult.OK:
+					return rc_r
+		elif cash < need and budget > 0:
+			# 不足：在「上季（投入 + 工资）× wc_cap」的额度内借。
+			var room: int = maxi(0, JWMath.mul_ppm(_sc_input_prev[c], _st.credit.wc_cap_ppm)
+					- _st.credit.wc_principal[c])
+			var x: int = mini(need - cash, mini(room, budget))
+			if x > 0 and _post_loan_draw(agent, c, x) == JWResult.OK:
+				var rc_d: int = _st.credit.note_wc_draw(c, x)
+				if rc_d != JWResult.OK:
+					return rc_d
+				budget -= x
 		c += 1
 	return JWResult.OK
 
@@ -2074,6 +2178,11 @@ func _step_s06() -> int:
 	if rc != JWResult.OK:
 		return rc
 
+	# R-FIRMCASH-01 第 2 条：季末周转额度再平衡——企业带着够下季经营的现金进入下一季。
+	rc = _credit_rebalance_wc()
+	if rc != JWResult.OK:
+		return rc
+
 	# 第 9 条：对外经常项目（外债经整数形参传入，秩 4 同秩不得互引）。
 	var ext_interest: int = _ledger_sum(JWUnits.Kind.BOND_INTEREST, JWIds.AGENT_ROW, true)
 	var ext_borrow: int = _ledger_sum(JWUnits.Kind.BOND_ISSUE, JWIds.AGENT_ROW, false) \
@@ -2149,10 +2258,10 @@ func _step_s07() -> int:
 	m.note_level(_st.q)
 	_st.pricing.set_long_run_bounds(_st.mode == JWUnits.Mode.CAMPAIGN and m.band_ceil_ppm > 0,
 			m.price_level_ppm, m.band_floor_ppm, m.band_ceil_ppm, m.abs_floor_ppm, m.abs_ceil_ppm,
-			m.wage_ceil_mult_ppm, m.wage_floor_level_ppm())
+			m.wage_ceil_mult_ppm, m.wage_floor_level_ppm(), m.level_prev_ppm(_st.q))
 
 	# 第 4 条：价格 / 工资 / 租金（**只写 pending**，INV-065..070）。
-	rc = _st.pricing.update_prices(_st.inventory.m_supply, _st.inventory.m_demand,
+	rc = _st.pricing.update_prices(_price_supply(), _price_demand(),
 			_st.inventory.inv_output, _st.inventory.m_inv_target, _st.io.storable, _st.params)
 	if rc != JWResult.OK:
 		return rc
@@ -2793,9 +2902,7 @@ func _retain_working_capital() -> void:
 		var d: int = _sc_distributable[c]
 		if d > 0:
 			var agent: int = JWIds.agent_of_cell(c)
-			# rounding: floor, reason=目标只取整一次
-			var target: int = JWMath.mul_div_floor(
-					_ledger_sum(JWUnits.Kind.WAGE_PAYMENT, agent, false), JWUnits.PPM, share)
+			var target: int = _operating_cash_target(agent, share)
 			var room: int = maxi(0, _st.accounts.cash_of(agent) - target)
 			if d > room:
 				_sc_distributable[c] = room
@@ -2809,8 +2916,7 @@ func _retain_working_capital() -> void:
 	var c2: int = 0
 	while c2 < JWUnits.CELL:
 		var agent2: int = JWIds.agent_of_cell(c2)
-		var target2: int = JWMath.mul_div_floor(
-				_ledger_sum(JWUnits.Kind.WAGE_PAYMENT, agent2, false), JWUnits.PPM, share)
+		var target2: int = _operating_cash_target(agent2, share)
 		var buffer: int = JWMath.mul_ppm(target2, m.firm_excess_buffer_ppm)
 		var excess: int = _st.accounts.cash_of(agent2) - maxi(0, _sc_distributable[c2]) - buffer
 		if excess > 0:
