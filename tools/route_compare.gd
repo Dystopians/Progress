@@ -51,19 +51,27 @@ func _run(name: String, techs: PackedInt64Array, builds: Array, n_q: int, seed_v
 		step: int) -> Dictionary:
 	var out: Dictionary = {"name": name, "seed": seed_v, "gdp": 0.0, "unemp": 0.0, "built": 0,
 			"techs": 0, "end": "—"}
-	var g: JWGame = JWGame.new()
-	g.autosave_slot = "autosave_route_%d" % seed_v
-	var r: JWResult = g.new_game("res://content#campaign_1600", seed_v, 0)
-	if r == null or not r.ok:
-		out["end"] = "开局失败"
+	# 裸跑结算器（与 diag_* 工具相同）：命令照样经 S02 判定，只是不经 JWGame 的存档与检查点。
+	var st: JWSimState = JWSimState.new()
+	st.allocate_all()
+	var loader: JWContentLoader = JWContentLoader.new()
+	if not loader.load_all("res://content#campaign_1600", st).ok:
+		out["end"] = "载入失败"
 		return out
-	var st: JWSimState = g.get("_st") as JWSimState
-	# 诊断工具不需要逐季自动存档与状态哈希（它们占了九成耗时）；规则与结算不受影响。
-	g.set("_saves", null)
+	st.content_hash = loader.content_hash
+	st.rng.set_state_scalar(0, seed_v)
+	var cmds: JWCommands = JWCommands.new()
+	cmds.allocate()
+	var events: JWEventEngine = JWEventEngine.new()
+	events.allocate()
+	loader.load_events_into(events, st)
+	JWResult.clear_pending()
+	var runner: JWTurnRunner = JWTurnRunner.new(st, events)
 	if _nofinal:
 		st.crisis.final_window_q = 1 << 40
 	if step > 0:
-		print("\n══ 路线%s（种子 %d）══" % [name, seed_v])
+		print("
+══ 路线%s（种子 %d）══" % [name, seed_v])
 		print("年份   实际GDP  失业%   资本存量  价格水平  科技  建成  国库   瓶颈")
 	var next_tech: int = 0
 	var next_build: int = 0
@@ -74,51 +82,37 @@ func _run(name: String, techs: PackedInt64Array, builds: Array, n_q: int, seed_v
 		if next_tech < techs.size():
 			var t: int = techs[next_tech]
 			if st.research.focus != t and st.research.is_available(t):
-				g.submit_command(JWCommands.Kind.SET_RESEARCH_FOCUS, _args([t]))
+				cmds.submit(JWCommands.Kind.SET_RESEARCH_FOCUS, _args([t]), q, st.policy_defs)
 		# ② 建造：清单里的下一项解锁了、国库付得起两倍造价，就下令；S02 接受了才推进清单。
-		var ordered: int = -1
+		var build_row: int = -1
 		if next_build < builds.size():
 			var spec: Array = builds[next_build]
 			var bt: int = int(spec[0])
-			if (st.research.unlocked_building_mask() >> bt) & 1 == 1 \
-					and st.accounts.cash_of(JWIds.AGENT_GOV) > st.buildings.t_cost[bt] * 2:
-				var rb: JWResult = g.submit_command(JWCommands.Kind.BUILD_BUILDING,
-						_args([bt, int(spec[1]), int(spec[2]), 0]))
-				if rb != null and rb.ok:
-					ordered = bt
-		g.submit_command(JWCommands.Kind.ADVANCE_QUARTER, _args([]))
-		var cmds: JWCommands = g.get("_cmds") as JWCommands
-		var n_before: int = cmds.count if cmds != null else 0
-		var ra: JWResult = g.advance_quarter()
-		if ordered > 0 and cmds != null and _accepted_build(cmds, n_before):
+			if (st.research.unlocked_building_mask() >> bt) & 1 == 1 					and st.accounts.cash_of(JWIds.AGENT_GOV) > st.buildings.t_cost[bt] * 2:
+				build_row = cmds.count
+				cmds.submit(JWCommands.Kind.BUILD_BUILDING, _args([bt, int(spec[1]), int(spec[2]), 0]),
+						q, st.policy_defs)
+		cmds.submit(JWCommands.Kind.ADVANCE_QUARTER, _args([]), q, st.policy_defs)
+		var code: int = runner.advance_quarter(cmds)
+		if build_row >= 0 and build_row < cmds.count 				and cmds.c_kind[build_row] == JWCommands.Kind.BUILD_BUILDING 				and cmds.c_accepted[build_row] == 1:
 			next_build += 1
 			out["built"] = int(out["built"]) + 1
-		if ra == null or not ra.ok:
+		if code != JWResult.OK:
 			if st.politics.run_terminated:
 				out["end"] = "%d 年（原因 %d）" % [1600 + q / 4, st.politics.termination_reason]
 			else:
-				out["end"] = "故障 %d" % (ra.code if ra else -1)
+				out["end"] = "故障 %d" % code
 			break
 		if step > 0 and (q % step == step - 1 or q == n_q - 1):
-			print("%4d %9.2f %6.1f %9.1f %9.3f %5d %5d %6.1f   %s" % [1600 + q / 4,
+			print("%4d %9.2f %6.1f %9.1f %9.3f %5d %5d %6.1f   %s  [%d ms]" % [1600 + q / 4,
 					st.diag.gdp_real / U, st.diag.unemployment_ppm / 1e4,
 					JWMath.sum(st.capital.cell_capital_value) / U, st.money.price_level_ppm / 1e6,
 					_techs_done(st), int(out["built"]), st.accounts.cash_of(JWIds.AGENT_GOV) / U,
-					_mix(st)])
+					_mix(st), Time.get_ticks_msec()])
 	out["gdp"] = st.diag.gdp_real / U
 	out["unemp"] = st.diag.unemployment_ppm / 1e4
 	out["techs"] = _techs_done(st)
 	return out
-
-
-## 本季提交的建造命令在 S02 有没有被接受（命令流里本季新增的行）。
-static func _accepted_build(cmds: JWCommands, from_row: int) -> bool:
-	var i: int = maxi(0, from_row - 2)
-	while i < cmds.count:
-		if cmds.c_kind[i] == JWCommands.Kind.BUILD_BUILDING and cmds.c_accepted[i] == 1:
-			return true
-		i += 1
-	return false
 
 
 static func _techs_done(st: JWSimState) -> int:

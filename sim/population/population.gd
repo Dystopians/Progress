@@ -187,6 +187,9 @@ var f_savings: PackedInt64Array = PackedInt64Array()
 
 ## content.demography.birth_ppm[]，4（按地区），ppm。写入者 LOAD。
 var birth_ppm: PackedInt64Array = PackedInt64Array()
+## R-SKILL-INHERIT-01（战役模式）：技能的家庭 / 学徒传承系数（ppm；0 == 不启用，新生儿全部进低技能）。
+## 内容常量，载入期由剧本 demography_rates.skill_inheritance_ppm 赋值，不进注册表。
+var skill_inheritance_ppm: int = 0
 ## content.demography.death_ppm[]，36，ppm。写入者 LOAD。
 var death_ppm: PackedInt64Array = PackedInt64Array()
 ## content.demography.age_out_ppm[]，3（按年龄档），ppm。写入者 LOAD。
@@ -939,9 +942,25 @@ func update_demography(rng: JWRngStreams, params: PackedInt64Array) -> int:
 		var b: int = JWMath.mul_ppm(working_pop, birth_ppm[r])
 		if b <= 0:
 			continue
+		var b_low: int = b
+		if skill_inheritance_ppm > 0 and working_pop > 0:
+			# R-SKILL-INHERIT-01：手艺靠家庭与学徒传承。新生儿按本地区在业人口的技能结构分到
+			# minor.<k>，中高技能各乘传承系数，其余回落到低技能。不这样做，中高技能只能靠政府
+			# 教育（P05）升档——四百年里不办教育，中高技能劳动力 40 年就少三分之一以上
+			# （tools/diag_skills.gd 实测：中、高技能劳动力 −37%，低技能 +23%）。
+			for k: int in [JWUnits.Skill.MID, JWUnits.Skill.HIGH]:
+				var wk: int = population[JWIds.idx_group(r, JWUnits.Age.WORKING, k)]
+				# rounding: floor, reason=传承分配只取整一次，剩下的都归低技能
+				var bk: int = JWMath.mul_ppm(JWMath.mul_div_floor(b, wk, working_pop), skill_inheritance_ppm)
+				if bk <= 0:
+					continue
+				var gk: int = JWIds.idx_group(r, JWUnits.Age.MINOR, k)
+				population[gk] = population[gk] + bk
+				f_births[gk] = f_births[gk] + bk
+				b_low -= bk
 		var g_newborn: int = JWIds.idx_group(r, JWUnits.Age.MINOR, JWUnits.Skill.LOW)
-		population[g_newborn] = population[g_newborn] + b
-		f_births[g_newborn] = f_births[g_newborn] + b
+		population[g_newborn] = population[g_newborn] + b_low
+		f_births[g_newborn] = f_births[g_newborn] + b_low
 
 	# 3) 成年：minor → working，同技能档（minor 的 skill 是教育准备度，docs/10 §6）。
 	var minor_rate: int = age_out_ppm[JWUnits.Age.MINOR]

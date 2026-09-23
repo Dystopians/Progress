@@ -2006,7 +2006,7 @@ func _step_s05() -> int:
 	# 优先级配给在长局里是一个断崖开关：制造品一旦短缺，能源的制造品投入被居民消费挤到零，
 	# 发电停摆，所有部门缺电（tools/diag_cells.gd 实测：能源的投入约束三季内 0.86 → 0.01）。
 	# 按比例配给是契约里本就设计好的 gov.ration_mode == 1（docs/12 §5.6）。旧剧本不变。
-	var ration_mode: int = JWInventory.RATION_MODE_PROPORTIONAL 			if _st.mode == JWUnits.Mode.CAMPAIGN else JWInventory.RATION_MODE_PRIORITY
+	var ration_mode: int = JWInventory.RATION_MODE_INPUT_FIRST 			if _st.mode == JWUnits.Mode.CAMPAIGN else JWInventory.RATION_MODE_PRIORITY
 	rc = _st.inventory.ration(ration_mode, _st.rng)
 	if rc != JWResult.OK:
 		return rc

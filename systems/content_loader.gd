@@ -2102,7 +2102,7 @@ func _validate_demography(st: JWSimState, doc: Dictionary, w: String) -> void:
 	var dw: String = w + "/demography_rates"
 	var d: Dictionary = _get_dict(doc, "demography_rates", w, JWResult.Load.SCHEMA_HEADER)
 	_check_keys(d, PackedStringArray(["birth_ppm_per_q", "death_ppm_per_q", "age_out_ppm_per_q",
-			"birth_target_skill"]), dw)
+			"birth_target_skill", "skill_inheritance_ppm"]), dw)
 
 	var birth: PackedInt64Array = _zeros(JWUnits.R)
 	var bm: Dictionary = _get_dict(d, "birth_ppm_per_q", dw, JWResult.Load.SCHEMA_HEADER)
@@ -2139,6 +2139,12 @@ func _validate_demography(st: JWSimState, doc: Dictionary, w: String) -> void:
 	if target != SKILL_NAMES[JWUnits.Skill.LOW]:
 		_fail(JWResult.Load.SCHEMA_HEADER, dw + "/birth_target_skill", 0, 0)
 
+	# R-SKILL-INHERIT-01：技能传承系数（可缺省；只允许战役模式）。
+	var inherit: int = int(d.get("skill_inheritance_ppm", 0))
+	_ppm_range(inherit, dw + "/skill_inheritance_ppm")
+	if inherit > 0 and st.mode != JWUnits.Mode.CAMPAIGN:
+		_fail(JWResult.Load.SCHEMA_HEADER, dw + "/skill_inheritance_ppm#term-mode", inherit, 0)
+	st.pop.skill_inheritance_ppm = inherit
 	_set_arr(st.pop, 9, birth, dw + "#birth_ppm", false)
 	_set_arr(st.pop, 10, death, dw + "#death_ppm", false)
 	_set_arr(st.pop, 11, age_out, dw + "#age_out_ppm", false)

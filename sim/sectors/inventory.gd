@@ -66,6 +66,8 @@ const PUBSERV_INPUT_SHARE_PPM: PackedInt64Array = [95_238, 309_524, 214_286, 380
 ## 「切到全比例」这条政策永远打不开，且把 `rationing_rule` 记成 priority——同时破坏 INV-003 与 INV-061。
 const RATION_MODE_PRIORITY: int = 0
 const RATION_MODE_PROPORTIONAL: int = 1
+## R-RATION-01 第 2 版（战役模式）：生产链保供——短缺时先满足企业的中间投入，余下按需求比例分给其它买方类。
+const RATION_MODE_INPUT_FIRST: int = 2
 
 ## state.cell.inventory_output_uqs[] —— 长度 16，初值剧本，μQ_s。类 S，写入者 S05。
 var inv_output: PackedInt64Array = PackedInt64Array()
@@ -945,9 +947,9 @@ func ration(ration_mode: int, rng: JWRngStreams) -> int:
 	_fault = 0
 	# 政策旗的定义域是 0|1（docs/12 §5.6）。越界值不得被静默当成优先级配给：
 	# 那会让一个坏掉的政策位表现为「政策没生效」，而不是一次可被看见的故障。
-	if ration_mode != RATION_MODE_PRIORITY and ration_mode != RATION_MODE_PROPORTIONAL:
+	if ration_mode != RATION_MODE_PRIORITY and ration_mode != RATION_MODE_PROPORTIONAL 			and ration_mode != RATION_MODE_INPUT_FIRST:
 		return _raise(JWResult.Fault.INDEX_OUT_OF_RANGE,
-				ration_mode, RATION_MODE_PROPORTIONAL)
+				ration_mode, RATION_MODE_INPUT_FIRST)
 	for s: int in JWUnits.S:
 		var supply: int = m_supply[s]
 		if supply < 0:
@@ -971,7 +973,19 @@ func ration(ration_mode: int, rng: JWRngStreams) -> int:
 				m_traded[mi_n] = _w5[b] + _imp_plan[mi_n]
 				m_unmet[mi_n] = m_demand[mi_n] - m_traded[mi_n]
 			continue
-		if ration_mode == RATION_MODE_PROPORTIONAL:
+		if ration_mode == RATION_MODE_INPUT_FIRST:
+			# 生产链保供：企业中间投入先足额（以可供量为限），余下对其它买方类一次最大余数法。
+			var fi: int = JWUnits.BuyerClass.FIRM_INPUT
+			var first: int = mini(_w5[fi], supply)
+			var saved_fi: int = _w5[fi]
+			_w5[fi] = 0
+			var rc2: int = JWMath.split_lr_into(supply - first, _w5, _t5, _o5)
+			_w5[fi] = saved_fi
+			if JWMath._split_last_fault != 0:
+				return _raise(rc2, s, supply - first)
+			_o5[fi] = first
+			m_rule[s] = JWUnits.Rationing.PROPORTIONAL
+		elif ration_mode == RATION_MODE_PROPORTIONAL:
 			# 全比例配给（gov.ration_mode == 1）：一次最大余数法，Σ alloc 精确等于 supply。
 			# 权重就是各买方类的需求量（§5.6 第二级「档内按需求量比例」，INV-003）；
 			# 决胜键 _t5 是恒定的买方类下标升序，故结果与调用顺序无关（无 rng 参与）。

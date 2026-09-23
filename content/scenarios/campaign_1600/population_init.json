@@ -1398,7 +1398,8 @@
       "minor": 13889,
       "working": 5319
     },
-    "birth_target_skill": "low"
+    "birth_target_skill": "low",
+    "skill_inheritance_ppm": 900000
   },
   "_note_derived_check": {
     "_note_zh": "本块是载入期冗余校验的算据，供人工与离线脚本复核；SimCore 不得从这里读任何值（INV-143）。原为顶层键 derived_check，因 §3「additionalProperties: false」不接受未声明键而改名为注释键；按 §1.5／§6.4 它不进加载器、不进 content_hash。权威的载入期冗余断言载体是 §5.11 的 assertions.json，该文件落地后本块应整体迁过去。",
