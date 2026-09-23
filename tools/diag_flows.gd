@@ -2,7 +2,7 @@
 ## 在一个窗口内累加，每个窗口打印一张表。用来回答「谁的钱漏到哪去了」。
 ##
 ## 用法：godot --headless --path <根> --script res://tools/diag_flows.gd -- [剧本=campaign_1600] [季数=120] [窗口=20] [主体类=firm] [种子=1] [nofinal]
-## 主体类：firm（16 个生产单元）| hh（全部居民组）| gov | row | invpool
+## 主体类：firm（16 个生产单元）| agri / manu / energy / services（该部门 4 个单元）| hh | gov | row | invpool
 ## 只读诊断，不改规则。
 extends SceneTree
 
@@ -97,6 +97,11 @@ func _member(agent: int, who: String) -> bool:
 		"firm":
 			var c: int = JWIds.cell_of_agent(agent)
 			return c >= 0 and c < JWUnits.CELL
+		"agri", "manu", "energy", "services":
+			var c2: int = JWIds.cell_of_agent(agent)
+			if c2 < 0 or c2 >= JWUnits.CELL:
+				return false
+			return JWIds.sector_of_cell(c2) == ["agri", "manu", "energy", "services"].find(who)
 		"hh":
 			return agent >= JWIds.AGENT_GROUP_BASE and agent < JWIds.AGENT_INVPOOL
 		"gov":
