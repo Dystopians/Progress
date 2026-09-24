@@ -211,13 +211,13 @@
       "source_type": "design_assumption",
       "source_ref": "计划书 §06；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
       "reference_year": 0,
-      "definition": "居民单季可动用的存量资产比例（5%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + mul_ppm(存款存量, 本值)。",
+      "definition": "居民单季可动用的存量资产比例（8%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + mul_ppm(存款存量, 本值)。",
       "valid_range": [
         0,
         200000
       ],
       "confidence": "low",
-      "calibration_note": "检验方式：收入归零的极端情形下消费应按每季 5% 衰减而不是立即归零；断言存款存量非负且逐季单调下降。本值过大会让居民在危机中把存款一季花光，抹掉「危机有持续时间」这一叙事；过小则转移支付类政策毫无短期效果。"
+      "calibration_note": "检验方式：收入归零的极端情形下消费应按每季 8% 衰减而不是立即归零；断言存款存量非负且逐季单调下降。本值过大会让居民在危机中把存款一季花光，抹掉「危机有持续时间」这一叙事；过小则转移支付类政策毫无短期效果。"
     },
     {
       "parameter_id": "param.edu_pipeline_slots",

@@ -27,7 +27,7 @@
 
 ## 1 校验结果
 
-- 扫描文件：37（跳过 1）
+- 扫描文件：65（跳过 1）
 - 参数身份证：96
 - 近似卡（带卡片字段但无 `parameter_id`，未进登记表）：4
 - **ERROR：0**（按契约应拒绝加载）
@@ -98,7 +98,7 @@
 | `param.default_grace_q` | 2 | 季 | design_assumption | low | [0, 8] | 政府无法足额偿付本息后，进入违约判定前的宽限季数。宽限期内欠付计入 gov.arrears_uu，不立即触发重组。 | `parameters/params_core.json` |
 | `param.defer_fee_ppm_per_q` | 15000 | ppm | design_assumption | low | [0, 100000] | 延期赔偿率：每延期 1 季，按剩余合同额的该比例向承包方支付停工赔偿（人员、设备闲置），于延期当季一次付清，现金不足转… | `parameters/params_core.json` |
 | `param.demand_smooth_ppm` | 400000 | ppm | design_assumption | low | [0, 1000000] | 计划产量对滞后需求的平滑权重：E_t = mul_ppm(本值, 实际需求_{t−1}) + mul_ppm(1e6 … | `parameters/params_core.json` |
-| `param.dissave_ppm` | 80000 | ppm | design_assumption | low | [0, 200000] | 居民单季可动用的存量资产比例（5%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + m… | `parameters/params_core.json` |
+| `param.dissave_ppm` | 80000 | ppm | design_assumption | low | [0, 200000] | 居民单季可动用的存量资产比例（8%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + m… | `parameters/params_core.json` |
 | `param.edu_pipeline_slots` | 8 | 季 | design_assumption | low | [1, 16] | 培训队列可同时容纳的在训季数（队列深度）。超出即新批次排队等待，不是静默丢弃。 | `parameters/params_core.json` |
 | `param.emission_decay_ppm` | 30000 | ppm | design_assumption | low | [0, 200000] | 排放存量的季度自然衰减率（3%）。季末先衰减再累加当季排放。 | `parameters/params_core.json` |
 | `param.engel_weight_ppm` | [229573, 357738, 40181, 372… | ppm | design_assumption | medium | [0, 1000000] | 居民消费预算在四部门之间的分配权重，下标按 docs/10 §0.5 的稠密下标（0 agri / 1 manu / … | `parameters/params_core.json` |
@@ -187,8 +187,15 @@
 |---|---:|
 | `parameters/params_core.json` | 96 |
 
-<details><summary>已扫描文件（37）</summary>
+<details><summary>已扫描文件（65）</summary>
 
+- `buildings/building_B01.json`
+- `buildings/building_B02.json`
+- `buildings/building_B03.json`
+- `buildings/building_B04.json`
+- `buildings/building_B05.json`
+- `buildings/building_B06.json`
+- `buildings/building_B07.json`
 - `events/event_E01.json`
 - `events/event_E02.json`
 - `events/event_E03.json`
@@ -201,6 +208,10 @@
 - `events/event_E10.json`
 - `events/event_E11.json`
 - `events/event_E12.json`
+- `methods/method_M01.json`
+- `methods/method_M02.json`
+- `methods/method_M03.json`
+- `methods/method_M04.json`
 - `parameters/params_core.json`
 - `policies/policy_P01.json`
 - `policies/policy_P02.json`
@@ -214,6 +225,15 @@
 - `policies/policy_P10.json`
 - `policies/policy_P11.json`
 - `policies/policy_P12.json`
+- `scenarios/campaign_1600/assertions.json`
+- `scenarios/campaign_1600/cells_init.json`
+- `scenarios/campaign_1600/government_init.json`
+- `scenarios/campaign_1600/io_table.json`
+- `scenarios/campaign_1600/politics_init.json`
+- `scenarios/campaign_1600/population_init.json`
+- `scenarios/campaign_1600/pubserv_init.json`
+- `scenarios/campaign_1600/regions.json`
+- `scenarios/campaign_1600/scenario.json`
 - `scenarios/chengwan/assertions.json`
 - `scenarios/chengwan/cells_init.json`
 - `scenarios/chengwan/government_init.json`
@@ -226,6 +246,14 @@
 - `shocks/shock_S01.json`
 - `shocks/shock_S02.json`
 - `shocks/shock_S03.json`
+- `technologies/tech_T01.json`
+- `technologies/tech_T02.json`
+- `technologies/tech_T03.json`
+- `technologies/tech_T04.json`
+- `technologies/tech_T05.json`
+- `technologies/tech_T06.json`
+- `technologies/tech_T07.json`
+- `technologies/tech_T08.json`
 
 </details>
 

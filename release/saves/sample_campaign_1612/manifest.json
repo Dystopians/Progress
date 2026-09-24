@@ -1,0 +1,25 @@
+{
+	"build_id": "jingwei-simcore-1",
+	"command_count": 55,
+	"command_log_hash": "b850553f635bab9a1891e3a57627afb92c53dc13a24b6d72bf36a14b4e9022db",
+	"content_hash": "040650a46ca07be611620ef65d5ed98b9e4b42a5385b16d1969c5ea3d291a084",
+	"created_utc": "2026-09-24T04:44:58Z",
+	"draw_count": [
+		86,
+		8,
+		0,
+		0,
+		0,
+		0
+	],
+	"horizon_q": 1600,
+	"param_set_version": 1,
+	"q": 48,
+	"replay_mode": "state+commands",
+	"root_seed": 7,
+	"scenario_hash": "b0e191480fad3267da2bc1efaad1ac3bf14cc7c3911a4cb68ac5b80279ec34e9",
+	"scenario_id": "scenario.campaign_1600",
+	"schema_kind": "save_manifest",
+	"schema_version": 2,
+	"state_hash": "c3a13c849d4cab965283974e75561c137068802e12f98c2b879a06b80d5b516f"
+}

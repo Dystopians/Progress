@@ -4,6 +4,7 @@
 ## 缩放唯一入口：Window.content_scale_factor = ui_scale（项目设置 stretch/mode = disabled，§5.2）；
 ## 只有作为主场景直接挂在根视口下时才改窗口（截图工具把本节点放进 SubViewport 时不改）。
 ## 命令行：--ui-scale=1.25 / --window-size=1366x768 / --jw-autostart=<种子> / --jw-goal=<0|1|2>
+##        --jw-play=<行动脚本.json> [--jw-play-until=1650秋]：按脚本开局并快进（调试与截图用）
 class_name JwRoot
 extends Control
 
@@ -40,7 +41,16 @@ func _ready() -> void:
 		autostart_goal = goal_arg.to_int()
 	if seed_arg.is_valid_int():
 		autostart_seed = seed_arg.to_int()
-	if autostart_seed != 0:
+	var play_arg: String = JwScale.cmd_value("--jw-play=")
+	if play_arg != "":
+		var pr: Dictionary = session.play_script(play_arg, JwScale.cmd_value("--jw-play-until="))
+		if not bool(pr.get("ok", false)):
+			push_error("[JwRoot] playscript failed: " + str(pr.get("errors", [])))
+			open_overlay("newgame", {})
+		else:
+			print("[JwRoot] playscript done: batch=%s status=%s" % [str(pr.get("batch", {})),
+					str(pr.get("status", {}))])
+	elif autostart_seed != 0:
 		# R-SCENARIO-01：--jw-scenario=<剧本目录名> 指定开局剧本（缺省沿用当前剧本）。
 		session.start_new(autostart_seed, autostart_goal, JwScale.cmd_value("--jw-scenario="))
 	else:

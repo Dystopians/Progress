@@ -6,7 +6,7 @@
   "tool": "tools/build_param_registry.py",
   "tool_version": 1,
   "summary": {
-    "files_scanned": 37,
+    "files_scanned": 65,
     "files_skipped": 1,
     "card_count": 96,
     "near_miss_count": 4,
@@ -54,6 +54,13 @@
     ]
   },
   "files_scanned": [
+    "buildings/building_B01.json",
+    "buildings/building_B02.json",
+    "buildings/building_B03.json",
+    "buildings/building_B04.json",
+    "buildings/building_B05.json",
+    "buildings/building_B06.json",
+    "buildings/building_B07.json",
     "events/event_E01.json",
     "events/event_E02.json",
     "events/event_E03.json",
@@ -66,6 +73,10 @@
     "events/event_E10.json",
     "events/event_E11.json",
     "events/event_E12.json",
+    "methods/method_M01.json",
+    "methods/method_M02.json",
+    "methods/method_M03.json",
+    "methods/method_M04.json",
     "parameters/params_core.json",
     "policies/policy_P01.json",
     "policies/policy_P02.json",
@@ -79,6 +90,15 @@
     "policies/policy_P10.json",
     "policies/policy_P11.json",
     "policies/policy_P12.json",
+    "scenarios/campaign_1600/assertions.json",
+    "scenarios/campaign_1600/cells_init.json",
+    "scenarios/campaign_1600/government_init.json",
+    "scenarios/campaign_1600/io_table.json",
+    "scenarios/campaign_1600/politics_init.json",
+    "scenarios/campaign_1600/population_init.json",
+    "scenarios/campaign_1600/pubserv_init.json",
+    "scenarios/campaign_1600/regions.json",
+    "scenarios/campaign_1600/scenario.json",
     "scenarios/chengwan/assertions.json",
     "scenarios/chengwan/cells_init.json",
     "scenarios/chengwan/government_init.json",
@@ -90,7 +110,15 @@
     "scenarios/chengwan/scenario.json",
     "shocks/shock_S01.json",
     "shocks/shock_S02.json",
-    "shocks/shock_S03.json"
+    "shocks/shock_S03.json",
+    "technologies/tech_T01.json",
+    "technologies/tech_T02.json",
+    "technologies/tech_T03.json",
+    "technologies/tech_T04.json",
+    "technologies/tech_T05.json",
+    "technologies/tech_T06.json",
+    "technologies/tech_T07.json",
+    "technologies/tech_T08.json"
   ],
   "files_skipped": [
     "parameters/registry.json（本工具自身的生成物，排除以避免自指重复登记）"
@@ -570,13 +598,13 @@
       "source_type": "design_assumption",
       "source_ref": "计划书 §06；docs/12_simulation_contract.md §6；docs/11_data_contract.md §5.15.2「首版必备参数最小集」",
       "reference_year": 0,
-      "definition": "居民单季可动用的存量资产比例（5%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + mul_ppm(存款存量, 本值)。",
+      "definition": "居民单季可动用的存量资产比例（8%）：消费预算 = mul_ppm(可支配收入, param.mpc_ppm) + mul_ppm(存款存量, 本值)。",
       "valid_range": [
         0,
         200000
       ],
       "confidence": "low",
-      "calibration_note": "检验方式：收入归零的极端情形下消费应按每季 5% 衰减而不是立即归零；断言存款存量非负且逐季单调下降。本值过大会让居民在危机中把存款一季花光，抹掉「危机有持续时间」这一叙事；过小则转移支付类政策毫无短期效果。",
+      "calibration_note": "检验方式：收入归零的极端情形下消费应按每季 8% 衰减而不是立即归零；断言存款存量非负且逐季单调下降。本值过大会让居民在危机中把存款一季花光，抹掉「危机有持续时间」这一叙事；过小则转移支付类政策毫无短期效果。",
       "_origin_file": "parameters/params_core.json",
       "_origin_pointer": "/cards/13"
     },

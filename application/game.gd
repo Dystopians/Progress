@@ -404,6 +404,113 @@ func pause_reason(before: Dictionary, advance_ok: bool) -> int:
 	return Pause.NONE
 
 
+# ── 行动脚本（application/playscript.gd）────────────────────────────────
+
+## 按本局载入的内容解析脚本里的文字 ID 与时间。开局之后调用一次。
+func playscript_bind(ps: JWPlayscript) -> bool:
+	if _loader == null or _st == null:
+		ps.errors.append("还没开局，或本局是读档得来的（没有内容加载器）")
+		return false
+	return ps.bind(_loader, _st.start_year)
+
+
+## 提交脚本本季的命令（不含推进标记），返回计划表；每项记下命令行号，结算后用 playscript_settle 登记。
+func playscript_submit(ps: JWPlayscript) -> Array[Dictionary]:
+	var planned: Array[Dictionary] = ps.plan(_st)
+	for p: Dictionary in planned:
+		var a: PackedInt64Array = PackedInt64Array()
+		a.resize(JWCommands.ARG_SLOTS)
+		a.fill(0)
+		var src: Array = p["args"]
+		for i: int in mini(src.size(), JWCommands.ARG_SLOTS):
+			a[i] = int(src[i])
+		p["row"] = _cmds.count
+		submit_command(int(p["kind"]), a)
+	return planned
+
+
+## 结算之后读回每条命令是否被 S02 受理，交给脚本登记（受理的出队，被拒的下季重试）。
+func playscript_settle(ps: JWPlayscript, planned: Array[Dictionary], q: int) -> void:
+	var acc: PackedInt64Array = PackedInt64Array()
+	var codes: PackedInt64Array = PackedInt64Array()
+	for p: Dictionary in planned:
+		var row: int = int(p.get("row", -1))
+		var ok_row: bool = row >= 0 and row < _cmds.count and _cmds.c_kind[row] == int(p["kind"])
+		acc.append(1 if ok_row and _cmds.c_accepted[row] == 1 else 0)
+		codes.append(_cmds.c_reject_code[row] if ok_row else -1)
+	ps.settle(q, planned, acc, codes)
+
+
+## 界面用的包装（界面只能经 JWGame 访问模拟，不直接持有 JWPlayscript）：
+## 开局前先 peek 拿种子与剧本，开局后 attach 绑定到本局，之后每季 submit_active / settle_active。
+var _active_ps: JWPlayscript = null
+
+
+static func playscript_peek(path: String) -> Dictionary:
+	var ps: JWPlayscript = JWPlayscript.from_file(path)
+	return {"ok": ps.ok(), "errors": ps.errors, "name": ps.name, "seed": ps.seed_value,
+			"scenario": ps.scenario}
+
+
+func playscript_attach(path: String) -> Dictionary:
+	var ps: JWPlayscript = JWPlayscript.from_file(path)
+	if ps.ok():
+		playscript_bind(ps)
+	_active_ps = ps if ps.ok() else null
+	return {"ok": ps.ok(), "errors": ps.errors, "until_q": ps.until_q,
+			"start_year": _st.start_year if _st != null else 0}
+
+
+func playscript_submit_active() -> Array[Dictionary]:
+	if _active_ps == null:
+		return []
+	return playscript_submit(_active_ps)
+
+
+func playscript_settle_active(planned: Array[Dictionary], q: int) -> void:
+	if _active_ps != null:
+		playscript_settle(_active_ps, planned, q)
+
+
+## 当前脚本的执行情况：{name, actions, rejected, pending}。
+func playscript_status() -> Dictionary:
+	if _active_ps == null:
+		return {}
+	var rej: int = 0
+	for e: Dictionary in _active_ps.log:
+		if not bool(e["accepted"]):
+			rej += 1
+	return {"name": _active_ps.name, "actions": _active_ps.log.size(), "rejected": rej,
+			"pending": _active_ps.pending_count()}
+
+
+## 截止时间换算成季下标（写法同脚本）。
+func playscript_parse_q(s: String) -> int:
+	return JWPlayscript._parse_q(s, _st.start_year if _st != null else 0)
+
+
+## 无界面整段运行脚本：逐季提交脚本命令并推进，直到 until_q（不含）、终局或故障。
+## 返回 {advanced, q, terminated, code}。存档照常自动追加，所以跑完可以直接另存或重放校验。
+func run_playscript(ps: JWPlayscript, until_q: int) -> Dictionary:
+	var done: int = 0
+	var code: int = 0
+	var empty: PackedInt64Array = PackedInt64Array()
+	empty.resize(JWCommands.ARG_SLOTS)
+	empty.fill(0)
+	while _st != null and _st.q < until_q and not _st.politics.run_terminated:
+		var q0: int = _st.q
+		var planned: Array[Dictionary] = playscript_submit(ps)
+		submit_command(JWCommands.Kind.ADVANCE_QUARTER, empty)
+		var r: JWResult = advance_quarter()
+		playscript_settle(ps, planned, q0)
+		if r != null and not r.ok:
+			code = r.code
+			break
+		done += 1
+	return {"advanced": done, "q": _st.q if _st != null else 0,
+			"terminated": _st != null and _st.politics.run_terminated, "code": code}
+
+
 ## 批量推进 n 季（R-CLOCK-01）：调用方先提交本季业务命令（不含推进标记）；本函数逐季补推进标记并结算，
 ## 遇到暂停原因即停。结果与逐季调用 advance_quarter 逐位相同——它就是逐季调用。
 ## 返回 {advanced, reason, code}。

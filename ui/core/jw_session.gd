@@ -1020,7 +1020,8 @@ func advance() -> Dictionary:
 ## 批量推进（R-CLOCK-01，战役模式的「推进一年 / 五年」）：主线程逐季结算，每季照常写历史快照与回执；
 ## 遇到暂停原因（终局、危机升级、政府更替、选举、新增欠付）即停；只在最后一季发 settlement_finished。
 ## 草案只进第一季。
-func advance_batch(n: int) -> Dictionary:
+## scripted == true 时（行动脚本快进）：每季先提交本局所挂脚本的命令，只在终局或推进失败时停。
+func advance_batch(n: int, scripted: bool = false) -> Dictionary:
 	var out: Dictionary = {"ok": false}
 	if game == null or read_only or model.terminated or settling or n < 1:
 		out["code"] = JwReadModel.RJ_PHASE_BUSY if (read_only or settling) else JwReadModel.RJ_RUN_TERMINATED
@@ -1041,15 +1042,25 @@ func advance_batch(n: int) -> Dictionary:
 				var rr: Dictionary = res(game.submit_command(int(d.get("kind", 0)), d.get("args", _args([]))))
 				submitted.append({"label": String(d.get("label", "")), "kind": int(d.get("kind", 0)),
 						"p": int(d.get("p", -1)), "submit_ok": bool(rr["ok"]), "submit_code": int(rr["code"])})
+		var planned: Array[Dictionary] = []
+		if scripted:
+			planned = game.playscript_submit_active()
+			for p: Dictionary in planned:
+				submitted.append({"label": String(p["label"]), "kind": int(p["kind"]), "p": -1,
+						"submit_ok": true, "submit_code": 0})
 		var before: Dictionary = game.pause_probe()
 		var rm: Dictionary = res(game.submit_command(K_ADVANCE, _args([])))
 		_adv_ctx = {"q0": q0, "submitted": submitted, "rm": rm, "arrears0": model.sc("state.gov.arrears_uu")}
 		settling = true
 		var ra: Dictionary = res(game.advance_quarter())
+		if scripted:
+			game.playscript_settle_active(planned, q0)
 		last = _finish_advance(ra, false)
 		reason = game.pause_reason(before, bool(ra.get("ok", false)))
 		if bool(ra.get("ok", false)):
 			done += 1
+		if scripted and reason != JWGame.Pause.TERMINATED and reason != JWGame.Pause.FAILED:
+			reason = 0
 		if reason != 0:
 			break
 	last["batch"] = {"requested": n, "done": done, "reason": reason}
@@ -1057,6 +1068,28 @@ func advance_batch(n: int) -> Dictionary:
 	settlement_finished.emit(last)
 	request_dryrun(true)
 	return last
+
+
+## 行动脚本快进：按脚本的剧本与种子开新局，再逐季提交脚本命令推进到 until（可覆盖；写法同脚本）。
+## 返回 {ok, errors, status, batch}；脚本解析失败时不开局。
+func play_script(path: String, until_override: String = "") -> Dictionary:
+	var peek: Dictionary = JWGame.playscript_peek(path)
+	if not bool(peek.get("ok", false)):
+		return {"ok": false, "errors": peek.get("errors", PackedStringArray())}
+	var r: Dictionary = start_new(int(peek["seed"]), -1, String(peek["scenario"]))
+	if not bool(r.get("ok", false)):
+		return {"ok": false, "errors": PackedStringArray(["start_new failed"]), "start": r}
+	var at: Dictionary = game.playscript_attach(path)
+	if not bool(at.get("ok", false)):
+		return {"ok": false, "errors": at.get("errors", PackedStringArray())}
+	var until_q: int = int(at.get("until_q", -1))
+	if until_override != "":
+		until_q = game.playscript_parse_q(until_override)
+	var out: Dictionary = {"ok": true, "errors": PackedStringArray()}
+	if until_q > model.q:
+		out["batch"] = advance_batch(until_q - model.q, true).get("batch", {})
+	out["status"] = game.playscript_status()
+	return out
 
 
 ## 结算完成（主线程）：刷新读模型、写历史快照与回执、发 settlement_finished。

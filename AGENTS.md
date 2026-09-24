@@ -53,7 +53,8 @@ Windows 11。Git Bash 与 PowerShell 都能用；下面用 Bash 写法。先 `so
 | 内容闸门 | `python tools/validate_content.py`；新增参数卡后 `python tools/build_param_registry.py`（重生成 `registry.json` 与 `docs/14`） |
 | 刷新类缓存（新增或改名 `class_name` 后必须） | `"$GODOT" --headless --path . --import` |
 | 运行游戏 | `"$GODOT" --path . -- --jw-autostart=1000000`（可加 `--ui-scale=1.25`、`--window-size=1366x768`、`--jw-goal=0\|1\|2`） |
-| 截图（必须开窗，不能 `--headless`） | `"$GODOT" --path . --windowed --resolution 1600x900 --script res://tools/capture_ui.gd -- 输出.png [等待帧=90] [推进季数=0] [页面] --jw-autostart=1000000` |
+| 截图（必须开窗，不能 `--headless`） | `"$GODOT" --path . --windowed --resolution 1600x900 --script res://tools/capture_ui.gd -- 输出.png [等待帧=90] [推进季数=0] [页面] --jw-autostart=1000000`；要停在某个年份就改用 `--jw-play=res://tools/playscripts/<脚本>.json`（试算要几秒，等待帧给 300 以上） |
+| 行动脚本（按脚本开局并快进，调试首选） | 无界面：`"$GODOT" --headless --path . --script res://tools/play.gd -- res://tools/playscripts/route_a_agrarian.json 1650 [log] [save=槽名]`；带界面：`"$GODOT" --path . -- --jw-play=<脚本> [--jw-play-until=1650秋]`。格式见 `tools/playscripts/README.md` |
 | 界面冒烟（走完 40 季） | `"$GODOT" --headless --path . --script res://tools/ui_snapshot.gd -- --smoke --full` |
 | 无冲击基线 | `"$GODOT" --headless --path . --script res://tools/diag_baseline.gd -- 40 1000000 99 noshock` |
 | 单一政策干预 | `"$GODOT" --headless --path . --script res://tools/diag_intervention.gd -- p01_up@3`（或 `eNN@季`、`lNN_r@季`） |
@@ -396,3 +397,10 @@ Python 输出中文时设 `PYTHONIOENCODING=utf-8`，否则控制台乱码。
 - **方向转变（待审）**：用户同意做减法、加产业链商品层、改为四个时代（世界按日历、本国按成就、引领有奖励）。方案 `docs/54_redesign_plan.md`；docs/53 新增 §4.5 指向它，M3 以 docs/54 §7 为准。
 - 验证：全量 610 / 610。
 - 遗留：样例存档（release/saves/）因内容指纹变化需重生成；参数卡 `param.dissave_ppm` 定义写 5% 实为 8%，与样例存档一起改；尚未推送（等 M2 收尾）。
+
+### 2026-09-23 · Claude · 完成 · M2 收尾、行动脚本、游戏概览
+
+- **行动脚本**（用户要求）：`application/playscript.gd`（`JWPlayscript`）+ `tools/play.gd` + `tools/playscripts/*.json`。按季度经真实命令路径提交动作，逐位可复现；界面用 `--jw-play=<脚本>` 快进。路线甲、乙改写成脚本后与 `route_compare.gd` 逐位相同。**以后调试、截图、对照局都用脚本开局，不再依赖旧存档。**内容加载器新增公开的 `lookup_id()` 与 `event_choice_commands`。
+- **游戏概览**：给用户审阅的网页版概览（机制、截图、270 张资源、第二轮方案）已交付；docs/54、docs/55 的 v1.1 等用户审阅后再改。
+- **M2 收尾**：参数卡 `param.dissave_ppm` 定义改为 8%；样例存档重生成，并新增战役样例 `sample_campaign_1612`；报告 `docs/_drafts/56_m2_report.md`；推送。
+- 遗留：M2.5 等用户审定 docs/54 第二轮方案后开始。

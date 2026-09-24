@@ -137,6 +137,10 @@ var _building_index: Dictionary = {}
 var _method_index: Dictionary = {}
 ## 科技 ID → 下标（载入期解析前置与解锁引用用）。
 var _tech_index: Dictionary = {}
+## 贸易伙伴 ID → 下标（行动脚本按文字 ID 引用伙伴）。
+var _partner_index: Dictionary = {}
+## 选择型事件的预填命令：事件下标 → [{kind, args}, ...]（行动脚本按选项下标取用；只读）。
+var event_choice_commands: Dictionary = {}
 const SECTOR_NAMES: PackedStringArray = ["agri", "manu", "energy", "services"]
 const AGE_NAMES: PackedStringArray = ["minor", "working", "elder"]
 const SKILL_NAMES: PackedStringArray = ["low", "mid", "high"]
@@ -586,6 +590,26 @@ func _name_index(names: PackedStringArray, s: String) -> int:
 	for i: int in names.size():
 		if names[i] == s:
 			return i
+	return -1
+
+
+## 行动脚本用的公开查询：内容文字 ID → 命令参数里用的下标；查不到返回 −1。
+## 科技、地区、政策、事件、伙伴从 0 起；建筑类型与生产方式从 1 起（与命令 14、15 的参数一致）。
+func lookup_id(id: String) -> int:
+	if id.begins_with("tech."):
+		return int(_tech_index.get(id, -1))
+	if id.begins_with("building."):
+		return int(_building_index.get(id, -1))
+	if id.begins_with("method."):
+		return int(_method_index.get(id, -1))
+	if id.begins_with("partner."):
+		return int(_partner_index.get(id, -1))
+	if id.begins_with("region."):
+		return _region_index(id)
+	if id.begins_with("policy."):
+		return _policy_index(id)
+	if id.begins_with("event."):
+		return _event_index(id)
 	return -1
 
 
@@ -1163,6 +1187,8 @@ func _reset() -> void:
 	_method_files = PackedStringArray()
 	_building_index = {}
 	_method_index = {}
+	_partner_index = {}
+	event_choice_commands = {}
 	_op_agent = PackedInt64Array()
 	_op_code = PackedInt64Array()
 	_op_amount = PackedInt64Array()
@@ -1385,6 +1411,7 @@ func _validate_trade_rule(st: JWSimState, doc: Dictionary, w: String) -> void:
 		var pid: String = _get_str(pd, "partner_id", pw, JWResult.Load.SCHEMA_HEADER)
 		if not pid.begins_with("partner."):
 			_fail(JWResult.Load.ID_FORMAT, pw + "/partner_id", 0, 0)
+		_partner_index[pid] = i
 		exp_s[i] = _get_int(pd, "export_share_ppm", pw, JWResult.Load.SCHEMA_HEADER)
 		imp_s[i] = _get_int(pd, "import_share_ppm", pw, JWResult.Load.SCHEMA_HEADER)
 		price[i] = _get_int(pd, "price_mult_ppm", pw, JWResult.Load.SCHEMA_HEADER)
@@ -3670,6 +3697,8 @@ func _validate_events(st: JWSimState) -> void:
 			var chs: Array = _get_array(doc, "choices", w, JWResult.Load.SCHEMA_HEADER)
 			if chs.size() < 2 or chs.size() > 3:
 				_fail(JWResult.Load.SCHEMA_HEADER, w + "/choices#count", chs.size(), 2)
+			var opts: Array = []
+			event_choice_commands[e] = opts
 			for ci: int in chs.size():
 				var cw: String = w + "/choices/" + str(ci)
 				if typeof(chs[ci]) != TYPE_DICTIONARY:
@@ -3689,6 +3718,10 @@ func _validate_events(st: JWSimState) -> void:
 				if da.size() > JWCommands.ARG_SLOTS:
 					_fail(JWResult.Load.SCHEMA_HEADER, cw + "/draft_command/args", da.size(),
 							JWCommands.ARG_SLOTS)
+				var da_int: PackedInt64Array = PackedInt64Array()
+				for v: Variant in da:
+					da_int.append(int(v))
+				opts.append({"kind": dk, "args": da_int})
 			choice_count[e] = chs.size()
 		if _event_index(_get_str(doc, "event_id", w, JWResult.Load.EVENT_COUNT)) != e:
 			_fail(JWResult.Load.EVENT_COUNT, w + "/event_id", e, 0)

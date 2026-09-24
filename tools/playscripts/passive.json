@@ -1,0 +1,10 @@
+{
+  "schema_kind": "playscript",
+  "schema_version": 1,
+  "name": "无操作",
+  "note": "什么都不做，只推进。用来验证「不操作必须亡国」。",
+  "scenario": "campaign_1600",
+  "seed": 1,
+  "until": "1700",
+  "events": {"default": "skip"}
+}

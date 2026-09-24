@@ -1,0 +1,22 @@
+{
+  "schema_kind": "playscript",
+  "schema_version": 1,
+  "name": "路线乙 早期工场",
+  "note": "与 tools/route_compare.gd 的路线乙逐条对应。",
+  "scenario": "campaign_1600",
+  "seed": 1,
+  "until": "1650",
+  "research": ["tech.bookkeeping", "tech.craft_guild", "tech.charcoal_smelting", "tech.survey", "tech.water_management", "tech.water_power"],
+  "events": {"default": "skip"},
+  "rules": {"build_cash_multiple": 2},
+  "build_queue": [
+    {"build": "building.workshop_manual", "region": "region.zhongzhou"},
+    {"build": "building.market_hall", "region": "region.zhongzhou"},
+    {"build": "building.workshop_manual", "region": "region.beiyuan"},
+    {"build": "building.smelter_charcoal", "region": "region.haijia"},
+    {"build": "building.power_water", "region": "region.xiling"},
+    {"build": "building.irrigation_basic", "region": "region.xiling"},
+    {"build": "building.workshop_manual", "region": "region.haijia"}
+  ],
+  "timeline": []
+}

@@ -2,8 +2,8 @@
 	"build_id": "jingwei-simcore-1",
 	"command_count": 0,
 	"command_log_hash": "1304d830d7ccc0b0f26964a0d3cb8e5dd806552912aaf76fa08f72f487da4eeb",
-	"content_hash": "deecb4f563de5361cfcc20449b4f93e0d9508e1f98fabbf91ef328040dfd7a80",
-	"created_utc": "2026-09-22T11:08:42Z",
+	"content_hash": "183b696b271a3c53cab52947bae61bfa458dd69c718e54fdf93b3c02e539c0fa",
+	"created_utc": "2026-09-24T04:44:45Z",
 	"draw_count": [
 		0,
 		0,
@@ -21,5 +21,5 @@
 	"scenario_id": "scenario.chengwan",
 	"schema_kind": "save_manifest",
 	"schema_version": 2,
-	"state_hash": "a3cccc6d6fb0887c31e5c0331ba890486660422753320f9a570dc0cae4212970"
+	"state_hash": "8ffedc8a6daeb486580fc102e04b48b9ac19102b1e8b670186240f9793782b7c"
 }

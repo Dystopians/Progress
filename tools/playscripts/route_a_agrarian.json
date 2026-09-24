@@ -1,0 +1,22 @@
+{
+  "schema_kind": "playscript",
+  "schema_version": 1,
+  "name": "路线甲 重农商贸",
+  "note": "与 tools/route_compare.gd 的路线甲逐条对应：研究队列 + 按顺序建造，国库现金超过造价两倍才下令，不回应事件。",
+  "scenario": "campaign_1600",
+  "seed": 1,
+  "until": "1650",
+  "research": ["tech.survey", "tech.water_management", "tech.crop_rotation", "tech.bookkeeping", "tech.harbor_works"],
+  "events": {"default": "skip"},
+  "rules": {"build_cash_multiple": 2},
+  "build_queue": [
+    {"build": "building.irrigation_regional", "region": "region.beiyuan", "owner": "gov"},
+    {"build": "building.power_water", "region": "region.xiling"},
+    {"build": "building.irrigation_basic", "region": "region.zhongzhou"},
+    {"build": "building.market_hall", "region": "region.zhongzhou"},
+    {"build": "building.irrigation_regional", "region": "region.haijia"},
+    {"build": "building.harbor_yard", "region": "region.haijia"},
+    {"build": "building.irrigation_basic", "region": "region.xiling"}
+  ],
+  "timeline": []
+}

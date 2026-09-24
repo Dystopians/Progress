@@ -1,0 +1,15 @@
+{
+  "schema_kind": "playscript",
+  "schema_version": 1,
+  "name": "截图局 1612",
+  "note": "概览截图用：种子 7，研究三项后停在 1612 年春；事件取第一个选项。",
+  "scenario": "campaign_1600",
+  "seed": 7,
+  "until": "1612",
+  "research": ["tech.survey", "tech.bookkeeping", "tech.water_management"],
+  "events": {"default": 0},
+  "timeline": [
+    {"at": "1604", "do": [{"build": "building.irrigation_basic", "region": "region.beiyuan", "owner": "gov"}]},
+    {"at": "1606", "do": [{"build": "building.market_hall", "region": "region.zhongzhou"}]}
+  ]
+}

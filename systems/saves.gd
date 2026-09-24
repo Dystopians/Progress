@@ -367,10 +367,13 @@ func save(st: JWSimState, cmds: JWCommands, slot: String) -> JWResult:
 	# 6) 原子改名。旧档先改名成 .bak，新档就位后才删 .bak；中途失败回滚。
 	var had_old: bool = DirAccess.dir_exists_absolute(dst)
 	if had_old:
-		if DirAccess.rename_absolute(dst, bak) != OK:
+		# 上一次中途失败可能留下 .bak，先清掉，否则改名必失败。
+		if DirAccess.dir_exists_absolute(bak):
+			_rm_recursive(bak)
+		if _rename_retry(dst, bak) != OK:
 			_rm_recursive(tmp)
 			return JWResult.make_err(JWResult.Load.FILE_FORMAT, 6, 0)
-	if DirAccess.rename_absolute(tmp, dst) != OK:
+	if _rename_retry(tmp, dst) != OK:
 		if had_old:
 			DirAccess.rename_absolute(bak, dst)
 		_rm_recursive(tmp)
@@ -1010,6 +1013,18 @@ func _float_to_int(x: Variant) -> int:
 		_field_err = true
 		return 0
 	return n
+
+
+## 目录改名，失败时短暂等待后重试（Windows 上杀毒或索引会短暂占用刚写完的文件，改名偶发失败；
+## 失败会让旧槽残留，随后的自动存档追加以 2900 失败）。只影响写盘，不影响结算与哈希。
+static func _rename_retry(from: String, to: String) -> int:
+	var err: int = DirAccess.rename_absolute(from, to)
+	var tries: int = 0
+	while err != OK and tries < 8:
+		OS.delay_msec(25 * (tries + 1))
+		err = DirAccess.rename_absolute(from, to)
+		tries += 1
+	return err
 
 
 ## 递归删除一个目录（写盘失败时清理半成品；不存在即成功）。
