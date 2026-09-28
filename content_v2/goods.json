@@ -669,7 +669,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 1924,
+   "base_price_li": 2242,
    "durable": false,
    "art": "assets/goods/g01/goods_flour_v2.png",
    "note": ""
@@ -921,7 +921,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 400000,
-   "base_price_li": 2384,
+   "base_price_li": 2736,
    "durable": false,
    "art": "assets/goods/g08/goods_bread.png",
    "note": ""

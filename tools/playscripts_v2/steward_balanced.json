@@ -1,0 +1,6 @@
+{
+  "schema_kind": "jc_playscript", "schema_version": 1, "name": "全托管·均衡",
+  "seed": 1, "until": "1800",
+  "steward": {"research": ["auto", "era"], "build": ["auto", "balanced"], "modernize": ["auto", "profit"],
+              "fiscal": ["auto", "balanced"], "trade": ["auto", "balanced"], "events": ["auto", "people"]}
+}

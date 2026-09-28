@@ -29,11 +29,11 @@ func research_points() -> int:
 	var C: int = ct.c_n
 	var pts: int = 0
 	for r: int in ct.r_n:
-		pts += JCMath.muldiv(st.pop[r * C + econ.CL_G], 600, PPM)
+		pts += JCMath.muldiv(st.pop[r * C + econ.CL_G], 400, PPM)
 		pts += JCMath.muldiv(st.pop[r * C + econ.CL_M], 100, PPM)
 		pts += JCMath.muldiv(JCMath.mulppm(st.pop[r * C + econ.CL_A], st.literacy[r]), 100, PPM)
 		@warning_ignore("integer_division")
-		pts += econ.edu_seats[r] / 2000
+		pts += econ.edu_seats[r] / 3000
 	pts += econ.research_bld
 	return JCMath.mulppm(pts, mods.mult_ppm("research_speed"))
 

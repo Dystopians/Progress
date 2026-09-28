@@ -125,13 +125,13 @@ ERAS = [
          need={}),
     dict(id=2, name="工场与商路", subtitle="水力工场、钱庄票号、运河与远洋商路",
          art="assets/eras/e01/era02_commerce.png",
-         need={"techs": ["water_power", "bookkeeping"],
-               "buildings": {"watermill": 6, "port": 6},
-               "social": {"literacy": 0.14}}),
+         need={"techs": ["water_power", "bookkeeping", "banking"],
+               "buildings": {"watermill": 8, "port": 8},
+               "social": {"literacy": 0.16}}),
     dict(id=3, name="蒸汽与铁路", subtitle="煤铁、钢、机械、铁路与城市", art="assets/eras/e01/era04_industry.png",
          need={"techs": ["steam_engine", "coke_smelting"],
                "buildings": {"steamplant": 4, "cokeworks": 3},
-               "social": {"urban": 0.25}}),
+               "social": {"urban": 0.14}}),
     dict(id=4, name="电气与现代国家", subtitle="电力、化工、汽车、电子与福利国家",
          art="assets/eras/e01/era05_electricity.png",
          need={"techs": ["power_grid", "internal_combustion"],
@@ -140,7 +140,7 @@ ERAS = [
 ]
 
 # 时代更替时旧生产方式的落后：每年相对新方式少产多少（百分数），封顶。
-OBSOLESCENCE = dict(per_year=3, cap=30)
+OBSOLESCENCE = dict(per_year=1.5, cap=15)
 
 # ════════════════════════════ 政令 ════════════════════════════════════════
 # kind：toggle（开关）、level（档位，levels 列出各档名）、campaign（一次性运动，duration 季）。

@@ -1,7 +1,7 @@
 {
  "schema": "jc.meta",
  "version": 1,
- "content_hash": "27c4c5d08c08e26df1f40a997974d06b398344a20d3c0f9cb61290914afa5454",
+ "content_hash": "48dfe68b6254305dbd0604db8c79926ada8e12f6d4d42390f979f5aa5ad576e9",
  "files": [
   "goods.json",
   "buildings.json",

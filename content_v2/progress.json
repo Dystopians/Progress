@@ -843,14 +843,15 @@
    "need": {
     "techs": [
      "water_power",
-     "bookkeeping"
+     "bookkeeping",
+     "banking"
     ],
     "buildings": {
-     "watermill": 6,
-     "port": 6
+     "watermill": 8,
+     "port": 8
     },
     "social": {
-     "literacy": 0.14
+     "literacy": 0.16
     }
    }
   },
@@ -869,7 +870,7 @@
      "cokeworks": 3
     },
     "social": {
-     "urban": 0.25
+     "urban": 0.14
     }
    }
   },
@@ -894,8 +895,8 @@
   }
  ],
  "obsolescence": {
-  "per_year": 3,
-  "cap": 30
+  "per_year_ppm": 15000,
+  "cap_ppm": 150000
  },
  "decrees": [
   {

@@ -29,10 +29,11 @@ NEEDS = [
     dict(id="staple", name="口粮", essential=True, weight=30, era=1, own_food=True,
          goods={"rice": 1.0, "grain": 1.0, "beans": 0.9, "flour": 1.0, "bread": 1.2},
          qty={P: 0.45, AR: 0.5, M: 0.52, GE: 0.54},
-         taste={"beiyuan": {"grain": 0.72, "beans": 0.2, "rice": 0.08},
-                "zhongzhou": {"rice": 0.72, "grain": 0.14, "beans": 0.14},
-                "haijia": {"rice": 0.78, "grain": 0.08, "beans": 0.14},
-                "xiling": {"grain": 0.46, "rice": 0.34, "beans": 0.2}}),
+         # 面粉（第二时代）、面包（第三时代）只在吃麦的北方与西岭慢慢普及；稻作区照吃米
+         taste={"beiyuan": {"grain": 0.72, "beans": 0.2, "rice": 0.08, "flour": 0.3, "bread": 0.12},
+                "zhongzhou": {"rice": 0.72, "grain": 0.14, "beans": 0.14, "flour": 0.06, "bread": 0.04},
+                "haijia": {"rice": 0.78, "grain": 0.08, "beans": 0.14, "flour": 0.03, "bread": 0.03},
+                "xiling": {"grain": 0.46, "rice": 0.34, "beans": 0.2, "flour": 0.15, "bread": 0.06}}),
     dict(id="salt", name="盐", essential=True, weight=8, era=1, goods={"salt": 1.0},
          qty={P: 0.025, AR: 0.025, M: 0.028, GE: 0.03}),
     dict(id="clothes", name="衣", weight=12, era=1, el=1.0, goods={"fabric": 1.0, "clothing": 1.3, "wool": 3.0},
@@ -170,5 +171,5 @@ GOV = dict(
     relief_budget=150_000.0,        # 赈济拨款基数（两 / 季）
     commerce_margin=0.08,           # 零售加价（归商贾经营的集市）
     # 各时代人们心里「过得去」的日用水平（相对开局篮子）：世界在变，期待也在涨
-    comfort_expect=[1.0, 1.3, 1.7, 2.3],
+    comfort_expect=[1.0, 1.2, 1.5, 2.0],
 )

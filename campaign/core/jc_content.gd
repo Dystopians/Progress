@@ -507,17 +507,20 @@ func _add_method(m: Dictionary, b: int) -> int:
 		iq.append(int(inp[gk2]))
 	m_in_g.append(ig)
 	m_in_q.append(iq)
-	# 投入的价值份额（按基准价）
-	var tot_v: int = 0
+	var lab: Dictionary = m.get("labor", {})
+	var lab_v: int = 0
+	for c: int in c_n:
+		m_labor.append(int(lab.get(c_id[c], 0)))
+		lab_v += int(lab.get(c_id[c], 0)) * c_wage[c]
+	# 投入占「投入 + 工钱」（按基准价与基准工钱）的份额：份额大的是主料，缺多少减多少；
+	# 份额小的是辅料（农田的役畜与农具、船坞的铜钉……），缺了只减一部分
+	var tot_v: int = lab_v
 	for kk: int in ig.size():
 		tot_v += JCMath.value(iq[kk], g_base[ig[kk]])
 	var shares: PackedInt64Array = PackedInt64Array()
 	for kk2: int in ig.size():
-		shares.append(JCMath.ratio_ppm(JCMath.value(iq[kk2], g_base[ig[kk2]]), tot_v))
+		shares.append(JCMath.ratio_ppm(JCMath.value(iq[kk2], g_base[ig[kk2]]), maxi(1, tot_v)))
 	m_in_share.append(shares)
-	var lab: Dictionary = m.get("labor", {})
-	for c: int in c_n:
-		m_labor.append(int(lab.get(c_id[c], 0)))
 	return i
 
 

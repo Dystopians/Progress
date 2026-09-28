@@ -447,7 +447,9 @@ building("shipyard", "船坞", "workshop", "manu", capital=1.6, art=art3("b08", 
 # ── 第二时代起 ──
 building("gristmill", "磨坊", "workshop", "manu", capital=1.0, era=2, tech="water_power",
          art=art3("b05", "grainmill"),
-         methods=[method("mill_water", "水磨", era=2, water=True, out={"flour": 20000}, inp={"grain": 21000},
+         methods=[method("mill_animal", "畜力磨", era=2, out={"flour": 9000}, inp={"grain": 9450, "draft_animal": 20},
+                         labor={AR: 900, M: 30}),
+                  method("mill_water", "水磨", era=2, water=True, out={"flour": 20000}, inp={"grain": 21000},
                          labor={AR: 800, M: 40}),
                   method("mill_steam", "蒸汽面粉厂", era=3, tech="steam_engine", out={"flour": 60000},
                          inp={"grain": 63000, "power": 40}, labor={AR: 900, M: 60})])

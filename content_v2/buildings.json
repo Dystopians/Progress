@@ -4227,8 +4227,8 @@
    "land": "",
    "deposit": "",
    "coast": false,
-   "cost_li": 10240000,
-   "maint_li": 153600,
+   "cost_li": 11280000,
+   "maint_li": 169200,
    "build_q": 4,
    "era": 2,
    "era_end": 4,
@@ -4241,6 +4241,29 @@
     "4": "assets/buildings/b05/grainmill_modern.png"
    },
    "methods": [
+    {
+     "id": "mill_animal",
+     "name": "畜力磨",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "flour": 9000000
+     },
+     "inp": {
+      "grain": 9450000,
+      "draft_animal": 20000
+     },
+     "labor": {
+      "artisan": 900,
+      "merchant": 30
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "eff_ppm": 1000000,
+     "note": ""
+    },
     {
      "id": "mill_water",
      "name": "水磨",

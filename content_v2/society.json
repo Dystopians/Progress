@@ -70,22 +70,30 @@
     "beiyuan": {
      "grain": 720000,
      "beans": 200000,
-     "rice": 80000
+     "rice": 80000,
+     "flour": 300000,
+     "bread": 120000
     },
     "zhongzhou": {
      "rice": 720000,
      "grain": 140000,
-     "beans": 140000
+     "beans": 140000,
+     "flour": 60000,
+     "bread": 40000
     },
     "haijia": {
      "rice": 780000,
      "grain": 80000,
-     "beans": 140000
+     "beans": 140000,
+     "flour": 30000,
+     "bread": 30000
     },
     "xiling": {
      "grain": 460000,
      "rice": 340000,
-     "beans": 200000
+     "beans": 200000,
+     "flour": 150000,
+     "bread": 60000
     }
    }
   },

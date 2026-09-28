@@ -4,7 +4,9 @@ extends RefCounted
 
 const PPM: int = 1_000_000
 ## 民间投资：每季动用可投资闲钱的比例、年化回报门槛、每季至多新开几项
-const INVEST_RATE_PPM: int = 40_000
+const INVEST_RATE_PPM: int = 80_000
+## 每季至多几处农田改种
+const MAX_SWITCH: int = 3
 const HURDLE_PPM: int = 100_000
 const MAX_NEW: int = 4
 ## 连亏几季后民营作坊缩小一级
@@ -82,7 +84,16 @@ func current_methods(b: int) -> PackedInt64Array:
 	return out
 
 
+## 同一建筑里有没有比 m 更新、已解锁、产出同类的方法（建造提醒「这是旧式做法」用）。
+func newer_method_exists(b: int, m: int) -> bool:
+	for m2: int in ct.b_methods[b]:
+		if m2 != m and method_unlocked(m2) and ct.m_era[m2] > ct.m_era[m] and _same_crop(m, m2):
+			return true
+	return false
+
+
 ## 某堆有没有更新的可用方法（给「改造」面板与托管用）；返回方法下标或 −1。
+## 「更新」：时代更晚的；或同一时代、要靠研究才解锁的改良（轮作之于传统种法）。
 func newer_method(i: int) -> int:
 	var b: int = st.s_b[i]
 	var cur: int = st.s_m[i]
@@ -90,14 +101,27 @@ func newer_method(i: int) -> int:
 	for m: int in ct.b_methods[b]:
 		if m == cur or not method_unlocked(m):
 			continue
-		if ct.m_era[m] <= ct.m_era[cur]:
+		if not is_newer(cur, m):
 			continue
-		# 农田只在同一作物的更新种法之间升级（名字前缀相同）
+		# 农田只在同一作物的更新种法之间升级
 		if ct.b_cat[b] == JCContent.CAT_FARM and not _same_crop(cur, m):
 			continue
-		if best < 0 or ct.m_era[m] > ct.m_era[best]:
+		if best < 0 or ct.m_era[m] > ct.m_era[best] or (ct.m_era[m] == ct.m_era[best] and m > best):
 			best = m
 	return best
+
+
+## m2 算不算 m1 的改良：时代更晚；或同时代、m2 要研究解锁而 m1 不用，且每级产出更多。
+func is_newer(m1: int, m2: int) -> bool:
+	if ct.m_era[m2] > ct.m_era[m1]:
+		return true
+	if ct.m_era[m2] < ct.m_era[m1] or ct.m_tech[m2] < 0 or ct.m_tech[m1] >= 0:
+		return false
+	var o1: PackedInt64Array = ct.m_out_g[m1]
+	var o2: PackedInt64Array = ct.m_out_g[m2]
+	if o1.is_empty() or o2.is_empty() or o1[0] != o2[0]:
+		return false
+	return ct.m_out_q[m2][0] > ct.m_out_q[m1][0]
 
 
 func _same_crop(a: int, b: int) -> bool:
@@ -368,8 +392,7 @@ func level_profit(b: int, m: int, r: int) -> int:
 	var mult: int = PPM
 	if ct.b_cat[b] == JCContent.CAT_FARM:
 		mult = mods.mult_ppm("farm_yield", ct.r_id[r])
-	var pen: int = econ.obsolete_penalty(b, m, int(ct.obsolescence.get("per_year", 3)) * 10_000,
-			int(ct.obsolescence.get("cap", 30)) * 10_000) if econ.st != null else 0
+	var pen: int = econ.obsolete_penalty(b, m, econ.obs_rate(), econ.obs_max()) if econ.st != null else 0
 	mult = JCMath.mulppm(mult, PPM - pen)
 	for k: int in og.size():
 		rev += JCMath.value(JCMath.mulppm(oq[k], mult), st.price[og[k]])
@@ -483,7 +506,7 @@ func private_invest() -> void:
 		if st.s_owner[i2] != JCContent.OWNER_PRIVATE or st.s_status[i2] != JCState.ST_ACTIVE or st.s_pending[i2] > 0:
 			continue
 		var nm: int = newer_method(i2)
-		if nm < 0:
+		if nm < 0 or not upgrade_sane(st.s_m[i2], nm, st.s_level[i2]):
 			continue
 		var gain: int = level_profit(st.s_b[i2], nm, st.s_region[i2]) - level_profit(st.s_b[i2], st.s_m[i2], st.s_region[i2])
 		if gain <= 0:
@@ -492,6 +515,71 @@ func private_invest() -> void:
 		var roi2: int = JCMath.ratio_ppm(gain * 4 * st.s_level[i2], maxi(cost, 1), 0)
 		if roi2 > HURDLE_PPM:
 			cands.append([roi2, st.s_b[i2], nm, st.s_region[i2], i2 + 1])
+	# 退回：民营的作坊、牧场卡在主料上（开工不足四成），同一建筑有不缺料、产同样东西的做法就换回去
+	var adapted: int = 0
+	for i6: int in st.stack_count():
+		if adapted >= MAX_SWITCH or funds <= 0:
+			break
+		if st.s_owner[i6] != JCContent.OWNER_PRIVATE or st.s_status[i6] != JCState.ST_ACTIVE or st.s_pending[i6] > 0:
+			continue
+		if st.s_bind[i6] != JCEconomy.B_INPUT or st.s_u[i6] >= 400_000 or st.s_level[i6] <= 0:
+			continue
+		var m7: int = st.s_m[i6]
+		var alt: int = _fallback_method(st.s_b[i6], m7)
+		if alt < 0:
+			continue
+		var cost7: int = upgrade_cost(i6, alt)
+		if cost7 > funds:
+			continue
+		start_upgrade(i6, alt)
+		funds -= cost7
+		adapted += 1
+		st.note("invest", "chron.private_fallback", {"building": ct.b_id[st.s_b[i6]], "region": ct.r_id[st.s_region[i6]],
+				"from": ct.m_id[m7], "method": ct.m_id[alt]})
+	# 改种：民田的作物积压（价低于八五折、或存货超过一季多），改种更赚钱、又不积压的作物
+	var switched: int = 0
+	for i5: int in st.stack_count():
+		if switched >= MAX_SWITCH or funds <= 0:
+			break
+		if st.s_owner[i5] != JCContent.OWNER_PRIVATE or st.s_status[i5] != JCState.ST_ACTIVE or st.s_pending[i5] > 0:
+			continue
+		var b5: int = st.s_b[i5]
+		if ct.b_cat[b5] != JCContent.CAT_FARM or st.s_level[i5] <= 0:
+			continue
+		var m5: int = st.s_m[i5]
+		if ct.m_out_g[m5].is_empty():
+			continue
+		var g5: int = ct.m_out_g[m5][0]
+		if not _glutted(g5):
+			continue
+		var r5: int = st.s_region[i5]
+		var cur_p: int = level_profit(b5, m5, r5)
+		var best_m: int = -1
+		var best_p: int = cur_p + maxi(absi(cur_p) / 5, 1)
+		for m6: int in current_methods(b5):
+			if m6 == m5 or ct.m_out_g[m6].is_empty() or _glutted(ct.m_out_g[m6][0]):
+				continue
+			var p6: int = level_profit(b5, m6, r5)
+			if p6 > best_p:
+				best_p = p6
+				best_m = m6
+		if best_m < 0:
+			continue
+		# 一次只改种一成（至少一级），分开成一堆去改，其余照种
+		var n5: int = maxi(1, st.s_level[i5] / 10)
+		var row: int = split_off(i5, n5)
+		if row < 0:
+			continue
+		var cost5: int = upgrade_cost(row, best_m)
+		if cost5 > funds:
+			st.s_level[i5] += n5
+			st.s_level[row] = 0
+			continue
+		start_upgrade(row, best_m)
+		funds -= cost5
+		switched += 1
+		st.note("invest", "chron.private_switch", {"building": ct.b_id[b5], "region": ct.r_id[r5],
+				"from": ct.m_id[m5], "method": ct.m_id[best_m]})
 	cands.sort_custom(func(a: Array, b2: Array) -> bool:
 		return a[0] > b2[0] or (a[0] == b2[0] and (a[1] < b2[1] or (a[1] == b2[1] and a[3] < b2[3]))))
 	var started: int = 0
@@ -530,6 +618,93 @@ func private_invest() -> void:
 				"method": ct.m_id[m3]})
 
 
+## 改造合不合时宜（民间投资、托管、顾问共用）：
+##   新方法每级多用的主料，眼下到货不足九成或价高两成，不改；
+##   产品已积压、新方法每级还多产的，不改；多产出来的量超过销路，也不改。
+func upgrade_sane(m_old: int, m_new: int, levels: int = 1) -> bool:
+	var ig: PackedInt64Array = ct.m_in_g[m_new]
+	for k: int in ig.size():
+		if ct.m_in_share[m_new][k] < JCEconomy.MAIN_INPUT_PPM or ct.g_durable[ig[k]] == 1:
+			continue
+		var g: int = ig[k]
+		var old_q: int = 0
+		var ko: int = ct.m_in_g[m_old].find(g)
+		if ko >= 0:
+			old_q = ct.m_in_q[m_old][ko]
+		if ct.m_in_q[m_new][k] <= old_q:
+			continue
+		var fill: int = econ.in_fill[g] if econ.in_fill.size() > g else PPM
+		if fill < 900_000 or JCMath.ratio_ppm(st.price[g], maxi(1, ct.g_base[g])) > 1_200_000:
+			return false
+		# 多出来的用量，市面上得真有富余（没人用过的新料，到货率看着是满的，其实根本没有）
+		if input_room(g) < (ct.m_in_q[m_new][k] - old_q) * maxi(1, levels):
+			return false
+	var og: PackedInt64Array = ct.m_out_g[m_new]
+	if og.is_empty():
+		return true
+	var g0: int = og[0]
+	var o_old: int = 0
+	var k0: int = ct.m_out_g[m_old].find(g0)
+	if k0 >= 0:
+		o_old = ct.m_out_q[m_old][k0]
+	var extra: int = (ct.m_out_q[m_new][0] - o_old) * maxi(1, levels)
+	if extra <= 0:
+		return true
+	if _glutted(g0):
+		return false
+	return market_room(g0) >= extra / 2
+
+
+## 某商品眼下的富余：上季产量与进口减去各方用掉的，加半数库存（易腐的就只看当季富余）。
+func input_room(g: int) -> int:
+	var flow: int = st.f_prod[g] + st.f_imp[g] - st.f_use[g] - st.f_hh[g] - st.f_gov[g] - st.f_exp[g]
+	@warning_ignore("integer_division")
+	return maxi(0, flow) + st.stock[g] / 2
+
+
+## 缺料时可以退回的做法：同一建筑、已解锁、产出同一样主产品，主料眼下到货都在八成以上。
+func _fallback_method(b: int, m: int) -> int:
+	var og: PackedInt64Array = ct.m_out_g[m]
+	if og.is_empty():
+		return -1
+	for m2: int in ct.b_methods[b]:
+		if m2 == m or not method_unlocked(m2):
+			continue
+		var o2: PackedInt64Array = ct.m_out_g[m2]
+		if o2.is_empty() or o2[0] != og[0]:
+			continue
+		var ok: bool = true
+		var ig: PackedInt64Array = ct.m_in_g[m2]
+		for k: int in ig.size():
+			if ct.m_in_share[m2][k] < JCEconomy.MAIN_INPUT_PPM or ct.g_durable[ig[k]] == 1:
+				continue
+			var fill: int = econ.in_fill[ig[k]] if econ.in_fill.size() > ig[k] else PPM
+			if fill < 800_000:
+				ok = false
+				break
+		if ok:
+			return m2
+	return -1
+
+
+## 积压：价格低于基准八五折，而且库存超过一季的需求（两样都占才算，免得一时的波动就改种）。
+func _glutted(g: int) -> bool:
+	var pp: int = JCMath.ratio_ppm(st.price[g], maxi(1, ct.g_base[g]))
+	var d: int = maxi(1, st.f_demand[g])
+	return pp < 850_000 and st.stock[g] > d
+
+
+## 从一堆里分出 n 级成为新的一堆（同地区、同建筑、同方法、同所有者），返回新堆行号；分不了返回 −1。
+func split_off(i: int, n: int) -> int:
+	if n <= 0 or n >= st.s_level[i] or st.s_status[i] != JCState.ST_ACTIVE:
+		return -1
+	st.s_level[i] -= n
+	var row: int = st.add_stack(st.s_region[i], st.s_b[i], st.s_m[i], st.s_owner[i], n, JCState.ST_ACTIVE, 0, 0)
+	st.s_fund[row] = st.s_fund[i]
+	st.s_u[row] = st.s_u[i]
+	return row
+
+
 func _roi(b: int, m: int, r: int) -> int:
 	var cost: int = level_cost(b, m, false)
 	if cost <= 0:
@@ -561,6 +736,14 @@ func _roi(b: int, m: int, r: int) -> int:
 		var k: int = r * C + c
 		var idle: int = maxi(0, JCMath.mulppm(st.pop[k], ct.c_work[c]) - st.employed[k])
 		util = mini(util, maxi(300_000, JCMath.ratio_ppm(idle, need)))
+	# 水力：本地区水力不够时，新开的水力作坊只能开到五成
+	if ct.m_water[m] == 1 and econ.water_cov.size() > r:
+		var wl: int = 0
+		for i3: int in st.stack_count():
+			if st.s_region[i3] == r and ct.m_water[st.s_m[i3]] == 1:
+				wl += st.s_level[i3]
+		if econ.water_cov[r] < (wl + 1) * PPM:
+			util = mini(util, 200_000)
 	# 原料：本季这些投入作为生产投入实际到了几成（主料缺多少算多少；辅料按份额）
 	var ig: PackedInt64Array = ct.m_in_g[m]
 	var sh: PackedInt64Array = ct.m_in_share[m]
@@ -568,7 +751,13 @@ func _roi(b: int, m: int, r: int) -> int:
 		var g: int = ig[k2]
 		var f: int = econ.in_fill[g] if econ.in_fill.size() > g else PPM
 		if sh[k2] < JCEconomy.MAIN_INPUT_PPM:
-			f = PPM - JCMath.mulppm(sh[k2], PPM - f)
+			f = PPM - JCMath.mulppm(maxi(sh[k2], JCEconomy.MINOR_INPUT_FLOOR), PPM - f)
+		elif f < 700_000:
+			# 主料眼下就不够七成：再开一家只会一起挨饿，按平方重罚
+			f = JCMath.mulppm(f, f)
+		if sh[k2] >= JCEconomy.MAIN_INPUT_PPM and ct.g_durable[g] != 1:
+			# 主料还得有富余够这一级用
+			f = mini(f, JCMath.ratio_ppm(input_room(g), maxi(1, ct.m_in_q[m][k2])))
 		util = mini(util, f)
 	prof = JCMath.mulppm(prof, util)
 	var roi: int = JCMath.ratio_ppm(prof * 4, cost, 0)

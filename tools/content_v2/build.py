@@ -308,7 +308,9 @@ def export(cal, res):
                                options=opts, text=e["text"], art=e["art"] or "", region=e["region"],
                                chance_ppm=i_ppm(e["chance"]), cooldown=e["cooldown"]))
     texts.append(write_json("progress.json", dict(schema="jc.progress", version=1, techs=techs_out, eras=prog.ERAS,
-                                                  obsolescence=prog.OBSOLESCENCE, decrees=decrees_out,
+                                                  obsolescence={"per_year_ppm": i_ppm(prog.OBSOLESCENCE["per_year"] / 100.0),
+                                                                "cap_ppm": i_ppm(prog.OBSOLESCENCE["cap"] / 100.0)},
+                                                  decrees=decrees_out,
                                                   partners=partners_out,
                                                   tech_order={str(k): v for k, v in prog.TECH_ORDER.items()},
                                                   landmarks=landmarks_out, events=events_out)))
