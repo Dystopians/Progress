@@ -42,11 +42,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -63,11 +64,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -85,11 +87,12 @@
       "fertilizer": 140000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -107,11 +110,12 @@
       "fertilizer": 190000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -128,11 +132,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -149,11 +154,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -171,11 +177,12 @@
       "fertilizer": 122000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -193,11 +200,12 @@
       "fertilizer": 166000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -214,11 +222,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -235,11 +244,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -257,11 +267,12 @@
       "fertilizer": 42000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -279,11 +290,12 @@
       "fertilizer": 60000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -300,11 +312,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -321,11 +334,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -343,11 +357,12 @@
       "fertilizer": 55000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -365,11 +380,12 @@
       "fertilizer": 76000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -386,11 +402,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -407,11 +424,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -429,11 +447,12 @@
       "fertilizer": 70000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -451,11 +470,12 @@
       "fertilizer": 96000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -472,11 +492,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -493,11 +514,12 @@
       "draft_animal": 55000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -515,11 +537,12 @@
       "fertilizer": 420000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -537,11 +560,12 @@
       "fertilizer": 563000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -587,11 +611,12 @@
       "draft_animal": 50000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -608,11 +633,12 @@
       "draft_animal": 50000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 80000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -629,11 +655,12 @@
       "draft_animal": 60000
      },
      "labor": {
-      "peasant": 33985
+      "peasant": 29172
      },
      "water": false,
      "upgrade_cost_ppm": 120000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -651,11 +678,12 @@
       "fertilizer": 145000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 150000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -673,11 +701,12 @@
       "fertilizer": 196000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -694,11 +723,12 @@
       "draft_animal": 40000
      },
      "labor": {
-      "peasant": 31153
+      "peasant": 26741
      },
      "water": false,
      "upgrade_cost_ppm": 50000,
      "upgrade_q": 1,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -743,11 +773,12 @@
       "tools": 80000
      },
      "labor": {
-      "peasant": 31153
+      "peasant": 26741
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -764,11 +795,12 @@
       "fertilizer": 30000
      },
      "labor": {
-      "peasant": 28321
+      "peasant": 24310
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -813,11 +845,12 @@
       "tools": 60000
      },
      "labor": {
-      "peasant": 31153
+      "peasant": 26741
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -834,11 +867,12 @@
       "power": 40000
      },
      "labor": {
-      "peasant": 21240
+      "peasant": 18233
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -883,11 +917,12 @@
       "tools": 60000
      },
      "labor": {
-      "peasant": 22656
+      "peasant": 19448
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -905,11 +940,12 @@
       "electricity": 50000
      },
      "labor": {
-      "peasant": 12744
+      "peasant": 10940
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -948,18 +984,19 @@
      "era_end": 4,
      "tech": "",
      "out": {
-      "draft_animal": 1600000,
       "meat": 3500000,
-      "hides": 2600000,
-      "wool": 1500000
+      "draft_animal": 360000,
+      "wool": 450000,
+      "hides": 140000
      },
      "inp": {},
      "labor": {
-      "peasant": 12744
+      "peasant": 10940
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -969,20 +1006,21 @@
      "era_end": 4,
      "tech": "fertilizer",
      "out": {
-      "draft_animal": 1600000,
       "meat": 7000000,
-      "hides": 4200000,
-      "wool": 2600000
+      "draft_animal": 600000,
+      "wool": 900000,
+      "hides": 280000
      },
      "inp": {
       "grain": 6000000
      },
      "labor": {
-      "peasant": 11328
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -993,8 +1031,8 @@
      "tech": "mechanized_farming",
      "out": {
       "meat": 14000000,
-      "hides": 6000000,
-      "wool": 3500000
+      "wool": 1800000,
+      "hides": 560000
      },
      "inp": {
       "grain": 10000000,
@@ -1002,11 +1040,12 @@
       "machinery": 5000
      },
      "labor": {
-      "peasant": 7080
+      "peasant": 6078
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1052,11 +1091,12 @@
       "rope": 300000
      },
      "labor": {
-      "peasant": 14160
+      "peasant": 12155
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1073,11 +1113,12 @@
       "coal": 3000000
      },
      "labor": {
-      "peasant": 11328
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1095,11 +1136,12 @@
       "electricity": 60000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1144,11 +1186,12 @@
       "tools": 100000
      },
      "labor": {
-      "peasant": 11328
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1165,11 +1208,12 @@
       "coal": 2000000
      },
      "labor": {
-      "peasant": 8496
+      "peasant": 7293
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1186,11 +1230,12 @@
       "machinery": 5000
      },
      "labor": {
-      "peasant": 5664
+      "peasant": 4862
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1241,6 +1286,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1263,6 +1309,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1284,6 +1331,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1334,6 +1382,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1356,6 +1405,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1377,6 +1427,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1427,6 +1478,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1448,6 +1500,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1498,6 +1551,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1521,6 +1575,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1543,6 +1598,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1593,6 +1649,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1614,6 +1671,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1635,6 +1693,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1683,6 +1742,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1704,6 +1764,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1724,6 +1785,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1774,6 +1836,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1824,6 +1887,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -1845,6 +1909,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1894,6 +1959,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1944,6 +2010,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -1994,6 +2061,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2044,6 +2112,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2066,6 +2135,7 @@
      "water": true,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2089,6 +2159,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2112,6 +2183,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2162,6 +2234,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2184,6 +2257,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2207,6 +2281,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2230,6 +2305,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2280,6 +2356,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2303,6 +2380,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2326,6 +2404,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2376,6 +2455,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2399,6 +2479,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2422,6 +2503,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2473,6 +2555,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2496,6 +2579,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2546,6 +2630,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2596,6 +2681,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2617,6 +2703,7 @@
      "water": true,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2639,6 +2726,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2690,6 +2778,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2712,6 +2801,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2735,6 +2825,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2758,6 +2849,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2810,6 +2902,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2832,6 +2925,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -2883,6 +2977,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2905,6 +3000,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2928,6 +3024,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -2951,6 +3048,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3002,6 +3100,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3025,6 +3124,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3047,6 +3147,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3098,6 +3199,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3121,6 +3223,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3143,6 +3246,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3193,6 +3297,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3214,6 +3319,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3236,6 +3342,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3286,6 +3393,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3307,6 +3415,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3328,6 +3437,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3378,6 +3488,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3400,6 +3511,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3450,6 +3562,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3472,6 +3585,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3496,6 +3610,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3546,6 +3661,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3569,6 +3685,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3619,6 +3736,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3642,6 +3760,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3693,6 +3812,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3715,6 +3835,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3738,6 +3859,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3788,6 +3910,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3810,6 +3933,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3860,6 +3984,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3883,6 +4008,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -3933,6 +4059,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3955,6 +4082,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -3977,6 +4105,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4021,7 +4150,8 @@
       "lumber": 3000000,
       "rope": 3000000,
       "sailcloth": 1500000,
-      "tools": 100000
+      "tools": 100000,
+      "copper": 60000
      },
      "labor": {
       "artisan": 3000,
@@ -4030,6 +4160,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4044,7 +4175,8 @@
      "inp": {
       "steel": 1500000,
       "machinery": 20000,
-      "rope": 2000000
+      "rope": 2000000,
+      "copper": 100000
      },
      "labor": {
       "artisan": 3500,
@@ -4053,6 +4185,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4076,6 +4209,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4126,6 +4260,7 @@
      "water": true,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4148,6 +4283,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4198,6 +4334,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4221,6 +4358,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4272,6 +4410,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4295,6 +4434,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4345,6 +4485,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4367,6 +4508,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4417,6 +4559,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4441,6 +4584,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4476,7 +4620,7 @@
      "id": "steam_power",
      "name": "蒸汽机组",
      "era": 3,
-     "era_end": 3,
+     "era_end": 4,
      "tech": "",
      "out": {
       "power": 900000
@@ -4492,10 +4636,11 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
-   "note": "第四时代由电厂取代。"
+   "note": "第四时代仍可用，但作坊换成电力方式后就不再需要它。"
   },
   {
    "id": "gasworks",
@@ -4543,6 +4688,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4595,6 +4741,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4618,6 +4765,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4672,6 +4820,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4696,6 +4845,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4748,6 +4898,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4772,6 +4923,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4815,7 +4967,8 @@
      "inp": {
       "lumber": 2000000,
       "tools": 2000000,
-      "pig_iron": 800000
+      "pig_iron": 800000,
+      "copper": 80000
      },
      "labor": {
       "artisan": 2500,
@@ -4824,6 +4977,7 @@
      "water": true,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4838,7 +4992,8 @@
      "inp": {
       "steel": 2500000,
       "tools": 1500000,
-      "power": 60000
+      "power": 60000,
+      "copper": 150000
      },
      "labor": {
       "artisan": 3000,
@@ -4848,6 +5003,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -4872,6 +5028,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4923,6 +5080,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -4976,6 +5134,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5000,6 +5159,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5051,6 +5211,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5073,6 +5234,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5115,7 +5277,8 @@
      },
      "inp": {
       "coal": 60000000,
-      "machinery": 8000
+      "machinery": 8000,
+      "cable": 40000
      },
      "labor": {
       "artisan": 1200,
@@ -5124,6 +5287,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5137,7 +5301,8 @@
      },
      "inp": {
       "refined_fuel": 12000000,
-      "machinery": 8000
+      "machinery": 8000,
+      "cable": 40000
      },
      "labor": {
       "artisan": 1000,
@@ -5146,6 +5311,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5187,7 +5353,8 @@
       "electricity": 1400000
      },
      "inp": {
-      "machinery": 4000
+      "machinery": 4000,
+      "cable": 60000
      },
      "labor": {
       "artisan": 500,
@@ -5196,6 +5363,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5246,6 +5414,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5299,6 +5468,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5351,6 +5521,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5405,6 +5576,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5459,6 +5631,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5484,6 +5657,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5508,6 +5682,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5549,7 +5724,8 @@
       "appliances": 30000000
      },
      "inp": {
-      "steel": 2500000,
+      "steel": 2000000,
+      "aluminum": 600000,
       "electric_motor": 900000,
       "plastic": 1500000,
       "electricity": 150000
@@ -5562,6 +5738,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5603,7 +5780,8 @@
       "automobile": 4000000
      },
      "inp": {
-      "steel": 5000000,
+      "steel": 4200000,
+      "aluminum": 800000,
       "machinery": 200000,
       "rubber": 1500000,
       "electronic_parts": 1200000,
@@ -5618,6 +5796,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -5666,6 +5845,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5683,6 +5863,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2500000,
      "note": ""
     },
     {
@@ -5700,6 +5881,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 6000000,
      "note": ""
     }
    ],
@@ -5741,7 +5923,8 @@
      "tech": "",
      "out": {},
      "inp": {
-      "draft_animal": 30000
+      "draft_animal": 30000,
+      "leather": 15000
      },
      "labor": {
       "artisan": 1000,
@@ -5750,6 +5933,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5769,6 +5953,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 4000000,
      "note": ""
     },
     {
@@ -5788,6 +5973,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 8000000,
      "note": ""
     }
    ],
@@ -5811,7 +5997,7 @@
    "era_end": 4,
    "tech": "",
    "effects": {
-    "logistics_cut": 15000
+    "logistics_cut": 5000
    },
    "art": {
     "1": "assets/buildings/b03/transport_early.png",
@@ -5834,6 +6020,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5852,6 +6039,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2670000,
      "note": ""
     },
     {
@@ -5870,10 +6058,11 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 3330000,
      "note": ""
     }
    ],
-   "note": "每级把本地区的物流成本降低 1.5 个百分点（铁路 4 个、公路 5 个），有下限。"
+   "note": "每级把本地区的物流成本降低 0.5 个百分点（铁路约 1.3 个、公路约 1.7 个），最低到 1%。"
   },
   {
    "id": "canal",
@@ -5893,7 +6082,7 @@
    "era_end": 4,
    "tech": "canal_engineering",
    "effects": {
-    "logistics_cut": 30000
+    "logistics_cut": 10000
    },
    "art": {
     "1": "assets/buildings/b12/canal_early.png",
@@ -5916,6 +6105,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -5934,10 +6124,11 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1500000,
      "note": ""
     }
    ],
-   "note": "只能建在有河的地区；每级降低物流成本 3 个百分点。"
+   "note": "只能建在有河的地区；每级降低物流成本 1 个百分点。"
   },
   {
    "id": "port",
@@ -5984,6 +6175,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6004,6 +6196,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2500000,
      "note": ""
     },
     {
@@ -6024,6 +6217,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 6000000,
      "note": ""
     }
    ],
@@ -6076,6 +6270,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6093,6 +6288,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     },
     {
@@ -6110,6 +6306,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 3000000,
      "note": ""
     }
    ],
@@ -6156,6 +6353,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6174,6 +6372,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1400000,
      "note": ""
     },
     {
@@ -6192,6 +6391,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1800000,
      "note": ""
     }
    ],
@@ -6238,6 +6438,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6256,6 +6457,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1500000,
      "note": ""
     }
    ],
@@ -6303,6 +6505,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -6350,6 +6553,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     }
    ],
@@ -6399,6 +6603,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6418,6 +6623,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1500000,
      "note": ""
     },
     {
@@ -6438,6 +6644,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     }
    ],
@@ -6487,6 +6694,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6505,6 +6713,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     },
     {
@@ -6524,6 +6733,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 3700000,
      "note": ""
     }
    ],
@@ -6573,6 +6783,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6592,6 +6803,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     },
     {
@@ -6612,6 +6824,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 3750000,
      "note": ""
     }
    ],
@@ -6660,6 +6873,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6678,6 +6892,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     },
     {
@@ -6697,6 +6912,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 4000000,
      "note": ""
     }
    ],
@@ -6744,6 +6960,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6761,6 +6978,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1500000,
      "note": ""
     },
     {
@@ -6780,6 +6998,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 2000000,
      "note": ""
     }
    ],
@@ -6827,6 +7046,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1000000,
      "note": ""
     },
     {
@@ -6846,6 +7066,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 1900000,
      "note": ""
     },
     {
@@ -6857,7 +7078,8 @@
      "out": {},
      "inp": {
       "electricity": 80000,
-      "chemicals": 100000
+      "chemicals": 100000,
+      "cable": 10000
      },
      "labor": {
       "artisan": 500
@@ -6865,6 +7087,7 @@
      "water": false,
      "upgrade_cost_ppm": 350000,
      "upgrade_q": 2,
+     "eff_ppm": 3750000,
      "note": ""
     }
    ],
@@ -6872,8 +7095,62 @@
   }
  ],
  "maint_mix": {
-  "lumber": 400000,
-  "bricks": 300000,
-  "tools": 300000
+  "1": {
+   "lumber": 400000,
+   "bricks": 300000,
+   "tools": 300000
+  },
+  "2": {
+   "lumber": 350000,
+   "bricks": 300000,
+   "tools": 250000,
+   "glass": 100000
+  },
+  "3": {
+   "lumber": 200000,
+   "bricks": 200000,
+   "cement": 200000,
+   "steel": 200000,
+   "tools": 200000
+  },
+  "4": {
+   "cement": 250000,
+   "steel": 250000,
+   "cable": 200000,
+   "machinery": 150000,
+   "tools": 150000
+  }
+ },
+ "build_mix": {
+  "1": {
+   "lumber": 350000,
+   "bricks": 300000,
+   "cut_stone": 150000,
+   "tools": 200000
+  },
+  "2": {
+   "lumber": 300000,
+   "bricks": 300000,
+   "cut_stone": 150000,
+   "tools": 150000,
+   "glass": 100000
+  },
+  "3": {
+   "bricks": 250000,
+   "cement": 200000,
+   "steel": 250000,
+   "lumber": 150000,
+   "tools": 100000,
+   "cut_stone": 50000
+  },
+  "4": {
+   "cement": 280000,
+   "steel": 300000,
+   "glass": 100000,
+   "cable": 150000,
+   "machinery": 100000,
+   "bricks": 50000,
+   "cut_stone": 20000
+  }
  }
 }

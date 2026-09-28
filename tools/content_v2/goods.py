@@ -108,8 +108,8 @@ good("beer", "啤酒", "桶", "manu", 2, era=3, perish=5, art=A + "g08/goods_bee
 good("gas", "煤气", "千方", "energy", 1, era=3, perish=100, art=A + "g03/goods_gas.png")
 good("rubber", "橡胶", "担", "agri", 0, era=3, perish=1, price=14.0, art=A + "g03/goods_rubber.png",
      note="只能进口")
-good("power", "动力", "千马力时", "energy", 1, era=3, era_end=3, perish=100, art=None,
-     note="蒸汽动力，不可储存；需一张「蒸汽机」物资图")
+good("power", "动力", "千马力时", "energy", 1, era=3, perish=100, art=None,
+     note="蒸汽动力，不可储存；第四时代仍可用（渐被电力取代）。需一张「蒸汽机」物资图")
 
 # ── 第四时代 ───────────────────────────────────────────────────────────────
 good("electricity", "电力", "万度", "energy", 1, era=4, perish=100, art=A + "g04/goods_electricity.png")

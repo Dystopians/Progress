@@ -7,7 +7,8 @@
    "name": "农户",
    "base_wage_li": 1600,
    "work_ppm": 500000,
-   "save_ppm": 30000,
+   "save_ppm": 60000,
+   "buffer_ppm": 2000000,
    "invest": false,
    "note": "种地、放牧、打鱼、伐木，也当兵、修路。"
   },
@@ -16,7 +17,8 @@
    "name": "工匠",
    "base_wage_li": 3000,
    "work_ppm": 520000,
-   "save_ppm": 50000,
+   "save_ppm": 80000,
+   "buffer_ppm": 2000000,
    "invest": false,
    "note": "作坊、矿场、营造、运输里的手艺人与工人。"
   },
@@ -25,7 +27,8 @@
    "name": "商贾",
    "base_wage_li": 4000,
    "work_ppm": 450000,
-   "save_ppm": 180000,
+   "save_ppm": 200000,
+   "buffer_ppm": 5000000,
    "invest": true,
    "note": "买卖、经营作坊与商铺，是民间投资的主力。"
   },
@@ -35,6 +38,7 @@
    "base_wage_li": 5500,
    "work_ppm": 400000,
    "save_ppm": 150000,
+   "buffer_ppm": 5000000,
    "invest": true,
    "note": "读书做官、收租、教书、行医，后来的专业人士。"
   }
@@ -47,6 +51,8 @@
    "weight": 30,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": true,
    "goods": {
     "rice": 1000000,
     "grain": 1000000,
@@ -55,7 +61,7 @@
     "bread": 1200000
    },
    "qty": {
-    "peasant": 470,
+    "peasant": 450,
     "artisan": 500,
     "merchant": 520,
     "gentry": 540
@@ -90,6 +96,8 @@
    "weight": 8,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "salt": 1000000
    },
@@ -108,17 +116,35 @@
    "weight": 12,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "fabric": 1000000,
-    "clothing": 1300000
+    "clothing": 1300000,
+    "wool": 3000000
    },
    "qty": {
-    "peasant": 160,
+    "peasant": 100,
     "artisan": 200,
     "merchant": 340,
     "gentry": 400
    },
-   "taste": {}
+   "taste": {
+    "beiyuan": {
+     "fabric": 900000,
+     "wool": 100000
+    },
+    "xiling": {
+     "fabric": 930000,
+     "wool": 70000
+    },
+    "zhongzhou": {
+     "fabric": 1000000
+    },
+    "haijia": {
+     "fabric": 1000000
+    }
+   }
   },
   {
    "id": "fuel",
@@ -127,6 +153,8 @@
    "weight": 8,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 500000,
+   "own_food": false,
    "goods": {
     "charcoal": 1000000,
     "timber": 1200000,
@@ -134,7 +162,7 @@
     "gas": 4000000
    },
    "qty": {
-    "peasant": 300,
+    "peasant": 140,
     "artisan": 400,
     "merchant": 550,
     "gentry": 650
@@ -166,17 +194,36 @@
    "weight": 6,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 500000,
+   "own_food": false,
    "goods": {
     "vegetables": 1000000,
     "fruit": 800000
    },
    "qty": {
-    "peasant": 220,
+    "peasant": 100,
     "artisan": 240,
     "merchant": 300,
     "gentry": 320
    },
-   "taste": {}
+   "taste": {
+    "beiyuan": {
+     "vegetables": 860000,
+     "fruit": 140000
+    },
+    "zhongzhou": {
+     "vegetables": 800000,
+     "fruit": 200000
+    },
+    "haijia": {
+     "vegetables": 700000,
+     "fruit": 300000
+    },
+    "xiling": {
+     "vegetables": 800000,
+     "fruit": 200000
+    }
+   }
   },
   {
    "id": "protein",
@@ -185,13 +232,15 @@
    "weight": 6,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "fish": 1000000,
     "meat": 1100000,
     "preserved_food": 1400000
    },
    "qty": {
-    "peasant": 35,
+    "peasant": 20,
     "artisan": 60,
     "merchant": 120,
     "gentry": 150
@@ -222,12 +271,14 @@
    "weight": 4,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 500000,
+   "own_food": false,
    "goods": {
     "cooking_oil": 1000000
    },
    "qty": {
-    "peasant": 14,
-    "artisan": 18,
+    "peasant": 4,
+    "artisan": 12,
     "merchant": 30,
     "gentry": 35
    },
@@ -240,13 +291,15 @@
    "weight": 4,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "earthenware": 1000000,
     "porcelain": 1500000,
     "glass": 6000000
    },
    "qty": {
-    "peasant": 100,
+    "peasant": 40,
     "artisan": 150,
     "merchant": 260,
     "gentry": 300
@@ -260,13 +313,15 @@
    "weight": 3,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "candles": 1000000,
     "gas": 60000000,
     "electricity": 200000000
    },
    "qty": {
-    "peasant": 80,
+    "peasant": 30,
     "artisan": 140,
     "merchant": 400,
     "gentry": 600
@@ -280,11 +335,13 @@
    "weight": 4,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "medicine": 1000000
    },
    "qty": {
-    "peasant": 10,
+    "peasant": 4,
     "artisan": 15,
     "merchant": 30,
     "gentry": 40
@@ -298,11 +355,13 @@
    "weight": 3,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "furniture": 1000000
    },
    "qty": {
-    "peasant": 4,
+    "peasant": 2,
     "artisan": 8,
     "merchant": 30,
     "gentry": 40
@@ -316,13 +375,15 @@
    "weight": 2,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "tea": 1000000,
     "coffee": 1000000
    },
    "qty": {
-    "peasant": 4,
-    "artisan": 8,
+    "peasant": 1,
+    "artisan": 6,
     "merchant": 20,
     "gentry": 30
    },
@@ -335,12 +396,14 @@
    "weight": 2,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 500000,
+   "own_food": false,
    "goods": {
     "wine": 1000000,
     "beer": 1000000
    },
    "qty": {
-    "peasant": 50,
+    "peasant": 20,
     "artisan": 80,
     "merchant": 150,
     "gentry": 200
@@ -354,11 +417,13 @@
    "weight": 2,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "paper": 1000000
    },
    "qty": {
-    "peasant": 10,
+    "peasant": 3,
     "artisan": 30,
     "merchant": 120,
     "gentry": 400
@@ -372,6 +437,8 @@
    "weight": 2,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "books": 1000000
    },
@@ -390,6 +457,8 @@
    "weight": 2,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "silk": 1000000
    },
@@ -408,6 +477,8 @@
    "weight": 1,
    "era": 1,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "porcelain": 1000000
    },
@@ -426,6 +497,8 @@
    "weight": 2,
    "era": 2,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "sugar": 1000000
    },
@@ -444,6 +517,8 @@
    "weight": 2,
    "era": 2,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "soap": 1000000
    },
@@ -462,6 +537,8 @@
    "weight": 1,
    "era": 2,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "spices": 1000000
    },
@@ -480,6 +557,8 @@
    "weight": 4,
    "era": 4,
    "era_end": 4,
+   "el_ppm": 1000000,
+   "own_food": false,
    "goods": {
     "electricity": 1000000
    },
@@ -498,6 +577,8 @@
    "weight": 3,
    "era": 4,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "appliances": 1000000,
     "radio": 1200000,
@@ -509,7 +590,28 @@
     "merchant": 20,
     "gentry": 25
    },
-   "taste": {}
+   "taste": {
+    "beiyuan": {
+     "appliances": 500000,
+     "radio": 250000,
+     "television": 250000
+    },
+    "zhongzhou": {
+     "appliances": 500000,
+     "radio": 250000,
+     "television": 250000
+    },
+    "haijia": {
+     "appliances": 500000,
+     "radio": 250000,
+     "television": 250000
+    },
+    "xiling": {
+     "appliances": 500000,
+     "radio": 250000,
+     "television": 250000
+    }
+   }
   },
   {
    "id": "car",
@@ -518,6 +620,8 @@
    "weight": 3,
    "era": 4,
    "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
    "goods": {
     "automobile": 1000000
    },

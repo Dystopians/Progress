@@ -11,7 +11,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 1419,
+   "base_price_li": 1258,
    "durable": false,
    "art": "assets/goods/g07/goods_rice_v2.png",
    "note": ""
@@ -25,7 +25,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 1473,
+   "base_price_li": 1309,
    "durable": false,
    "art": "assets/goods/g01/goods_grain.png",
    "note": ""
@@ -39,7 +39,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 1724,
+   "base_price_li": 1532,
    "durable": false,
    "art": "assets/goods/g07/goods_beans.png",
    "note": ""
@@ -53,7 +53,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 350000,
-   "base_price_li": 442,
+   "base_price_li": 393,
    "durable": false,
    "art": "assets/goods/g01/goods_vegetables.png",
    "note": ""
@@ -67,7 +67,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 300000,
-   "base_price_li": 944,
+   "base_price_li": 816,
    "durable": false,
    "art": "assets/goods/g01/goods_fruit.png",
    "note": ""
@@ -81,7 +81,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 7856,
+   "base_price_li": 6979,
    "durable": false,
    "art": "assets/goods/g01/goods_cotton.png",
    "note": ""
@@ -95,7 +95,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 5050,
+   "base_price_li": 4486,
    "durable": false,
    "art": "assets/goods/g07/goods_hemp.png",
    "note": ""
@@ -109,7 +109,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 100000,
-   "base_price_li": 15572,
+   "base_price_li": 13461,
    "durable": false,
    "art": "assets/goods/g05/goods_cocoon.png",
    "note": ""
@@ -123,7 +123,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 29924,
+   "base_price_li": 25865,
    "durable": false,
    "art": "assets/goods/g05/goods_tea.png",
    "note": ""
@@ -137,7 +137,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 3535,
+   "base_price_li": 3141,
    "durable": false,
    "art": "assets/goods/g07/goods_oilseed_v2.png",
    "note": ""
@@ -151,7 +151,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 400000,
-   "base_price_li": 1095,
+   "base_price_li": 954,
    "durable": false,
    "art": "assets/goods/g01/goods_fish.png",
    "note": ""
@@ -165,7 +165,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 400000,
-   "base_price_li": 3178,
+   "base_price_li": 4003,
    "durable": false,
    "art": "assets/goods/g01/goods_meat_v2.png",
    "note": ""
@@ -179,7 +179,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 3178,
+   "base_price_li": 24018,
    "durable": true,
    "art": "assets/goods/g05/goods_draft_animal.png",
    "note": ""
@@ -193,7 +193,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 3178,
+   "base_price_li": 4804,
    "durable": false,
    "art": "assets/goods/g01/goods_wool.png",
    "note": ""
@@ -207,7 +207,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 50000,
-   "base_price_li": 3178,
+   "base_price_li": 3202,
    "durable": false,
    "art": "assets/goods/g01/goods_hides.png",
    "note": ""
@@ -221,7 +221,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 623,
+   "base_price_li": 539,
    "durable": false,
    "art": "assets/goods/g01/goods_timber.png",
    "note": ""
@@ -235,7 +235,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 548,
+   "base_price_li": 547,
    "durable": false,
    "art": "assets/goods/g02/goods_iron_ore.png",
    "note": ""
@@ -249,7 +249,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 996,
+   "base_price_li": 995,
    "durable": false,
    "art": "assets/goods/g09/goods_copper_ore.png",
    "note": ""
@@ -263,7 +263,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 435,
+   "base_price_li": 434,
    "durable": false,
    "art": "assets/goods/g05/goods_kaolin.png",
    "note": ""
@@ -277,7 +277,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 770,
+   "base_price_li": 769,
    "durable": false,
    "art": "assets/goods/g08/goods_cut_stone_v2.png",
    "note": ""
@@ -291,7 +291,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 376,
+   "base_price_li": 375,
    "durable": false,
    "art": "assets/goods/g02/goods_coal.png",
    "note": ""
@@ -319,7 +319,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 13729,
+   "base_price_li": 12488,
    "durable": false,
    "art": "assets/goods/g08/goods_yarn.png",
    "note": ""
@@ -333,7 +333,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 94482,
+   "base_price_li": 83234,
    "durable": false,
    "art": "assets/goods/g08/goods_silk_thread.png",
    "note": ""
@@ -347,7 +347,7 @@
    "era": 1,
    "era_end": 3,
    "perish_ppm": 10000,
-   "base_price_li": 814,
+   "base_price_li": 742,
    "durable": false,
    "art": "assets/goods/g05/goods_charcoal.png",
    "note": ""
@@ -361,7 +361,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2028,
+   "base_price_li": 1867,
    "durable": false,
    "art": "assets/goods/g01/goods_lumber.png",
    "note": ""
@@ -375,7 +375,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 5411,
+   "base_price_li": 5181,
    "durable": false,
    "art": "assets/goods/g09/goods_pig_iron.png",
    "note": ""
@@ -389,7 +389,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 17880,
+   "base_price_li": 17415,
    "durable": false,
    "art": "assets/goods/g03/goods_copper_v2.png",
    "note": ""
@@ -403,7 +403,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 19752,
+   "base_price_li": 17818,
    "durable": false,
    "art": "assets/goods/g08/goods_cooking_oil.png",
    "note": ""
@@ -417,7 +417,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 5522,
+   "base_price_li": 5557,
    "durable": false,
    "art": "assets/goods/g02/goods_leather.png",
    "note": ""
@@ -431,7 +431,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 152,
+   "base_price_li": 145,
    "durable": false,
    "art": "assets/goods/g02/goods_paper.png",
    "note": ""
@@ -445,7 +445,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 3078,
+   "base_price_li": 2987,
    "durable": false,
    "art": "assets/goods/g02/goods_bricks.png",
    "note": ""
@@ -459,7 +459,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2363,
+   "base_price_li": 2136,
    "durable": false,
    "art": "assets/goods/g08/goods_rope.png",
    "note": ""
@@ -473,7 +473,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2363,
+   "base_price_li": 2136,
    "durable": false,
    "art": "assets/goods/g08/goods_sailcloth.png",
    "note": ""
@@ -487,7 +487,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 994,
+   "base_price_li": 915,
    "durable": false,
    "art": "assets/goods/g02/goods_fabric.png",
    "note": ""
@@ -501,7 +501,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 6794,
+   "base_price_li": 6078,
    "durable": false,
    "art": "assets/goods/g05/goods_silk.png",
    "note": ""
@@ -515,7 +515,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 2002,
+   "base_price_li": 1926,
    "durable": true,
    "art": "assets/goods/g03/goods_tools.png",
    "note": ""
@@ -529,7 +529,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 219,
+   "base_price_li": 212,
    "durable": false,
    "art": "assets/goods/g05/goods_porcelain.png",
    "note": ""
@@ -543,7 +543,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 48,
+   "base_price_li": 47,
    "durable": false,
    "art": "assets/goods/g08/goods_earthenware_v2.png",
    "note": ""
@@ -557,7 +557,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 1036,
+   "base_price_li": 995,
    "durable": false,
    "art": "assets/goods/g08/goods_furniture.png",
    "note": ""
@@ -571,7 +571,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 1218,
+   "base_price_li": 1191,
    "durable": false,
    "art": "assets/goods/g02/goods_books.png",
    "note": ""
@@ -585,7 +585,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 406,
+   "base_price_li": 373,
    "durable": false,
    "art": "assets/goods/g08/goods_candles.png",
    "note": ""
@@ -599,7 +599,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 356,
+   "base_price_li": 328,
    "durable": false,
    "art": "",
    "note": "暂用无专属图；需一张「酒坛」物资图"
@@ -613,7 +613,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 171,
+   "base_price_li": 163,
    "durable": false,
    "art": "assets/goods/g04/goods_medicine.png",
    "note": ""
@@ -627,7 +627,7 @@
    "era": 1,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 1152394,
+   "base_price_li": 1132566,
    "durable": true,
    "art": "",
    "note": "需一张「木帆船」物资图"
@@ -641,7 +641,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 200000,
-   "base_price_li": 1110,
+   "base_price_li": 977,
    "durable": false,
    "art": "assets/goods/g07/goods_sugarcane.png",
    "note": ""
@@ -655,7 +655,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 15553,
+   "base_price_li": 13857,
    "durable": false,
    "art": "assets/goods/g06/goods_sugar.png",
    "note": ""
@@ -669,7 +669,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 30000,
-   "base_price_li": 2143,
+   "base_price_li": 1924,
    "durable": false,
    "art": "assets/goods/g01/goods_flour_v2.png",
    "note": ""
@@ -697,7 +697,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2737,
+   "base_price_li": 2736,
    "durable": false,
    "art": "assets/goods/g02/goods_glass.png",
    "note": ""
@@ -711,7 +711,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 5433,
+   "base_price_li": 591,
    "durable": false,
    "art": "assets/goods/g08/goods_soap.png",
    "note": ""
@@ -753,7 +753,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 1687,
+   "base_price_li": 1569,
    "durable": false,
    "art": "assets/goods/g02/goods_clothing.png",
    "note": ""
@@ -767,7 +767,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 936,
+   "base_price_li": 935,
    "durable": false,
    "art": "assets/goods/g06/goods_coke.png",
    "note": ""
@@ -781,7 +781,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 18449,
+   "base_price_li": 17789,
    "durable": false,
    "art": "assets/goods/g02/goods_steel.png",
    "note": ""
@@ -795,7 +795,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 134728,
+   "base_price_li": 139399,
    "durable": true,
    "art": "assets/goods/g03/goods_machinery_v2.png",
    "note": ""
@@ -809,7 +809,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 28035,
+   "base_price_li": 27111,
    "durable": false,
    "art": "assets/goods/g10/goods_rail.png",
    "note": ""
@@ -823,7 +823,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 92,
+   "base_price_li": 363,
    "durable": false,
    "art": "assets/goods/g09/goods_limestone.png",
    "note": ""
@@ -837,7 +837,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 918,
+   "base_price_li": 1435,
    "durable": false,
    "art": "assets/goods/g02/goods_cement_v2.png",
    "note": ""
@@ -851,7 +851,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 699,
+   "base_price_li": 698,
    "durable": false,
    "art": "assets/goods/g09/goods_sulfur.png",
    "note": ""
@@ -865,7 +865,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2441,
+   "base_price_li": 2440,
    "durable": false,
    "art": "assets/goods/g03/goods_chemicals.png",
    "note": ""
@@ -879,7 +879,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 715,
+   "base_price_li": 714,
    "durable": false,
    "art": "assets/goods/g09/goods_phosphate.png",
    "note": ""
@@ -893,7 +893,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2355,
+   "base_price_li": 2354,
    "durable": false,
    "art": "assets/goods/g03/goods_fertilizer_v2.png",
    "note": ""
@@ -907,7 +907,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 1749,
+   "base_price_li": 1897,
    "durable": false,
    "art": "assets/goods/g02/goods_preserved_food.png",
    "note": ""
@@ -921,7 +921,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 400000,
-   "base_price_li": 2627,
+   "base_price_li": 2384,
    "durable": false,
    "art": "assets/goods/g08/goods_bread.png",
    "note": ""
@@ -935,7 +935,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 50000,
-   "base_price_li": 756,
+   "base_price_li": 507,
    "durable": false,
    "art": "assets/goods/g08/goods_beer_v2.png",
    "note": ""
@@ -949,7 +949,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 1000000,
-   "base_price_li": 2167,
+   "base_price_li": 1345,
    "durable": false,
    "art": "assets/goods/g03/goods_gas.png",
    "note": ""
@@ -975,12 +975,12 @@
    "sector": "energy",
    "tier": 1,
    "era": 3,
-   "era_end": 3,
+   "era_end": 4,
    "perish_ppm": 1000000,
-   "base_price_li": 24406,
+   "base_price_li": 24428,
    "durable": false,
    "art": "",
-   "note": "蒸汽动力，不可储存；需一张「蒸汽机」物资图"
+   "note": "蒸汽动力，不可储存；第四时代仍可用（渐被电力取代）。需一张「蒸汽机」物资图"
   },
   {
    "id": "electricity",
@@ -991,7 +991,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 1000000,
-   "base_price_li": 23876,
+   "base_price_li": 24852,
    "durable": false,
    "art": "assets/goods/g04/goods_electricity.png",
    "note": ""
@@ -1005,7 +1005,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 327,
+   "base_price_li": 332,
    "durable": false,
    "art": "assets/goods/g03/goods_crude_oil.png",
    "note": ""
@@ -1019,7 +1019,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 717,
+   "base_price_li": 726,
    "durable": false,
    "art": "assets/goods/g03/goods_refined_fuel.png",
    "note": ""
@@ -1033,7 +1033,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 717,
+   "base_price_li": 726,
    "durable": false,
    "art": "assets/goods/g10/goods_plastic.png",
    "note": ""
@@ -1047,7 +1047,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 496,
+   "base_price_li": 501,
    "durable": false,
    "art": "assets/goods/g09/goods_bauxite.png",
    "note": ""
@@ -1061,7 +1061,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 8322,
+   "base_price_li": 8536,
    "durable": false,
    "art": "assets/goods/g09/goods_aluminum.png",
    "note": ""
@@ -1075,7 +1075,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 0,
-   "base_price_li": 29056,
+   "base_price_li": 28392,
    "durable": false,
    "art": "assets/goods/g03/goods_cable.png",
    "note": ""
@@ -1089,7 +1089,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 29056,
+   "base_price_li": 28392,
    "durable": true,
    "art": "assets/goods/g03/goods_electric_motor.png",
    "note": ""
@@ -1103,7 +1103,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 2040,
+   "base_price_li": 2030,
    "durable": false,
    "art": "assets/goods/g03/goods_electronic_parts.png",
    "note": ""
@@ -1145,7 +1145,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 3750,
+   "base_price_li": 3501,
    "durable": false,
    "art": "assets/goods/g06/goods_appliances.png",
    "note": ""
@@ -1159,7 +1159,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 52066,
+   "base_price_li": 49015,
    "durable": false,
    "art": "assets/goods/g06/goods_automobile.png",
    "note": ""
@@ -1173,7 +1173,7 @@
    "era": 4,
    "era_end": 4,
    "perish_ppm": 20000,
-   "base_price_li": 17045,
+   "base_price_li": 17044,
    "durable": false,
    "art": "assets/goods/g10/goods_computer.png",
    "note": ""

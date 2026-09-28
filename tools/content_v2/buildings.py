@@ -31,10 +31,11 @@ def art3(folder, family, early=None, industrial=None, modern=None):
 
 
 def method(id, name, era=1, tech=None, out=None, inp=None, labor=None, power=0, water=False,
-           upgrade_cost=0.35, upgrade_q=2, era_end=4, note=""):
+           upgrade_cost=0.35, upgrade_q=2, era_end=4, note="", eff=1.0):
+    """eff：基础设施与公共设施的效果倍数（换代后的能力 = 建筑 effects × eff）。"""
     return dict(id=id, name=name, era=era, era_end=era_end, tech=tech, out=out or {}, inp=inp or {},
                 labor=labor or {}, power=power, water=water, upgrade_cost=upgrade_cost,
-                upgrade_q=upgrade_q, note=note)
+                upgrade_q=upgrade_q, note=note, eff=eff)
 
 
 def building(id, name, category, sector, methods, art, owners=("private", "gov"), land=None,
@@ -47,6 +48,22 @@ def building(id, name, category, sector, methods, art, owners=("private", "gov")
 
 
 P, AR, M, GE = "peasant", "artisan", "merchant", "gentry"
+
+# 营造与维护的用料（价值份额），随本国所处时代变：第三时代起要水泥和钢材，第四时代要电缆与机械。
+# 缺哪样，营造就按缺的份额放慢（不是整个停下）；维护材料缺了只记账，不减产。
+BUILD_MIX = {
+    1: {"lumber": 0.35, "bricks": 0.30, "cut_stone": 0.15, "tools": 0.20},
+    2: {"lumber": 0.30, "bricks": 0.30, "cut_stone": 0.15, "tools": 0.15, "glass": 0.10},
+    3: {"bricks": 0.25, "cement": 0.20, "steel": 0.25, "lumber": 0.15, "tools": 0.10, "cut_stone": 0.05},
+    4: {"cement": 0.28, "steel": 0.30, "glass": 0.10, "cable": 0.15, "machinery": 0.10, "bricks": 0.05,
+        "cut_stone": 0.02},
+}
+MAINT_MIX = {
+    1: {"lumber": 0.40, "bricks": 0.30, "tools": 0.30},
+    2: {"lumber": 0.35, "bricks": 0.30, "tools": 0.25, "glass": 0.10},
+    3: {"lumber": 0.20, "bricks": 0.20, "cement": 0.20, "steel": 0.20, "tools": 0.20},
+    4: {"cement": 0.25, "steel": 0.25, "cable": 0.20, "machinery": 0.15, "tools": 0.15},
+}
 
 # ════════════════════════════ 农林牧渔 ════════════════════════════════════
 FARM_ART = art3("b02", "farm")
@@ -118,14 +135,14 @@ building("orchard", "果园", "farm", "agri", land="slope", capital=1.0, art=art
                          labor={P: 9000})])
 
 building("ranch", "牧场", "farm", "agri", land="pasture", capital=1.0, art=art3("b05", "ranch"),
-         methods=[method("ranch_trad", "放牧", out={"draft_animal": 1600, "meat": 3500, "hides": 2600,
-                                                     "wool": 1500},
+         methods=[method("ranch_trad", "放牧", out={"meat": 3500, "draft_animal": 360, "wool": 450,
+                                                     "hides": 140},
                          labor={P: 9000}),
                   method("ranch_feed", "舍饲", era=3, tech="fertilizer",
-                         out={"draft_animal": 1600, "meat": 7000, "hides": 4200, "wool": 2600},
+                         out={"meat": 7000, "draft_animal": 600, "wool": 900, "hides": 280},
                          inp={"grain": 6000}, labor={P: 8000}),
                   method("ranch_modern", "现代畜牧", era=4, tech="mechanized_farming",
-                         out={"meat": 14000, "hides": 6000, "wool": 3500},
+                         out={"meat": 14000, "wool": 1800, "hides": 560},
                          inp={"grain": 10000, "electricity": 30, "machinery": 5}, labor={P: 5000})])
 
 building("fishery", "渔场", "farm", "agri", land="coast", capital=1.0, art=art3("b05", "fishing",
@@ -419,10 +436,11 @@ building("herbalist", "药局", "workshop", "manu", capital=1.0,
 
 building("shipyard", "船坞", "workshop", "manu", capital=1.6, art=art3("b08", "shipyard"),
          methods=[method("ship_wood", "木帆船", out={"ships": 30},
-                         inp={"lumber": 3000, "rope": 3000, "sailcloth": 1500, "tools": 100},
+                         inp={"lumber": 3000, "rope": 3000, "sailcloth": 1500, "tools": 100, "copper": 60},
                          labor={AR: 3000, M: 80}),
                   method("ship_steam", "蒸汽轮船", era=3, tech="steam_engine", out={"ships": 40},
-                         inp={"steel": 1500, "machinery": 20, "rope": 2000}, labor={AR: 3500, M: 120}),
+                         inp={"steel": 1500, "machinery": 20, "rope": 2000, "copper": 100},
+                         labor={AR: 3500, M: 120}),
                   method("ship_modern", "现代船厂", era=4, tech="power_grid", out={"ships": 70},
                          inp={"steel": 3000, "machinery": 30, "electricity": 150}, labor={AR: 3000, M: 150})])
 
@@ -468,9 +486,9 @@ building("cokeworks", "炼焦厂", "workshop", "energy", capital=1.6, era=3, tec
 building("steamplant", "蒸汽动力站", "workshop", "energy", capital=1.8, era=3, tech="steam_engine",
          art={"1": ART + "b02/power_industrial.png", "2": ART + "b02/power_industrial.png",
               "3": ART + "b02/power_industrial.png", "4": ART + "b02/power_modern.png"},
-         methods=[method("steam_power", "蒸汽机组", era=3, era_end=3, out={"power": 900},
+         methods=[method("steam_power", "蒸汽机组", era=3, out={"power": 900},
                          inp={"coal": 30000, "machinery": 6}, labor={AR: 1500, M: 40})],
-         note="第四时代由电厂取代。")
+         note="第四时代仍可用，但作坊换成电力方式后就不再需要它。")
 
 building("gasworks", "煤气厂", "workshop", "energy", capital=1.5, era=3, tech="steam_engine",
          art=art3("b09", "gas", early=ART + "b09/gas_early.png", modern=ART + "b09/gas_modern_v2.png"),
@@ -501,9 +519,10 @@ building("fertilizerworks", "化肥厂", "workshop", "manu", capital=2.0, era=3,
 building("machineworks", "机械厂", "workshop", "manu", capital=2.0, era=2, tech="water_power",
          art=art3("b07", "machineworks"),
          methods=[method("mach_water", "水力机械营造", era=2, water=True, out={"machinery": 200},
-                         inp={"lumber": 2000, "tools": 2000, "pig_iron": 800}, labor={AR: 2500, M: 80}),
+                         inp={"lumber": 2000, "tools": 2000, "pig_iron": 800, "copper": 80}, labor={AR: 2500, M: 80}),
                   method("mach_steam", "蒸汽机械厂", era=3, tech="machine_tools", out={"machinery": 900},
-                         inp={"steel": 2500, "tools": 1500, "power": 60}, labor={AR: 3000, GE: 60, M: 120}),
+                         inp={"steel": 2500, "tools": 1500, "power": 60, "copper": 150},
+                         labor={AR: 3000, GE: 60, M: 120}),
                   method("mach_modern", "工业装备厂", era=4, tech="automation", out={"machinery": 2500},
                          inp={"steel": 6000, "electric_motor": 400, "electricity": 300}, labor={AR: 2600, GE: 150, M: 150})])
 
@@ -531,14 +550,14 @@ building("bakery", "面包坊", "workshop", "manu", capital=0.9, era=3, tech="st
 building("powerplant", "火电厂", "workshop", "energy", capital=2.4, era=4, tech="power_grid",
          art={"1": ART + "b02/power_modern.png", "2": ART + "b02/power_modern.png",
               "3": ART + "b02/power_modern.png", "4": ART + "b02/power_modern.png"},
-         methods=[method("power_coal", "燃煤发电", era=4, out={"electricity": 1500}, inp={"coal": 60000, "machinery": 8},
-                         labor={AR: 1200, GE: 60}),
+         methods=[method("power_coal", "燃煤发电", era=4, out={"electricity": 1500},
+                         inp={"coal": 60000, "machinery": 8, "cable": 40}, labor={AR: 1200, GE: 60}),
                   method("power_oil", "燃油发电", era=4, tech="petrochemistry", out={"electricity": 1500},
-                         inp={"refined_fuel": 12000, "machinery": 8}, labor={AR: 1000, GE: 60})])
+                         inp={"refined_fuel": 12000, "machinery": 8, "cable": 40}, labor={AR: 1000, GE: 60})])
 
 building("hydroplant", "水电站", "workshop", "energy", capital=3.0, era=4, tech="power_grid", deposit="hydro",
          art=art3("b09", "hydropower"),
-         methods=[method("hydro", "水力发电", era=4, out={"electricity": 1400}, inp={"machinery": 4},
+         methods=[method("hydro", "水力发电", era=4, out={"electricity": 1400}, inp={"machinery": 4, "cable": 60},
                          labor={AR: 500, GE: 40})])
 
 building("windfarm", "风电场", "workshop", "energy", capital=2.6, era=4, tech="solar_wind",
@@ -581,14 +600,15 @@ building("applianceworks", "家电厂", "workshop", "manu", capital=2.2, era=4, 
          art={"1": ART + "b08/electrical_modern_v2.png", "2": ART + "b08/electrical_modern_v2.png",
               "3": ART + "b08/electrical_modern_v2.png", "4": ART + "b08/electrical_modern_v2.png"},
          methods=[method("appliance", "家用电器", era=4, out={"appliances": 30000},
-                         inp={"steel": 2500, "electric_motor": 900, "plastic": 1500, "electricity": 150},
+                         inp={"steel": 2000, "aluminum": 600, "electric_motor": 900, "plastic": 1500,
+                              "electricity": 150},
                          labor={AR: 3000, GE: 100, M: 120})],
          note="暂借电气设备厂配图；需一张「家电装配厂」建筑图。")
 
 building("autoworks", "汽车厂", "workshop", "manu", capital=2.8, era=4, tech="automobile",
          art=art3("b08", "vehicle", early=ART + "b08/vehicle_early_v3.png", modern=ART + "b08/vehicle_modern_v2.png"),
          methods=[method("auto_assembly", "汽车装配", era=4, out={"automobile": 4000},
-                         inp={"steel": 5000, "machinery": 200, "rubber": 1500, "electronic_parts": 1200,
+                         inp={"steel": 4200, "aluminum": 800, "machinery": 200, "rubber": 1500, "electronic_parts": 1200,
                               "refined_fuel": 500, "electricity": 200},
                          labor={AR: 4000, GE: 150, M: 150})])
 
@@ -596,69 +616,70 @@ building("autoworks", "汽车厂", "workshop", "manu", capital=2.8, era=4, tech=
 building("market", "集市", "infra", "serv", capital=1.2, art=art3("b10", "market",
                                                                 modern=ART + "b10/market_modern_v2.png"),
          methods=[method("market_trad", "集市", out={}, labor={M: 2500, AR: 800}),
-                  method("market_hall", "商贸市场", era=3, tech="railway", out={}, labor={M: 2200, AR: 600}),
-                  method("market_modern", "城市批发中心", era=4, tech="automation", out={}, labor={M: 1800, AR: 400})],
+                  method("market_hall", "商贸市场", era=3, tech="railway", out={}, labor={M: 2200, AR: 600}, eff=2.5),
+                  method("market_modern", "城市批发中心", era=4, tech="automation", out={}, labor={M: 1800, AR: 400}, eff=6.0)],
          effects={"commerce": 180000},
          note="每级每季可承接约 18 万两的零售额（商贸市场 ×2.5、批发中心 ×6）。商贸能力不足时商贩加价。")
 
 building("carrier", "车马行", "infra", "serv", capital=1.0, art=art3("b08", "vehicle",
                                                                   early=ART + "b08/vehicle_early_v3.png",
                                                                   modern=ART + "b08/vehicle_modern_v2.png"),
-         methods=[method("carrier_animal", "车马运输", out={}, inp={"draft_animal": 30}, labor={AR: 1000, P: 1000}),
+         methods=[method("carrier_animal", "车马运输", out={}, inp={"draft_animal": 30, "leather": 15},
+                         labor={AR: 1000, P: 1000}),
                   method("carrier_rail", "铁路货运", era=3, tech="railway", out={}, inp={"coal": 4000, "rail": 40},
-                         labor={AR: 2500}),
+                         labor={AR: 2500}, eff=4.0),
                   method("carrier_truck", "汽车货运", era=4, tech="automobile", out={},
-                         inp={"refined_fuel": 3000, "automobile": 20}, labor={AR: 2000})],
+                         inp={"refined_fuel": 3000, "automobile": 20}, labor={AR: 2000}, eff=8.0)],
          effects={"freight": 9000},
          note="每级每季可收约 9 千两运费（铁路 ×4、汽车 ×8）。运力不足时物流成本上升。")
 
 building("road", "驿路", "infra", "serv", owners=("gov",), capital=2.0, art=art3("b03", "transport",
                                                                                modern=ART + "b03/transport_modern_v2.png"),
          methods=[method("road_post", "驿路", out={}, labor={P: 1500}),
-                  method("road_rail", "铁路干线", era=3, tech="railway", out={}, inp={"rail": 60}, labor={AR: 1500}),
-                  method("road_highway", "公路网", era=4, tech="automobile", out={}, inp={"cement": 400}, labor={AR: 1200})],
-         effects={"logistics_cut": 15000},
-         note="每级把本地区的物流成本降低 1.5 个百分点（铁路 4 个、公路 5 个），有下限。")
+                  method("road_rail", "铁路干线", era=3, tech="railway", out={}, inp={"rail": 60}, labor={AR: 1500}, eff=2.67),
+                  method("road_highway", "公路网", era=4, tech="automobile", out={}, inp={"cement": 400}, labor={AR: 1200}, eff=3.33)],
+         effects={"logistics_cut": 5000},
+         note="每级把本地区的物流成本降低 0.5 个百分点（铁路约 1.3 个、公路约 1.7 个），最低到 1%。")
 
 building("canal", "运河", "infra", "serv", owners=("gov",), capital=3.0, era=2, tech="canal_engineering",
          art={"1": ART + "b12/canal_early.png", "2": ART + "b12/canal_early.png",
               "3": ART + "b12/canal_industrial.png", "4": ART + "b12/canal_modern.png"},
          methods=[method("canal_lock", "纤道船闸", era=2, out={}, labor={P: 2000}),
                   method("canal_steam", "蒸汽拖船闸", era=3, tech="steam_engine", out={}, inp={"coal": 1000},
-                         labor={AR: 1200})],
-         effects={"logistics_cut": 30000},
-         note="只能建在有河的地区；每级降低物流成本 3 个百分点。")
+                         labor={AR: 1200}, eff=1.5)],
+         effects={"logistics_cut": 10000},
+         note="只能建在有河的地区；每级降低物流成本 1 个百分点。")
 
 building("port", "港口", "infra", "serv", capital=1.6, coast=True,
          art=art3("b03", "port"),
          methods=[method("port_wharf", "河港仓栈", out={}, inp={"ships": 2}, labor={AR: 2000, M: 300}),
                   method("port_trade", "商贸港区", era=3, tech="steam_engine", out={}, inp={"ships": 2, "coal": 1500},
-                         labor={AR: 2500, M: 400}),
+                         labor={AR: 2500, M: 400}, eff=2.5),
                   method("port_modern", "机械化港区", era=4, tech="automation", out={}, inp={"ships": 3, "electricity": 100},
-                         labor={AR: 2000, M: 400})],
+                         labor={AR: 2000, M: 400}, eff=6.0)],
          effects={"sea_trade": 400000},
          note="每级每季可吞吐约 40 万两的海上贸易（第三时代 ×2.5，第四时代 ×6）。需要船只维持。")
 
 building("caravanserai", "关津商栈", "infra", "serv", capital=1.4, art=art3("b16", "customs"),
          methods=[method("caravan", "关津商栈", out={}, inp={"draft_animal": 40}, labor={M: 400, AR: 800, P: 800}),
-                  method("customs_house", "海关验货仓", era=3, tech="railway", out={}, labor={M: 500, AR: 800}),
-                  method("customs_modern", "现代通关中心", era=4, tech="computing", out={}, labor={M: 400, GE: 100})],
+                  method("customs_house", "海关验货仓", era=3, tech="railway", out={}, labor={M: 500, AR: 800}, eff=2.0),
+                  method("customs_modern", "现代通关中心", era=4, tech="computing", out={}, labor={M: 400, GE: 100}, eff=3.0)],
          effects={"land_trade": 200000, "customs_eff": 20000},
          note="每级每季可承接约 20 万两的陆路贸易，并提高关税征收率。")
 
 building("irrigation", "水利", "infra", "serv", owners=("gov",), capital=2.2,
          art=art3("b01", "irrigation"),
          methods=[method("irrig_canal", "渠系水轮", out={}, labor={P: 1500}),
-                  method("irrig_pump", "工业泵站", era=3, tech="steam_engine", out={}, inp={"coal": 800}, labor={AR: 600}),
+                  method("irrig_pump", "工业泵站", era=3, tech="steam_engine", out={}, inp={"coal": 800}, labor={AR: 600}, eff=1.4),
                   method("irrig_electric", "电动灌溉", era=4, tech="power_grid", out={}, inp={"electricity": 60},
-                         labor={AR: 400})],
+                         labor={AR: 400}, eff=1.8)],
          effects={"irrigate": 25},
          note="每级灌溉本地区 25 级农田（250 万亩），使其增产 25%（工业泵站 35%，电动 45%）。")
 
 building("watermill", "水力动力坊", "infra", "energy", owners=("gov",), capital=1.6, art=art3("b02", "power"),
          methods=[method("waterwheel", "水轮", out={}, labor={AR: 600}),
                   method("waterwheel_iron", "铁制水轮", era=2, tech="water_power", out={}, inp={"pig_iron": 100},
-                         labor={AR: 500})],
+                         labor={AR: 500}, eff=1.5)],
          effects={"waterpower": 6},
          note="只能建在有河的地区；每级为本地区 6 级「水力」作坊提供动力，使其满产。")
 
@@ -679,44 +700,44 @@ building("surveyoffice", "丈量所", "infra", "serv", owners=("gov",), capital=
 building("school", "学舍", "public", "serv", owners=("gov",), capital=1.6, art=art3("b01", "education"),
          methods=[method("school_trad", "地方学舍", out={}, inp={"paper": 3000, "books": 300}, labor={GE: 500}),
                   method("school_modern", "新式学堂", era=3, tech="public_education", out={}, inp={"paper": 6000, "books": 800},
-                         labor={GE: 700}),
+                         labor={GE: 700}, eff=1.5),
                   method("school_research", "研究型大学", era=4, tech="computing", out={}, inp={"paper": 8000, "books": 1200, "electricity": 60},
-                         labor={GE: 900})],
+                         labor={GE: 900}, eff=2.0)],
          effects={"edu_seats": 20000},
          note="每级每季有 2 万个学位（新式学堂 3 万，大学 4 万）；提高识字率，培养士人，产生研究点。")
 
 building("library", "藏书院", "public", "serv", owners=("gov",), capital=1.4, art=art3("b10", "library"),
          methods=[method("library_trad", "藏书院", out={}, inp={"books": 800}, labor={GE: 120}),
                   method("library_public", "公共图书馆", era=3, tech="public_education", out={}, inp={"books": 2000},
-                         labor={GE: 200}),
+                         labor={GE: 200}, eff=2.0),
                   method("library_modern", "知识资料中心", era=4, tech="computing", out={}, inp={"books": 2000, "computer": 20},
-                         labor={GE: 250})],
+                         labor={GE: 250}, eff=3.7)],
          effects={"research": 60, "literacy": 5000},
          note="每级每季 60 研究点（公共图书馆 120、资料中心 220），并提高本地区识字率。")
 
 building("clinic", "医馆", "public", "serv", owners=("gov",), capital=1.4, art=art3("b04", "health"),
          methods=[method("clinic_trad", "地方医馆", out={}, inp={"medicine": 6000}, labor={GE: 200, AR: 200}),
                   method("clinic_hospital", "公共医院", era=3, tech="public_health", out={}, inp={"medicine": 15000},
-                         labor={GE: 400, AR: 400}),
+                         labor={GE: 400, AR: 400}, eff=2.0),
                   method("clinic_modern", "区域医疗中心", era=4, tech="antibiotics", out={}, inp={"medicine": 40000, "electricity": 60},
-                         labor={GE: 600, AR: 500})],
+                         labor={GE: 600, AR: 500}, eff=3.75)],
          effects={"health": 400000},
          note="每级照顾约 40 万人（医院 80 万、医疗中心 150 万），降低死亡率。")
 
 building("yamen", "衙署", "public", "serv", owners=("gov",), capital=1.6, art=art3("b04", "administration"),
          methods=[method("yamen_trad", "地方衙署", out={}, inp={"paper": 4000}, labor={GE: 1500}),
-                  method("yamen_modern", "税关核算所", era=3, tech="telegraph", out={}, inp={"paper": 8000}, labor={GE: 1500}),
+                  method("yamen_modern", "税关核算所", era=3, tech="telegraph", out={}, inp={"paper": 8000}, labor={GE: 1500}, eff=2.0),
                   method("yamen_digital", "现代行政中心", era=4, tech="computing", out={}, inp={"paper": 6000, "computer": 30},
-                         labor={GE: 1200})],
+                         labor={GE: 1200}, eff=4.0)],
          effects={"admin": 1000000},
          note="每级治理约 100 万人口（新式 200 万、现代 400 万）；治理不足时征收率下降、隐田增长加快。")
 
 building("theater", "戏台", "public", "serv", owners=("gov",), capital=1.0,
          art=art3("b16", "theater", early=ART + "b16/theater_early_v2.png"),
          methods=[method("theater_folk", "民间戏台", out={}, labor={AR: 300, M: 50}),
-                  method("theater_city", "城市剧院", era=3, tech="railway", out={}, labor={AR: 400, M: 80}),
+                  method("theater_city", "城市剧院", era=3, tech="railway", out={}, labor={AR: 400, M: 80}, eff=1.5),
                   method("theater_modern", "现代演艺中心", era=4, tech="television", out={}, inp={"electricity": 40},
-                         labor={AR: 400, M: 100})],
+                         labor={AR: 400, M: 100}, eff=2.0)],
          effects={"amenity": 500000},
          note="每级让约 50 万人的民心略有提升。")
 
@@ -724,8 +745,9 @@ building("urbanworks", "城政", "public", "serv", owners=("gov",), capital=1.6,
          art=art3("b04", "utility", early=ART + "b04/utility_early_v2.png"),
          methods=[method("urban_wells", "水井与排水", out={}, labor={P: 800, AR: 300}),
                   method("urban_sanitation", "供水卫生设施", era=3, tech="public_health", out={}, inp={"coal": 500, "cement": 100},
-                         labor={AR: 600}),
-                  method("urban_modern", "综合公用设施", era=4, tech="power_grid", out={}, inp={"electricity": 80, "chemicals": 100},
-                         labor={AR: 500})],
+                         labor={AR: 600}, eff=1.9),
+                  method("urban_modern", "综合公用设施", era=4, tech="power_grid", out={},
+                         inp={"electricity": 80, "chemicals": 100, "cable": 10},
+                         labor={AR: 500}, eff=3.75)],
          effects={"sanitation": 800000},
          note="每级覆盖约 80 万人（卫生设施 150 万、综合公用 300 万），降低疫病风险与死亡率。")

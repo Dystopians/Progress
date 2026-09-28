@@ -261,7 +261,7 @@ PARTNERS = [
          desc="南方群岛，盛产木材、稻米与香料，需要布匹、铁器与盐。",
          wants={"fabric": [1.2, 400000], "tools": [1.3, 30000], "salt": [1.2, 30000], "porcelain": [1.2, 200000]},
          offers={"timber": [0.9, 30000], "rice": [0.9, 150000], "fruit": [0.9, 60000], "spices": [1.0, 3000],
-                 "sugar": [0.9, 20000], "rubber": [1.0, 4000]}),
+                 "sugar": [0.9, 20000], "rubber": [1.0, 4000], "copper": [1.1, 1500]}),
     dict(id="inland_khanate", name="内陆汗国", route="land", dev=1.05, rate=0.0050, relation=5,
          art="assets/partners/partner_inland_khanate_v2.png",
          desc="西部草原上的汗国，出役畜、羊毛与皮张，渴求茶叶、布匹与盐。",

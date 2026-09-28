@@ -11,10 +11,22 @@
 """
 import math
 
+from buildings import MAINT_MIX as MAINT_MIX_ERA
+
 MARKUP = {"farm": 0.30, "mine": 0.20, "workshop": 0.18, "infra": 0.0, "public": 0.0}
 MAINT_RATE = 0.015
 L_AVG = 0.055
-MAINT_MIX = {"lumber": 0.4, "bricks": 0.3, "tools": 0.3}
+MAINT_MIX = MAINT_MIX_ERA[1]
+# 联产品的相对价值（按它分摊成本）：一头役畜约值六担肉
+JOINT_REL = {"draft_animal": 6.0, "meat": 1.0, "wool": 1.2, "hides": 0.8, "rope": 1.0, "sailcloth": 1.0}
+# 按开局规模自动配的基础设施（它们的投入也要算进开局产能）
+VOLUME_INFRA = ("market", "carrier", "irrigation", "port", "caravanserai")
+K_MIN, K_MAX = 0.02, 6.0
+IRRIG_SHARE = 0.35          # 开局水利覆盖的农田份额
+IRRIG_BONUS = 0.25          # 灌溉增产（与引擎一致）
+# 农户的日用水平是设计给定的：农户的储蓄率对它不敏感（买得多、干得多、价钱跟着变），由各地地租率校准
+K_PEASANT = 0.6
+RENT_MIN, RENT_MAX = 0.2, 0.65
 PUBLIC_FUNDED = ("public", "infra")
 PRIVATE_INFRA = ("market", "carrier", "port", "caravanserai")
 RENT_SHARE = 0.42
@@ -27,7 +39,13 @@ class Calib:
     def __init__(self, ctx):
         self.c = ctx
         self.peasant_mult = 1.0
-        self.k = {r["id"]: {c: 1.0 for c in ctx.CORDER} for r in ctx.REGIONS}
+        self.k = {r["id"]: {c: (K_PEASANT if c == "peasant" else 1.0) for c in ctx.CORDER} for r in ctx.REGIONS}
+        # 各地区的地租率（农田利润里归士绅的份额）：校准使各地农户收支相抵
+        self.rent = {r["id"]: RENT_SHARE for r in ctx.REGIONS}
+        # 宫廷与杂项开支：校准使开局财政有一成盈余
+        self.court = ctx.GOV["court"]
+        # 开局水利的实际覆盖率（按上一轮的农田与水利级数算），给农田产量乘上灌溉增产
+        self.irrig_cov = IRRIG_SHARE
         self.shares = None
         self.prices = {}
         self.prim = {}
@@ -94,7 +112,7 @@ class Calib:
                 if b is None:
                     continue
                 cost = self.wage_bill(b, m) + self.maint(b) + sum(q * price[x] for x, q in m["inp"].items())
-                vals = {x: q * price[x] for x, q in m["out"].items()}
+                vals = {x: q * JOINT_REL.get(x, 1.0) for x, q in m["out"].items()}
                 share = vals[gid] / (sum(vals.values()) or 1.0)
                 unit = cost * share / m["out"][gid]
                 new[gid] = unit * (1 + MARKUP.get(b["category"], 0.18)) / (1 - L_AVG) / (1 - self.tax_rate(b))
@@ -117,26 +135,54 @@ class Calib:
             return {g: v / tot for g, v in taste.items() if g in avail}
         return {avail[0]: 1.0}
 
-    def need_qty(self, n, cl, rid):
-        q = n["qty"][cl]
-        return q if n.get("essential") else q * self.k[rid][cl]
+    @staticmethod
+    def mult(n, k):
+        """需要随日用水平 k 的伸缩（与引擎 need_mult 一致）。"""
+        return 1.0 if n.get("essential") else k ** n.get("el", 1.0)
 
-    def consumer_price(self, g):
-        p = self.prices[g] * (1 + self.c.GOV["commerce_margin"])
+    def need_qty(self, n, cl, rid):
+        return n["qty"][cl] * self.mult(n, self.k[rid][cl])
+
+    def eff_log(self, rid):
+        """开局驿路之后的物流费率（与引擎一致：每级驿路减 logistics_cut，最低 1%）。"""
+        cut = self.c.BID["road"]["effects"]["logistics_cut"] / 1e6
+        return max(0.01, self.c.RID[rid]["logistics"] - cut * self.public_levels()[(rid, "road")])
+
+    @staticmethod
+    def pays_margin(n, cl):
+        """农户的口粮自产自食，不付零售加价（与引擎一致）。"""
+        return not (n.get("own_food") and cl == "peasant")
+
+    def consumer_price(self, g, n=None, cl=None):
+        p = self.prices[g] * (1 + (self.c.GOV["commerce_margin"] if n is None or self.pays_margin(n, cl) else 0))
         if g == "salt":
             p += self.c.GOV["salt_tax"]
         return p
 
-    def needs_cost(self, rid, cl):
+    def needs_cost(self, rid, cl, k=1.0):
+        """每人每季：必需品花费、日用水平为 k 时的其余花费。"""
         ess, non = 0.0, 0.0
         for n in self.active_needs():
             q = n["qty"][cl]
-            v = sum(q * s / n["goods"][g] * self.consumer_price(g) for g, s in self.split(n, rid).items())
+            v = sum(q * s / n["goods"][g] * self.consumer_price(g, n, cl) for g, s in self.split(n, rid).items())
             if n.get("essential"):
                 ess += v
             else:
-                non += v
+                non += v * self.mult(n, k)
         return ess, non
+
+    def solve_k(self, rid, cl, budget):
+        """日用花费等于 budget（每人每季）时的日用水平。"""
+        lo, hi = K_MIN, K_MAX
+        if self.needs_cost(rid, cl, lo)[1] >= budget:
+            return lo
+        for _ in range(60):
+            mid = (lo + hi) / 2
+            if self.needs_cost(rid, cl, mid)[1] > budget:
+                hi = mid
+            else:
+                lo = mid
+        return lo
 
     def household_demand(self, pop_rc):
         d = {}
@@ -184,7 +230,7 @@ class Calib:
         gv = self.c.GOV
         soldiers = total_pop * gv["soldiers_per_capita"]
         return {"rice": soldiers * gv["soldier_ration"] * 0.5, "grain": soldiers * gv["soldier_ration"] * 0.5,
-                "fabric": soldiers * gv["soldier_cloth"]}, soldiers
+                "fabric": soldiers * gv["soldier_cloth"], "leather": soldiers * gv["soldier_leather"]}, soldiers
 
     # ── 产能 ────────────────────────────────────────────────────────────
     @staticmethod
@@ -194,18 +240,33 @@ class Calib:
                 return g
         return max(m["out"], key=lambda g: m["out"][g])
 
+    def out_mult(self, b):
+        """灌溉增产：水田、旱田、坡地上的农田（与引擎 _produce 一致）。"""
+        if b["category"] == "farm" and b["land"] in ("paddy", "dry", "slope"):
+            return 1.0 + IRRIG_BONUS * self.irrig_cov
+        return 1.0
+
+    def method_levels(self, x):
+        """各主力生产方式需要的级数：联产品取各产品所需级数的最大值（其余产品有富余）。"""
+        lv = {}
+        for g, q in x.items():
+            if q <= 0 or self.c.GID[g]["era"] > 1:
+                continue
+            b, m = self.prim[g]
+            if b is None:
+                continue
+            key = (b["id"], m["id"])
+            need = q / (m["out"][g] * self.out_mult(b))
+            if key not in lv or need > lv[key][0]:
+                lv[key] = (need, b, m)
+        return lv
+
     def solve(self, final, fixed):
         GID = self.c.GID
         x = {g: final.get(g, 0.0) + fixed.get(g, 0.0) for g in GID}
         for _ in range(400):
             need = {g: final.get(g, 0.0) + fixed.get(g, 0.0) for g in GID}
-            for g, q in x.items():
-                if q <= 0 or GID[g]["era"] > 1:
-                    continue
-                b, m = self.prim[g]
-                if b is None or (len(m["out"]) > 1 and g != self.driver(m)):
-                    continue
-                per = q / m["out"][g]
+            for key, (per, b, m) in self.method_levels(x).items():
                 for i, qi in m["inp"].items():
                     need[i] = need.get(i, 0.0) + per * qi
                 mv = self.maint(b) * per
@@ -216,6 +277,16 @@ class Calib:
             if diff < 1e-6:
                 break
         return x
+
+    def sold_ratio(self, stacks, x):
+        """每种商品开局产量中能卖掉的比例（联产品有富余时 < 1）。"""
+        made = {}
+        for (rid, bid, mid), lv in stacks.items():
+            b = self.c.BID[bid]
+            m = next(mm for mm in b["methods"] if mm["id"] == mid)
+            for g, q in m["out"].items():
+                made[g] = made.get(g, 0.0) + q * lv * self.out_mult(b)
+        return {g: min(1.0, x.get(g, 0.0) / v) if v > 0 else 1.0 for g, v in made.items()}
 
     def public_levels(self):
         out = {}
@@ -235,29 +306,42 @@ class Calib:
                 out[(rid, "watermill")] = {"beiyuan": 1, "zhongzhou": 2, "xiling": 2}.get(rid, 1)
         return out
 
-    def add_volume_infra(self, stacks, hh):
+    def retail_by_region(self, pop_rc):
+        """各地区经集市零售的货值（基准价，不含农户自产自食的口粮）。"""
+        out = {rid: 0.0 for rid in self.c.RORDER}
+        for rid in self.c.RORDER:
+            for cl in self.c.CORDER:
+                persons = pop_rc[rid][cl]
+                for n in self.active_needs():
+                    if not self.pays_margin(n, cl):
+                        continue
+                    q = self.need_qty(n, cl, rid) * persons
+                    for g, s in self.split(n, rid).items():
+                        out[rid] += q * s / n["goods"][g] * self.prices[g]
+        return out
+
+    def add_volume_infra(self, stacks, hh, x, pop_rc):
         c = self.c
         stacks = dict(stacks)
+        sold = self.sold_ratio(stacks, x)
         cap_market = c.BID["market"]["effects"]["commerce"]
         cap_freight = c.BID["carrier"]["effects"]["freight"]
         cap_port = c.BID["port"]["effects"]["sea_trade"]
         cap_land = c.BID["caravanserai"]["effects"]["land_trade"]
-        total_pop = sum(r["pop"] for r in c.REGIONS)
-        retail = sum(q * self.prices[g] for g, q in hh.items())
+        retail_r = self.retail_by_region(pop_rc)
         for rid in c.RORDER:
-            share = c.RID[rid]["pop"] / total_pop
-            stacks[(rid, "market", "market_trad")] = max(1, math.ceil(retail * share / cap_market * 1.02))
+            stacks[(rid, "market", "market_trad")] = max(1, math.ceil(retail_r[rid] / cap_market * 1.02))
             sales = 0.0
             for (r2, bid, mid), lv in stacks.items():
                 b = c.BID[bid]
                 if r2 != rid or b["category"] in PUBLIC_FUNDED:
                     continue
                 m = next(mm for mm in b["methods"] if mm["id"] == mid)
-                sales += lv * sum(q * self.prices[g] for g, q in m["out"].items())
-            fee = sales * c.RID[rid]["logistics"]
+                sales += lv * self.out_mult(b) * sum(q * self.prices[g] * sold.get(g, 1.0) for g, q in m["out"].items())
+            fee = sales * self.eff_log(rid)
             stacks[(rid, "carrier", "carrier_animal")] = max(1, math.ceil(fee / cap_freight * 1.02))
             farm_lv = sum(lv for (r2, bid, mid), lv in stacks.items() if r2 == rid and bid in ("paddy", "dryfarm"))
-            stacks[(rid, "irrigation", "irrig_canal")] = max(1, round(farm_lv * 0.35 / 25))
+            stacks[(rid, "irrigation", "irrig_canal")] = max(1, round(farm_lv * IRRIG_SHARE / 25))
         sea, land = self.trade_values()
         stacks[("haijia", "port", "port_wharf")] = max(1, math.ceil(sea * 0.8 / cap_port * 1.05))
         stacks[("zhongzhou", "port", "port_wharf")] = max(1, math.ceil(sea * 0.2 / cap_port * 1.05))
@@ -275,6 +359,7 @@ class Calib:
         exp, imp = self.initial_trade()
         gov_goods, soldiers = self.gov_goods(total_pop)
         res = None
+        vol_fixed = {}
         for _ in range(40):
             pop_rc = {rid: {cl: c.RID[rid]["pop"] * shares[rid][cl] for cl in c.CORDER} for rid in c.RORDER}
             hh = self.household_demand(pop_rc)
@@ -291,15 +376,13 @@ class Calib:
                 mv = self.maint(b) * lv
                 for mg, sh in MAINT_MIX.items():
                     fixed[mg] = fixed.get(mg, 0.0) + mv * sh / self.prices[mg]
+            for g, q in vol_fixed.items():
+                fixed[g] = fixed.get(g, 0.0) + q
             x = self.solve(final, fixed)
             stacks = {}
-            for g, q in x.items():
-                if q <= 0 or c.GID[g]["era"] > 1:
-                    continue
-                b, m = self.prim[g]
-                if b is None or (len(m["out"]) > 1 and g != self.driver(m)):
-                    continue
-                levels = q / m["out"][g] * 1.02
+            for key0, (per, b, m) in self.method_levels(x).items():
+                levels = per
+                g = self.driver(m)
                 for rid, sh in self.spread.get(g, pop_share).items():
                     key = (rid, b["id"], m["id"])
                     stacks[key] = stacks.get(key, 0.0) + levels * sh
@@ -307,7 +390,27 @@ class Calib:
                 key = (rid, bid, c.BID[bid]["methods"][0]["id"])
                 stacks[key] = stacks.get(key, 0.0) + lv
             ist = {k: max(1, int(round(v))) for k, v in stacks.items() if v >= 0.35}
-            ist = self.add_volume_infra(ist, hh)
+            # 有需求的商品至少保留一级（放在需求最大的产地），否则开局就断供（船只、绳索……）
+            by_good = {}
+            for (rid, bid, mid), v in stacks.items():
+                by_good.setdefault((bid, mid), []).append((v, rid))
+            for (bid, mid), lst in by_good.items():
+                if not any((rid, bid, mid) in ist for _, rid in lst):
+                    v, rid = max(lst)
+                    if v > 0.02:
+                        ist[(rid, bid, mid)] = 1
+            ist = self.add_volume_infra(ist, hh, x, pop_rc)
+            vol_fixed = {}
+            for (rid, bid, mid), lv in ist.items():
+                if bid not in VOLUME_INFRA:
+                    continue
+                b = c.BID[bid]
+                m = next(mm for mm in b["methods"] if mm["id"] == mid)
+                for g, q in m["inp"].items():
+                    vol_fixed[g] = vol_fixed.get(g, 0.0) + q * lv
+                mv = self.maint(b) * lv
+                for mg, sh in MAINT_MIX.items():
+                    vol_fixed[mg] = vol_fixed.get(mg, 0.0) + mv * sh / self.prices[mg]
             labor = {rid: {cl: 0.0 for cl in c.CORDER} for rid in c.RORDER}
             for (rid, bid, mid), lv in ist.items():
                 b = c.BID[bid]
@@ -327,6 +430,14 @@ class Calib:
             diff = max(abs(new[r][cl] - shares[r][cl]) for r in c.RORDER for cl in c.CORDER)
             shares = {r: {cl: 0.5 * shares[r][cl] + 0.5 * new[r][cl] for cl in c.CORDER} for r in c.RORDER}
             res = dict(stacks=ist, labor=labor, x=x, hh=hh, exp=exp, imp=imp, soldiers=soldiers, pop_rc=pop_rc)
+            farm_lv, cov_lv = 0.0, 0.0
+            for rid in c.RORDER:
+                fl = sum(lv for (r2, bid, mid), lv in ist.items() if r2 == rid and c.BID[bid]["category"] == "farm"
+                         and c.BID[bid]["land"] in ("paddy", "dry", "slope"))
+                il = ist.get((rid, "irrigation", "irrig_canal"), 0) * c.BID["irrigation"]["effects"]["irrigate"]
+                farm_lv += fl
+                cov_lv += min(fl, il)
+            self.irrig_cov = cov_lv / max(farm_lv, 1.0)
             if diff < 1e-6:
                 break
         self.shares = shares
@@ -339,16 +450,9 @@ class Calib:
         stacks = res["stacks"]
         inc = {rid: {cl: 0.0 for cl in c.CORDER} for rid in c.RORDER}
         rev = {"田赋": 0.0, "盐课": 0.0, "商税": 0.0, "关税": 0.0}
-        exp = {"公共设施": 0.0, "基础设施": 0.0, "兵饷军需": 0.0, "宫廷": gv["court"]}
+        exp = {"公共设施": 0.0, "基础设施": 0.0, "兵饷军需": 0.0, "宫廷": self.court}
         va = {"agri": 0.0, "manu": 0.0, "energy": 0.0, "serv": 0.0}
-        retail_r = {rid: 0.0 for rid in c.RORDER}
-        for rid in c.RORDER:
-            for cl in c.CORDER:
-                persons = res["pop_rc"][rid][cl]
-                for n in self.active_needs():
-                    q = self.need_qty(n, cl, rid) * persons
-                    for g, s in self.split(n, rid).items():
-                        retail_r[rid] += q * s / n["goods"][g] * self.prices[g]
+        retail_r = self.retail_by_region(res["pop_rc"])
         rev["盐课"] = res["hh"].get("salt", 0.0) * gv["salt_tax"]
         sea, land = self.trade_values()
         lv_by = {}
@@ -357,6 +461,8 @@ class Calib:
         port_total = sum(lv for (rid, bid), lv in lv_by.items() if bid == "port")
         cara_total = sum(lv for (rid, bid), lv in lv_by.items() if bid == "caravanserai")
         freight = {rid: 0.0 for rid in c.RORDER}
+        farm_profit = {rid: 0.0 for rid in c.RORDER}
+        sold = self.sold_ratio(stacks, res["x"])
         rows = []
         for (rid, bid, mid), lv in stacks.items():
             b = c.BID[bid]
@@ -379,9 +485,9 @@ class Calib:
             elif bid == "carrier":
                 revenue = None
             else:
-                gross = sum(q * self.prices[g] * lv for g, q in m["out"].items())
-                freight[rid] += gross * c.RID[rid]["logistics"]
-                revenue = gross * (1 - c.RID[rid]["logistics"])
+                gross = self.out_mult(b) * sum(q * self.prices[g] * lv * sold.get(g, 1.0) for g, q in m["out"].items())
+                freight[rid] += gross * self.eff_log(rid)
+                revenue = gross * (1 - self.eff_log(rid))
                 va[b["sector"]] += gross - inputs - maint
             rows.append((rid, bid, b, lv, wages, inputs, maint, revenue))
         for (rid, bid, b, lv, wages, inputs, maint, revenue) in rows:
@@ -392,8 +498,9 @@ class Calib:
                 rev["田赋" if b["category"] == "farm" else "商税"] += tax
             profit = revenue - wages - inputs - maint - tax
             if b["category"] == "farm":
-                inc[rid]["gentry"] += profit * RENT_SHARE
-                inc[rid]["peasant"] += profit * (1 - RENT_SHARE)
+                inc[rid]["gentry"] += profit * self.rent[rid]
+                inc[rid]["peasant"] += profit * (1 - self.rent[rid])
+                farm_profit[rid] += profit
             else:
                 inc[rid]["merchant"] += profit
             if bid in PRIVATE_INFRA:
@@ -405,28 +512,34 @@ class Calib:
             inc[rid]["peasant"] += soldiers * c.RID[rid]["pop"] / total_pop * gv["soldier_wage"]
         exp["兵饷军需"] = soldiers * gv["soldier_wage"] + soldiers * gv["soldier_ration"] * (
             self.prices["rice"] + self.prices["grain"]) / 2 + soldiers * gv["soldier_cloth"] * self.prices["fabric"]
-        inc["zhongzhou"]["gentry"] += gv["court"]
+        inc["zhongzhou"]["gentry"] += self.court
         emp = {}
         for rid in c.RORDER:
             for cl in c.CORDER:
                 emp[(rid, cl)] = res["labor"][rid][cl] / max(res["pop_rc"][rid][cl] * c.CID[cl]["work"], 1)
+        self.farm_profit = farm_profit
         return inc, rev, exp, va, emp
 
     # ── 校准循环 ────────────────────────────────────────────────────────
     def run(self, producers, say):
         c = self.c
-        target = {cl["id"]: cl["save"] for cl in c.CLASSES}
+        # 开局是稳态：各组积蓄正好在目标上，收入全部花掉（储蓄率只在积蓄偏离目标时起作用）
+        target = {cl["id"]: 0.0 for cl in c.CLASSES}
         res = None
-        for outer in range(60):
+        for outer in range(90):
             self.compute_prices(producers)
             res = self.build_initial()
             inc, rev, exp, va, emp = self.accounts(res)
+            rt, et = sum(rev.values()), sum(exp.values())
+            new_court = max(200_000.0, self.court + (rt * 0.90 - et))
+            moved_court = abs(new_court / self.court - 1)
+            self.court = 0.5 * self.court + 0.5 * new_court
             sup = sum(res["pop_rc"][r]["peasant"] * c.CID["peasant"]["work"] for r in c.RORDER)
             dem = sum(res["labor"][r]["peasant"] for r in c.RORDER)
             e_p = dem / sup
             step = (0.95 / e_p) ** 0.6
             self.peasant_mult *= step
-            moved = abs(step - 1)
+            moved = max(abs(step - 1), moved_court)
             # 地区之间按农户就业率挪动可挪的产地份额
             e_r = {r: res["labor"][r]["peasant"] / max(res["pop_rc"][r]["peasant"] * c.CID["peasant"]["work"], 1)
                    for r in c.RORDER}
@@ -441,7 +554,16 @@ class Calib:
                     y = inc[r][cl]
                     ess, non = self.needs_cost(r, cl)
                     persons = res["pop_rc"][r][cl]
-                    k_new = min(3.0, max(0.1, (y * (1 - target[cl]) - ess * persons) / max(non * persons, 1e-9)))
+                    if cl == "peasant":
+                        # 地租率：把农户的储蓄缺口从士绅的地租里挪回来
+                        spend = (ess + self.needs_cost(r, cl, self.k[r][cl])[1]) * persons
+                        gap = y * (1 - target[cl]) - spend
+                        fp = max(self.farm_profit[r], 1.0)
+                        new_rent = min(RENT_MAX, max(RENT_MIN, self.rent[r] + gap / fp))
+                        moved = max(moved, abs(new_rent - self.rent[r]) * 2)
+                        self.rent[r] = 0.5 * self.rent[r] + 0.5 * new_rent
+                        continue
+                    k_new = self.solve_k(r, cl, (y * (1 - target[cl]) - ess * persons) / max(persons, 1e-9))
                     moved = max(moved, abs(k_new / self.k[r][cl] - 1))
                     self.k[r][cl] = 0.5 * self.k[r][cl] + 0.5 * k_new
             if moved < 0.001:
@@ -450,7 +572,8 @@ class Calib:
         res = self.build_initial()
         say(f"\n校准：{outer+1} 轮；农活用工倍数 {self.peasant_mult:.3f}；非必需开支倍数（地区 × 阶层）：")
         for r in c.RORDER:
-            say(f"  {c.RID[r]['name']}：" + "，".join(f"{c.CID[cl]['name']} {self.k[r][cl]:.2f}" for cl in c.CORDER))
+            say(f"  {c.RID[r]['name']}：" + "，".join(f"{c.CID[cl]['name']} {self.k[r][cl]:.2f}" for cl in c.CORDER)
+                + f"；地租率 {100 * self.rent[r]:.0f}%")
         return res
 
     def report(self, res, say):
@@ -461,8 +584,8 @@ class Calib:
         for rid in c.RORDER:
             for cl in c.CORDER:
                 persons = res["pop_rc"][rid][cl]
-                ess, non = self.needs_cost(rid, cl)
-                cost = ess + non * self.k[rid][cl]
+                ess, non = self.needs_cost(rid, cl, self.k[rid][cl])
+                cost = ess + non
                 cons[(rid, cl)] = cost
                 pi = inc[rid][cl] / max(persons, 1)
                 say(f"  {c.RID[rid]['name']}·{c.CID[cl]['name']}：{persons/1e4:7.1f} 万人  就业 {100*emp[(rid,cl)]:5.1f}%  "

@@ -26,7 +26,8 @@ import goods as goods_mod  # noqa: E402
 import buildings as bld_mod  # noqa: E402
 import society as soc  # noqa: E402
 import progress as prog  # noqa: E402
-from calib import Calib, MAINT_RATE, MAINT_MIX, RENT_SHARE, PORT_FEE  # noqa: E402
+from calib import Calib, MAINT_RATE, RENT_SHARE, PORT_FEE  # noqa: E402
+import topology  # noqa: E402
 
 OUT = os.path.join(ROOT, "content_v2")
 REPORT = []
@@ -125,6 +126,23 @@ def validate():
     for g in C.GOODS:
         if g["id"] not in producers and g["id"] not in offered:
             errs.append(f"商品 {g['id']} 既没有生产方式也没有伙伴出售")
+    for n in soc.NEEDS:
+        if n.get("el", 1.0) not in (0.5, 1.0, 1.5):
+            errs.append(f"需要 {n['id']} 的弹性只能是 0.5、1、1.5")
+    for mixes in (bld_mod.BUILD_MIX, bld_mod.MAINT_MIX):
+        for era, mix in mixes.items():
+            if abs(sum(mix.values()) - 1.0) > 1e-9:
+                errs.append(f"第 {era} 时代的用料份额之和不是 1")
+            for g in mix:
+                if g not in C.GID or C.GID[g]["era"] > era:
+                    errs.append(f"第 {era} 时代的用料 {g} 不存在或还没出现")
+    # 产业链：每个时代的断头（产了没人要）与无源（要了没处来）
+    for era in (1, 2, 3, 4):
+        dead, orphan, _, _ = topology.audit(era)
+        for gid, name, c in orphan:
+            errs.append(f"第 {era} 时代 {name}（{gid}）有人要却没处来：{c}")
+        for gid, name, c in dead:
+            say(f"  提示：第 {era} 时代 {name}（{gid}）只能出口或无人要")
     if errs:
         for e in errs:
             say("✗", e)
@@ -180,23 +198,28 @@ def export(cal, res):
                            out={g: i_qty(q) for g, q in m["out"].items()},
                            inp={g: i_qty(q) for g, q in m["inp"].items()},
                            labor={c: int(round(n)) for c, n in lab.items()}, water=m["water"],
-                           upgrade_cost_ppm=i_ppm(m["upgrade_cost"]), upgrade_q=m["upgrade_q"], note=m["note"]))
+                           upgrade_cost_ppm=i_ppm(m["upgrade_cost"]), upgrade_q=m["upgrade_q"],
+                           eff_ppm=i_ppm(m.get("eff", 1.0)), note=m["note"]))
         b_out.append(dict(id=b["id"], name=b["name"], category=b["category"], sector=b["sector"], owners=b["owners"],
                           land=b["land"] or "", deposit=b["deposit"] or "", coast=b["coast"], cost_li=i_li(cost),
                           maint_li=i_li(maint), build_q=b["build_q"], era=b["era"], era_end=b["era_end"],
                           tech=b["tech"] or "", effects={k: int(v) for k, v in b["effects"].items()},
                           art=b["art"], methods=ms, note=b["note"]))
-    texts.append(write_json("buildings.json", {"schema": "jc.buildings", "version": 1, "buildings": b_out,
-                                               "maint_mix": {g: i_ppm(v) for g, v in MAINT_MIX.items()}}))
+    texts.append(write_json("buildings.json", {
+        "schema": "jc.buildings", "version": 1, "buildings": b_out,
+        "maint_mix": {str(e): {g: i_ppm(v) for g, v in mix.items()} for e, mix in bld_mod.MAINT_MIX.items()},
+        "build_mix": {str(e): {g: i_ppm(v) for g, v in mix.items()} for e, mix in bld_mod.BUILD_MIX.items()}}))
 
     classes_out = [dict(id=c["id"], name=c["name"], base_wage_li=i_li(c["wage"]), work_ppm=i_ppm(c["work"]),
-                        save_ppm=i_ppm(c["save"]), invest=c["invest"], note=c["note"]) for c in C.CLASSES]
+                        save_ppm=i_ppm(c["save"]), buffer_ppm=i_ppm(c["buffer"]), invest=c["invest"],
+                        note=c["note"]) for c in C.CLASSES]
     needs_out = []
     for n in soc.NEEDS:
         taste = {rid: {g: i_ppm(v) for g, v in t.items()} for rid, t in n.get("taste", {}).items()}
         qty = {c: i_qty(v) for c, v in n["qty"].items()}
         needs_out.append(dict(id=n["id"], name=n["name"], essential=n.get("essential", False), weight=n["weight"],
-                              era=n["era"], era_end=n.get("era_end", 4),
+                              era=n["era"], era_end=n.get("era_end", 4), el_ppm=i_ppm(n.get("el", 1.0)),
+                              own_food=n.get("own_food", False),
                               goods={g: i_ppm(v) for g, v in n["goods"].items()}, qty=qty, taste=taste))
     texts.append(write_json("society.json", {"schema": "jc.society", "version": 1, "classes": classes_out,
                                              "needs": needs_out}))
@@ -228,7 +251,8 @@ def export(cal, res):
         pop = {c: int(round(res["pop_rc"][rid][c])) for c in C.CORDER}
         pop["peasant"] += r["pop"] - sum(pop.values())
         regions_out.append(dict(id=rid, name=r["name"], desc=r["desc"], river=r["river"], coast=r["coast"],
-                                capital=r.get("capital", False), logistics_ppm=i_ppm(r["logistics"]), land=land,
+                                capital=r.get("capital", False), logistics_ppm=i_ppm(r["logistics"]),
+                                logistics_start_ppm=i_ppm(cal.eff_log(rid)), rent_ppm=i_ppm(cal.rent[rid]), land=land,
                                 deposit=deposit, pop=pop))
     stacks_out = []
     for (rid, bid, mid), lv in sorted(res["stacks"].items()):
@@ -238,7 +262,7 @@ def export(cal, res):
         stacks_out.append(dict(region=rid, building=bid, method=mid, owner=owner, level=int(lv)))
     cons = cal.report(res, lambda *a: None)
     gv = C.GOV
-    savings = {f"{rid}:{c}": i_li(cons[(rid, c)] * res["pop_rc"][rid][c] * gv["savings_start_quarters"])
+    savings = {f"{rid}:{c}": i_li(cons[(rid, c)] * res["pop_rc"][rid][c] * C.CID[c]["buffer"])
                for rid in C.RORDER for c in C.CORDER}
     basket = {f"{rid}:{c}": i_ppm(cal.k[rid][c]) for rid in C.RORDER for c in C.CORDER}
     scenario = dict(schema="jc.scenario", version=1, id="campaign_v2", name="四百年战役", start_year=1600,
@@ -249,7 +273,9 @@ def export(cal, res):
                              hidden_growth_ppm=i_ppm(gv["hidden_growth"]), soldiers=int(round(res["soldiers"])),
                              soldier_wage_li=i_li(gv["soldier_wage"]),
                              soldier_ration_milli=i_qty(gv["soldier_ration"]),
-                             soldier_cloth_milli=i_qty(gv["soldier_cloth"]), court_li=i_li(gv["court"]),
+                             soldier_cloth_milli=i_qty(gv["soldier_cloth"]),
+                             soldier_leather_milli=i_qty(gv["soldier_leather"]), court_li=i_li(cal.court),
+                             comfort_expect_ppm=[i_ppm(v) for v in gv["comfort_expect"]],
                              relief_li=i_li(gv["relief_budget"]), commerce_margin_ppm=i_ppm(gv["commerce_margin"]),
                              rent_share_ppm=i_ppm(RENT_SHARE), port_fee_ppm=i_ppm(PORT_FEE),
                              literacy_ppm=i_ppm(0.08)),
