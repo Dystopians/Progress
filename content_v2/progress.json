@@ -1,0 +1,4404 @@
+{
+ "schema": "jc.progress",
+ "version": 1,
+ "techs": [
+  {
+   "id": "crop_rotation",
+   "name": "轮作与新作物",
+   "era": 1,
+   "cost": 7000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "dryfarm",
+    "paddy"
+   ],
+   "effects": [],
+   "desc": "豆麦轮作、引种新作物，旱田与水田都能增产两成（需改用轮作的种法）。"
+  },
+  {
+   "id": "water_management",
+   "name": "水利营造",
+   "era": 1,
+   "cost": 7000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "irrigation"
+   ],
+   "effects": [
+    {
+     "target": "irrigation_eff",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "desc": "水利设施的增产效果提高两成。"
+  },
+  {
+   "id": "survey",
+   "name": "土地清丈",
+   "era": 1,
+   "cost": 6000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "surveyoffice",
+    "yamen"
+   ],
+   "effects": [],
+   "desc": "可以推行「清丈田亩」，也能建丈量所，止住隐田增长。"
+  },
+  {
+   "id": "granary_system",
+   "name": "常平仓法",
+   "era": 1,
+   "cost": 5000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "granary"
+   ],
+   "effects": [],
+   "desc": "可以推行「常平仓」：丰年收储、荒年平粜。"
+  },
+  {
+   "id": "movable_type",
+   "name": "活字印刷",
+   "era": 1,
+   "cost": 7000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "printing",
+    "papermill"
+   ],
+   "effects": [],
+   "desc": "印坊可改用活字，书籍产量提高三分之二；读书人更多。"
+  },
+  {
+   "id": "herbal_medicine",
+   "name": "本草",
+   "era": 1,
+   "cost": 6000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "herbalist",
+    "clinic"
+   ],
+   "effects": [
+    {
+     "target": "health_eff",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "desc": "医馆与药局的效果提高两成。"
+  },
+  {
+   "id": "craft_guild",
+   "name": "行会工场",
+   "era": 1,
+   "cost": 8000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "weaving",
+    "smithy",
+    "porcelainkiln"
+   ],
+   "effects": [
+    {
+     "target": "workshop_labor",
+     "value": -8,
+     "scope": ""
+    }
+   ],
+   "desc": "作坊分工更细，用工减少 8%。"
+  },
+  {
+   "id": "bookkeeping",
+   "name": "复式记账",
+   "era": 1,
+   "cost": 10000,
+   "prereq": [],
+   "key": true,
+   "bg": [
+    "market"
+   ],
+   "effects": [
+    {
+     "target": "commerce_cap",
+     "value": 15,
+     "scope": ""
+    },
+    {
+     "target": "invest_prop",
+     "value": 10,
+     "scope": ""
+    }
+   ],
+   "desc": "商帮记账更严密：集市能力 +15%，民间投资意愿 +10%；可以推行「一条鞭法」。"
+  },
+  {
+   "id": "harbor_works",
+   "name": "港务营造",
+   "era": 1,
+   "cost": 8000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "port",
+    "shipyard"
+   ],
+   "effects": [
+    {
+     "target": "sea_trade_cap",
+     "value": 30,
+     "scope": ""
+    }
+   ],
+   "desc": "港口吞吐能力提高三成。"
+  },
+  {
+   "id": "navigation",
+   "name": "海图与罗盘",
+   "era": 1,
+   "cost": 11000,
+   "prereq": [
+    "harbor_works"
+   ],
+   "key": false,
+   "bg": [
+    "port",
+    "shipyard"
+   ],
+   "effects": [
+    {
+     "target": "sea_trade_cap",
+     "value": 15,
+     "scope": ""
+    },
+    {
+     "target": "relation_all",
+     "value": 5,
+     "scope": ""
+    }
+   ],
+   "desc": "远航更安全：港口能力再 +15%，可以推行「遣使译书」。"
+  },
+  {
+   "id": "water_power",
+   "name": "水力机械",
+   "era": 1,
+   "cost": 14000,
+   "prereq": [
+    "water_management"
+   ],
+   "key": true,
+   "bg": [
+    "watermill"
+   ],
+   "effects": [],
+   "desc": "铁制水轮、水力锯木、水磨、水力机械营造。进入第二时代的关键科技。"
+  },
+  {
+   "id": "double_cropping",
+   "name": "双季稻",
+   "era": 2,
+   "cost": 22000,
+   "prereq": [
+    "crop_rotation"
+   ],
+   "key": false,
+   "bg": [
+    "paddy"
+   ],
+   "effects": [],
+   "desc": "水田可改为双季稻，增产五成以上，用工也更多。"
+  },
+  {
+   "id": "sugar_refining",
+   "name": "甘蔗制糖",
+   "era": 2,
+   "cost": 18000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "paddy"
+   ],
+   "effects": [],
+   "desc": "水田可改种甘蔗，可建制糖坊。"
+  },
+  {
+   "id": "water_frame",
+   "name": "水力纺纱",
+   "era": 2,
+   "cost": 24000,
+   "prereq": [
+    "water_power"
+   ],
+   "key": false,
+   "bg": [
+    "spinning",
+    "watermill"
+   ],
+   "effects": [],
+   "desc": "纺纱坊改用水力，用工减少六成（需要本地区有水力）。"
+  },
+  {
+   "id": "flying_shuttle",
+   "name": "飞梭",
+   "era": 2,
+   "cost": 22000,
+   "prereq": [
+    "craft_guild"
+   ],
+   "key": false,
+   "bg": [
+    "weaving"
+   ],
+   "effects": [],
+   "desc": "织布用工减少四成；可建成衣坊。"
+  },
+  {
+   "id": "coal_iron",
+   "name": "煤炭冶铁",
+   "era": 2,
+   "cost": 26000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "coalmine",
+    "ironworks"
+   ],
+   "effects": [],
+   "desc": "冶铁、打铁、制陶、烧砖改烧煤，缓解木炭短缺。"
+  },
+  {
+   "id": "banking",
+   "name": "钱庄汇兑",
+   "era": 2,
+   "cost": 26000,
+   "prereq": [
+    "bookkeeping"
+   ],
+   "key": false,
+   "bg": [
+    "market"
+   ],
+   "effects": [
+    {
+     "target": "invest_prop",
+     "value": 15,
+     "scope": ""
+    }
+   ],
+   "desc": "钱庄兴起：民间投资意愿 +15%，可以推行「钱庄准入」、借商债。"
+  },
+  {
+   "id": "canal_engineering",
+   "name": "运河营造",
+   "era": 2,
+   "cost": 28000,
+   "prereq": [
+    "water_management"
+   ],
+   "key": false,
+   "bg": [
+    "irrigation"
+   ],
+   "effects": [],
+   "desc": "可以开凿运河，大幅降低有河地区的物流成本。"
+  },
+  {
+   "id": "glassmaking",
+   "name": "玻璃",
+   "era": 2,
+   "cost": 16000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "pottery"
+   ],
+   "effects": [],
+   "desc": "可以开砂场、建玻璃坊。"
+  },
+  {
+   "id": "chemistry_basic",
+   "name": "皂化",
+   "era": 2,
+   "cost": 14000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "chandlery"
+   ],
+   "effects": [],
+   "desc": "皂烛坊兼产肥皂。"
+  },
+  {
+   "id": "ocean_navigation",
+   "name": "远洋航海",
+   "era": 2,
+   "cost": 30000,
+   "prereq": [
+    "navigation"
+   ],
+   "key": false,
+   "bg": [
+    "shipyard",
+    "port"
+   ],
+   "effects": [
+    {
+     "target": "sea_trade_cap",
+     "value": 25,
+     "scope": ""
+    }
+   ],
+   "desc": "远洋商会愿意来往；港口能力 +25%。"
+  },
+  {
+   "id": "steam_principle",
+   "name": "蒸汽原理",
+   "era": 2,
+   "cost": 34000,
+   "prereq": [
+    "water_power"
+   ],
+   "key": true,
+   "bg": [
+    "machineworks"
+   ],
+   "effects": [],
+   "desc": "进入第三时代的关键科技之一。"
+  },
+  {
+   "id": "precision_mechanics",
+   "name": "精密机械",
+   "era": 2,
+   "cost": 34000,
+   "prereq": [
+    "water_power"
+   ],
+   "key": true,
+   "bg": [
+    "machineworks",
+    "smithy"
+   ],
+   "effects": [
+    {
+     "target": "workshop_labor",
+     "value": -5,
+     "scope": ""
+    }
+   ],
+   "desc": "进入第三时代的关键科技之一。"
+  },
+  {
+   "id": "steam_engine",
+   "name": "蒸汽机",
+   "era": 3,
+   "cost": 60000,
+   "prereq": [
+    "steam_principle"
+   ],
+   "key": false,
+   "bg": [
+    "machineworks",
+    "coalmine"
+   ],
+   "effects": [],
+   "desc": "蒸汽动力站、蒸汽纺织、竖井煤矿、机帆渔船……动力耗煤。"
+  },
+  {
+   "id": "coke_smelting",
+   "name": "焦炭炼铁",
+   "era": 3,
+   "cost": 60000,
+   "prereq": [
+    "coal_iron"
+   ],
+   "key": false,
+   "bg": [
+    "ironworks",
+    "coalmine"
+   ],
+   "effects": [],
+   "desc": "炼焦厂与焦炭高炉，生铁产量成倍提高。木炭开始淡出。"
+  },
+  {
+   "id": "bessemer",
+   "name": "转炉炼钢",
+   "era": 3,
+   "cost": 70000,
+   "prereq": [
+    "coke_smelting"
+   ],
+   "key": false,
+   "bg": [
+    "ironworks"
+   ],
+   "effects": [],
+   "desc": "可以建钢铁厂。"
+  },
+  {
+   "id": "machine_tools",
+   "name": "机床",
+   "era": 3,
+   "cost": 70000,
+   "prereq": [
+    "bessemer",
+    "precision_mechanics"
+   ],
+   "key": false,
+   "bg": [
+    "machineworks"
+   ],
+   "effects": [],
+   "desc": "蒸汽机械厂、机加工工具、机械家具、成衣工厂。"
+  },
+  {
+   "id": "railway",
+   "name": "铁路",
+   "era": 3,
+   "cost": 80000,
+   "prereq": [
+    "steam_engine",
+    "bessemer"
+   ],
+   "key": false,
+   "bg": [
+    "road",
+    "railworks"
+   ],
+   "effects": [],
+   "desc": "铁路干线与铁路货运，物流成本大降；可建钢轨厂。"
+  },
+  {
+   "id": "chemistry",
+   "name": "化学工业",
+   "era": 3,
+   "cost": 65000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "chandlery",
+    "tannery"
+   ],
+   "effects": [],
+   "desc": "化工厂、硫磺矿、机械制皂、蒸汽制革。"
+  },
+  {
+   "id": "fertilizer",
+   "name": "化肥",
+   "era": 3,
+   "cost": 70000,
+   "prereq": [
+    "chemistry"
+   ],
+   "key": false,
+   "bg": [
+    "dryfarm",
+    "paddy"
+   ],
+   "effects": [],
+   "desc": "磷矿与化肥厂；农田可改为施肥种法，增产七成。"
+  },
+  {
+   "id": "cement",
+   "name": "水泥",
+   "era": 3,
+   "cost": 50000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "quarry",
+    "brickkiln"
+   ],
+   "effects": [],
+   "desc": "石灰岩与水泥厂。"
+  },
+  {
+   "id": "canning",
+   "name": "罐头",
+   "era": 3,
+   "cost": 45000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "fishery"
+   ],
+   "effects": [],
+   "desc": "罐头厂。"
+  },
+  {
+   "id": "telegraph",
+   "name": "电报",
+   "era": 3,
+   "cost": 60000,
+   "prereq": [
+    "steam_engine"
+   ],
+   "key": false,
+   "bg": [
+    "yamen"
+   ],
+   "effects": [
+    {
+     "target": "admin_eff",
+     "value": 25,
+     "scope": ""
+    }
+   ],
+   "desc": "衙署效率提高，可改为新式税关核算所。"
+  },
+  {
+   "id": "public_health",
+   "name": "公共卫生",
+   "era": 3,
+   "cost": 55000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "clinic",
+    "urbanworks"
+   ],
+   "effects": [
+    {
+     "target": "health_eff",
+     "value": 25,
+     "scope": ""
+    }
+   ],
+   "desc": "公共医院、卫生设施与制药工场。"
+  },
+  {
+   "id": "public_education",
+   "name": "新式教育",
+   "era": 3,
+   "cost": 55000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "school",
+    "library"
+   ],
+   "effects": [
+    {
+     "target": "literacy_rate",
+     "value": 30,
+     "scope": ""
+    }
+   ],
+   "desc": "新式学堂与公共图书馆。"
+  },
+  {
+   "id": "sericulture_science",
+   "name": "蚕桑改良",
+   "era": 3,
+   "cost": 40000,
+   "prereq": [],
+   "key": false,
+   "bg": [
+    "mulberry"
+   ],
+   "effects": [],
+   "desc": "良种桑蚕，蚕茧增产七成。"
+  },
+  {
+   "id": "dynamo",
+   "name": "发电机",
+   "era": 3,
+   "cost": 90000,
+   "prereq": [
+    "steam_engine"
+   ],
+   "key": true,
+   "bg": [
+    "steamplant"
+   ],
+   "effects": [],
+   "desc": "进入第四时代的关键科技之一。"
+  },
+  {
+   "id": "internal_combustion",
+   "name": "内燃机",
+   "era": 3,
+   "cost": 90000,
+   "prereq": [
+    "steam_engine"
+   ],
+   "key": true,
+   "bg": [
+    "machineworks"
+   ],
+   "effects": [],
+   "desc": "进入第四时代的关键科技之一。"
+  },
+  {
+   "id": "power_grid",
+   "name": "电网",
+   "era": 4,
+   "cost": 140000,
+   "prereq": [
+    "dynamo"
+   ],
+   "key": false,
+   "bg": [
+    "steamplant"
+   ],
+   "effects": [],
+   "desc": "火电厂、水电站与跨区电网；大批工厂改用电力。"
+  },
+  {
+   "id": "electrochemistry",
+   "name": "电化学",
+   "era": 4,
+   "cost": 130000,
+   "prereq": [
+    "power_grid"
+   ],
+   "key": false,
+   "bg": [
+    "chemworks"
+   ],
+   "effects": [],
+   "desc": "电解铝、电解精炼铜。"
+  },
+  {
+   "id": "petrochemistry",
+   "name": "石油化工",
+   "era": 4,
+   "cost": 150000,
+   "prereq": [
+    "internal_combustion"
+   ],
+   "key": false,
+   "bg": [
+    "chemworks"
+   ],
+   "effects": [],
+   "desc": "油井、炼油厂、合成氨、石油化工。"
+  },
+  {
+   "id": "automobile",
+   "name": "汽车",
+   "era": 4,
+   "cost": 150000,
+   "prereq": [
+    "internal_combustion"
+   ],
+   "key": false,
+   "bg": [
+    "machineworks"
+   ],
+   "effects": [],
+   "desc": "汽车厂、汽车货运、公路网。"
+  },
+  {
+   "id": "electronics",
+   "name": "电子管",
+   "era": 4,
+   "cost": 140000,
+   "prereq": [
+    "power_grid"
+   ],
+   "key": false,
+   "bg": [
+    "electricalworks"
+   ],
+   "effects": [],
+   "desc": "电子厂。"
+  },
+  {
+   "id": "television",
+   "name": "电视",
+   "era": 4,
+   "cost": 160000,
+   "prereq": [
+    "electronics"
+   ],
+   "key": false,
+   "bg": [
+    "electronicsworks"
+   ],
+   "effects": [],
+   "desc": "收音机与电视机。"
+  },
+  {
+   "id": "antibiotics",
+   "name": "抗生素",
+   "era": 4,
+   "cost": 140000,
+   "prereq": [
+    "public_health"
+   ],
+   "key": false,
+   "bg": [
+    "clinic",
+    "herbalist"
+   ],
+   "effects": [
+    {
+     "target": "health_eff",
+     "value": 40,
+     "scope": ""
+    }
+   ],
+   "desc": "现代药厂与区域医疗中心，死亡率大降。"
+  },
+  {
+   "id": "mechanized_farming",
+   "name": "农业机械化",
+   "era": 4,
+   "cost": 150000,
+   "prereq": [
+    "internal_combustion"
+   ],
+   "key": false,
+   "bg": [
+    "dryfarm",
+    "paddy"
+   ],
+   "effects": [],
+   "desc": "农田可改为机械化种法，用工减少七成。"
+  },
+  {
+   "id": "automation",
+   "name": "自动化",
+   "era": 4,
+   "cost": 180000,
+   "prereq": [
+    "electronics"
+   ],
+   "key": false,
+   "bg": [
+    "machineworks",
+    "electricalworks"
+   ],
+   "effects": [
+    {
+     "target": "workshop_labor",
+     "value": -10,
+     "scope": ""
+    }
+   ],
+   "desc": "家电厂、工业装备厂、精密工具。"
+  },
+  {
+   "id": "computing",
+   "name": "计算机",
+   "era": 4,
+   "cost": 220000,
+   "prereq": [
+    "electronics",
+    "automation"
+   ],
+   "key": false,
+   "bg": [
+    "electronicsworks",
+    "school"
+   ],
+   "effects": [
+    {
+     "target": "research_speed",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "desc": "计算机、研究型大学、现代行政中心。"
+  },
+  {
+   "id": "solar_wind",
+   "name": "新能源",
+   "era": 4,
+   "cost": 200000,
+   "prereq": [
+    "power_grid"
+   ],
+   "key": false,
+   "bg": [
+    "hydroplant"
+   ],
+   "effects": [],
+   "desc": "风电场。"
+  }
+ ],
+ "eras": [
+  {
+   "id": 1,
+   "name": "农商",
+   "subtitle": "土地、水利、手工业与互市",
+   "art": "assets/eras/e01/era01_agriculture.png",
+   "need": {}
+  },
+  {
+   "id": 2,
+   "name": "工场与商路",
+   "subtitle": "水力工场、钱庄票号、运河与远洋商路",
+   "art": "assets/eras/e01/era02_commerce.png",
+   "need": {
+    "techs": [
+     "water_power",
+     "bookkeeping"
+    ],
+    "buildings": {
+     "watermill": 6,
+     "port": 6
+    },
+    "social": {
+     "literacy": 0.14
+    }
+   }
+  },
+  {
+   "id": 3,
+   "name": "蒸汽与铁路",
+   "subtitle": "煤铁、钢、机械、铁路与城市",
+   "art": "assets/eras/e01/era04_industry.png",
+   "need": {
+    "techs": [
+     "steam_engine",
+     "coke_smelting"
+    ],
+    "buildings": {
+     "steamplant": 4,
+     "cokeworks": 3
+    },
+    "social": {
+     "urban": 0.25
+    }
+   }
+  },
+  {
+   "id": 4,
+   "name": "电气与现代国家",
+   "subtitle": "电力、化工、汽车、电子与福利国家",
+   "art": "assets/eras/e01/era05_electricity.png",
+   "need": {
+    "techs": [
+     "power_grid",
+     "internal_combustion"
+    ],
+    "buildings": {
+     "powerplant": 6,
+     "electricalworks": 2
+    },
+    "social": {
+     "literacy": 0.6
+    }
+   }
+  }
+ ],
+ "obsolescence": {
+  "per_year": 3,
+  "cap": 30
+ },
+ "decrees": [
+  {
+   "id": "land_survey",
+   "name": "清丈田亩",
+   "era": 1,
+   "era_end": 4,
+   "kind": "campaign",
+   "desc": "派员逐县丈量田亩，八季内把隐田追回七成。士绅不满，农户略喜。",
+   "tech": "survey",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 300000000,
+   "cost_q_li": 50000000,
+   "duration": 8,
+   "effects": [
+    [
+     {
+      "target": "hidden_cut",
+      "value": 9,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": -12,
+     "peasant": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "single_whip",
+   "name": "一条鞭法",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "赋役合并、折银征收：田赋征收率 +12%，吏员开支 −5%。",
+   "tech": "bookkeeping",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "land_tax_eff",
+      "value": 12,
+      "scope": ""
+     },
+     {
+      "target": "admin_cost",
+      "value": -5,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": 5,
+     "gentry": -3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "ever_normal_granary",
+   "name": "常平仓",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "粮价低于基准时官府收储，高于基准时平价出粜，需要粮仓。",
+   "tech": "granary_system",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 20000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "granary_ops",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": 4
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "sea_policy",
+   "name": "海禁与开海",
+   "era": 1,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "海禁时海上贸易只剩三成；开海时海港能力 +60%，商贾欢迎、士绅疑虑。",
+   "tech": "",
+   "levels": [
+    "海禁",
+    "限开",
+    "开海"
+   ],
+   "default": 1,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "sea_trade_cap",
+      "value": -70,
+      "scope": ""
+     },
+     {
+      "target": "customs_eff",
+      "value": -40,
+      "scope": ""
+     }
+    ],
+    [],
+    [
+     {
+      "target": "sea_trade_cap",
+      "value": 60,
+      "scope": ""
+     },
+     {
+      "target": "invest_prop",
+      "value": 5,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": -10,
+     "gentry": 5
+    },
+    {},
+    {
+     "merchant": 10,
+     "gentry": -5
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "commerce_policy",
+   "name": "农商取向",
+   "era": 1,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "决定民间投资的意愿：重农抑商时民间投资减四成，恤商惠工时增四成。",
+   "tech": "",
+   "levels": [
+    "重农抑商",
+    "农商并重",
+    "恤商惠工"
+   ],
+   "default": 1,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "invest_prop",
+      "value": -40,
+      "scope": ""
+     },
+     {
+      "target": "farm_yield",
+      "value": 3,
+      "scope": ""
+     }
+    ],
+    [],
+    [
+     {
+      "target": "invest_prop",
+      "value": 40,
+      "scope": ""
+     },
+     {
+      "target": "commerce_cap",
+      "value": 10,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": -10,
+     "gentry": 5,
+     "peasant": 2
+    },
+    {},
+    {
+     "merchant": 10,
+     "gentry": -5,
+     "artisan": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "salt_policy",
+   "name": "盐政",
+   "era": 1,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "官卖时盐课增五成，但盐价上涨四成、私盐与民怨随之而来。",
+   "tech": "",
+   "levels": [
+    "商销",
+    "官督商销",
+    "官卖"
+   ],
+   "default": 1,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "salt_tax_eff",
+      "value": -40,
+      "scope": ""
+     }
+    ],
+    [],
+    [
+     {
+      "target": "salt_tax_eff",
+      "value": 50,
+      "scope": ""
+     },
+     {
+      "target": "salt_markup",
+      "value": 40,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 5,
+     "peasant": 3
+    },
+    {},
+    {
+     "peasant": -8,
+     "merchant": -5
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "famine_relief",
+   "name": "赈济",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "口粮不足的地区由官府买粮发放；花费随灾情而定。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 10000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "relief",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "promote_schools",
+   "name": "兴学",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "资助书院与乡学：识字率增长加快，学舍效果 +15%。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 30000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "literacy_rate",
+      "value": 25,
+      "scope": ""
+     },
+     {
+      "target": "edu_eff",
+      "value": 15,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": 4
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "foreign_learning",
+   "name": "遣使译书",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "派使节、译西书：从伙伴那里学来的科技研究加速 +50%。",
+   "tech": "navigation",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 40000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "research_foreign",
+      "value": 50,
+      "scope": ""
+     },
+     {
+      "target": "relation_all",
+      "value": 5,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": -3,
+     "merchant": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "tea_horse",
+   "name": "茶马互市",
+   "era": 1,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "以茶易马：卖给内陆汗国的茶叶加价三成，买役畜便宜三成。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "export_price",
+      "value": 30,
+      "scope": "partner:inland_khanate:tea"
+     },
+     {
+      "target": "import_price",
+      "value": -30,
+      "scope": "partner:inland_khanate:draft_animal"
+     },
+     {
+      "target": "relation",
+      "value": 10,
+      "scope": "inland_khanate"
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 2
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "sell_titles",
+   "name": "捐纳",
+   "era": 1,
+   "era_end": 4,
+   "kind": "campaign",
+   "desc": "出售功名官衔，四季内多收一笔银子，但伤合法性。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 4,
+   "effects": [
+    [
+     {
+      "target": "title_sales",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": 4,
+     "peasant": -4,
+     "merchant": 2
+    }
+   ],
+   "cooldown": 24
+  },
+  {
+   "id": "corvee_works",
+   "name": "征发徭役",
+   "era": 1,
+   "era_end": 4,
+   "kind": "campaign",
+   "desc": "征发民夫修筑官办工程：八季内官办建设成本 −25%，农户不满。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 8,
+   "effects": [
+    [
+     {
+      "target": "construction_cost",
+      "value": -25,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": -8
+    }
+   ],
+   "cooldown": 16
+  },
+  {
+   "id": "reclamation",
+   "name": "招民垦荒",
+   "era": 1,
+   "era_end": 4,
+   "kind": "campaign",
+   "desc": "开垦林地为旱地：八季内各地区旱地增加约一成，林地相应减少。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 200000000,
+   "cost_q_li": 30000000,
+   "duration": 8,
+   "effects": [
+    [
+     {
+      "target": "reclaim",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": 3
+    }
+   ],
+   "cooldown": 16
+  },
+  {
+   "id": "tax_remission",
+   "name": "蠲免钱粮",
+   "era": 1,
+   "era_end": 4,
+   "kind": "campaign",
+   "desc": "四季内田赋减半，民心大振，国库吃紧。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 4,
+   "effects": [
+    [
+     {
+      "target": "land_tax_eff",
+      "value": -50,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "peasant": 10,
+     "gentry": 3
+    }
+   ],
+   "cooldown": 16
+  },
+  {
+   "id": "banking_license",
+   "name": "钱庄准入",
+   "era": 2,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "准许钱庄票号：民间投资意愿 +20%，官府借债利息 −30%。",
+   "tech": "banking",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "invest_prop",
+      "value": 20,
+      "scope": ""
+     },
+     {
+      "target": "interest_rate",
+      "value": -30,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 6,
+     "gentry": -2
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "industrial_charter",
+   "name": "工场特许",
+   "era": 2,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "准许民间开办大型工场：作坊类投资意愿 +30%。",
+   "tech": "water_frame",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "invest_workshop",
+      "value": 30,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 5,
+     "artisan": 3,
+     "gentry": -3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "official_press",
+   "name": "官办书局",
+   "era": 2,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "官府刊印书籍：识字率增长加快，研究 +8%。",
+   "tech": "movable_type",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 40000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "literacy_rate",
+      "value": 20,
+      "scope": ""
+     },
+     {
+      "target": "research_speed",
+      "value": 8,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "navigation_act",
+   "name": "航海条例",
+   "era": 2,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "本国货物由本国船只承运：港口能力 +20%，海运出口价 +8%。",
+   "tech": "ocean_navigation",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "sea_trade_cap",
+      "value": 20,
+      "scope": ""
+     },
+     {
+      "target": "export_price",
+      "value": 8,
+      "scope": "sea"
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 4
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "factory_act",
+   "name": "工厂法",
+   "era": 3,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "限制工时、改善工人待遇：工匠不满减少，作坊用工 +5%。",
+   "tech": "steam_engine",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "unrest",
+      "value": -20,
+      "scope": "artisan"
+     },
+     {
+      "target": "workshop_labor",
+      "value": 5,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "artisan": 10,
+     "merchant": -5
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "railway_policy",
+   "name": "铁路经营",
+   "era": 3,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "铁路交给谁经营：民营时民间投资更积极，国有时全国物流成本再降 2 个百分点。",
+   "tech": "railway",
+   "levels": [
+    "民营",
+    "官督商办",
+    "国有"
+   ],
+   "default": 1,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "invest_prop",
+      "value": 10,
+      "scope": ""
+     }
+    ],
+    [],
+    [
+     {
+      "target": "logistics_cut_all",
+      "value": 2,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 5
+    },
+    {},
+    {
+     "merchant": -5,
+     "peasant": 2
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "income_tax",
+   "name": "所得税",
+   "era": 3,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "开征所得税：按商贾、士绅收入的一成征收。",
+   "tech": "telegraph",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "income_tax",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": -6,
+     "gentry": -6
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "protective_tariff",
+   "name": "保护关税",
+   "era": 3,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "进口关税翻倍，保护本国工场，出口略受报复。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "tariff",
+      "value": 100,
+      "scope": ""
+     },
+     {
+      "target": "export_price",
+      "value": -5,
+      "scope": "all"
+     }
+    ]
+   ],
+   "support": [
+    {
+     "artisan": 4,
+     "merchant": -2
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "compulsory_school",
+   "name": "初等义务教育",
+   "era": 3,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "儿童必须入学：识字率增长大幅加快。",
+   "tech": "public_education",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 150000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "literacy_rate",
+      "value": 60,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "artisan": 3,
+     "peasant": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "central_bank",
+   "name": "中央银行",
+   "era": 4,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "统一货币与信贷：借债利息 −40%，物价更稳。",
+   "tech": "electrochemistry",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "interest_rate",
+      "value": -40,
+      "scope": ""
+     },
+     {
+      "target": "price_stability",
+      "value": 1,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 3
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "social_insurance",
+   "name": "社会保险",
+   "era": 4,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "养老、失业与医疗保险：各阶层不满大减，财政负担显著。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 300000000,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "pension",
+      "value": 1,
+      "scope": ""
+     },
+     {
+      "target": "unrest",
+      "value": -30,
+      "scope": "all"
+     }
+    ]
+   ],
+   "support": [
+    {
+     "artisan": 8,
+     "peasant": 6
+    }
+   ],
+   "cooldown": 8
+  },
+  {
+   "id": "environment_law",
+   "name": "环境保护法",
+   "era": 4,
+   "era_end": 4,
+   "kind": "toggle",
+   "desc": "限制排放：污染事件减半，工厂成本 +5%。",
+   "tech": "",
+   "levels": [],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "pollution_cut",
+      "value": 50,
+      "scope": ""
+     },
+     {
+      "target": "workshop_cost",
+      "value": 5,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "gentry": 4,
+     "merchant": -3
+    }
+   ],
+   "cooldown": 8
+  }
+ ],
+ "partners": [
+  {
+   "id": "north_ports",
+   "name": "北方海港诸邦",
+   "route": "sea",
+   "dev_ppm": 1560000,
+   "rate_ppm": 8000,
+   "relation": 10,
+   "appear_era": 1,
+   "art": "assets/partners/partner_north_ports.png",
+   "desc": "北方海上的城邦联盟，航海与商业发达，掌握复式记账、海图与钱庄。",
+   "wants": {
+    "silk": [
+     1500000,
+     30000000
+    ],
+    "porcelain": [
+     1600000,
+     400000000
+    ],
+    "tea": [
+     1400000,
+     6000000
+    ],
+    "sugar": [
+     1300000,
+     20000000
+    ]
+   },
+   "offers": {
+    "tools": [
+     1100000,
+     60000000
+    ],
+    "pig_iron": [
+     1150000,
+     12000000
+    ],
+    "glass": [
+     1200000,
+     8000000
+    ],
+    "books": [
+     1300000,
+     2000000
+    ],
+    "machinery": [
+     1300000,
+     400000
+    ],
+    "steel": [
+     1200000,
+     3000000
+    ],
+    "chemicals": [
+     1300000,
+     3000000
+    ]
+   }
+  },
+  {
+   "id": "south_isles",
+   "name": "南洋列岛",
+   "route": "sea",
+   "dev_ppm": 1120000,
+   "rate_ppm": 6000,
+   "relation": 0,
+   "appear_era": 1,
+   "art": "assets/partners/partner_south_isles.png",
+   "desc": "南方群岛，盛产木材、稻米与香料，需要布匹、铁器与盐。",
+   "wants": {
+    "fabric": [
+     1200000,
+     400000000
+    ],
+    "tools": [
+     1300000,
+     30000000
+    ],
+    "salt": [
+     1200000,
+     30000000
+    ],
+    "porcelain": [
+     1200000,
+     200000000
+    ]
+   },
+   "offers": {
+    "timber": [
+     900000,
+     30000000
+    ],
+    "rice": [
+     900000,
+     150000000
+    ],
+    "fruit": [
+     900000,
+     60000000
+    ],
+    "spices": [
+     1000000,
+     3000000
+    ],
+    "sugar": [
+     900000,
+     20000000
+    ],
+    "rubber": [
+     1000000,
+     4000000
+    ]
+   }
+  },
+  {
+   "id": "inland_khanate",
+   "name": "内陆汗国",
+   "route": "land",
+   "dev_ppm": 1050000,
+   "rate_ppm": 5000,
+   "relation": 5,
+   "appear_era": 1,
+   "art": "assets/partners/partner_inland_khanate_v2.png",
+   "desc": "西部草原上的汗国，出役畜、羊毛与皮张，渴求茶叶、布匹与盐。",
+   "wants": {
+    "tea": [
+     1600000,
+     5000000
+    ],
+    "fabric": [
+     1200000,
+     200000000
+    ],
+    "salt": [
+     1300000,
+     25000000
+    ],
+    "silk": [
+     1200000,
+     8000000
+    ]
+   },
+   "offers": {
+    "draft_animal": [
+     800000,
+     4000000
+    ],
+    "wool": [
+     800000,
+     6000000
+    ],
+    "hides": [
+     800000,
+     10000000
+    ],
+    "meat": [
+     900000,
+     8000000
+    ]
+   }
+  },
+  {
+   "id": "oceanic_league",
+   "name": "远洋商会",
+   "route": "sea",
+   "dev_ppm": 1900000,
+   "rate_ppm": 8500,
+   "relation": 0,
+   "appear_era": 2,
+   "art": "assets/partners/partner_oceanic_league.png",
+   "desc": "从大洋彼岸驶来的商会，带来香料、咖啡与新式器物，也要丝、瓷、茶、糖。",
+   "wants": {
+    "silk": [
+     1700000,
+     40000000
+    ],
+    "porcelain": [
+     1700000,
+     500000000
+    ],
+    "tea": [
+     1600000,
+     10000000
+    ],
+    "sugar": [
+     1400000,
+     40000000
+    ],
+    "cotton": [
+     1200000,
+     40000000
+    ]
+   },
+   "offers": {
+    "spices": [
+     1000000,
+     8000000
+    ],
+    "coffee": [
+     1000000,
+     8000000
+    ],
+    "glass": [
+     1100000,
+     10000000
+    ],
+    "machinery": [
+     1200000,
+     800000
+    ],
+    "chemicals": [
+     1200000,
+     5000000
+    ],
+    "rubber": [
+     1000000,
+     8000000
+    ]
+   }
+  },
+  {
+   "id": "industrial_power",
+   "name": "新兴工业国",
+   "route": "sea",
+   "dev_ppm": 2600000,
+   "rate_ppm": 10000,
+   "relation": 0,
+   "appear_era": 3,
+   "art": "assets/partners/partner_industrial_power.png",
+   "desc": "率先完成工业化的强国，出售机器、钢铁与化学品，大量收购原料。",
+   "wants": {
+    "cotton": [
+     1300000,
+     80000000
+    ],
+    "silk_thread": [
+     1400000,
+     8000000
+    ],
+    "tea": [
+     1300000,
+     12000000
+    ],
+    "coal": [
+     1100000,
+     300000000
+    ],
+    "iron_ore": [
+     1100000,
+     200000000
+    ]
+   },
+   "offers": {
+    "machinery": [
+     1100000,
+     3000000
+    ],
+    "steel": [
+     1050000,
+     20000000
+    ],
+    "chemicals": [
+     1100000,
+     20000000
+    ],
+    "rail": [
+     1100000,
+     8000000
+    ],
+    "electric_motor": [
+     1200000,
+     1000000
+    ],
+    "automobile": [
+     1200000,
+     500000
+    ]
+   }
+  },
+  {
+   "id": "alliance_bloc",
+   "name": "联盟集团",
+   "route": "sea",
+   "dev_ppm": 3500000,
+   "rate_ppm": 11000,
+   "relation": 0,
+   "appear_era": 4,
+   "art": "assets/partners/partner_alliance_bloc.png",
+   "desc": "战后结成的经济联盟，出售石油、电子与汽车，收购轻工产品与食品。",
+   "wants": {
+    "clothing": [
+     1300000,
+     300000000
+    ],
+    "preserved_food": [
+     1300000,
+     200000000
+    ],
+    "porcelain": [
+     1300000,
+     600000000
+    ],
+    "appliances": [
+     1200000,
+     30000000
+    ]
+   },
+   "offers": {
+    "crude_oil": [
+     1000000,
+     100000000
+    ],
+    "refined_fuel": [
+     1050000,
+     60000000
+    ],
+    "electronic_parts": [
+     1100000,
+     20000000
+    ],
+    "computer": [
+     1300000,
+     2000000
+    ],
+    "automobile": [
+     1100000,
+     3000000
+    ],
+    "plastic": [
+     1050000,
+     5000000
+    ]
+   }
+  }
+ ],
+ "tech_order": {
+  "1": [
+   "bookkeeping",
+   "navigation",
+   "harbor_works",
+   "movable_type",
+   "crop_rotation",
+   "water_management",
+   "craft_guild",
+   "survey",
+   "herbal_medicine",
+   "granary_system",
+   "water_power"
+  ],
+  "2": [
+   "banking",
+   "ocean_navigation",
+   "glassmaking",
+   "coal_iron",
+   "flying_shuttle",
+   "water_frame",
+   "chemistry_basic",
+   "sugar_refining",
+   "canal_engineering",
+   "double_cropping",
+   "precision_mechanics",
+   "steam_principle"
+  ],
+  "3": [
+   "steam_engine",
+   "coke_smelting",
+   "bessemer",
+   "railway",
+   "machine_tools",
+   "telegraph",
+   "chemistry",
+   "cement",
+   "canning",
+   "public_health",
+   "public_education",
+   "fertilizer",
+   "sericulture_science",
+   "dynamo",
+   "internal_combustion"
+  ],
+  "4": [
+   "power_grid",
+   "electrochemistry",
+   "internal_combustion",
+   "petrochemistry",
+   "automobile",
+   "electronics",
+   "antibiotics",
+   "mechanized_farming",
+   "television",
+   "automation",
+   "computing",
+   "solar_wind"
+  ]
+ },
+ "landmarks": [
+  {
+   "id": "imperial_exam_hall",
+   "name": "贡院",
+   "era": 1,
+   "kind": "achievement",
+   "cost_li": 1500000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "admin_eff",
+     "value": 10,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 5,
+     "scope": "gentry"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "admin_eff",
+     "value": 5.0,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 2.5,
+     "scope": "gentry"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 10.0,
+     "scope": ""
+    }
+   ],
+   "desc": "科举考场。治理效率 +10%，士绅民心 +5，识字率增长加快。带时代标签：进入第三时代后十年内失效，可改为新式学堂或古迹。",
+   "art": "assets/landmarks/l02/landmark_imperial_exam_hall_v2.png",
+   "need": {
+    "techs": [
+     "movable_type"
+    ],
+    "literacy": 0.11
+   },
+   "eraband": 1,
+   "convert": {
+    "to": "school",
+    "levels": 3
+   }
+  },
+  {
+   "id": "astronomical_observatory",
+   "name": "古天象台",
+   "era": 1,
+   "kind": "achievement",
+   "cost_li": 1000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "research_speed",
+     "value": 10,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "research_speed",
+     "value": 5.0,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 10.0,
+     "scope": ""
+    }
+   ],
+   "desc": "观天测候、修订历法。研究 +10%，天灾损失 −20%。",
+   "art": "assets/landmarks/l02/landmark_astronomical_observatory.png",
+   "need": {
+    "tech_count": 6
+   },
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "great_public_granary",
+   "name": "公共义仓总库",
+   "era": 1,
+   "kind": "achievement",
+   "cost_li": 1200000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "relief_eff",
+     "value": 50,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 3,
+     "scope": "peasant"
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "relief_eff",
+     "value": 25.0,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 1.5,
+     "scope": "peasant"
+    }
+   ],
+   "desc": "全国义仓的总库。赈济效果 +50%，农户民心 +3。",
+   "art": "assets/landmarks/l02/landmark_great_public_granary_v2.png",
+   "need": {
+    "buildings": {
+     "granary": 4
+    }
+   },
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "grand_canal_hub",
+   "name": "大运河枢纽",
+   "era": 2,
+   "kind": "leading",
+   "cost_li": 3000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "logistics_cut_all",
+     "value": 4,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "logistics_cut_all",
+     "value": 2.0,
+     "scope": ""
+    }
+   ],
+   "desc": "南北漕运的总枢纽。全国物流成本 −4 个百分点（降级版 −2）。",
+   "art": "assets/landmarks/landmark_grand_canal_hub.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "merchant_exchange",
+   "name": "通商会馆",
+   "era": 2,
+   "kind": "leading",
+   "cost_li": 2500000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "sea_trade_cap",
+     "value": 25,
+     "scope": ""
+    },
+    {
+     "target": "land_trade_cap",
+     "value": 25,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 5,
+     "scope": "merchant"
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "sea_trade_cap",
+     "value": 12.5,
+     "scope": ""
+    },
+    {
+     "target": "land_trade_cap",
+     "value": 12.5,
+     "scope": ""
+    },
+    {
+     "target": "support",
+     "value": 2.5,
+     "scope": "merchant"
+    }
+   ],
+   "desc": "各地商帮的总会馆。海陆贸易能力 +25%，商贾民心 +5。",
+   "art": "assets/landmarks/l02/landmark_merchant_exchange.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "public_archive",
+   "name": "国家档案馆",
+   "era": 2,
+   "kind": "leading",
+   "cost_li": 2200000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "admin_eff",
+     "value": 15,
+     "scope": ""
+    },
+    {
+     "target": "hidden_growth",
+     "value": -50,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "admin_eff",
+     "value": 7.5,
+     "scope": ""
+    },
+    {
+     "target": "hidden_growth",
+     "value": -25.0,
+     "scope": ""
+    }
+   ],
+   "desc": "户籍田册的总档。治理效率 +15%，隐田增长减半。",
+   "art": "assets/landmarks/l02/landmark_public_archive.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "maritime_lighthouse",
+   "name": "海岬大灯塔",
+   "era": 2,
+   "kind": "leading",
+   "cost_li": 2000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "sea_trade_cap",
+     "value": 20,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 10,
+     "scope": "haijia"
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "sea_trade_cap",
+     "value": 10.0,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 5.0,
+     "scope": "haijia"
+    }
+   ],
+   "desc": "照亮海岬航道。海港能力 +20%，海岬台风损失 −10%。",
+   "art": "assets/landmarks/l02/landmark_maritime_lighthouse_v3.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "mountain_aqueduct",
+   "name": "西岭引水渠",
+   "era": 2,
+   "kind": "leading",
+   "cost_li": 2400000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "farm_yield",
+     "value": 20,
+     "scope": "xiling"
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "farm_yield",
+     "value": 10.0,
+     "scope": "xiling"
+    }
+   ],
+   "desc": "穿山引水灌溉西岭。西岭农田 +20%。",
+   "art": "assets/landmarks/l02/landmark_mountain_aqueduct.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "world_exposition",
+   "name": "万国博览馆",
+   "era": 3,
+   "kind": "leading",
+   "cost_li": 6000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "export_price",
+     "value": 10,
+     "scope": "all"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 20,
+     "scope": ""
+    },
+    {
+     "target": "prestige",
+     "value": 10,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "export_price",
+     "value": 5.0,
+     "scope": "all"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 10.0,
+     "scope": ""
+    },
+    {
+     "target": "prestige",
+     "value": 5.0,
+     "scope": ""
+    }
+   ],
+   "desc": "向世界展示本国工艺。出口价格 +10%，识字率增长加快。",
+   "art": "assets/landmarks/landmark_world_exposition.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "central_rail_terminal",
+   "name": "中央铁路总站",
+   "era": 3,
+   "kind": "leading",
+   "cost_li": 5500000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "logistics_cut_all",
+     "value": 3,
+     "scope": ""
+    },
+    {
+     "target": "migration",
+     "value": 30,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "logistics_cut_all",
+     "value": 1.5,
+     "scope": ""
+    },
+    {
+     "target": "migration",
+     "value": 15.0,
+     "scope": ""
+    }
+   ],
+   "desc": "全国铁路的总站。物流成本 −3 个百分点，人口流动更顺畅。",
+   "art": "assets/landmarks/l02/landmark_central_rail_terminal.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "technical_university",
+   "name": "国家工科大学",
+   "era": 3,
+   "kind": "leading",
+   "cost_li": 5000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "research_speed",
+     "value": 15,
+     "scope": ""
+    },
+    {
+     "target": "skill_up",
+     "value": 30,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "research_speed",
+     "value": 7.5,
+     "scope": ""
+    },
+    {
+     "target": "skill_up",
+     "value": 15.0,
+     "scope": ""
+    }
+   ],
+   "desc": "培养工程师。研究 +15%，工匠与士人成长更快。",
+   "art": "assets/landmarks/l03/landmark_technical_university.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "great_dry_dock",
+   "name": "国家大船坞",
+   "era": 3,
+   "kind": "leading",
+   "cost_li": 5000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "sea_trade_cap",
+     "value": 30,
+     "scope": ""
+    },
+    {
+     "target": "ships_output",
+     "value": 40,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "sea_trade_cap",
+     "value": 15.0,
+     "scope": ""
+    },
+    {
+     "target": "ships_output",
+     "value": 20.0,
+     "scope": ""
+    }
+   ],
+   "desc": "建造远洋巨轮。海港能力 +30%，船只产量 +40%。",
+   "art": "assets/landmarks/l03/landmark_great_dry_dock.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "transregional_viaduct",
+   "name": "跨谷铁路大桥",
+   "era": 3,
+   "kind": "leading",
+   "cost_li": 4500000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "logistics_cut",
+     "value": 6,
+     "scope": "xiling"
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "logistics_cut",
+     "value": 3.0,
+     "scope": "xiling"
+    }
+   ],
+   "desc": "打通西岭铁路。西岭物流成本 −6 个百分点。",
+   "art": "assets/landmarks/l02/landmark_transregional_viaduct_v2.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "national_academy",
+   "name": "国家科学院",
+   "era": 4,
+   "kind": "leading",
+   "cost_li": 12000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "research_speed",
+     "value": 25,
+     "scope": ""
+    },
+    {
+     "target": "prestige",
+     "value": 10,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "research_speed",
+     "value": 12.5,
+     "scope": ""
+    },
+    {
+     "target": "prestige",
+     "value": 5.0,
+     "scope": ""
+    }
+   ],
+   "desc": "全国科学研究的中枢。研究 +25%。",
+   "art": "assets/landmarks/landmark_national_academy.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "hydroelectric_dam",
+   "name": "跨江水电枢纽",
+   "era": 4,
+   "kind": "leading",
+   "cost_li": 14000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "electricity_bonus",
+     "value": 20,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "electricity_bonus",
+     "value": 10.0,
+     "scope": ""
+    },
+    {
+     "target": "disaster_cut",
+     "value": 10.0,
+     "scope": ""
+    }
+   ],
+   "desc": "拦江发电、防洪。全国电力 +20%，水灾损失 −20%。",
+   "art": "assets/landmarks/l03/landmark_hydroelectric_dam.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "computing_institute",
+   "name": "国家计算中心",
+   "era": 4,
+   "kind": "leading",
+   "cost_li": 11000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "research_speed",
+     "value": 15,
+     "scope": ""
+    },
+    {
+     "target": "admin_eff",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "research_speed",
+     "value": 7.5,
+     "scope": ""
+    },
+    {
+     "target": "admin_eff",
+     "value": 10.0,
+     "scope": ""
+    }
+   ],
+   "desc": "国家的计算中枢。研究 +15%，治理效率 +20%。",
+   "art": "assets/landmarks/l03/landmark_computing_institute.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "international_air_terminal",
+   "name": "国际航空站",
+   "era": 4,
+   "kind": "leading",
+   "cost_li": 10000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "export_price",
+     "value": 8,
+     "scope": "all"
+    },
+    {
+     "target": "relation_all",
+     "value": 10,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "export_price",
+     "value": 4.0,
+     "scope": "all"
+    },
+    {
+     "target": "relation_all",
+     "value": 5.0,
+     "scope": ""
+    }
+   ],
+   "desc": "通往世界的空中门户。出口价格 +8%，与各伙伴关系 +10。",
+   "art": "assets/landmarks/l03/landmark_international_air_terminal.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  },
+  {
+   "id": "national_broadcast_house",
+   "name": "国家广播大楼",
+   "era": 4,
+   "kind": "leading",
+   "cost_li": 9000000000,
+   "build_q": 12,
+   "effects_full": [
+    {
+     "target": "support",
+     "value": 6,
+     "scope": "all"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "effects_lite": [
+    {
+     "target": "support",
+     "value": 3.0,
+     "scope": "all"
+    },
+    {
+     "target": "literacy_rate",
+     "value": 10.0,
+     "scope": ""
+    }
+   ],
+   "desc": "全国广播中心。各阶层民心 +6。",
+   "art": "assets/landmarks/l03/landmark_national_broadcast_house.png",
+   "need": {},
+   "eraband": 0,
+   "convert": null
+  }
+ ],
+ "events": [
+  {
+   "id": "drought",
+   "name": "旱季水井",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "harvest",
+     "<",
+     0.85
+    ]
+   ],
+   "options": [
+    {
+     "text": "开仓放粮、打井抗旱",
+     "cost_li": 250000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 4
+     },
+     "duration": 8
+    },
+    {
+     "text": "减免当地田赋",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "land_tax_eff",
+       "value": -40,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 3,
+      "gentry": 1
+     },
+     "duration": 4
+    },
+    {
+     "text": "听其自然",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "peasant": -6
+     },
+     "duration": 8
+    }
+   ],
+   "text": "{region}久旱，井水见底，秋粮减收。",
+   "art": "assets/events/ev01/event_drought_wells.png",
+   "region": "pick",
+   "chance_ppm": 600000,
+   "cooldown": 8
+  },
+  {
+   "id": "flood",
+   "name": "河水漫田",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "flood",
+     ">",
+     0
+    ]
+   ],
+   "options": [
+    {
+     "text": "拨款修堤、安置灾民",
+     "cost_li": 300000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 4
+     },
+     "duration": 8
+    },
+    {
+     "text": "征发民夫抢修",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -3
+     },
+     "duration": 4
+    },
+    {
+     "text": "听其自然",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "peasant": -6
+     },
+     "duration": 8
+    }
+   ],
+   "text": "大河决口，{region}良田被淹。",
+   "art": "assets/events/ev01/event_flooded_fields.png",
+   "region": "pick",
+   "chance_ppm": 700000,
+   "cooldown": 8
+  },
+  {
+   "id": "harvest_fair",
+   "name": "秋收集市",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "harvest",
+     ">",
+     1.05
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府出资办庙会",
+     "cost_li": 60000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 3,
+      "merchant": 2
+     },
+     "duration": 8
+    },
+    {
+     "text": "趁丰年多收田赋",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "land_tax_eff",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -3
+     },
+     "duration": 4
+    }
+   ],
+   "text": "{region}五谷丰登，四乡八镇齐赶秋集。",
+   "art": "assets/events/ev01/event_harvest_fair.png",
+   "region": "pick",
+   "chance_ppm": 250000,
+   "cooldown": 16
+  },
+  {
+   "id": "merchant_convoy",
+   "name": "山路商队",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "relation",
+     ">",
+     0,
+     "inland_khanate"
+    ]
+   ],
+   "options": [
+    {
+     "text": "派兵护送、减免过路钱",
+     "cost_li": 80000000,
+     "effects": [
+      {
+       "target": "land_trade_cap",
+       "value": 20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": 4
+     },
+     "duration": 12
+    },
+    {
+     "text": "照常征税",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "customs_eff",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": -2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "西去汗国的驼队请求官府护送山路。",
+   "art": "assets/events/ev01/event_merchant_convoy.png",
+   "region": "none",
+   "chance_ppm": 60000,
+   "cooldown": 16
+  },
+  {
+   "id": "craft_dispute",
+   "name": "停工的作坊",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "unemployment",
+     ">",
+     0.06,
+     "artisan"
+    ]
+   ],
+   "options": [
+    {
+     "text": "调解工钱，官府补贴一半",
+     "cost_li": 120000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -25,
+       "scope": "artisan"
+      }
+     ],
+     "support": {
+      "artisan": 5
+     },
+     "duration": 8
+    },
+    {
+     "text": "责令复工",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": 20,
+       "scope": "artisan"
+      }
+     ],
+     "support": {
+      "artisan": -6,
+      "merchant": 3
+     },
+     "duration": 8
+    }
+   ],
+   "text": "{region}作坊工匠因欠薪罢工，街市冷清。",
+   "art": "assets/events/ev01/event_craft_dispute.png",
+   "region": "pick",
+   "chance_ppm": 300000,
+   "cooldown": 16
+  },
+  {
+   "id": "school_opening",
+   "name": "乡学开馆",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "literacy",
+     "<",
+     0.2
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府资助乡学",
+     "cost_li": 150000000,
+     "effects": [
+      {
+       "target": "literacy_rate",
+       "value": 40,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "gentry": 3,
+      "peasant": 2
+     },
+     "duration": 16
+    },
+    {
+     "text": "由士绅自办",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "gentry": 1
+     },
+     "duration": 8
+    }
+   ],
+   "text": "{region}士绅集资办乡学，请求官府资助。",
+   "art": "assets/events/ev01/event_school_opening.png",
+   "region": "pick",
+   "chance_ppm": 50000,
+   "cooldown": 16
+  },
+  {
+   "id": "locusts",
+   "name": "蝗灾",
+   "era": 1,
+   "era_end": 3,
+   "when": [
+    [
+     "staple_sat",
+     "<",
+     1.1
+    ]
+   ],
+   "options": [
+    {
+     "text": "悬赏捕蝗",
+     "cost_li": 120000000,
+     "effects": [
+      {
+       "target": "farm_yield",
+       "value": -10,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 2
+    },
+    {
+     "text": "听其自然",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "farm_yield",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -4
+     },
+     "duration": 2
+    }
+   ],
+   "text": "{region}飞蝗蔽日，禾苗被啃食殆尽。",
+   "art": "",
+   "region": "pick",
+   "chance_ppm": 20000,
+   "cooldown": 16
+  },
+  {
+   "id": "epidemic",
+   "name": "疫病流行",
+   "era": 1,
+   "era_end": 3,
+   "when": [
+    [
+     "sanitation",
+     "<",
+     0.5
+    ]
+   ],
+   "options": [
+    {
+     "text": "设药局、施药",
+     "cost_li": 200000000,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": 20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 3
+     },
+     "duration": 4
+    },
+    {
+     "text": "封锁城门",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": 40,
+       "scope": ""
+      },
+      {
+       "target": "commerce_cap",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 4
+    },
+    {
+     "text": "听其自然",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": 80,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -5
+     },
+     "duration": 4
+    }
+   ],
+   "text": "{region}疫气流行，死者相枕。",
+   "art": "",
+   "region": "pick",
+   "chance_ppm": 30000,
+   "cooldown": 16
+  },
+  {
+   "id": "typhoon",
+   "name": "台风过境",
+   "era": 1,
+   "era_end": 4,
+   "when": [
+    [
+     "region",
+     "=",
+     "haijia"
+    ]
+   ],
+   "options": [
+    {
+     "text": "拨款重建港口与盐田",
+     "cost_li": 250000000,
+     "effects": [],
+     "support": {
+      "merchant": 3
+     },
+     "duration": 8
+    },
+    {
+     "text": "由商户自行修复",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "sea_trade_cap",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": -3
+     },
+     "duration": 4
+    }
+   ],
+   "text": "强台风登陆海岬，港口与盐田受损。",
+   "art": "",
+   "region": "pick",
+   "chance_ppm": 40000,
+   "cooldown": 16
+  },
+  {
+   "id": "bandits",
+   "name": "流民与盗匪",
+   "era": 1,
+   "era_end": 3,
+   "when": [
+    [
+     "unrest",
+     ">",
+     0.35
+    ]
+   ],
+   "options": [
+    {
+     "text": "招抚流民、以工代赈",
+     "cost_li": 200000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -40,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 4
+     },
+     "duration": 8
+    },
+    {
+     "text": "派兵剿办",
+     "cost_li": 100000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -3,
+      "gentry": 3
+     },
+     "duration": 8
+    }
+   ],
+   "text": "{region}流民啸聚山林，劫掠商旅。",
+   "art": "",
+   "region": "pick",
+   "chance_ppm": 500000,
+   "cooldown": 8
+  },
+  {
+   "id": "silver_drain",
+   "name": "银荒",
+   "era": 1,
+   "era_end": 2,
+   "when": [
+    [
+     "silver_flow",
+     "<",
+     0
+    ]
+   ],
+   "options": [
+    {
+     "text": "鼓励出口、限制奢侈进口",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "tariff",
+       "value": 50,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": -3
+     },
+     "duration": 8
+    },
+    {
+     "text": "铸造铜钱应急",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "price_level",
+       "value": 5,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "白银持续外流，市面银根紧缩。",
+   "art": "",
+   "region": "none",
+   "chance_ppm": 150000,
+   "cooldown": 16
+  },
+  {
+   "id": "border_raid",
+   "name": "边警",
+   "era": 1,
+   "era_end": 3,
+   "when": [
+    [
+     "defense",
+     "<",
+     0.8
+    ]
+   ],
+   "options": [
+    {
+     "text": "增兵戍边",
+     "cost_li": 300000000,
+     "effects": [],
+     "support": {
+      "peasant": -2,
+      "gentry": 2
+     },
+     "duration": 8
+    },
+    {
+     "text": "遣使议和、互市安抚",
+     "cost_li": 150000000,
+     "effects": [
+      {
+       "target": "relation",
+       "value": 10,
+       "scope": "inland_khanate"
+      }
+     ],
+     "support": {},
+     "duration": 8
+    },
+    {
+     "text": "坚守不出",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": 20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -4
+     },
+     "duration": 8
+    }
+   ],
+   "text": "北原边境有游骑袭扰村落。",
+   "art": "",
+   "region": "none",
+   "chance_ppm": 100000,
+   "cooldown": 12
+  },
+  {
+   "id": "canal_opening",
+   "name": "运河通航",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "building",
+     ">",
+     0,
+     "canal"
+    ]
+   ],
+   "options": [
+    {
+     "text": "大办通航典礼",
+     "cost_li": 80000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": 4
+     },
+     "duration": 8
+    },
+    {
+     "text": "低调通航",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "新开运河首次通航，漕船鱼贯而过。",
+   "art": "assets/events/ev02/event_canal_opening_v2.png",
+   "region": "none",
+   "chance_ppm": 500000,
+   "cooldown": 40
+  },
+  {
+   "id": "crop_innovation",
+   "name": "新作物试种",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "tech",
+     "=",
+     1,
+     "crop_rotation"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府推广新种",
+     "cost_li": 120000000,
+     "effects": [
+      {
+       "target": "farm_yield",
+       "value": 5,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": 2
+     },
+     "duration": 40
+    },
+    {
+     "text": "任民自便",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "有农户从海外引种高产作物，请求官府推广。",
+   "art": "assets/events/ev02/event_crop_innovation.png",
+   "region": "none",
+   "chance_ppm": 50000,
+   "cooldown": 80
+  },
+  {
+   "id": "harbor_quarantine",
+   "name": "港口检疫",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "sanitation",
+     "<",
+     0.7
+    ]
+   ],
+   "options": [
+    {
+     "text": "封港检疫",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "sea_trade_cap",
+       "value": -40,
+       "scope": ""
+      },
+      {
+       "target": "mortality",
+       "value": -30,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 2
+    },
+    {
+     "text": "照常通商",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": 30,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 4
+    }
+   ],
+   "text": "远洋船带来疫病，港口人心惶惶。",
+   "art": "assets/events/ev02/event_harbor_quarantine.png",
+   "region": "none",
+   "chance_ppm": 50000,
+   "cooldown": 16
+  },
+  {
+   "id": "mill_expansion",
+   "name": "水力工场扩建",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "building",
+     ">",
+     3,
+     "watermill"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府贴息扶持",
+     "cost_li": 150000000,
+     "effects": [
+      {
+       "target": "invest_workshop",
+       "value": 20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": 3
+     },
+     "duration": 16
+    },
+    {
+     "text": "任其自筹",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "工场主请求贴息扩建水力工场。",
+   "art": "assets/events/ev02/event_mill_expansion.png",
+   "region": "none",
+   "chance_ppm": 60000,
+   "cooldown": 16
+  },
+  {
+   "id": "trade_embargo",
+   "name": "商路受阻",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "relation",
+     "<",
+     0,
+     "any"
+    ]
+   ],
+   "options": [
+    {
+     "text": "遣使修好",
+     "cost_li": 150000000,
+     "effects": [
+      {
+       "target": "relation_all",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 8
+    },
+    {
+     "text": "以牙还牙",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "tariff",
+       "value": 50,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": -3
+     },
+     "duration": 8
+    }
+   ],
+   "text": "一方伙伴对本国商船加征重税。",
+   "art": "assets/events/ev02/event_trade_embargo.png",
+   "region": "none",
+   "chance_ppm": 80000,
+   "cooldown": 16
+  },
+  {
+   "id": "warehouse_fire",
+   "name": "仓库火灾",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "building",
+     ">",
+     2,
+     "port"
+    ]
+   ],
+   "options": [
+    {
+     "text": "拨款救济商户",
+     "cost_li": 100000000,
+     "effects": [],
+     "support": {
+      "merchant": 3
+     },
+     "duration": 8
+    },
+    {
+     "text": "责令商户自理",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "merchant": -3
+     },
+     "duration": 8
+    }
+   ],
+   "text": "港口货栈失火，积货付之一炬。",
+   "art": "assets/events/ev02/event_warehouse_fire.png",
+   "region": "none",
+   "chance_ppm": 30000,
+   "cooldown": 16
+  },
+  {
+   "id": "wood_shortage",
+   "name": "林木枯竭",
+   "era": 2,
+   "era_end": 3,
+   "when": [
+    [
+     "price_ratio",
+     ">",
+     1.6,
+     "timber"
+    ]
+   ],
+   "options": [
+    {
+     "text": "封山育林",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "forest_regrow",
+       "value": 50,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "peasant": -2
+     },
+     "duration": 40
+    },
+    {
+     "text": "鼓励改烧煤炭",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "coal_shift",
+       "value": 30,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 40
+    }
+   ],
+   "text": "木材价格飞涨，山林砍伐殆尽。",
+   "art": "",
+   "region": "none",
+   "chance_ppm": 300000,
+   "cooldown": 40
+  },
+  {
+   "id": "bank_crisis",
+   "name": "银根吃紧",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "debt_ratio",
+     ">",
+     0.6
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府注资钱庄",
+     "cost_li": 600000000,
+     "effects": [
+      {
+       "target": "invest_prop",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 8
+    },
+    {
+     "text": "听其倒闭",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "invest_prop",
+       "value": -40,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": -6
+     },
+     "duration": 8
+    }
+   ],
+   "text": "钱庄挤兑，银根骤紧。",
+   "art": "assets/events/ev03/event_bank_liquidity_crisis.png",
+   "region": "none",
+   "chance_ppm": 150000,
+   "cooldown": 16
+  },
+  {
+   "id": "coal_shortage",
+   "name": "燃料短缺",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "price_ratio",
+     ">",
+     1.5,
+     "coal"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府平价调煤",
+     "cost_li": 300000000,
+     "effects": [],
+     "support": {
+      "artisan": 3
+     },
+     "duration": 8
+    },
+    {
+     "text": "听其涨价",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "artisan": -4
+     },
+     "duration": 8
+    }
+   ],
+   "text": "煤价飞涨，工厂停炉、城里人家断炊。",
+   "art": "assets/events/ev03/event_coal_shortage.png",
+   "region": "none",
+   "chance_ppm": 300000,
+   "cooldown": 16
+  },
+  {
+   "id": "industrial_exhibition",
+   "name": "工艺展览",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "building",
+     ">",
+     10,
+     "machineworks"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府主办",
+     "cost_li": 200000000,
+     "effects": [
+      {
+       "target": "research_speed",
+       "value": 10,
+       "scope": ""
+      },
+      {
+       "target": "prestige",
+       "value": 3,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 8
+    },
+    {
+     "text": "由商会承办",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "merchant": 2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "各地工场要办一场工艺展览。",
+   "art": "assets/events/ev03/event_industrial_exhibition_v2.png",
+   "region": "none",
+   "chance_ppm": 50000,
+   "cooldown": 16
+  },
+  {
+   "id": "health_campaign",
+   "name": "街区卫生整治",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "sanitation",
+     "<",
+     0.8
+    ]
+   ],
+   "options": [
+    {
+     "text": "拨款整治街区",
+     "cost_li": 250000000,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": -20,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 16
+    },
+    {
+     "text": "暂缓",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "artisan": -2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "城市街区拥挤污秽，时疫频发。",
+   "art": "assets/events/ev03/event_public_health_campaign.png",
+   "region": "none",
+   "chance_ppm": 80000,
+   "cooldown": 16
+  },
+  {
+   "id": "railway_opening",
+   "name": "铁路启用",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "building",
+     ">",
+     0,
+     "road:rail"
+    ]
+   ],
+   "options": [
+    {
+     "text": "举行通车典礼",
+     "cost_li": 100000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -20,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "merchant": 3
+     },
+     "duration": 8
+    },
+    {
+     "text": "低调通车",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "第一条铁路通车。",
+   "art": "assets/events/ev03/event_railway_opening.png",
+   "region": "none",
+   "chance_ppm": 500000,
+   "cooldown": 200
+  },
+  {
+   "id": "workers_housing",
+   "name": "工人住宅落成",
+   "era": 3,
+   "era_end": 3,
+   "when": [
+    [
+     "unrest",
+     ">",
+     0.2,
+     "artisan"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府补贴工人住宅",
+     "cost_li": 300000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -30,
+       "scope": "artisan"
+      }
+     ],
+     "support": {
+      "artisan": 5
+     },
+     "duration": 8
+    },
+    {
+     "text": "由工厂自建",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "merchant": 1,
+      "artisan": -2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "工人聚居区拥挤不堪，要求建新住宅。",
+   "art": "assets/events/ev03/event_workers_housing.png",
+   "region": "none",
+   "chance_ppm": 100000,
+   "cooldown": 16
+  },
+  {
+   "id": "air_pollution",
+   "name": "工业烟霾",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "building",
+     ">",
+     8,
+     "powerplant"
+    ]
+   ],
+   "options": [
+    {
+     "text": "加装除尘设备",
+     "cost_li": 800000000,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": -10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "gentry": 3
+     },
+     "duration": 8
+    },
+    {
+     "text": "暂不处理",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "mortality",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "gentry": -3,
+      "artisan": -2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "城市上空烟霾不散。",
+   "art": "assets/events/ev04/event_air_pollution.png",
+   "region": "none",
+   "chance_ppm": 100000,
+   "cooldown": 16
+  },
+  {
+   "id": "electrification",
+   "name": "乡村通电",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "building",
+     ">",
+     4,
+     "powerplant"
+    ]
+   ],
+   "options": [
+    {
+     "text": "官府出资拉线",
+     "cost_li": 1000000000,
+     "effects": [
+      {
+       "target": "unrest",
+       "value": -20,
+       "scope": "peasant"
+      }
+     ],
+     "support": {
+      "peasant": 6
+     },
+     "duration": 8
+    },
+    {
+     "text": "由电厂自筹",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "乡村请求通电。",
+   "art": "assets/events/ev04/event_electrification.png",
+   "region": "none",
+   "chance_ppm": 80000,
+   "cooldown": 16
+  },
+  {
+   "id": "container_trade",
+   "name": "集装箱贸易",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "building",
+     ">",
+     8,
+     "port"
+    ]
+   ],
+   "options": [
+    {
+     "text": "投资集装箱码头",
+     "cost_li": 1500000000,
+     "effects": [
+      {
+       "target": "sea_trade_cap",
+       "value": 40,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 400
+    },
+    {
+     "text": "维持现状",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "港口可以改建集装箱码头。",
+   "art": "assets/events/ev04/event_container_trade.png",
+   "region": "none",
+   "chance_ppm": 50000,
+   "cooldown": 200
+  },
+  {
+   "id": "computer_network",
+   "name": "计算机联网",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "tech",
+     "=",
+     1,
+     "computing"
+    ]
+   ],
+   "options": [
+    {
+     "text": "建设全国网络",
+     "cost_li": 2000000000,
+     "effects": [
+      {
+       "target": "research_speed",
+       "value": 15,
+       "scope": ""
+      },
+      {
+       "target": "admin_eff",
+       "value": 15,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 400
+    },
+    {
+     "text": "暂缓",
+     "cost_li": 0,
+     "effects": [],
+     "support": {},
+     "duration": 8
+    }
+   ],
+   "text": "计算机可以联网了。",
+   "art": "assets/events/ev04/event_computer_network.png",
+   "region": "none",
+   "chance_ppm": 100000,
+   "cooldown": 400
+  },
+  {
+   "id": "bridge_reconstruction",
+   "name": "桥梁重建",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "year",
+     ">",
+     1950
+    ]
+   ],
+   "options": [
+    {
+     "text": "拨款重建",
+     "cost_li": 600000000,
+     "effects": [
+      {
+       "target": "logistics_cut_all",
+       "value": 1,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 400
+    },
+    {
+     "text": "暂缓",
+     "cost_li": 0,
+     "effects": [
+      {
+       "target": "logistics_cut_all",
+       "value": -1,
+       "scope": ""
+      }
+     ],
+     "support": {},
+     "duration": 40
+    }
+   ],
+   "text": "老旧桥梁年久失修。",
+   "art": "assets/events/ev04/event_bridge_reconstruction.png",
+   "region": "none",
+   "chance_ppm": 30000,
+   "cooldown": 200
+  },
+  {
+   "id": "university_expansion",
+   "name": "大学扩建",
+   "era": 4,
+   "era_end": 4,
+   "when": [
+    [
+     "literacy",
+     ">",
+     0.6
+    ]
+   ],
+   "options": [
+    {
+     "text": "扩建大学",
+     "cost_li": 1200000000,
+     "effects": [
+      {
+       "target": "research_speed",
+       "value": 10,
+       "scope": ""
+      }
+     ],
+     "support": {
+      "gentry": 3
+     },
+     "duration": 80
+    },
+    {
+     "text": "暂缓",
+     "cost_li": 0,
+     "effects": [],
+     "support": {
+      "gentry": -2
+     },
+     "duration": 8
+    }
+   ],
+   "text": "大学请求扩建。",
+   "art": "assets/events/ev04/event_university_expansion.png",
+   "region": "none",
+   "chance_ppm": 50000,
+   "cooldown": 80
+  }
+ ]
+}

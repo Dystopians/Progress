@@ -1,0 +1,12 @@
+{
+ "schema": "jc.meta",
+ "version": 1,
+ "content_hash": "3f2cf2f67635699c27e813893ca46941d51d3decad64061b1131e8467b8d521c",
+ "files": [
+  "goods.json",
+  "buildings.json",
+  "society.json",
+  "scenario.json",
+  "progress.json"
+ ]
+}

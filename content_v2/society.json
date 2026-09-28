@@ -1,0 +1,533 @@
+{
+ "schema": "jc.society",
+ "version": 1,
+ "classes": [
+  {
+   "id": "peasant",
+   "name": "农户",
+   "base_wage_li": 1600,
+   "work_ppm": 500000,
+   "save_ppm": 30000,
+   "invest": false,
+   "note": "种地、放牧、打鱼、伐木，也当兵、修路。"
+  },
+  {
+   "id": "artisan",
+   "name": "工匠",
+   "base_wage_li": 3000,
+   "work_ppm": 520000,
+   "save_ppm": 50000,
+   "invest": false,
+   "note": "作坊、矿场、营造、运输里的手艺人与工人。"
+  },
+  {
+   "id": "merchant",
+   "name": "商贾",
+   "base_wage_li": 4000,
+   "work_ppm": 450000,
+   "save_ppm": 180000,
+   "invest": true,
+   "note": "买卖、经营作坊与商铺，是民间投资的主力。"
+  },
+  {
+   "id": "gentry",
+   "name": "士绅",
+   "base_wage_li": 5500,
+   "work_ppm": 400000,
+   "save_ppm": 150000,
+   "invest": true,
+   "note": "读书做官、收租、教书、行医，后来的专业人士。"
+  }
+ ],
+ "needs": [
+  {
+   "id": "staple",
+   "name": "口粮",
+   "essential": true,
+   "weight": 30,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "rice": 1000000,
+    "grain": 1000000,
+    "beans": 900000,
+    "flour": 1000000,
+    "bread": 1200000
+   },
+   "qty": {
+    "peasant": 470,
+    "artisan": 500,
+    "merchant": 520,
+    "gentry": 540
+   },
+   "taste": {
+    "beiyuan": {
+     "grain": 720000,
+     "beans": 200000,
+     "rice": 80000
+    },
+    "zhongzhou": {
+     "rice": 720000,
+     "grain": 140000,
+     "beans": 140000
+    },
+    "haijia": {
+     "rice": 780000,
+     "grain": 80000,
+     "beans": 140000
+    },
+    "xiling": {
+     "grain": 460000,
+     "rice": 340000,
+     "beans": 200000
+    }
+   }
+  },
+  {
+   "id": "salt",
+   "name": "盐",
+   "essential": true,
+   "weight": 8,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "salt": 1000000
+   },
+   "qty": {
+    "peasant": 25,
+    "artisan": 25,
+    "merchant": 28,
+    "gentry": 30
+   },
+   "taste": {}
+  },
+  {
+   "id": "clothes",
+   "name": "衣",
+   "essential": false,
+   "weight": 12,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "fabric": 1000000,
+    "clothing": 1300000
+   },
+   "qty": {
+    "peasant": 160,
+    "artisan": 200,
+    "merchant": 340,
+    "gentry": 400
+   },
+   "taste": {}
+  },
+  {
+   "id": "fuel",
+   "name": "柴炭",
+   "essential": false,
+   "weight": 8,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "charcoal": 1000000,
+    "timber": 1200000,
+    "coal": 1300000,
+    "gas": 4000000
+   },
+   "qty": {
+    "peasant": 300,
+    "artisan": 400,
+    "merchant": 550,
+    "gentry": 650
+   },
+   "taste": {
+    "beiyuan": {
+     "coal": 400000,
+     "charcoal": 300000,
+     "timber": 300000
+    },
+    "zhongzhou": {
+     "charcoal": 550000,
+     "timber": 450000
+    },
+    "haijia": {
+     "charcoal": 500000,
+     "timber": 500000
+    },
+    "xiling": {
+     "timber": 700000,
+     "charcoal": 300000
+    }
+   }
+  },
+  {
+   "id": "greens",
+   "name": "蔬果",
+   "essential": false,
+   "weight": 6,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "vegetables": 1000000,
+    "fruit": 800000
+   },
+   "qty": {
+    "peasant": 220,
+    "artisan": 240,
+    "merchant": 300,
+    "gentry": 320
+   },
+   "taste": {}
+  },
+  {
+   "id": "protein",
+   "name": "鱼肉",
+   "essential": false,
+   "weight": 6,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "fish": 1000000,
+    "meat": 1100000,
+    "preserved_food": 1400000
+   },
+   "qty": {
+    "peasant": 35,
+    "artisan": 60,
+    "merchant": 120,
+    "gentry": 150
+   },
+   "taste": {
+    "haijia": {
+     "fish": 800000,
+     "meat": 200000
+    },
+    "beiyuan": {
+     "meat": 700000,
+     "fish": 300000
+    },
+    "zhongzhou": {
+     "fish": 550000,
+     "meat": 450000
+    },
+    "xiling": {
+     "meat": 600000,
+     "fish": 400000
+    }
+   }
+  },
+  {
+   "id": "oil",
+   "name": "油",
+   "essential": false,
+   "weight": 4,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "cooking_oil": 1000000
+   },
+   "qty": {
+    "peasant": 14,
+    "artisan": 18,
+    "merchant": 30,
+    "gentry": 35
+   },
+   "taste": {}
+  },
+  {
+   "id": "wares",
+   "name": "器用",
+   "essential": false,
+   "weight": 4,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "earthenware": 1000000,
+    "porcelain": 1500000,
+    "glass": 6000000
+   },
+   "qty": {
+    "peasant": 100,
+    "artisan": 150,
+    "merchant": 260,
+    "gentry": 300
+   },
+   "taste": {}
+  },
+  {
+   "id": "light",
+   "name": "灯火",
+   "essential": false,
+   "weight": 3,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "candles": 1000000,
+    "gas": 60000000,
+    "electricity": 200000000
+   },
+   "qty": {
+    "peasant": 80,
+    "artisan": 140,
+    "merchant": 400,
+    "gentry": 600
+   },
+   "taste": {}
+  },
+  {
+   "id": "medicine",
+   "name": "医药",
+   "essential": false,
+   "weight": 4,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "medicine": 1000000
+   },
+   "qty": {
+    "peasant": 10,
+    "artisan": 15,
+    "merchant": 30,
+    "gentry": 40
+   },
+   "taste": {}
+  },
+  {
+   "id": "furniture",
+   "name": "家具",
+   "essential": false,
+   "weight": 3,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "furniture": 1000000
+   },
+   "qty": {
+    "peasant": 4,
+    "artisan": 8,
+    "merchant": 30,
+    "gentry": 40
+   },
+   "taste": {}
+  },
+  {
+   "id": "tea",
+   "name": "茶",
+   "essential": false,
+   "weight": 2,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "tea": 1000000,
+    "coffee": 1000000
+   },
+   "qty": {
+    "peasant": 4,
+    "artisan": 8,
+    "merchant": 20,
+    "gentry": 30
+   },
+   "taste": {}
+  },
+  {
+   "id": "drink",
+   "name": "酒",
+   "essential": false,
+   "weight": 2,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "wine": 1000000,
+    "beer": 1000000
+   },
+   "qty": {
+    "peasant": 50,
+    "artisan": 80,
+    "merchant": 150,
+    "gentry": 200
+   },
+   "taste": {}
+  },
+  {
+   "id": "letters",
+   "name": "纸墨",
+   "essential": false,
+   "weight": 2,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "paper": 1000000
+   },
+   "qty": {
+    "peasant": 10,
+    "artisan": 30,
+    "merchant": 120,
+    "gentry": 400
+   },
+   "taste": {}
+  },
+  {
+   "id": "books",
+   "name": "书籍",
+   "essential": false,
+   "weight": 2,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "books": 1000000
+   },
+   "qty": {
+    "peasant": 0,
+    "artisan": 2,
+    "merchant": 15,
+    "gentry": 60
+   },
+   "taste": {}
+  },
+  {
+   "id": "silk",
+   "name": "绸缎",
+   "essential": false,
+   "weight": 2,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "silk": 1000000
+   },
+   "qty": {
+    "peasant": 0,
+    "artisan": 4,
+    "merchant": 60,
+    "gentry": 100
+   },
+   "taste": {}
+  },
+  {
+   "id": "porcelain_lux",
+   "name": "瓷器",
+   "essential": false,
+   "weight": 1,
+   "era": 1,
+   "era_end": 4,
+   "goods": {
+    "porcelain": 1000000
+   },
+   "qty": {
+    "peasant": 0,
+    "artisan": 4,
+    "merchant": 40,
+    "gentry": 60
+   },
+   "taste": {}
+  },
+  {
+   "id": "sugar",
+   "name": "糖",
+   "essential": false,
+   "weight": 2,
+   "era": 2,
+   "era_end": 4,
+   "goods": {
+    "sugar": 1000000
+   },
+   "qty": {
+    "peasant": 2,
+    "artisan": 8,
+    "merchant": 30,
+    "gentry": 40
+   },
+   "taste": {}
+  },
+  {
+   "id": "soap",
+   "name": "皂",
+   "essential": false,
+   "weight": 2,
+   "era": 2,
+   "era_end": 4,
+   "goods": {
+    "soap": 1000000
+   },
+   "qty": {
+    "peasant": 2,
+    "artisan": 6,
+    "merchant": 20,
+    "gentry": 25
+   },
+   "taste": {}
+  },
+  {
+   "id": "spice",
+   "name": "香料",
+   "essential": false,
+   "weight": 1,
+   "era": 2,
+   "era_end": 4,
+   "goods": {
+    "spices": 1000000
+   },
+   "qty": {
+    "peasant": 0,
+    "artisan": 0,
+    "merchant": 4,
+    "gentry": 6
+   },
+   "taste": {}
+  },
+  {
+   "id": "power_home",
+   "name": "用电",
+   "essential": false,
+   "weight": 4,
+   "era": 4,
+   "era_end": 4,
+   "goods": {
+    "electricity": 1000000
+   },
+   "qty": {
+    "peasant": 20,
+    "artisan": 40,
+    "merchant": 80,
+    "gentry": 100
+   },
+   "taste": {}
+  },
+  {
+   "id": "appliance",
+   "name": "家电",
+   "essential": false,
+   "weight": 3,
+   "era": 4,
+   "era_end": 4,
+   "goods": {
+    "appliances": 1000000,
+    "radio": 1200000,
+    "television": 600000
+   },
+   "qty": {
+    "peasant": 4,
+    "artisan": 8,
+    "merchant": 20,
+    "gentry": 25
+   },
+   "taste": {}
+  },
+  {
+   "id": "car",
+   "name": "出行",
+   "essential": false,
+   "weight": 3,
+   "era": 4,
+   "era_end": 4,
+   "goods": {
+    "automobile": 1000000
+   },
+   "qty": {
+    "peasant": 0,
+    "artisan": 1,
+    "merchant": 4,
+    "gentry": 5
+   },
+   "taste": {}
+  }
+ ]
+}

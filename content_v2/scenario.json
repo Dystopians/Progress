@@ -1,0 +1,1255 @@
+{
+ "schema": "jc.scenario",
+ "version": 1,
+ "id": "campaign_v2",
+ "name": "四百年战役",
+ "start_year": 1600,
+ "regions": [
+  {
+   "id": "beiyuan",
+   "name": "北原",
+   "desc": "北方平原，旱地与草场广阔，人口最多，冬季寒冷。",
+   "river": true,
+   "coast": false,
+   "capital": false,
+   "logistics_ppm": 70000,
+   "land": {
+    "paddy": 11,
+    "dry": 137,
+    "slope": 0,
+    "forest": 18,
+    "pasture": 9,
+    "coast": 0
+   },
+   "deposit": {
+    "coal": 30,
+    "stone": 12,
+    "iron": 4,
+    "oil": 10,
+    "phosphate": 6,
+    "sand": 10
+   },
+   "pop": {
+    "peasant": 8156288,
+    "artisan": 477564,
+    "merchant": 306898,
+    "gentry": 229250
+   }
+  },
+  {
+   "id": "zhongzhou",
+   "name": "中州",
+   "desc": "大河中游的富庶之地，水田与桑园相连，首府与商贸中心。",
+   "river": true,
+   "coast": false,
+   "capital": true,
+   "logistics_ppm": 30000,
+   "land": {
+    "paddy": 56,
+    "dry": 47,
+    "slope": 14,
+    "forest": 12,
+    "pasture": 2,
+    "coast": 0
+   },
+   "deposit": {
+    "kaolin": 16,
+    "stone": 8,
+    "coal": 4,
+    "sand": 8,
+    "hydro": 6
+   },
+   "pop": {
+    "peasant": 6109530,
+    "artisan": 379808,
+    "merchant": 233287,
+    "gentry": 172375
+   }
+  },
+  {
+   "id": "haijia",
+   "name": "海岬",
+   "desc": "东南沿海，产盐与鱼，良港众多，对外贸易的门户，常遭台风。",
+   "river": false,
+   "coast": true,
+   "capital": false,
+   "logistics_ppm": 50000,
+   "land": {
+    "paddy": 46,
+    "dry": 25,
+    "slope": 8,
+    "forest": 12,
+    "pasture": 0,
+    "coast": 40
+   },
+   "deposit": {
+    "salt": 30,
+    "stone": 6,
+    "sand": 10
+   },
+   "pop": {
+    "peasant": 4443665,
+    "artisan": 285857,
+    "merchant": 172778,
+    "gentry": 125700
+   }
+  },
+  {
+   "id": "xiling",
+   "name": "西岭",
+   "desc": "西部山地，茶园、林木与铁铜矿藏丰富，人少路险，河流湍急宜建水力。",
+   "river": true,
+   "coast": false,
+   "capital": false,
+   "logistics_ppm": 100000,
+   "land": {
+    "paddy": 17,
+    "dry": 20,
+    "slope": 13,
+    "forest": 16,
+    "pasture": 2,
+    "coast": 0
+   },
+   "deposit": {
+    "iron": 30,
+    "copper": 18,
+    "sulfur": 8,
+    "stone": 10,
+    "coal": 12,
+    "bauxite": 10,
+    "hydro": 20,
+    "phosphate": 4
+   },
+   "pop": {
+    "peasant": 2599183,
+    "artisan": 222157,
+    "merchant": 102685,
+    "gentry": 74975
+   }
+  }
+ ],
+ "stacks": [
+  {
+   "region": "beiyuan",
+   "building": "brewery",
+   "method": "brew_trad",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "brickkiln",
+   "method": "brick_hand",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "beiyuan",
+   "building": "caravanserai",
+   "method": "caravan",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "carrier",
+   "method": "carrier_animal",
+   "owner": "private",
+   "level": 88
+  },
+  {
+   "region": "beiyuan",
+   "building": "chandlery",
+   "method": "candle_hand",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "beiyuan",
+   "building": "charcoalkiln",
+   "method": "charcoal_kiln",
+   "owner": "private",
+   "level": 9
+  },
+  {
+   "region": "beiyuan",
+   "building": "clinic",
+   "method": "clinic_trad",
+   "owner": "gov",
+   "level": 7
+  },
+  {
+   "region": "beiyuan",
+   "building": "coalmine",
+   "method": "coal_trad",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "dryfarm",
+   "method": "dry_beans",
+   "owner": "private",
+   "level": 28
+  },
+  {
+   "region": "beiyuan",
+   "building": "dryfarm",
+   "method": "dry_cotton",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "dryfarm",
+   "method": "dry_grain",
+   "owner": "private",
+   "level": 72
+  },
+  {
+   "region": "beiyuan",
+   "building": "dryfarm",
+   "method": "dry_oilseed",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "beiyuan",
+   "building": "dryfarm",
+   "method": "dry_vegetables",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "forestry",
+   "method": "forestry_trad",
+   "owner": "private",
+   "level": 10
+  },
+  {
+   "region": "beiyuan",
+   "building": "furnitureshop",
+   "method": "furniture_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "granary",
+   "method": "granary_raised",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "herbalist",
+   "method": "herbal",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "ironmine",
+   "method": "ironmine_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "ironworks",
+   "method": "iron_charcoal",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "irrigation",
+   "method": "irrig_canal",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "beiyuan",
+   "building": "market",
+   "method": "market_trad",
+   "owner": "private",
+   "level": 52
+  },
+  {
+   "region": "beiyuan",
+   "building": "oilpress",
+   "method": "oilpress_wood",
+   "owner": "private",
+   "level": 11
+  },
+  {
+   "region": "beiyuan",
+   "building": "paddy",
+   "method": "paddy_rice",
+   "owner": "private",
+   "level": 8
+  },
+  {
+   "region": "beiyuan",
+   "building": "pottery",
+   "method": "pottery_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "printing",
+   "method": "print_block",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "ranch",
+   "method": "ranch_trad",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "beiyuan",
+   "building": "road",
+   "method": "road_post",
+   "owner": "gov",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "sawmill",
+   "method": "saw_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "school",
+   "method": "school_trad",
+   "owner": "gov",
+   "level": 6
+  },
+  {
+   "region": "beiyuan",
+   "building": "smithy",
+   "method": "smith_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "beiyuan",
+   "building": "spinning",
+   "method": "spin_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "theater",
+   "method": "theater_folk",
+   "owner": "gov",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "urbanworks",
+   "method": "urban_wells",
+   "owner": "gov",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "watermill",
+   "method": "waterwheel",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "beiyuan",
+   "building": "weaving",
+   "method": "weave_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "beiyuan",
+   "building": "yamen",
+   "method": "yamen_trad",
+   "owner": "gov",
+   "level": 8
+  },
+  {
+   "region": "haijia",
+   "building": "brewery",
+   "method": "brew_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "brickkiln",
+   "method": "brick_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "haijia",
+   "building": "carrier",
+   "method": "carrier_animal",
+   "owner": "private",
+   "level": 37
+  },
+  {
+   "region": "haijia",
+   "building": "chandlery",
+   "method": "candle_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "haijia",
+   "building": "charcoalkiln",
+   "method": "charcoal_kiln",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "haijia",
+   "building": "clinic",
+   "method": "clinic_trad",
+   "owner": "gov",
+   "level": 4
+  },
+  {
+   "region": "haijia",
+   "building": "dryfarm",
+   "method": "dry_beans",
+   "owner": "private",
+   "level": 8
+  },
+  {
+   "region": "haijia",
+   "building": "dryfarm",
+   "method": "dry_cotton",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "dryfarm",
+   "method": "dry_grain",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "haijia",
+   "building": "dryfarm",
+   "method": "dry_oilseed",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "haijia",
+   "building": "dryfarm",
+   "method": "dry_vegetables",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "fishery",
+   "method": "fish_trad",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "haijia",
+   "building": "forestry",
+   "method": "forestry_trad",
+   "owner": "private",
+   "level": 7
+  },
+  {
+   "region": "haijia",
+   "building": "furnitureshop",
+   "method": "furniture_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "granary",
+   "method": "granary_raised",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "herbalist",
+   "method": "herbal",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "irrigation",
+   "method": "irrig_canal",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "library",
+   "method": "library_trad",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "market",
+   "method": "market_trad",
+   "owner": "private",
+   "level": 29
+  },
+  {
+   "region": "haijia",
+   "building": "mulberry",
+   "method": "mulberry_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "oilpress",
+   "method": "oilpress_wood",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "haijia",
+   "building": "paddy",
+   "method": "paddy_rice",
+   "owner": "private",
+   "level": 38
+  },
+  {
+   "region": "haijia",
+   "building": "papermill",
+   "method": "paper_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "port",
+   "method": "port_wharf",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "pottery",
+   "method": "pottery_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "printing",
+   "method": "print_block",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "road",
+   "method": "road_post",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "saltworks",
+   "method": "salt_trad",
+   "owner": "private",
+   "level": 11
+  },
+  {
+   "region": "haijia",
+   "building": "sawmill",
+   "method": "saw_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "haijia",
+   "building": "school",
+   "method": "school_trad",
+   "owner": "gov",
+   "level": 3
+  },
+  {
+   "region": "haijia",
+   "building": "silkreel",
+   "method": "reel_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "silkweave",
+   "method": "silkweave_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "smithy",
+   "method": "smith_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "spinning",
+   "method": "spin_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "teagarden",
+   "method": "tea_trad",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "haijia",
+   "building": "theater",
+   "method": "theater_folk",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "urbanworks",
+   "method": "urban_wells",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "haijia",
+   "building": "weaving",
+   "method": "weave_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "haijia",
+   "building": "yamen",
+   "method": "yamen_trad",
+   "owner": "gov",
+   "level": 5
+  },
+  {
+   "region": "xiling",
+   "building": "brewery",
+   "method": "brew_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "brickkiln",
+   "method": "brick_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "caravanserai",
+   "method": "caravan",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "carrier",
+   "method": "carrier_animal",
+   "owner": "private",
+   "level": 42
+  },
+  {
+   "region": "xiling",
+   "building": "chandlery",
+   "method": "candle_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "charcoalkiln",
+   "method": "charcoal_kiln",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "xiling",
+   "building": "clinic",
+   "method": "clinic_trad",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "dryfarm",
+   "method": "dry_beans",
+   "owner": "private",
+   "level": 5
+  },
+  {
+   "region": "xiling",
+   "building": "dryfarm",
+   "method": "dry_grain",
+   "owner": "private",
+   "level": 8
+  },
+  {
+   "region": "xiling",
+   "building": "dryfarm",
+   "method": "dry_oilseed",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "dryfarm",
+   "method": "dry_vegetables",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "forestry",
+   "method": "forestry_trad",
+   "owner": "private",
+   "level": 7
+  },
+  {
+   "region": "xiling",
+   "building": "granary",
+   "method": "granary_raised",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "herbalist",
+   "method": "herbal",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "ironmine",
+   "method": "ironmine_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "ironworks",
+   "method": "iron_charcoal",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "irrigation",
+   "method": "irrig_canal",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "market",
+   "method": "market_trad",
+   "owner": "private",
+   "level": 17
+  },
+  {
+   "region": "xiling",
+   "building": "mulberry",
+   "method": "mulberry_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "oilpress",
+   "method": "oilpress_wood",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "xiling",
+   "building": "paddy",
+   "method": "paddy_rice",
+   "owner": "private",
+   "level": 13
+  },
+  {
+   "region": "xiling",
+   "building": "papermill",
+   "method": "paper_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "ranch",
+   "method": "ranch_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "road",
+   "method": "road_post",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "sawmill",
+   "method": "saw_hand",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "xiling",
+   "building": "school",
+   "method": "school_trad",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "smithy",
+   "method": "smith_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "spinning",
+   "method": "spin_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "teagarden",
+   "method": "tea_trad",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "xiling",
+   "building": "theater",
+   "method": "theater_folk",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "urbanworks",
+   "method": "urban_wells",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "watermill",
+   "method": "waterwheel",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "xiling",
+   "building": "weaving",
+   "method": "weave_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "xiling",
+   "building": "yamen",
+   "method": "yamen_trad",
+   "owner": "gov",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "brewery",
+   "method": "brew_trad",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "brickkiln",
+   "method": "brick_hand",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "zhongzhou",
+   "building": "carrier",
+   "method": "carrier_animal",
+   "owner": "private",
+   "level": 33
+  },
+  {
+   "region": "zhongzhou",
+   "building": "chandlery",
+   "method": "candle_hand",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "zhongzhou",
+   "building": "charcoalkiln",
+   "method": "charcoal_kiln",
+   "owner": "private",
+   "level": 7
+  },
+  {
+   "region": "zhongzhou",
+   "building": "clinic",
+   "method": "clinic_trad",
+   "owner": "gov",
+   "level": 5
+  },
+  {
+   "region": "zhongzhou",
+   "building": "dryfarm",
+   "method": "dry_beans",
+   "owner": "private",
+   "level": 13
+  },
+  {
+   "region": "zhongzhou",
+   "building": "dryfarm",
+   "method": "dry_cotton",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "dryfarm",
+   "method": "dry_grain",
+   "owner": "private",
+   "level": 13
+  },
+  {
+   "region": "zhongzhou",
+   "building": "dryfarm",
+   "method": "dry_oilseed",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "zhongzhou",
+   "building": "dryfarm",
+   "method": "dry_vegetables",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "forestry",
+   "method": "forestry_trad",
+   "owner": "private",
+   "level": 7
+  },
+  {
+   "region": "zhongzhou",
+   "building": "furnitureshop",
+   "method": "furniture_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "granary",
+   "method": "granary_raised",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "herbalist",
+   "method": "herbal",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "irrigation",
+   "method": "irrig_canal",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "kaolinpit",
+   "method": "kaolin_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "library",
+   "method": "library_trad",
+   "owner": "gov",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "market",
+   "method": "market_trad",
+   "owner": "private",
+   "level": 39
+  },
+  {
+   "region": "zhongzhou",
+   "building": "mulberry",
+   "method": "mulberry_trad",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "oilpress",
+   "method": "oilpress_wood",
+   "owner": "private",
+   "level": 13
+  },
+  {
+   "region": "zhongzhou",
+   "building": "paddy",
+   "method": "paddy_rice",
+   "owner": "private",
+   "level": 46
+  },
+  {
+   "region": "zhongzhou",
+   "building": "papermill",
+   "method": "paper_hand",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "porcelainkiln",
+   "method": "kiln_dragon",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "port",
+   "method": "port_wharf",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "pottery",
+   "method": "pottery_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "printing",
+   "method": "print_block",
+   "owner": "private",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "ranch",
+   "method": "ranch_trad",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "road",
+   "method": "road_post",
+   "owner": "gov",
+   "level": 4
+  },
+  {
+   "region": "zhongzhou",
+   "building": "sawmill",
+   "method": "saw_hand",
+   "owner": "private",
+   "level": 4
+  },
+  {
+   "region": "zhongzhou",
+   "building": "school",
+   "method": "school_trad",
+   "owner": "gov",
+   "level": 4
+  },
+  {
+   "region": "zhongzhou",
+   "building": "silkreel",
+   "method": "reel_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "silkweave",
+   "method": "silkweave_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "smithy",
+   "method": "smith_hand",
+   "owner": "private",
+   "level": 1
+  },
+  {
+   "region": "zhongzhou",
+   "building": "spinning",
+   "method": "spin_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "teagarden",
+   "method": "tea_trad",
+   "owner": "private",
+   "level": 6
+  },
+  {
+   "region": "zhongzhou",
+   "building": "theater",
+   "method": "theater_folk",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "urbanworks",
+   "method": "urban_wells",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "watermill",
+   "method": "waterwheel",
+   "owner": "gov",
+   "level": 2
+  },
+  {
+   "region": "zhongzhou",
+   "building": "weaving",
+   "method": "weave_hand",
+   "owner": "private",
+   "level": 3
+  },
+  {
+   "region": "zhongzhou",
+   "building": "yamen",
+   "method": "yamen_trad",
+   "owner": "gov",
+   "level": 6
+  }
+ ],
+ "savings_li": {
+  "beiyuan:peasant": 14945958350,
+  "beiyuan:artisan": 1357964368,
+  "beiyuan:merchant": 1903057865,
+  "beiyuan:gentry": 1352094231,
+  "zhongzhou:peasant": 10862426548,
+  "zhongzhou:artisan": 1079990667,
+  "zhongzhou:merchant": 1724738024,
+  "zhongzhou:gentry": 2054455060,
+  "haijia:peasant": 7866768778,
+  "haijia:artisan": 812841293,
+  "haijia:merchant": 1106982247,
+  "haijia:gentry": 796003622,
+  "xiling:peasant": 4738031229,
+  "xiling:artisan": 631705771,
+  "xiling:merchant": 713994604,
+  "xiling:gentry": 376317456
+ },
+ "basket_ppm": {
+  "beiyuan:peasant": 100000,
+  "beiyuan:artisan": 372857,
+  "beiyuan:merchant": 691813,
+  "beiyuan:gentry": 463732,
+  "zhongzhou:peasant": 100000,
+  "zhongzhou:artisan": 383923,
+  "zhongzhou:merchant": 878855,
+  "zhongzhou:gentry": 1153675,
+  "haijia:peasant": 100000,
+  "haijia:artisan": 394127,
+  "haijia:merchant": 741717,
+  "haijia:gentry": 527178,
+  "xiling:peasant": 100000,
+  "xiling:artisan": 370910,
+  "xiling:merchant": 804592,
+  "xiling:gentry": 361452
+ },
+ "gov": {
+  "treasury_li": 4000000000,
+  "land_tax_ppm": 90000,
+  "salt_tax_li": 600,
+  "commerce_tax_ppm": 20000,
+  "customs_ppm": 50000,
+  "hidden_land_ppm": 120000,
+  "hidden_growth_ppm": 4000,
+  "soldiers": 385472,
+  "soldier_wage_li": 1800,
+  "soldier_ration_milli": 600,
+  "soldier_cloth_milli": 200,
+  "court_li": 500000000,
+  "relief_li": 150000000,
+  "commerce_margin_ppm": 80000,
+  "rent_share_ppm": 420000,
+  "port_fee_ppm": 30000,
+  "literacy_ppm": 80000
+ },
+ "initial_trade": {
+  "exports": {
+   "silk": 19000000,
+   "porcelain": 300000000,
+   "tea": 5500000,
+   "fabric": 300000000,
+   "tools": 15000000,
+   "salt": 27500000
+  },
+  "imports": {
+   "tools": 15000000,
+   "timber": 9000000,
+   "draft_animal": 1400000,
+   "wool": 1800000,
+   "hides": 3000000
+  }
+ }
+}

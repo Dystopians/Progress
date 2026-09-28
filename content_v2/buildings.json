@@ -1,0 +1,6879 @@
+{
+ "schema": "jc.buildings",
+ "version": 1,
+ "buildings": [
+  {
+   "id": "dryfarm",
+   "name": "旱田",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "dry",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 102400000,
+   "maint_li": 1536000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/farm_early.png",
+    "2": "assets/buildings/b02/farm_early.png",
+    "3": "assets/buildings/b02/farm_industrial.png",
+    "4": "assets/buildings/b02/farm_modern.png"
+   },
+   "methods": [
+    {
+     "id": "dry_grain",
+     "name": "旱地麦粟",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "grain": 48000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_grain_rot",
+     "name": "旱地麦粟（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "grain": 57600000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_grain_fert",
+     "name": "旱地麦粟（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "grain": 84000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 140000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_grain_mech",
+     "name": "旱地麦粟（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "grain": 115200000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 190000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "dry_beans",
+     "name": "旱地豆类",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "beans": 41000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_beans_rot",
+     "name": "旱地豆类（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "beans": 49200000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_beans_fert",
+     "name": "旱地豆类（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "beans": 71750000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 122000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_beans_mech",
+     "name": "旱地豆类（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "beans": 98400000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 166000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "dry_cotton",
+     "name": "棉田",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "cotton": 9000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_cotton_rot",
+     "name": "棉田（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "cotton": 10800000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_cotton_fert",
+     "name": "棉田（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "cotton": 15750000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 42000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_cotton_mech",
+     "name": "棉田（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "cotton": 21600000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 60000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "dry_hemp",
+     "name": "麻田",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "hemp": 14000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_hemp_rot",
+     "name": "麻田（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "hemp": 16800000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_hemp_fert",
+     "name": "麻田（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "hemp": 24500000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 55000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_hemp_mech",
+     "name": "麻田（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "hemp": 33600000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 76000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "dry_oilseed",
+     "name": "油籽田",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "oilseed": 20000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_oilseed_rot",
+     "name": "油籽田（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "oilseed": 24000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_oilseed_fert",
+     "name": "油籽田（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "oilseed": 35000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 70000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_oilseed_mech",
+     "name": "油籽田（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "oilseed": 48000000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 96000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "dry_vegetables",
+     "name": "菜园",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "vegetables": 160000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_vegetables_rot",
+     "name": "菜园（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "vegetables": 192000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 55000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_vegetables_fert",
+     "name": "菜园（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "vegetables": 280000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 27000,
+      "fertilizer": 420000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "dry_vegetables_mech",
+     "name": "菜园（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "vegetables": 384000000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 563000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "一级 = 10 万亩旱地。作物即生产方式，改种一季完成。"
+  },
+  {
+   "id": "paddy",
+   "name": "水田",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "paddy",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 115200000,
+   "maint_li": 1728000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/farm_early.png",
+    "2": "assets/buildings/b02/farm_early.png",
+    "3": "assets/buildings/b02/farm_industrial.png",
+    "4": "assets/buildings/b02/farm_modern.png"
+   },
+   "methods": [
+    {
+     "id": "paddy_rice",
+     "name": "水田稻作",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "rice": 50000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 50000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "paddy_rice_rot",
+     "name": "水田稻作（轮作）",
+     "era": 1,
+     "era_end": 4,
+     "tech": "crop_rotation",
+     "out": {
+      "rice": 60000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 50000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 80000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "paddy_rice_double",
+     "name": "水田稻作（双季稻）",
+     "era": 2,
+     "era_end": 4,
+     "tech": "double_cropping",
+     "out": {
+      "rice": 78000000
+     },
+     "inp": {
+      "tools": 200000,
+      "draft_animal": 60000
+     },
+     "labor": {
+      "peasant": 33985
+     },
+     "water": false,
+     "upgrade_cost_ppm": 120000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "paddy_rice_fert",
+     "name": "水田稻作（施肥）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "rice": 87500000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 25000,
+      "fertilizer": 145000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 150000,
+     "upgrade_q": 1,
+     "note": ""
+    },
+    {
+     "id": "paddy_rice_mech",
+     "name": "水田稻作（机械化）",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "rice": 120000000
+     },
+     "inp": {
+      "machinery": 30000,
+      "refined_fuel": 400000,
+      "fertilizer": 196000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 400000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "paddy_sugarcane",
+     "name": "甘蔗田",
+     "era": 2,
+     "era_end": 4,
+     "tech": "sugar_refining",
+     "out": {
+      "sugarcane": 70000000
+     },
+     "inp": {
+      "tools": 150000,
+      "draft_animal": 40000
+     },
+     "labor": {
+      "peasant": 31153
+     },
+     "water": false,
+     "upgrade_cost_ppm": 50000,
+     "upgrade_q": 1,
+     "note": ""
+    }
+   ],
+   "note": "一级 = 10 万亩水田。"
+  },
+  {
+   "id": "mulberry",
+   "name": "桑园",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "slope",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 140800000,
+   "maint_li": 2112000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/sericulture_early.png",
+    "2": "assets/buildings/b11/sericulture_early.png",
+    "3": "assets/buildings/b11/sericulture_industrial.png",
+    "4": "assets/buildings/b11/sericulture_modern.png"
+   },
+   "methods": [
+    {
+     "id": "mulberry_trad",
+     "name": "桑园养蚕",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "cocoon": 5000000
+     },
+     "inp": {
+      "tools": 80000
+     },
+     "labor": {
+      "peasant": 31153
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "mulberry_improved",
+     "name": "良种桑蚕",
+     "era": 3,
+     "era_end": 4,
+     "tech": "sericulture_science",
+     "out": {
+      "cocoon": 8500000
+     },
+     "inp": {
+      "tools": 80000,
+      "fertilizer": 30000
+     },
+     "labor": {
+      "peasant": 28321
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "teagarden",
+   "name": "茶园",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "slope",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 140800000,
+   "maint_li": 2112000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/tea_early.png",
+    "2": "assets/buildings/b11/tea_early.png",
+    "3": "assets/buildings/b11/tea_industrial.png",
+    "4": "assets/buildings/b11/tea_modern.png"
+   },
+   "methods": [
+    {
+     "id": "tea_trad",
+     "name": "梯田焙茶",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "tea": 2600000
+     },
+     "inp": {
+      "tools": 60000
+     },
+     "labor": {
+      "peasant": 31153
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "tea_mech",
+     "name": "机械揉茶",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "tea": 4200000
+     },
+     "inp": {
+      "tools": 60000,
+      "power": 40000
+     },
+     "labor": {
+      "peasant": 21240
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "orchard",
+   "name": "果园",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "slope",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 102400000,
+   "maint_li": 1536000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/orchard_early.png",
+    "2": "assets/buildings/b05/orchard_early.png",
+    "3": "assets/buildings/b05/orchard_industrial.png",
+    "4": "assets/buildings/b05/orchard_modern.png"
+   },
+   "methods": [
+    {
+     "id": "orchard_trad",
+     "name": "果园",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "fruit": 60000000
+     },
+     "inp": {
+      "tools": 60000
+     },
+     "labor": {
+      "peasant": 22656
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "orchard_modern",
+     "name": "温室园艺",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "fruit": 120000000
+     },
+     "inp": {
+      "tools": 60000,
+      "fertilizer": 200000,
+      "electricity": 50000
+     },
+     "labor": {
+      "peasant": 12744
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "ranch",
+   "name": "牧场",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "pasture",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 57600000,
+   "maint_li": 864000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/ranch_early.png",
+    "2": "assets/buildings/b05/ranch_early.png",
+    "3": "assets/buildings/b05/ranch_industrial.png",
+    "4": "assets/buildings/b05/ranch_modern.png"
+   },
+   "methods": [
+    {
+     "id": "ranch_trad",
+     "name": "放牧",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "draft_animal": 1600000,
+      "meat": 3500000,
+      "hides": 2600000,
+      "wool": 1500000
+     },
+     "inp": {},
+     "labor": {
+      "peasant": 12744
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ranch_feed",
+     "name": "舍饲",
+     "era": 3,
+     "era_end": 4,
+     "tech": "fertilizer",
+     "out": {
+      "draft_animal": 1600000,
+      "meat": 7000000,
+      "hides": 4200000,
+      "wool": 2600000
+     },
+     "inp": {
+      "grain": 6000000
+     },
+     "labor": {
+      "peasant": 11328
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ranch_modern",
+     "name": "现代畜牧",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "meat": 14000000,
+      "hides": 6000000,
+      "wool": 3500000
+     },
+     "inp": {
+      "grain": 10000000,
+      "electricity": 30000,
+      "machinery": 5000
+     },
+     "labor": {
+      "peasant": 7080
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "fishery",
+   "name": "渔场",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "coast",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 64000000,
+   "maint_li": 960000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/fishing_early.png",
+    "2": "assets/buildings/b05/fishing_early.png",
+    "3": "assets/buildings/b05/fishing_industrial.png",
+    "4": "assets/buildings/b05/fishing_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "fish_trad",
+     "name": "沿岸捕捞",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "fish": 32000000
+     },
+     "inp": {
+      "ships": 1000,
+      "rope": 300000
+     },
+     "labor": {
+      "peasant": 14160
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "fish_motor",
+     "name": "机帆渔船",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "fish": 60000000
+     },
+     "inp": {
+      "ships": 2000,
+      "coal": 3000000
+     },
+     "labor": {
+      "peasant": 11328
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "fish_cold",
+     "name": "冷链渔业",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "fish": 100000000
+     },
+     "inp": {
+      "ships": 2000,
+      "refined_fuel": 800000,
+      "electricity": 60000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "forestry",
+   "name": "伐木场",
+   "category": "farm",
+   "sector": "agri",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "forest",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 46080000,
+   "maint_li": 691200,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/forestry_early.png",
+    "2": "assets/buildings/b05/forestry_early.png",
+    "3": "assets/buildings/b05/forestry_industrial.png",
+    "4": "assets/buildings/b05/forestry_modern.png"
+   },
+   "methods": [
+    {
+     "id": "forestry_trad",
+     "name": "伐木",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "timber": 42000000
+     },
+     "inp": {
+      "tools": 100000
+     },
+     "labor": {
+      "peasant": 11328
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "forestry_mech",
+     "name": "机械伐木",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "timber": 70000000
+     },
+     "inp": {
+      "tools": 100000,
+      "coal": 2000000
+     },
+     "labor": {
+      "peasant": 8496
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "forestry_modern",
+     "name": "林木综合经营",
+     "era": 4,
+     "era_end": 4,
+     "tech": "mechanized_farming",
+     "out": {
+      "timber": 90000000
+     },
+     "inp": {
+      "refined_fuel": 500000,
+      "machinery": 5000
+     },
+     "labor": {
+      "peasant": 5664
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "ironmine",
+   "name": "铁矿",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "iron",
+   "coast": false,
+   "cost_li": 85120000,
+   "maint_li": 1276800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "ironmine_trad",
+     "name": "露天采矿",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "iron_ore": 40000000
+     },
+     "inp": {
+      "tools": 220000
+     },
+     "labor": {
+      "artisan": 4000,
+      "peasant": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ironmine_steam",
+     "name": "竖井采矿",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "iron_ore": 80000000
+     },
+     "inp": {
+      "tools": 200000,
+      "power": 60000,
+      "coal": 2000000
+     },
+     "labor": {
+      "artisan": 5000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ironmine_mech",
+     "name": "机械采矿",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "iron_ore": 150000000
+     },
+     "inp": {
+      "machinery": 20000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "coppermine",
+   "name": "铜矿",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "copper",
+   "coast": false,
+   "cost_li": 85120000,
+   "maint_li": 1276800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "coppermine_trad",
+     "name": "采铜",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "copper_ore": 22000000
+     },
+     "inp": {
+      "tools": 220000
+     },
+     "labor": {
+      "artisan": 4000,
+      "peasant": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "coppermine_steam",
+     "name": "竖井采铜",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "copper_ore": 45000000
+     },
+     "inp": {
+      "tools": 200000,
+      "power": 60000,
+      "coal": 2000000
+     },
+     "labor": {
+      "artisan": 5000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "coppermine_mech",
+     "name": "机械采铜",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "copper_ore": 90000000
+     },
+     "inp": {
+      "machinery": 20000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "kaolinpit",
+   "name": "瓷土采场",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "kaolin",
+   "coast": false,
+   "cost_li": 44160000,
+   "maint_li": 662400,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "kaolin_trad",
+     "name": "采瓷土",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "kaolin": 30000000
+     },
+     "inp": {
+      "tools": 100000
+     },
+     "labor": {
+      "artisan": 2000,
+      "peasant": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "kaolin_mech",
+     "name": "机械采掘",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "kaolin": 70000000
+     },
+     "inp": {
+      "machinery": 10000,
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "quarry",
+   "name": "采石场",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "stone",
+   "coast": false,
+   "cost_li": 51840000,
+   "maint_li": 777600,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/stonequarry_early.png",
+    "2": "assets/buildings/b14/stonequarry_early.png",
+    "3": "assets/buildings/b14/stonequarry_industrial.png",
+    "4": "assets/buildings/b14/stonequarry_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "quarry_trad",
+     "name": "采石",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "cut_stone": 20000000
+     },
+     "inp": {
+      "tools": 150000
+     },
+     "labor": {
+      "artisan": 2000,
+      "peasant": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "quarry_lime",
+     "name": "采石与石灰岩",
+     "era": 3,
+     "era_end": 4,
+     "tech": "cement",
+     "out": {
+      "cut_stone": 20000000,
+      "limestone": 30000000
+     },
+     "inp": {
+      "tools": 150000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 3000,
+      "peasant": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "quarry_mech",
+     "name": "机械采石",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "cut_stone": 40000000,
+      "limestone": 60000000
+     },
+     "inp": {
+      "machinery": 10000,
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 2500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "coalmine",
+   "name": "煤矿",
+   "category": "mine",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "coal",
+   "coast": false,
+   "cost_li": 72800000,
+   "maint_li": 1092000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/coal_early.png",
+    "2": "assets/buildings/b09/coal_early.png",
+    "3": "assets/buildings/b09/coal_industrial.png",
+    "4": "assets/buildings/b09/coal_modern.png"
+   },
+   "methods": [
+    {
+     "id": "coal_trad",
+     "name": "平硐采煤",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "coal": 50000000
+     },
+     "inp": {
+      "tools": 200000
+     },
+     "labor": {
+      "artisan": 3000,
+      "peasant": 2500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "coal_steam",
+     "name": "竖井煤矿",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "coal": 140000000
+     },
+     "inp": {
+      "tools": 200000,
+      "power": 80000
+     },
+     "labor": {
+      "artisan": 6000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "coal_mech",
+     "name": "机械化煤矿",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "coal": 300000000
+     },
+     "inp": {
+      "machinery": 30000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 4000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "saltworks",
+   "name": "盐场",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "salt",
+   "coast": false,
+   "cost_li": 60480000,
+   "maint_li": 907200,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/saltworks_early.png",
+    "2": "assets/buildings/b11/saltworks_early.png",
+    "3": "assets/buildings/b11/saltworks_industrial_v3.png",
+    "4": "assets/buildings/b11/saltworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "salt_trad",
+     "name": "海边晒盐",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "salt": 60000000
+     },
+     "inp": {},
+     "labor": {
+      "peasant": 6000,
+      "artisan": 1000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "salt_mech",
+     "name": "机械化盐场",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "salt": 120000000
+     },
+     "inp": {
+      "power": 30000
+     },
+     "labor": {
+      "peasant": 3000,
+      "artisan": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "salt_modern",
+     "name": "现代制盐",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "salt": 220000000
+     },
+     "inp": {
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "sulfurmine",
+   "name": "硫磺矿",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "sulfur",
+   "coast": false,
+   "cost_li": 50400000,
+   "maint_li": 756000,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "chemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "sulfur_mine",
+     "name": "采硫",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "sulfur": 20000000
+     },
+     "inp": {
+      "tools": 150000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "phosphatemine",
+   "name": "磷矿",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "phosphate",
+   "coast": false,
+   "cost_li": 50400000,
+   "maint_li": 756000,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "fertilizer",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "phosphate_mine",
+     "name": "采磷",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "phosphate": 20000000
+     },
+     "inp": {
+      "tools": 150000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "phosphate_mech",
+     "name": "机械采磷",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "phosphate": 45000000
+     },
+     "inp": {
+      "machinery": 10000,
+      "electricity": 100000
+     },
+     "labor": {
+      "artisan": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "sandpit",
+   "name": "砂场",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "sand",
+   "coast": false,
+   "cost_li": 19200000,
+   "maint_li": 288000,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "glassmaking",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "sand_trad",
+     "name": "采砂",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "sand": 30000000
+     },
+     "inp": {
+      "tools": 60000
+     },
+     "labor": {
+      "peasant": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "oilwell",
+   "name": "油井",
+   "category": "mine",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "oil",
+   "coast": false,
+   "cost_li": 72000000,
+   "maint_li": 1080000,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "petrochemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/oil_early_v2.png",
+    "2": "assets/buildings/b09/oil_early_v2.png",
+    "3": "assets/buildings/b09/oil_industrial.png",
+    "4": "assets/buildings/b09/oil_modern.png"
+   },
+   "methods": [
+    {
+     "id": "oil_well",
+     "name": "井架采油",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "crude_oil": 60000000
+     },
+     "inp": {
+      "machinery": 20000,
+      "electricity": 100000
+     },
+     "labor": {
+      "artisan": 3000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "bauxitemine",
+   "name": "铝土矿",
+   "category": "mine",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "bauxite",
+   "coast": false,
+   "cost_li": 48000000,
+   "maint_li": 720000,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "electrochemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/mine_early.png",
+    "2": "assets/buildings/b02/mine_early.png",
+    "3": "assets/buildings/b02/mine_industrial.png",
+    "4": "assets/buildings/b02/mine_modern.png"
+   },
+   "methods": [
+    {
+     "id": "bauxite_mine",
+     "name": "采铝土",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "bauxite": 30000000
+     },
+     "inp": {
+      "machinery": 10000,
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 2500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "spinning",
+   "name": "纺纱坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 55600000,
+   "maint_li": 834000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/textile_early.png",
+    "2": "assets/buildings/b06/textile_early.png",
+    "3": "assets/buildings/b06/textile_industrial.png",
+    "4": "assets/buildings/b06/textile_modern.png"
+   },
+   "methods": [
+    {
+     "id": "spin_hand",
+     "name": "手摇纺车",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "yarn": 7200000
+     },
+     "inp": {
+      "cotton": 8000000
+     },
+     "labor": {
+      "artisan": 4500,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "spin_water",
+     "name": "水力纺纱",
+     "era": 2,
+     "era_end": 4,
+     "tech": "water_frame",
+     "out": {
+      "yarn": 7200000
+     },
+     "inp": {
+      "cotton": 8000000,
+      "tools": 30000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 100
+     },
+     "water": true,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "spin_steam",
+     "name": "蒸汽纺纱厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "yarn": 16000000
+     },
+     "inp": {
+      "cotton": 17800000,
+      "power": 80000,
+      "machinery": 4000
+     },
+     "labor": {
+      "artisan": 2200,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "spin_modern",
+     "name": "电动纺纱",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "yarn": 30000000
+     },
+     "inp": {
+      "cotton": 33400000,
+      "electricity": 150000,
+      "machinery": 6000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "weaving",
+   "name": "织布坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 49600000,
+   "maint_li": 744000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/textile_early.png",
+    "2": "assets/buildings/b06/textile_early.png",
+    "3": "assets/buildings/b06/textile_industrial.png",
+    "4": "assets/buildings/b06/textile_modern.png"
+   },
+   "methods": [
+    {
+     "id": "weave_hand",
+     "name": "手织",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "fabric": 140000000
+     },
+     "inp": {
+      "yarn": 7000000
+     },
+     "labor": {
+      "artisan": 4000,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "weave_shuttle",
+     "name": "飞梭织机",
+     "era": 2,
+     "era_end": 4,
+     "tech": "flying_shuttle",
+     "out": {
+      "fabric": 140000000
+     },
+     "inp": {
+      "yarn": 7000000,
+      "tools": 20000
+     },
+     "labor": {
+      "artisan": 2400,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "weave_power",
+     "name": "动力织机",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "fabric": 320000000
+     },
+     "inp": {
+      "yarn": 16000000,
+      "power": 80000,
+      "machinery": 4000
+     },
+     "labor": {
+      "artisan": 2600,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "weave_modern",
+     "name": "现代织造",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "fabric": 600000000
+     },
+     "inp": {
+      "yarn": 30000000,
+      "electricity": 150000,
+      "machinery": 6000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "silkreel",
+   "name": "缫丝坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 41008000,
+   "maint_li": 615120,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/sericulture_early.png",
+    "2": "assets/buildings/b11/sericulture_early.png",
+    "3": "assets/buildings/b11/sericulture_industrial.png",
+    "4": "assets/buildings/b11/sericulture_modern.png"
+   },
+   "methods": [
+    {
+     "id": "reel_hand",
+     "name": "手工缫丝",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "silk_thread": 1100000
+     },
+     "inp": {
+      "cocoon": 4600000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "reel_machine",
+     "name": "机器缫丝",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "silk_thread": 2600000
+     },
+     "inp": {
+      "cocoon": 10500000,
+      "power": 40000,
+      "machinery": 2000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "reel_modern",
+     "name": "现代丝厂",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "silk_thread": 5000000
+     },
+     "inp": {
+      "cocoon": 20000000,
+      "electricity": 80000,
+      "machinery": 3000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "silkweave",
+   "name": "织绸坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 59904000,
+   "maint_li": 898560,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/textile_early.png",
+    "2": "assets/buildings/b06/textile_early.png",
+    "3": "assets/buildings/b06/textile_industrial.png",
+    "4": "assets/buildings/b06/textile_modern.png"
+   },
+   "methods": [
+    {
+     "id": "silkweave_hand",
+     "name": "花楼织机",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "silk": 22000000
+     },
+     "inp": {
+      "silk_thread": 1100000
+     },
+     "labor": {
+      "artisan": 4000,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "silkweave_jacquard",
+     "name": "提花织机",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "silk": 52000000
+     },
+     "inp": {
+      "silk_thread": 2600000,
+      "power": 40000,
+      "machinery": 2000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "silkweave_modern",
+     "name": "电动织绸",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "silk": 100000000
+     },
+     "inp": {
+      "silk_thread": 5000000,
+      "electricity": 80000,
+      "machinery": 3000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "ropesail",
+   "name": "绳帆坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 37280000,
+   "maint_li": 559200,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/ropesail_early.png",
+    "2": "assets/buildings/b14/ropesail_early.png",
+    "3": "assets/buildings/b14/ropesail_industrial.png",
+    "4": "assets/buildings/b14/ropesail_modern.png"
+   },
+   "methods": [
+    {
+     "id": "ropesail_hand",
+     "name": "手工绳帆",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "rope": 30000000,
+      "sailcloth": 8000000
+     },
+     "inp": {
+      "hemp": 12000000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ropesail_mech",
+     "name": "机械制绳",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "rope": 70000000,
+      "sailcloth": 18000000
+     },
+     "inp": {
+      "hemp": 27000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "charcoalkiln",
+   "name": "炭窑",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 20480000,
+   "maint_li": 307200,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 3,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/charcoalkiln_early.png",
+    "2": "assets/buildings/b11/charcoalkiln_early.png",
+    "3": "assets/buildings/b11/charcoalkiln_early.png",
+    "4": "assets/buildings/b11/charcoalkiln_early.png"
+   },
+   "methods": [
+    {
+     "id": "charcoal_kiln",
+     "name": "覆土炭窑",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "charcoal": 30000000
+     },
+     "inp": {
+      "timber": 20000000
+     },
+     "labor": {
+      "peasant": 2500,
+      "artisan": 800
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "第三时代起被焦炭取代，逐步淡出。"
+  },
+  {
+   "id": "sawmill",
+   "name": "锯木坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 24800000,
+   "maint_li": 372000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/forestry_industrial.png",
+    "2": "assets/buildings/b05/forestry_industrial.png",
+    "3": "assets/buildings/b05/forestry_industrial.png",
+    "4": "assets/buildings/b05/forestry_modern.png"
+   },
+   "methods": [
+    {
+     "id": "saw_hand",
+     "name": "手工锯木",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "lumber": 10000000
+     },
+     "inp": {
+      "timber": 15000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "saw_water",
+     "name": "水力锯木",
+     "era": 2,
+     "era_end": 4,
+     "tech": "water_power",
+     "out": {
+      "lumber": 10000000
+     },
+     "inp": {
+      "timber": 15000000
+     },
+     "labor": {
+      "artisan": 1000,
+      "merchant": 50
+     },
+     "water": true,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "saw_steam",
+     "name": "蒸汽锯木",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "lumber": 26000000
+     },
+     "inp": {
+      "timber": 38000000,
+      "power": 50000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "ironworks",
+   "name": "冶铁作坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 52192000,
+   "maint_li": 782880,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/steel_early_v2.png",
+    "2": "assets/buildings/b07/steel_early_v2.png",
+    "3": "assets/buildings/b07/steel_industrial_v2.png",
+    "4": "assets/buildings/b07/steel_modern.png"
+   },
+   "methods": [
+    {
+     "id": "iron_charcoal",
+     "name": "木炭冶铁",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "pig_iron": 12000000
+     },
+     "inp": {
+      "iron_ore": 30000000,
+      "charcoal": 30000000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "iron_coal",
+     "name": "煤炭冶铁",
+     "era": 2,
+     "era_end": 4,
+     "tech": "coal_iron",
+     "out": {
+      "pig_iron": 14000000
+     },
+     "inp": {
+      "iron_ore": 34000000,
+      "coal": 36000000
+     },
+     "labor": {
+      "artisan": 2800,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "iron_blast",
+     "name": "焦炭高炉",
+     "era": 3,
+     "era_end": 4,
+     "tech": "coke_smelting",
+     "out": {
+      "pig_iron": 40000000
+     },
+     "inp": {
+      "iron_ore": 95000000,
+      "coke": 45000000,
+      "power": 60000
+     },
+     "labor": {
+      "artisan": 3500,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "iron_modern",
+     "name": "现代高炉",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "pig_iron": 90000000
+     },
+     "inp": {
+      "iron_ore": 210000000,
+      "coke": 90000000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "steelworks",
+   "name": "钢铁厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 84480000,
+   "maint_li": 1267200,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "bessemer",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/steel_industrial_v2.png",
+    "2": "assets/buildings/b07/steel_industrial_v2.png",
+    "3": "assets/buildings/b07/steel_industrial_v2.png",
+    "4": "assets/buildings/b07/steel_modern.png"
+   },
+   "methods": [
+    {
+     "id": "steel_bessemer",
+     "name": "转炉炼钢",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "steel": 8000000
+     },
+     "inp": {
+      "pig_iron": 18000000,
+      "coke": 6000000,
+      "power": 80000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "steel_electric",
+     "name": "电炉炼钢",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "steel": 20000000
+     },
+     "inp": {
+      "pig_iron": 40000000,
+      "electricity": 600000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "smithy",
+   "name": "铁匠铺",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 36960000,
+   "maint_li": 554400,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/tools_early.png",
+    "2": "assets/buildings/b07/tools_early.png",
+    "3": "assets/buildings/b07/tools_industrial.png",
+    "4": "assets/buildings/b07/tools_modern.png"
+   },
+   "methods": [
+    {
+     "id": "smith_hand",
+     "name": "打铁",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "tools": 30000000
+     },
+     "inp": {
+      "pig_iron": 6000000,
+      "charcoal": 6000000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "smith_coal",
+     "name": "煤火打铁",
+     "era": 2,
+     "era_end": 4,
+     "tech": "coal_iron",
+     "out": {
+      "tools": 32000000
+     },
+     "inp": {
+      "pig_iron": 6400000,
+      "coal": 7000000
+     },
+     "labor": {
+      "artisan": 2800,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "smith_machine",
+     "name": "机加工工具",
+     "era": 3,
+     "era_end": 4,
+     "tech": "machine_tools",
+     "out": {
+      "tools": 90000000
+     },
+     "inp": {
+      "steel": 3000000,
+      "power": 40000,
+      "machinery": 3000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "smith_precision",
+     "name": "精密工具",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automation",
+     "out": {
+      "tools": 200000000
+     },
+     "inp": {
+      "steel": 6000000,
+      "electricity": 150000,
+      "machinery": 5000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "copperworks",
+   "name": "炼铜作坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 48048000,
+   "maint_li": 720720,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/copperworks_early.png",
+    "2": "assets/buildings/b14/copperworks_early.png",
+    "3": "assets/buildings/b14/copperworks_industrial.png",
+    "4": "assets/buildings/b14/copperworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "copper_charcoal",
+     "name": "木炭炼铜",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "copper": 3000000
+     },
+     "inp": {
+      "copper_ore": 20000000,
+      "charcoal": 15000000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "copper_coke",
+     "name": "焦炭炼铜",
+     "era": 3,
+     "era_end": 4,
+     "tech": "coke_smelting",
+     "out": {
+      "copper": 8000000
+     },
+     "inp": {
+      "copper_ore": 52000000,
+      "coke": 12000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "copper_electro",
+     "name": "电解精炼",
+     "era": 4,
+     "era_end": 4,
+     "tech": "electrochemistry",
+     "out": {
+      "copper": 18000000
+     },
+     "inp": {
+      "copper_ore": 110000000,
+      "electricity": 400000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "porcelainkiln",
+   "name": "瓷窑",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 52000000,
+   "maint_li": 780000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b11/porcelainkiln_early.png",
+    "2": "assets/buildings/b11/porcelainkiln_early.png",
+    "3": "assets/buildings/b11/porcelainkiln_industrial.png",
+    "4": "assets/buildings/b11/porcelainkiln_modern.png"
+   },
+   "methods": [
+    {
+     "id": "kiln_dragon",
+     "name": "龙窑烧瓷",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "porcelain": 150000000
+     },
+     "inp": {
+      "kaolin": 12000000,
+      "charcoal": 12000000
+     },
+     "labor": {
+      "artisan": 3200,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "kiln_coal",
+     "name": "煤烧瓷厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "coke_smelting",
+     "out": {
+      "porcelain": 320000000
+     },
+     "inp": {
+      "kaolin": 25000000,
+      "coal": 20000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "kiln_modern",
+     "name": "现代陶瓷厂",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "porcelain": 700000000
+     },
+     "inp": {
+      "kaolin": 55000000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 2200,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "pottery",
+   "name": "陶器作坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 27720000,
+   "maint_li": 415800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/pottery_early.png",
+    "2": "assets/buildings/b14/pottery_early.png",
+    "3": "assets/buildings/b14/pottery_industrial.png",
+    "4": "assets/buildings/b14/pottery_modern.png"
+   },
+   "methods": [
+    {
+     "id": "pottery_hand",
+     "name": "手工制陶",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "earthenware": 300000000
+     },
+     "inp": {
+      "charcoal": 4000000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "pottery_coal",
+     "name": "煤窑制陶",
+     "era": 2,
+     "era_end": 4,
+     "tech": "coal_iron",
+     "out": {
+      "earthenware": 320000000
+     },
+     "inp": {
+      "coal": 5000000
+     },
+     "labor": {
+      "artisan": 2300,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "pottery_mech",
+     "name": "机械陶器",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "earthenware": 700000000
+     },
+     "inp": {
+      "coal": 9000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "brickkiln",
+   "name": "砖瓦窑",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 27360000,
+   "maint_li": 410400,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/brick_early.png",
+    "2": "assets/buildings/b07/brick_early.png",
+    "3": "assets/buildings/b07/brick_industrial.png",
+    "4": "assets/buildings/b07/brick_modern.png"
+   },
+   "methods": [
+    {
+     "id": "brick_hand",
+     "name": "土窑烧砖",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "bricks": 5000000
+     },
+     "inp": {
+      "charcoal": 5000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "peasant": 1000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "brick_coal",
+     "name": "煤窑烧砖",
+     "era": 2,
+     "era_end": 4,
+     "tech": "coal_iron",
+     "out": {
+      "bricks": 5500000
+     },
+     "inp": {
+      "coal": 6000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "peasant": 800
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "brick_ring",
+     "name": "轮窑砖厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "bricks": 14000000
+     },
+     "inp": {
+      "coal": 12000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 2200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "oilpress",
+   "name": "榨油坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 16920000,
+   "maint_li": 253800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b15/oilpress_early.png",
+    "2": "assets/buildings/b15/oilpress_early.png",
+    "3": "assets/buildings/b15/oilpress_industrial.png",
+    "4": "assets/buildings/b15/oilpress_modern_v3.png"
+   },
+   "methods": [
+    {
+     "id": "oilpress_wood",
+     "name": "木榨",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "cooking_oil": 2600000
+     },
+     "inp": {
+      "oilseed": 10000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "oilpress_mech",
+     "name": "机械榨油",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "cooking_oil": 6400000
+     },
+     "inp": {
+      "oilseed": 23000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 1400,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "chandlery",
+   "name": "皂烛坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 11376000,
+   "maint_li": 170640,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b13/soapworks_early.png",
+    "2": "assets/buildings/b13/soapworks_early.png",
+    "3": "assets/buildings/b13/soapworks_industrial.png",
+    "4": "assets/buildings/b13/soapworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "candle_hand",
+     "name": "手工蜡烛",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "candles": 60000000
+     },
+     "inp": {
+      "cooking_oil": 800000
+     },
+     "labor": {
+      "artisan": 1000,
+      "merchant": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "candle_soap",
+     "name": "皂烛兼营",
+     "era": 2,
+     "era_end": 4,
+     "tech": "chemistry_basic",
+     "out": {
+      "candles": 60000000,
+      "soap": 3000000
+     },
+     "inp": {
+      "cooking_oil": 1400000
+     },
+     "labor": {
+      "artisan": 1300,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "soap_factory",
+     "name": "机械制皂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "chemistry",
+     "out": {
+      "soap": 12000000,
+      "candles": 30000000
+     },
+     "inp": {
+      "cooking_oil": 2600000,
+      "chemicals": 300000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 1200,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "brewery",
+   "name": "酿坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 17064000,
+   "maint_li": 255960,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b13/brewery_early.png",
+    "2": "assets/buildings/b13/brewery_early.png",
+    "3": "assets/buildings/b13/brewery_industrial.png",
+    "4": "assets/buildings/b13/brewery_modern.png"
+   },
+   "methods": [
+    {
+     "id": "brew_trad",
+     "name": "酿酒",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "wine": 60000000
+     },
+     "inp": {
+      "grain": 8000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "brew_beer",
+     "name": "蒸汽酿造（啤酒）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "beer": 30000000,
+      "wine": 30000000
+     },
+     "inp": {
+      "grain": 14000000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "papermill",
+   "name": "纸坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 30800000,
+   "maint_li": 462000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/paper_early.png",
+    "2": "assets/buildings/b06/paper_early.png",
+    "3": "assets/buildings/b06/paper_industrial.png",
+    "4": "assets/buildings/b06/paper_modern.png"
+   },
+   "methods": [
+    {
+     "id": "paper_hand",
+     "name": "手工造纸",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "paper": 100000000
+     },
+     "inp": {
+      "timber": 6000000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "paper_machine",
+     "name": "机械造纸",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "paper": 260000000
+     },
+     "inp": {
+      "timber": 14000000,
+      "chemicals": 200000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 2200,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "printing",
+   "name": "印坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 20400000,
+   "maint_li": 306000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/printing_early.png",
+    "2": "assets/buildings/b06/printing_early.png",
+    "3": "assets/buildings/b06/printing_industrial.png",
+    "4": "assets/buildings/b06/printing_modern.png"
+   },
+   "methods": [
+    {
+     "id": "print_block",
+     "name": "雕版印刷",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "books": 12000000
+     },
+     "inp": {
+      "paper": 40000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "gentry": 80,
+      "merchant": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "print_movable",
+     "name": "活字印刷",
+     "era": 1,
+     "era_end": 4,
+     "tech": "movable_type",
+     "out": {
+      "books": 20000000
+     },
+     "inp": {
+      "paper": 60000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "gentry": 80,
+      "merchant": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "print_rotary",
+     "name": "轮转印刷",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "books": 60000000
+     },
+     "inp": {
+      "paper": 170000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 1500,
+      "gentry": 100,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "furnitureshop",
+   "name": "家具坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 27864000,
+   "maint_li": 417960,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/furniture_early.png",
+    "2": "assets/buildings/b14/furniture_early.png",
+    "3": "assets/buildings/b14/furniture_industrial.png",
+    "4": "assets/buildings/b14/furniture_modern.png"
+   },
+   "methods": [
+    {
+     "id": "furniture_hand",
+     "name": "木作家具",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "furniture": 20000000
+     },
+     "inp": {
+      "lumber": 4000000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "furniture_mech",
+     "name": "机械家具",
+     "era": 3,
+     "era_end": 4,
+     "tech": "machine_tools",
+     "out": {
+      "furniture": 50000000
+     },
+     "inp": {
+      "lumber": 9000000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 2200,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "tannery",
+   "name": "制革坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 16776000,
+   "maint_li": 251640,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/leather_early.png",
+    "2": "assets/buildings/b06/leather_early.png",
+    "3": "assets/buildings/b06/leather_industrial.png",
+    "4": "assets/buildings/b06/leather_modern.png"
+   },
+   "methods": [
+    {
+     "id": "tan_hand",
+     "name": "手工制革",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "leather": 7000000
+     },
+     "inp": {
+      "hides": 8000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "tan_steam",
+     "name": "蒸汽制革",
+     "era": 3,
+     "era_end": 4,
+     "tech": "chemistry",
+     "out": {
+      "leather": 16000000
+     },
+     "inp": {
+      "hides": 18000000,
+      "chemicals": 200000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 1400,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "herbalist",
+   "name": "药局",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 15300000,
+   "maint_li": 229500,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b15/pharmacy_early_v3.png",
+    "2": "assets/buildings/b15/pharmacy_early_v3.png",
+    "3": "assets/buildings/b15/pharmacy_industrial.png",
+    "4": "assets/buildings/b15/pharmacy_modern.png"
+   },
+   "methods": [
+    {
+     "id": "herbal",
+     "name": "草药炮制",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "medicine": 50000000
+     },
+     "inp": {
+      "vegetables": 6000000
+     },
+     "labor": {
+      "artisan": 1000,
+      "gentry": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "pharma",
+     "name": "制药工场",
+     "era": 3,
+     "era_end": 4,
+     "tech": "public_health",
+     "out": {
+      "medicine": 150000000
+     },
+     "inp": {
+      "chemicals": 600000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 1200,
+      "gentry": 200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "pharma_modern",
+     "name": "现代药厂",
+     "era": 4,
+     "era_end": 4,
+     "tech": "antibiotics",
+     "out": {
+      "medicine": 500000000
+     },
+     "inp": {
+      "chemicals": 1500000,
+      "electricity": 100000
+     },
+     "labor": {
+      "artisan": 1200,
+      "gentry": 300
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "shipyard",
+   "name": "船坞",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 59648000,
+   "maint_li": 894720,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b08/shipyard_early.png",
+    "2": "assets/buildings/b08/shipyard_early.png",
+    "3": "assets/buildings/b08/shipyard_industrial.png",
+    "4": "assets/buildings/b08/shipyard_modern.png"
+   },
+   "methods": [
+    {
+     "id": "ship_wood",
+     "name": "木帆船",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "ships": 30000
+     },
+     "inp": {
+      "lumber": 3000000,
+      "rope": 3000000,
+      "sailcloth": 1500000,
+      "tools": 100000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ship_steam",
+     "name": "蒸汽轮船",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "ships": 40000
+     },
+     "inp": {
+      "steel": 1500000,
+      "machinery": 20000,
+      "rope": 2000000
+     },
+     "labor": {
+      "artisan": 3500,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "ship_modern",
+     "name": "现代船厂",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "ships": 70000
+     },
+     "inp": {
+      "steel": 3000000,
+      "machinery": 30000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "gristmill",
+   "name": "磨坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 10240000,
+   "maint_li": 153600,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "water_power",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/grainmill_early.png",
+    "2": "assets/buildings/b05/grainmill_early.png",
+    "3": "assets/buildings/b05/grainmill_industrial.png",
+    "4": "assets/buildings/b05/grainmill_modern.png"
+   },
+   "methods": [
+    {
+     "id": "mill_water",
+     "name": "水磨",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "flour": 20000000
+     },
+     "inp": {
+      "grain": 21000000
+     },
+     "labor": {
+      "artisan": 800,
+      "merchant": 40
+     },
+     "water": true,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "mill_steam",
+     "name": "蒸汽面粉厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "flour": 60000000
+     },
+     "inp": {
+      "grain": 63000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 900,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "sugarmill",
+   "name": "制糖坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 27456000,
+   "maint_li": 411840,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "sugar_refining",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b13/sugarworks_early.png",
+    "2": "assets/buildings/b13/sugarworks_early.png",
+    "3": "assets/buildings/b13/sugarworks_industrial.png",
+    "4": "assets/buildings/b13/sugarworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "sugar_press",
+     "name": "甘蔗榨糖",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "sugar": 6000000
+     },
+     "inp": {
+      "sugarcane": 60000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "sugar_steam",
+     "name": "蒸汽制糖",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "sugar": 15000000
+     },
+     "inp": {
+      "sugarcane": 140000000,
+      "coal": 3000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "glassworks",
+   "name": "玻璃坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 29952000,
+   "maint_li": 449280,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "glassmaking",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/glass_early.png",
+    "2": "assets/buildings/b06/glass_early.png",
+    "3": "assets/buildings/b06/glass_industrial.png",
+    "4": "assets/buildings/b06/glass_modern.png"
+   },
+   "methods": [
+    {
+     "id": "glass_hand",
+     "name": "吹制玻璃",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "glass": 5000000
+     },
+     "inp": {
+      "sand": 8000000,
+      "coal": 6000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "glass_industrial",
+     "name": "工业玻璃",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {
+      "glass": 14000000
+     },
+     "inp": {
+      "sand": 20000000,
+      "coal": 12000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "tailor",
+   "name": "成衣坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 33552000,
+   "maint_li": 503280,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "flying_shuttle",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b06/clothing_early.png",
+    "2": "assets/buildings/b06/clothing_early.png",
+    "3": "assets/buildings/b06/clothing_industrial.png",
+    "4": "assets/buildings/b06/clothing_modern.png"
+   },
+   "methods": [
+    {
+     "id": "tailor_hand",
+     "name": "裁缝作坊",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "clothing": 60000000
+     },
+     "inp": {
+      "fabric": 70000000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "tailor_factory",
+     "name": "成衣工厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "machine_tools",
+     "out": {
+      "clothing": 160000000
+     },
+     "inp": {
+      "fabric": 180000000,
+      "power": 30000
+     },
+     "labor": {
+      "artisan": 3000,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "cokeworks",
+   "name": "炼焦厂",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 39936000,
+   "maint_li": 599040,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "coke_smelting",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b12/cokeworks_industrial.png",
+    "2": "assets/buildings/b12/cokeworks_industrial.png",
+    "3": "assets/buildings/b12/cokeworks_industrial.png",
+    "4": "assets/buildings/b12/cokeworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "coke_beehive",
+     "name": "蜂巢炼焦",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "coke": 40000000
+     },
+     "inp": {
+      "coal": 60000000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "coke_recovery",
+     "name": "回收式炼焦",
+     "era": 4,
+     "era_end": 4,
+     "tech": "petrochemistry",
+     "out": {
+      "coke": 80000000,
+      "chemicals": 1500000,
+      "gas": 800000
+     },
+     "inp": {
+      "coal": 110000000,
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "steamplant",
+   "name": "蒸汽动力站",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 33552000,
+   "maint_li": 503280,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "steam_engine",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/power_industrial.png",
+    "2": "assets/buildings/b02/power_industrial.png",
+    "3": "assets/buildings/b02/power_industrial.png",
+    "4": "assets/buildings/b02/power_modern.png"
+   },
+   "methods": [
+    {
+     "id": "steam_power",
+     "name": "蒸汽机组",
+     "era": 3,
+     "era_end": 3,
+     "tech": "",
+     "out": {
+      "power": 900000
+     },
+     "inp": {
+      "coal": 30000000,
+      "machinery": 6000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "第四时代由电厂取代。"
+  },
+  {
+   "id": "gasworks",
+   "name": "煤气厂",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 28440000,
+   "maint_li": 426600,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "steam_engine",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/gas_early.png",
+    "2": "assets/buildings/b09/gas_early.png",
+    "3": "assets/buildings/b09/gas_industrial.png",
+    "4": "assets/buildings/b09/gas_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "gas_coal",
+     "name": "煤制气",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "gas": 4000000,
+      "coke": 8000000
+     },
+     "inp": {
+      "coal": 20000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "cementworks",
+   "name": "水泥厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 44928000,
+   "maint_li": 673920,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "cement",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/cement_early.png",
+    "2": "assets/buildings/b07/cement_early.png",
+    "3": "assets/buildings/b07/cement_industrial_v3.png",
+    "4": "assets/buildings/b07/cement_modern.png"
+   },
+   "methods": [
+    {
+     "id": "cement_kiln",
+     "name": "立窑水泥",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "cement": 20000000
+     },
+     "inp": {
+      "limestone": 30000000,
+      "coal": 10000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "cement_rotary",
+     "name": "回转窑水泥",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "cement": 60000000
+     },
+     "inp": {
+      "limestone": 85000000,
+      "coal": 20000000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "chemworks",
+   "name": "化工厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 53440000,
+   "maint_li": 801600,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "chemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/chemical_early.png",
+    "2": "assets/buildings/b07/chemical_early.png",
+    "3": "assets/buildings/b07/chemical_industrial.png",
+    "4": "assets/buildings/b07/chemical_modern.png"
+   },
+   "methods": [
+    {
+     "id": "chem_basic",
+     "name": "基础化工",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "chemicals": 10000000
+     },
+     "inp": {
+      "salt": 12000000,
+      "sulfur": 6000000,
+      "coal": 8000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 2000,
+      "gentry": 80,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "chem_petro",
+     "name": "石油化工",
+     "era": 4,
+     "era_end": 4,
+     "tech": "petrochemistry",
+     "out": {
+      "chemicals": 30000000
+     },
+     "inp": {
+      "refined_fuel": 8000000,
+      "salt": 20000000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 1800,
+      "gentry": 150,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "fertilizerworks",
+   "name": "化肥厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 45120000,
+   "maint_li": 676800,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "fertilizer",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/chemical_early.png",
+    "2": "assets/buildings/b07/chemical_early.png",
+    "3": "assets/buildings/b07/chemical_industrial.png",
+    "4": "assets/buildings/b07/chemical_modern.png"
+   },
+   "methods": [
+    {
+     "id": "fert_phosphate",
+     "name": "磷肥",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "fertilizer": 12000000
+     },
+     "inp": {
+      "phosphate": 14000000,
+      "chemicals": 2000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 1800,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "fert_synthetic",
+     "name": "合成氨",
+     "era": 4,
+     "era_end": 4,
+     "tech": "petrochemistry",
+     "out": {
+      "fertilizer": 40000000
+     },
+     "inp": {
+      "phosphate": 20000000,
+      "refined_fuel": 6000000,
+      "electricity": 300000
+     },
+     "labor": {
+      "artisan": 1600,
+      "gentry": 80,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "machineworks",
+   "name": "机械厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 62560000,
+   "maint_li": 938400,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "water_power",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/machineworks_early.png",
+    "2": "assets/buildings/b07/machineworks_early.png",
+    "3": "assets/buildings/b07/machineworks_industrial.png",
+    "4": "assets/buildings/b07/machineworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "mach_water",
+     "name": "水力机械营造",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "machinery": 200000
+     },
+     "inp": {
+      "lumber": 2000000,
+      "tools": 2000000,
+      "pig_iron": 800000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 80
+     },
+     "water": true,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "mach_steam",
+     "name": "蒸汽机械厂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "machine_tools",
+     "out": {
+      "machinery": 900000
+     },
+     "inp": {
+      "steel": 2500000,
+      "tools": 1500000,
+      "power": 60000
+     },
+     "labor": {
+      "artisan": 3000,
+      "gentry": 60,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "mach_modern",
+     "name": "工业装备厂",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automation",
+     "out": {
+      "machinery": 2500000
+     },
+     "inp": {
+      "steel": 6000000,
+      "electric_motor": 400000,
+      "electricity": 300000
+     },
+     "labor": {
+      "artisan": 2600,
+      "gentry": 150,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "railworks",
+   "name": "钢轨厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 50560000,
+   "maint_li": 758400,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "railway",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b07/steel_industrial_v2.png",
+    "2": "assets/buildings/b07/steel_industrial_v2.png",
+    "3": "assets/buildings/b07/steel_industrial_v2.png",
+    "4": "assets/buildings/b07/steel_modern.png"
+   },
+   "methods": [
+    {
+     "id": "rail_rolling",
+     "name": "轧制钢轨",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "rail": 5000000
+     },
+     "inp": {
+      "steel": 5500000,
+      "power": 60000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "cannery",
+   "name": "罐头厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 43792000,
+   "maint_li": 656880,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "canning",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b05/foodpreserve_early.png",
+    "2": "assets/buildings/b05/foodpreserve_early.png",
+    "3": "assets/buildings/b05/foodpreserve_industrial.png",
+    "4": "assets/buildings/b05/foodpreserve_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "can_steam",
+     "name": "罐藏食品",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "preserved_food": 40000000
+     },
+     "inp": {
+      "fish": 12000000,
+      "meat": 8000000,
+      "steel": 400000,
+      "power": 20000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "can_modern",
+     "name": "冷冻食品",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {
+      "preserved_food": 120000000
+     },
+     "inp": {
+      "fish": 30000000,
+      "meat": 25000000,
+      "electricity": 150000,
+      "plastic": 300000
+     },
+     "labor": {
+      "artisan": 2200,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "bakery",
+   "name": "面包坊",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 17064000,
+   "maint_li": 255960,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "steam_engine",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b13/bakery_early.png",
+    "2": "assets/buildings/b13/bakery_early.png",
+    "3": "assets/buildings/b13/bakery_industrial.png",
+    "4": "assets/buildings/b13/bakery_modern.png"
+   },
+   "methods": [
+    {
+     "id": "bake_brick",
+     "name": "砖炉烘焙",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "bread": 30000000
+     },
+     "inp": {
+      "flour": 26000000,
+      "coal": 3000000
+     },
+     "labor": {
+      "artisan": 1500,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "bake_modern",
+     "name": "连续烘焙",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automation",
+     "out": {
+      "bread": 90000000
+     },
+     "inp": {
+      "flour": 76000000,
+      "electricity": 80000
+     },
+     "labor": {
+      "artisan": 1000,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "powerplant",
+   "name": "火电厂",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 37728000,
+   "maint_li": 565920,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "power_grid",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b02/power_modern.png",
+    "2": "assets/buildings/b02/power_modern.png",
+    "3": "assets/buildings/b02/power_modern.png",
+    "4": "assets/buildings/b02/power_modern.png"
+   },
+   "methods": [
+    {
+     "id": "power_coal",
+     "name": "燃煤发电",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "electricity": 1500000
+     },
+     "inp": {
+      "coal": 60000000,
+      "machinery": 8000
+     },
+     "labor": {
+      "artisan": 1200,
+      "gentry": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "power_oil",
+     "name": "燃油发电",
+     "era": 4,
+     "era_end": 4,
+     "tech": "petrochemistry",
+     "out": {
+      "electricity": 1500000
+     },
+     "inp": {
+      "refined_fuel": 12000000,
+      "machinery": 8000
+     },
+     "labor": {
+      "artisan": 1000,
+      "gentry": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "hydroplant",
+   "name": "水电站",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "hydro",
+   "coast": false,
+   "cost_li": 20640000,
+   "maint_li": 309600,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "power_grid",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/hydropower_early.png",
+    "2": "assets/buildings/b09/hydropower_early.png",
+    "3": "assets/buildings/b09/hydropower_industrial.png",
+    "4": "assets/buildings/b09/hydropower_modern.png"
+   },
+   "methods": [
+    {
+     "id": "hydro",
+     "name": "水力发电",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "electricity": 1400000
+     },
+     "inp": {
+      "machinery": 4000
+     },
+     "labor": {
+      "artisan": 500,
+      "gentry": 40
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "windfarm",
+   "name": "风电场",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 11076000,
+   "maint_li": 166140,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "solar_wind",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/windpower_early.png",
+    "2": "assets/buildings/b09/windpower_early.png",
+    "3": "assets/buildings/b09/windpower_industrial.png",
+    "4": "assets/buildings/b09/windpower_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "wind",
+     "name": "风力发电",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "electricity": 700000
+     },
+     "inp": {
+      "machinery": 3000
+     },
+     "labor": {
+      "artisan": 300,
+      "gentry": 30
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "refinery",
+   "name": "炼油厂",
+   "category": "workshop",
+   "sector": "energy",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 50496000,
+   "maint_li": 757440,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "petrochemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b09/refinery_early_v2.png",
+    "2": "assets/buildings/b09/refinery_early_v2.png",
+    "3": "assets/buildings/b09/refinery_industrial.png",
+    "4": "assets/buildings/b09/refinery_modern.png"
+   },
+   "methods": [
+    {
+     "id": "refine",
+     "name": "炼油",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "refined_fuel": 50000000,
+      "plastic": 2000000
+     },
+     "inp": {
+      "crude_oil": 60000000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 1500,
+      "gentry": 80,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "aluminumworks",
+   "name": "铝厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 48672000,
+   "maint_li": 730080,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "electrochemistry",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b14/copperworks_modern.png",
+    "2": "assets/buildings/b14/copperworks_modern.png",
+    "3": "assets/buildings/b14/copperworks_modern.png",
+    "4": "assets/buildings/b14/copperworks_modern.png"
+   },
+   "methods": [
+    {
+     "id": "alu_electro",
+     "name": "电解铝",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "aluminum": 6000000
+     },
+     "inp": {
+      "bauxite": 24000000,
+      "electricity": 900000
+     },
+     "labor": {
+      "artisan": 1500,
+      "gentry": 60,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "暂借炼铜厂现代期配图；需一张「电解铝厂」建筑图。"
+  },
+  {
+   "id": "electricalworks",
+   "name": "电气设备厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 75328000,
+   "maint_li": 1129920,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "power_grid",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b08/electrical_early.png",
+    "2": "assets/buildings/b08/electrical_early.png",
+    "3": "assets/buildings/b08/electrical_industrial.png",
+    "4": "assets/buildings/b08/electrical_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "elec_motor",
+     "name": "电机与变压器",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "electric_motor": 1200000,
+      "cable": 3000000
+     },
+     "inp": {
+      "copper": 3000000,
+      "steel": 1500000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 2500,
+      "gentry": 120,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "electronicsworks",
+   "name": "电子厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 93600000,
+   "maint_li": 1404000,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "electronics",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b08/electronics_early.png",
+    "2": "assets/buildings/b08/electronics_early.png",
+    "3": "assets/buildings/b08/electronics_industrial.png",
+    "4": "assets/buildings/b08/electronics_modern.png"
+   },
+   "methods": [
+    {
+     "id": "elec_parts",
+     "name": "电子元件",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "electronic_parts": 20000000
+     },
+     "inp": {
+      "copper": 800000,
+      "plastic": 1500000,
+      "chemicals": 600000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 2500,
+      "gentry": 200,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "elec_radio",
+     "name": "收音机与电视机",
+     "era": 4,
+     "era_end": 4,
+     "tech": "television",
+     "out": {
+      "radio": 30000000,
+      "television": 12000000
+     },
+     "inp": {
+      "electronic_parts": 18000000,
+      "plastic": 2000000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 3000,
+      "gentry": 150,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "elec_computer",
+     "name": "计算机",
+     "era": 4,
+     "era_end": 4,
+     "tech": "computing",
+     "out": {
+      "computer": 6000000
+     },
+     "inp": {
+      "electronic_parts": 30000000,
+      "plastic": 1000000,
+      "electricity": 300000
+     },
+     "labor": {
+      "artisan": 2000,
+      "gentry": 600,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "applianceworks",
+   "name": "家电厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 88264000,
+   "maint_li": 1323960,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "automation",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b08/electrical_modern_v2.png",
+    "2": "assets/buildings/b08/electrical_modern_v2.png",
+    "3": "assets/buildings/b08/electrical_modern_v2.png",
+    "4": "assets/buildings/b08/electrical_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "appliance",
+     "name": "家用电器",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "appliances": 30000000
+     },
+     "inp": {
+      "steel": 2500000,
+      "electric_motor": 900000,
+      "plastic": 1500000,
+      "electricity": 150000
+     },
+     "labor": {
+      "artisan": 3000,
+      "gentry": 100,
+      "merchant": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "暂借电气设备厂配图；需一张「家电装配厂」建筑图。"
+  },
+  {
+   "id": "autoworks",
+   "name": "汽车厂",
+   "category": "workshop",
+   "sector": "manu",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 150360000,
+   "maint_li": 2255400,
+   "build_q": 4,
+   "era": 4,
+   "era_end": 4,
+   "tech": "automobile",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b08/vehicle_early_v3.png",
+    "2": "assets/buildings/b08/vehicle_early_v3.png",
+    "3": "assets/buildings/b08/vehicle_industrial.png",
+    "4": "assets/buildings/b08/vehicle_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "auto_assembly",
+     "name": "汽车装配",
+     "era": 4,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "automobile": 4000000
+     },
+     "inp": {
+      "steel": 5000000,
+      "machinery": 200000,
+      "rubber": 1500000,
+      "electronic_parts": 1200000,
+      "refined_fuel": 500000,
+      "electricity": 200000
+     },
+     "labor": {
+      "artisan": 4000,
+      "gentry": 150,
+      "merchant": 150
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "market",
+   "name": "集市",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 59520000,
+   "maint_li": 892800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "commerce": 180000
+   },
+   "art": {
+    "1": "assets/buildings/b10/market_early.png",
+    "2": "assets/buildings/b10/market_early.png",
+    "3": "assets/buildings/b10/market_industrial.png",
+    "4": "assets/buildings/b10/market_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "market_trad",
+     "name": "集市",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "merchant": 2500,
+      "artisan": 800
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "market_hall",
+     "name": "商贸市场",
+     "era": 3,
+     "era_end": 4,
+     "tech": "railway",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "merchant": 2200,
+      "artisan": 600
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "market_modern",
+     "name": "城市批发中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automation",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "merchant": 1800,
+      "artisan": 400
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季可承接约 18 万两的零售额（商贸市场 ×2.5、批发中心 ×6）。商贸能力不足时商贩加价。"
+  },
+  {
+   "id": "carrier",
+   "name": "车马行",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 18400000,
+   "maint_li": 276000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "freight": 9000
+   },
+   "art": {
+    "1": "assets/buildings/b08/vehicle_early_v3.png",
+    "2": "assets/buildings/b08/vehicle_early_v3.png",
+    "3": "assets/buildings/b08/vehicle_industrial.png",
+    "4": "assets/buildings/b08/vehicle_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "carrier_animal",
+     "name": "车马运输",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "draft_animal": 30000
+     },
+     "labor": {
+      "artisan": 1000,
+      "peasant": 1000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "carrier_rail",
+     "name": "铁路货运",
+     "era": 3,
+     "era_end": 4,
+     "tech": "railway",
+     "out": {},
+     "inp": {
+      "coal": 4000000,
+      "rail": 40000
+     },
+     "labor": {
+      "artisan": 2500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "carrier_truck",
+     "name": "汽车货运",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automobile",
+     "out": {},
+     "inp": {
+      "refined_fuel": 3000000,
+      "automobile": 20000
+     },
+     "labor": {
+      "artisan": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季可收约 9 千两运费（铁路 ×4、汽车 ×8）。运力不足时物流成本上升。"
+  },
+  {
+   "id": "road",
+   "name": "驿路",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 19200000,
+   "maint_li": 288000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "logistics_cut": 15000
+   },
+   "art": {
+    "1": "assets/buildings/b03/transport_early.png",
+    "2": "assets/buildings/b03/transport_early.png",
+    "3": "assets/buildings/b03/transport_industrial.png",
+    "4": "assets/buildings/b03/transport_modern_v2.png"
+   },
+   "methods": [
+    {
+     "id": "road_post",
+     "name": "驿路",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "peasant": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "road_rail",
+     "name": "铁路干线",
+     "era": 3,
+     "era_end": 4,
+     "tech": "railway",
+     "out": {},
+     "inp": {
+      "rail": 60000
+     },
+     "labor": {
+      "artisan": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "road_highway",
+     "name": "公路网",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automobile",
+     "out": {},
+     "inp": {
+      "cement": 400000
+     },
+     "labor": {
+      "artisan": 1200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级把本地区的物流成本降低 1.5 个百分点（铁路 4 个、公路 5 个），有下限。"
+  },
+  {
+   "id": "canal",
+   "name": "运河",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 38400000,
+   "maint_li": 576000,
+   "build_q": 4,
+   "era": 2,
+   "era_end": 4,
+   "tech": "canal_engineering",
+   "effects": {
+    "logistics_cut": 30000
+   },
+   "art": {
+    "1": "assets/buildings/b12/canal_early.png",
+    "2": "assets/buildings/b12/canal_early.png",
+    "3": "assets/buildings/b12/canal_industrial.png",
+    "4": "assets/buildings/b12/canal_modern.png"
+   },
+   "methods": [
+    {
+     "id": "canal_lock",
+     "name": "纤道船闸",
+     "era": 2,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "peasant": 2000
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "canal_steam",
+     "name": "蒸汽拖船闸",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {},
+     "inp": {
+      "coal": 1000000
+     },
+     "labor": {
+      "artisan": 1200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "只能建在有河的地区；每级降低物流成本 3 个百分点。"
+  },
+  {
+   "id": "port",
+   "name": "港口",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": true,
+   "cost_li": 46080000,
+   "maint_li": 691200,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "sea_trade": 400000
+   },
+   "art": {
+    "1": "assets/buildings/b03/port_early.png",
+    "2": "assets/buildings/b03/port_early.png",
+    "3": "assets/buildings/b03/port_industrial.png",
+    "4": "assets/buildings/b03/port_modern.png"
+   },
+   "methods": [
+    {
+     "id": "port_wharf",
+     "name": "河港仓栈",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "ships": 2000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 300
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "port_trade",
+     "name": "商贸港区",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {},
+     "inp": {
+      "ships": 2000,
+      "coal": 1500000
+     },
+     "labor": {
+      "artisan": 2500,
+      "merchant": 400
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "port_modern",
+     "name": "机械化港区",
+     "era": 4,
+     "era_end": 4,
+     "tech": "automation",
+     "out": {},
+     "inp": {
+      "ships": 3000,
+      "electricity": 100000
+     },
+     "labor": {
+      "artisan": 2000,
+      "merchant": 400
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季可吞吐约 40 万两的海上贸易（第三时代 ×2.5，第四时代 ×6）。需要船只维持。"
+  },
+  {
+   "id": "caravanserai",
+   "name": "关津商栈",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 29568000,
+   "maint_li": 443520,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "land_trade": 200000,
+    "customs_eff": 20000
+   },
+   "art": {
+    "1": "assets/buildings/b16/customs_early.png",
+    "2": "assets/buildings/b16/customs_early.png",
+    "3": "assets/buildings/b16/customs_industrial.png",
+    "4": "assets/buildings/b16/customs_modern.png"
+   },
+   "methods": [
+    {
+     "id": "caravan",
+     "name": "关津商栈",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "draft_animal": 40000
+     },
+     "labor": {
+      "merchant": 400,
+      "artisan": 800,
+      "peasant": 800
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "customs_house",
+     "name": "海关验货仓",
+     "era": 3,
+     "era_end": 4,
+     "tech": "railway",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "merchant": 500,
+      "artisan": 800
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "customs_modern",
+     "name": "现代通关中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "computing",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "merchant": 400,
+      "gentry": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季可承接约 20 万两的陆路贸易，并提高关税征收率。"
+  },
+  {
+   "id": "irrigation",
+   "name": "水利",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 21120000,
+   "maint_li": 316800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "irrigate": 25
+   },
+   "art": {
+    "1": "assets/buildings/b01/irrigation_early.png",
+    "2": "assets/buildings/b01/irrigation_early.png",
+    "3": "assets/buildings/b01/irrigation_industrial.png",
+    "4": "assets/buildings/b01/irrigation_modern.png"
+   },
+   "methods": [
+    {
+     "id": "irrig_canal",
+     "name": "渠系水轮",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "peasant": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "irrig_pump",
+     "name": "工业泵站",
+     "era": 3,
+     "era_end": 4,
+     "tech": "steam_engine",
+     "out": {},
+     "inp": {
+      "coal": 800000
+     },
+     "labor": {
+      "artisan": 600
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "irrig_electric",
+     "name": "电动灌溉",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {},
+     "inp": {
+      "electricity": 60000
+     },
+     "labor": {
+      "artisan": 400
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级灌溉本地区 25 级农田（250 万亩），使其增产 25%（工业泵站 35%，电动 45%）。"
+  },
+  {
+   "id": "watermill",
+   "name": "水力动力坊",
+   "category": "infra",
+   "sector": "energy",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 11520000,
+   "maint_li": 172800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "waterpower": 6
+   },
+   "art": {
+    "1": "assets/buildings/b02/power_early.png",
+    "2": "assets/buildings/b02/power_early.png",
+    "3": "assets/buildings/b02/power_industrial.png",
+    "4": "assets/buildings/b02/power_modern.png"
+   },
+   "methods": [
+    {
+     "id": "waterwheel",
+     "name": "水轮",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "artisan": 600
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "waterwheel_iron",
+     "name": "铁制水轮",
+     "era": 2,
+     "era_end": 4,
+     "tech": "water_power",
+     "out": {},
+     "inp": {
+      "pig_iron": 100000
+     },
+     "labor": {
+      "artisan": 500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "只能建在有河的地区；每级为本地区 6 级「水力」作坊提供动力，使其满产。"
+  },
+  {
+   "id": "granary",
+   "name": "粮仓",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 2832000,
+   "maint_li": 42480,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "grain_store": 400000
+   },
+   "art": {
+    "1": "assets/buildings/b13/granary_early.png",
+    "2": "assets/buildings/b13/granary_early.png",
+    "3": "assets/buildings/b13/granary_industrial.png",
+    "4": "assets/buildings/b13/granary_modern.png"
+   },
+   "methods": [
+    {
+     "id": "granary_raised",
+     "name": "架空粮仓",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "peasant": 300,
+      "gentry": 20
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级可储存 40 万石口粮，平时收储、灾年开仓（配合「常平仓」政令）。"
+  },
+  {
+   "id": "surveyoffice",
+   "name": "丈量所",
+   "category": "infra",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 9000000,
+   "maint_li": 135000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "survey": 1
+   },
+   "art": {
+    "1": "assets/buildings/b16/survey_early_v2.png",
+    "2": "assets/buildings/b16/survey_early_v2.png",
+    "3": "assets/buildings/b16/survey_industrial.png",
+    "4": "assets/buildings/b16/survey_modern.png"
+   },
+   "methods": [
+    {
+     "id": "survey_trad",
+     "name": "丈量制图",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "gentry": 300,
+      "artisan": 200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级把本地区隐田每年的增长减少一半（两级以上基本止住）。"
+  },
+  {
+   "id": "school",
+   "name": "学舍",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 17600000,
+   "maint_li": 264000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "edu_seats": 20000
+   },
+   "art": {
+    "1": "assets/buildings/b01/education_early.png",
+    "2": "assets/buildings/b01/education_early.png",
+    "3": "assets/buildings/b01/education_industrial.png",
+    "4": "assets/buildings/b01/education_modern.png"
+   },
+   "methods": [
+    {
+     "id": "school_trad",
+     "name": "地方学舍",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "paper": 3000000,
+      "books": 300000
+     },
+     "labor": {
+      "gentry": 500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "school_modern",
+     "name": "新式学堂",
+     "era": 3,
+     "era_end": 4,
+     "tech": "public_education",
+     "out": {},
+     "inp": {
+      "paper": 6000000,
+      "books": 800000
+     },
+     "labor": {
+      "gentry": 700
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "school_research",
+     "name": "研究型大学",
+     "era": 4,
+     "era_end": 4,
+     "tech": "computing",
+     "out": {},
+     "inp": {
+      "paper": 8000000,
+      "books": 1200000,
+      "electricity": 60000
+     },
+     "labor": {
+      "gentry": 900
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季有 2 万个学位（新式学堂 3 万，大学 4 万）；提高识字率，培养士人，产生研究点。"
+  },
+  {
+   "id": "library",
+   "name": "藏书院",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 3696000,
+   "maint_li": 55440,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "research": 60,
+    "literacy": 5000
+   },
+   "art": {
+    "1": "assets/buildings/b10/library_early.png",
+    "2": "assets/buildings/b10/library_early.png",
+    "3": "assets/buildings/b10/library_industrial.png",
+    "4": "assets/buildings/b10/library_modern.png"
+   },
+   "methods": [
+    {
+     "id": "library_trad",
+     "name": "藏书院",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "books": 800000
+     },
+     "labor": {
+      "gentry": 120
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "library_public",
+     "name": "公共图书馆",
+     "era": 3,
+     "era_end": 4,
+     "tech": "public_education",
+     "out": {},
+     "inp": {
+      "books": 2000000
+     },
+     "labor": {
+      "gentry": 200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "library_modern",
+     "name": "知识资料中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "computing",
+     "out": {},
+     "inp": {
+      "books": 2000000,
+      "computer": 20000
+     },
+     "labor": {
+      "gentry": 250
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级每季 60 研究点（公共图书馆 120、资料中心 220），并提高本地区识字率。"
+  },
+  {
+   "id": "clinic",
+   "name": "医馆",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 9520000,
+   "maint_li": 142800,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "health": 400000
+   },
+   "art": {
+    "1": "assets/buildings/b04/health_early.png",
+    "2": "assets/buildings/b04/health_early.png",
+    "3": "assets/buildings/b04/health_industrial.png",
+    "4": "assets/buildings/b04/health_modern.png"
+   },
+   "methods": [
+    {
+     "id": "clinic_trad",
+     "name": "地方医馆",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "medicine": 6000000
+     },
+     "labor": {
+      "gentry": 200,
+      "artisan": 200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "clinic_hospital",
+     "name": "公共医院",
+     "era": 3,
+     "era_end": 4,
+     "tech": "public_health",
+     "out": {},
+     "inp": {
+      "medicine": 15000000
+     },
+     "labor": {
+      "gentry": 400,
+      "artisan": 400
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "clinic_modern",
+     "name": "区域医疗中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "antibiotics",
+     "out": {},
+     "inp": {
+      "medicine": 40000000,
+      "electricity": 60000
+     },
+     "labor": {
+      "gentry": 600,
+      "artisan": 500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级照顾约 40 万人（医院 80 万、医疗中心 150 万），降低死亡率。"
+  },
+  {
+   "id": "yamen",
+   "name": "衙署",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 52800000,
+   "maint_li": 792000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "admin": 1000000
+   },
+   "art": {
+    "1": "assets/buildings/b04/administration_early.png",
+    "2": "assets/buildings/b04/administration_early.png",
+    "3": "assets/buildings/b04/administration_industrial.png",
+    "4": "assets/buildings/b04/administration_modern.png"
+   },
+   "methods": [
+    {
+     "id": "yamen_trad",
+     "name": "地方衙署",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {
+      "paper": 4000000
+     },
+     "labor": {
+      "gentry": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "yamen_modern",
+     "name": "税关核算所",
+     "era": 3,
+     "era_end": 4,
+     "tech": "telegraph",
+     "out": {},
+     "inp": {
+      "paper": 8000000
+     },
+     "labor": {
+      "gentry": 1500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "yamen_digital",
+     "name": "现代行政中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "computing",
+     "out": {},
+     "inp": {
+      "paper": 6000000,
+      "computer": 30000
+     },
+     "labor": {
+      "gentry": 1200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级治理约 100 万人口（新式 200 万、现代 400 万）；治理不足时征收率下降、隐田增长加快。"
+  },
+  {
+   "id": "theater",
+   "name": "戏台",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 4400000,
+   "maint_li": 66000,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "amenity": 500000
+   },
+   "art": {
+    "1": "assets/buildings/b16/theater_early_v2.png",
+    "2": "assets/buildings/b16/theater_early_v2.png",
+    "3": "assets/buildings/b16/theater_industrial.png",
+    "4": "assets/buildings/b16/theater_modern.png"
+   },
+   "methods": [
+    {
+     "id": "theater_folk",
+     "name": "民间戏台",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "artisan": 300,
+      "merchant": 50
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "theater_city",
+     "name": "城市剧院",
+     "era": 3,
+     "era_end": 4,
+     "tech": "railway",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "artisan": 400,
+      "merchant": 80
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "theater_modern",
+     "name": "现代演艺中心",
+     "era": 4,
+     "era_end": 4,
+     "tech": "television",
+     "out": {},
+     "inp": {
+      "electricity": 40000
+     },
+     "labor": {
+      "artisan": 400,
+      "merchant": 100
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级让约 50 万人的民心略有提升。"
+  },
+  {
+   "id": "urbanworks",
+   "name": "城政",
+   "category": "public",
+   "sector": "serv",
+   "owners": [
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 13952000,
+   "maint_li": 209280,
+   "build_q": 4,
+   "era": 1,
+   "era_end": 4,
+   "tech": "",
+   "effects": {
+    "sanitation": 800000
+   },
+   "art": {
+    "1": "assets/buildings/b04/utility_early_v2.png",
+    "2": "assets/buildings/b04/utility_early_v2.png",
+    "3": "assets/buildings/b04/utility_industrial.png",
+    "4": "assets/buildings/b04/utility_modern.png"
+   },
+   "methods": [
+    {
+     "id": "urban_wells",
+     "name": "水井与排水",
+     "era": 1,
+     "era_end": 4,
+     "tech": "",
+     "out": {},
+     "inp": {},
+     "labor": {
+      "peasant": 800,
+      "artisan": 300
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "urban_sanitation",
+     "name": "供水卫生设施",
+     "era": 3,
+     "era_end": 4,
+     "tech": "public_health",
+     "out": {},
+     "inp": {
+      "coal": 500000,
+      "cement": 100000
+     },
+     "labor": {
+      "artisan": 600
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    },
+    {
+     "id": "urban_modern",
+     "name": "综合公用设施",
+     "era": 4,
+     "era_end": 4,
+     "tech": "power_grid",
+     "out": {},
+     "inp": {
+      "electricity": 80000,
+      "chemicals": 100000
+     },
+     "labor": {
+      "artisan": 500
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "note": ""
+    }
+   ],
+   "note": "每级覆盖约 80 万人（卫生设施 150 万、综合公用 300 万），降低疫病风险与死亡率。"
+  }
+ ],
+ "maint_mix": {
+  "lumber": 400000,
+  "bricks": 300000,
+  "tools": 300000
+ }
+}
