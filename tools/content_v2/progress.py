@@ -118,6 +118,12 @@ tech("computing", "计算机", 4, 220000, prereq=["electronics", "automation"], 
      effects=[mod("research_speed", 20)], desc="计算机、研究型大学、现代行政中心。")
 tech("solar_wind", "新能源", 4, 200000, prereq=["power_grid"], bg=["hydroplant"], desc="风电场。")
 
+# 研究造价的整体倍率（节奏：全托管·均衡大约 1680—1740 年进入第二时代，比世界晚几十年；
+# 用心经营的玩家能追上，甚至领先）。上面各项写的是相对大小，这里统一放大。
+COST_SCALE = {1: 2.8, 2: 3.4, 3: 2.5, 4: 2.5}
+for _t in T:
+    _t["cost"] = int(round(_t["cost"] * COST_SCALE[_t["era"]] / 1000.0)) * 1000
+
 # ════════════════════════════ 时代 ════════════════════════════════════════
 # need：进入该时代的门槛。techs 全部完成；buildings 按类型累计级数；social 为社会条件。
 ERAS = [
@@ -127,7 +133,7 @@ ERAS = [
          art="assets/eras/e01/era02_commerce.png",
          need={"techs": ["water_power", "bookkeeping", "banking"],
                "buildings": {"watermill": 8, "port": 8},
-               "social": {"literacy": 0.16}}),
+               "social": {"literacy": 0.18}}),
     dict(id=3, name="蒸汽与铁路", subtitle="煤铁、钢、机械、铁路与城市", art="assets/eras/e01/era04_industry.png",
          need={"techs": ["steam_engine", "coke_smelting"],
                "buildings": {"steamplant": 4, "cokeworks": 3},
@@ -320,7 +326,7 @@ def landmark(id, name, era, kind, cost, effects, desc, art, need=None, eraband=0
 LA = "assets/landmarks/"
 landmark("imperial_exam_hall", "贡院", 1, "achievement", 1_500_000,
          [mod("admin_eff", 10), mod("support", 5, "gentry"), mod("literacy_rate", 20)],
-         "科举考场。治理效率 +10%，士绅民心 +5，识字率增长加快。带时代标签：进入第三时代后十年内失效，可改为新式学堂或古迹。",
+         "科举考场。治理效率 +10%，士绅民心 +5，识字率增长加快。进入第三时代十年后作用消失，那时可以改成新式学堂，或留作古迹。",
          LA + "l02/landmark_imperial_exam_hall_v2.png", need={"techs": ["movable_type"], "literacy": 0.11}, eraband=1,
          convert={"to": "school", "levels": 3})
 landmark("astronomical_observatory", "古天象台", 1, "achievement", 1_000_000,

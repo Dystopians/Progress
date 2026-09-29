@@ -8,7 +8,7 @@ config_version=5
 config/name="经纬 Jingwei"
 config/description="国家发展模拟游戏 · 首版机制验证"
 config/version="0.1.0-dev"
-run/main_scene="res://ui/main.tscn"
+run/main_scene="res://ui/campaign/jc_main.tscn"
 config/features=PackedStringArray("4.7", "GDScript")
 
 [debug]

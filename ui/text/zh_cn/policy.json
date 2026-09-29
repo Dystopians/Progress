@@ -27,7 +27,7 @@
     "pol.f.target_t": "作用对象",
     "pol.f.exit_t": "退出规则",
     "pol.f.react_t": "政治反应",
-    "pol.f.fail_t": "可验证的失败路径",
+    "pol.f.fail_t": "可能在哪里失败",
     "pol.f.authority": "{auth}；执政席位不低于 {seats}；{window}；否决域集团：{veto}。",
     "pol.f.window_yes": "只能在预算审查季提交",
     "pol.f.window_no": "不受预算审查窗口限制",

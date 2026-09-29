@@ -5,6 +5,8 @@ extends RefCounted
 const PPM: int = 1_000_000
 ## 危机：严重度阈值（ppm）与终局窗口（季）
 const FINAL_WINDOW_Q: int = 8
+## 各时代普遍的死亡率下降（ppm，下标是时代）
+const ERA_DEATH_CUT: PackedInt64Array = [0, 0, 0, 0, 150_000]
 const INFLUENCE: Dictionary = {"peasant": 300_000, "artisan": 150_000, "merchant": 200_000, "gentry": 350_000}
 
 var ct: JCContent
@@ -120,6 +122,8 @@ func demography() -> void:
 			birth = JCMath.mulppm(birth, PPM - JCMath.mulppm(mini(idle_b, 400_000), 250_000))
 			birth = JCMath.mulppm(birth, 900_000 + JCMath.mulppm(mini(st.comfort[k], PPM), 100_000))
 			var death: int = 8_600
+			# 时代本身带来的普遍改善（吃得更好、常识与防疫）：不靠设施，第二时代起逐步降
+			death = JCMath.mulppm(death, PPM - ERA_DEATH_CUT[clampi(st.era, 1, 4)])
 			# 医药与卫生降死亡率：前现代效果有限（第一时代至多一成），到第四时代才显著
 			death = JCMath.mulppm(death, PPM - JCMath.mulppm(h, 50_000 + (st.era - 1) * 70_000) - JCMath.mulppm(s, 40_000 + (st.era - 1) * 30_000))
 			if f < 950_000:
@@ -261,7 +265,11 @@ func living_and_unrest() -> void:
 				acc += w * st.sat[k * N + n]
 			@warning_ignore("integer_division")
 			var ess: int = PPM if wsum <= 0 else acc / wsum
-			st.living[k] = JCMath.mulppm(ess, 600_000) + JCMath.mulppm(mini(1_250_000, st.comfort[k]), 400_000)
+			# 吃不饱的时候，日用再好也不算过得好：温饱不到九成五，日用那四成最多按温饱算
+			var com: int = mini(1_250_000, st.comfort[k])
+			if ess < 950_000:
+				com = mini(com, ess)
+			st.living[k] = JCMath.mulppm(ess, 600_000) + JCMath.mulppm(com, 400_000)
 			var t: int = 3 * maxi(0, expect - st.living[k])
 			var cid: String = ct.c_id[c]
 			# 税负：高于开局水平的部分，按阶层加怨

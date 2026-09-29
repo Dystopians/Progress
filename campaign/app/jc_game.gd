@@ -44,6 +44,7 @@ func new_game(seed: int, content: JCContent = null) -> bool:
 		return false
 	st = JCSim.new_state(ct, maxi(1, seed))
 	sim = JCSim.new(ct, st)
+	sim.warm_up()
 	steward = JCSteward.new()
 	advisors = JCAdvisors.new()
 	journal = []
@@ -301,9 +302,12 @@ func end_turn() -> Dictionary:
 func fast_forward(n: int) -> Dictionary:
 	var turns: int = 0
 	var stop: String = ""
+	var q0: int = st.q
+	var done: Array = []
 	for i: int in n:
 		var cr0: int = _crisis_sum()
 		var r: Dictionary = end_turn()
+		done.append_array(r.get("steward", []))
 		turns += 1
 		if not bool(r.get("ok", false)) or st.over == 1:
 			stop = "over"
@@ -317,6 +321,13 @@ func fast_forward(n: int) -> Dictionary:
 		if _era_changed(r):
 			stop = "era"
 			break
+	# 快进的回执：把这几季的纪事与托管代办合在一起
+	var notes: Array = []
+	for e: Dictionary in st.chron:
+		if int(e["q"]) >= q0:
+			notes.append(e)
+	last_receipt = {"ok": st.over == 0, "q_from": q0, "q_to": st.q, "notes": notes, "steward": done,
+			"over": st.over == 1, "reason": String(last_receipt.get("reason", "")), "stop": stop, "turns": turns}
 	return {"turns": turns, "stop": stop}
 
 
@@ -411,6 +422,31 @@ func name_of(kind: String, id: String) -> String:
 	return id
 
 
+## 政令某一档的名字（分档政令）；开关与运动类返回空串。
+func decree_level_name(id: String, lvl: int) -> String:
+	if ct == null:
+		return ""
+	var d: int = int(ct.didx.get(id, -1))
+	if d < 0 or String(ct.decrees[d].get("kind", "toggle")) != "level":
+		return ""
+	var lv: Array = ct.decrees[d].get("levels", [])
+	return String(lv[lvl]) if lvl >= 0 and lvl < lv.size() else ""
+
+
+## 某一堆建筑（按编号）是什么、在哪：{building, region}；找不到返回空字典。
+func stack_info(uid: int) -> Dictionary:
+	if not is_ready():
+		return {}
+	var i: int = st.stack_of_uid(uid)
+	if i < 0:
+		return {}
+	return {"building": ct.b_id[st.s_b[i]], "region": ct.r_id[st.s_region[i]]}
+
+
+func is_class_id(id: String) -> bool:
+	return ct != null and ct.cidx.has(id)
+
+
 ## 顶栏用的概况。
 func status() -> Dictionary:
 	if not is_ready():
@@ -422,3 +458,13 @@ func status() -> Dictionary:
 			"proposals": proposals.size(), "over": st.over == 1, "over_reason": st.over_reason,
 			"pop": int(st.last.get("pop", 0)), "gdp": int(st.last.get("gdp", 0)), "living": int(st.last.get("living", 0)),
 			"unemp": int(st.last.get("unemp_ppm", 0)), "prestige": st.prestige, "orders": turn_orders().size()}
+
+
+## 界面视图（懒建）。
+var _views: JCViews = null
+
+
+func views() -> JCViews:
+	if _views == null:
+		_views = JCViews.new(self)
+	return _views

@@ -5,6 +5,16 @@ extends RefCounted
 const PPM: int = 1_000_000
 ## 民间投资：每季动用可投资闲钱的比例、年化回报门槛、每季至多新开几项
 const INVEST_RATE_PPM: int = 80_000
+## 出资方（s_fund）：官府、民间、官府出钱的合并改造（七折）
+const FUND_GOV: int = 0
+const FUND_PRIVATE: int = 1
+const FUND_MERGE: int = 2
+const MERGE_PPM: int = 700_000
+## 渐进改造：同一地区同类建筑同时在改的不超过这个比例；大堆每次只切出四分之一去改
+const UPGRADE_SHARE_MAX: int = 250_000
+## 省人的改造：新做法每级少用两成以上的人，而当地这些人的失业已过四分之一，就缓一缓
+const LABOR_CUT_PPM: int = 200_000
+const LABOR_HOLD_UNEMP: int = 250_000
 ## 每季至多几处农田改种
 const MAX_SWITCH: int = 3
 const HURDLE_PPM: int = 100_000
@@ -205,40 +215,63 @@ func start_upgrade(i: int, m: int) -> void:
 	st.s_fund[i] = 0 if st.s_owner[i] == JCContent.OWNER_GOV else 1
 
 
-## 合并：同地区同类型、同所有者的几堆过时建筑合成一堆新式的，造价打七折。返回新堆行号或 −1。
+## 合并改造：同地区、同类型、同所有者里用旧做法的几处（至少两处）合成一处，改用新法，造价打七折，由官府出钱。
+## 已经是新做法的不动（不让它们白白再付一次改造钱，也不让旧的借它们免费变新）。返回合并后那一处的行号或 −1。
 func consolidate(b: int, r: int, owner: int) -> int:
-	var rows: PackedInt64Array = PackedInt64Array()
-	var total: int = 0
-	var target: int = best_method(b)
-	for i: int in st.stack_count():
-		if st.s_region[i] == r and st.s_b[i] == b and st.s_owner[i] == owner and st.s_status[i] != JCState.ST_NEW \
-				and st.s_pending[i] == 0 and st.s_status[i] != JCState.ST_UPGRADE:
-			if ct.b_cat[b] == JCContent.CAT_FARM and not _same_crop(st.s_m[i], target):
-				continue
-			rows.append(i)
-			total += st.s_level[i]
-	if rows.size() < 1 or total <= 0:
+	var rows: PackedInt64Array = _merge_rows(b, r, owner)
+	if rows.size() < 2:
 		return -1
 	var keep: int = rows[0]
+	var total: int = 0
+	for i: int in rows:
+		total += st.s_level[i]
 	for k: int in range(1, rows.size()):
 		st.s_level[rows[k]] = 0
 	st.s_level[keep] = total
-	st.s_status[keep] = JCState.ST_ACTIVE
-	if target != st.s_m[keep]:
-		start_upgrade(keep, target)
+	start_upgrade(keep, best_method(b))
+	st.s_fund[keep] = FUND_MERGE
 	return keep
 
 
+## 能一起合并改造的几处：在开工、没有在建或在改、做法比眼下最好的旧（农田只算同一作物）。
+func _merge_rows(b: int, r: int, owner: int) -> PackedInt64Array:
+	var target: int = best_method(b)
+	var out: PackedInt64Array = PackedInt64Array()
+	for i: int in st.stack_count():
+		if st.s_region[i] != r or st.s_b[i] != b or st.s_owner[i] != owner or st.s_level[i] <= 0:
+			continue
+		if st.s_status[i] != JCState.ST_ACTIVE or st.s_pending[i] > 0 or st.s_m[i] == target:
+			continue
+		if not is_newer(st.s_m[i], target):
+			continue
+		if ct.b_cat[b] == JCContent.CAT_FARM and not _same_crop(st.s_m[i], target):
+			continue
+		out.append(i)
+	return out
+
+
+## 合并改造的造价（七折）；不够两处返回 0。
 func consolidate_cost(b: int, r: int, owner: int) -> int:
+	var rows: PackedInt64Array = _merge_rows(b, r, owner)
+	if rows.size() < 2:
+		return 0
 	var target: int = best_method(b)
 	var cost: int = 0
-	for i: int in st.stack_count():
-		if st.s_region[i] == r and st.s_b[i] == b and st.s_owner[i] == owner and st.s_m[i] != target \
-				and st.s_status[i] == JCState.ST_ACTIVE:
-			if ct.b_cat[b] == JCContent.CAT_FARM and not _same_crop(st.s_m[i], target):
-				continue
-			cost += upgrade_cost(i, target)
-	return JCMath.mulppm(cost, 700_000)
+	for i: int in rows:
+		cost += upgrade_cost(i, target)
+	return JCMath.mulppm(cost, MERGE_PPM)
+
+
+## 某一处在建或在改时，这一季该付的总造价（合并改造按七折）。
+func job_total(i: int) -> int:
+	var total: int = 0
+	if st.s_status[i] == JCState.ST_UPGRADE and st.s_target[i] >= 0:
+		total = upgrade_cost(i, st.s_target[i])
+		if st.s_fund[i] == FUND_MERGE:
+			total = JCMath.mulppm(total, MERGE_PPM)
+	elif st.s_pending[i] > 0:
+		total = level_cost(st.s_b[i], st.s_m[i], st.s_owner[i] == JCContent.OWNER_GOV) * st.s_pending[i]
+	return total
 
 
 func demolish(i: int, levels: int) -> int:
@@ -258,16 +291,11 @@ func plan_jobs() -> void:
 		var upgrading: bool = st.s_status[i] == JCState.ST_UPGRADE
 		if not building and not upgrading:
 			continue
-		var b: int = st.s_b[i]
-		var total: int
-		if upgrading:
-			total = upgrade_cost(i, st.s_target[i])
-		else:
-			total = level_cost(b, st.s_m[i], st.s_owner[i] == JCContent.OWNER_GOV) * st.s_pending[i]
+		var total: int = job_total(i)
 		var needq: int = maxi(1, st.s_needq[i])
 		@warning_ignore("integer_division")
 		var per_q: int = total / needq
-		var gov: bool = st.s_fund[i] == 0
+		var gov: bool = st.s_fund[i] != FUND_PRIVATE
 		var cap: int = gov_left if gov else priv_left
 		var v: int = mini(per_q, cap)
 		if gov:
@@ -501,12 +529,15 @@ func private_invest() -> void:
 				var roi: int = _roi(b, m, r)
 				if roi > HURDLE_PPM:
 					cands.append([roi, b, m, r, 0])
-	# 升级候选
+	# 升级候选（渐进：同类在改的不过四分之一；省人的改造在失业多时缓一缓）
+	var counts: Dictionary = upgrade_counts()
 	for i2: int in st.stack_count():
 		if st.s_owner[i2] != JCContent.OWNER_PRIVATE or st.s_status[i2] != JCState.ST_ACTIVE or st.s_pending[i2] > 0:
 			continue
 		var nm: int = newer_method(i2)
 		if nm < 0 or not upgrade_sane(st.s_m[i2], nm, st.s_level[i2]):
+			continue
+		if not upgrade_room(counts, st.s_b[i2], st.s_region[i2]) or not labor_ok(i2, nm):
 			continue
 		var gain: int = level_profit(st.s_b[i2], nm, st.s_region[i2]) - level_profit(st.s_b[i2], st.s_m[i2], st.s_region[i2])
 		if gain <= 0:
@@ -582,9 +613,11 @@ func private_invest() -> void:
 				"from": ct.m_id[m5], "method": ct.m_id[best_m]})
 	cands.sort_custom(func(a: Array, b2: Array) -> bool:
 		return a[0] > b2[0] or (a[0] == b2[0] and (a[1] < b2[1] or (a[1] == b2[1] and a[3] < b2[3]))))
+	# 经济越往后越大：每进一个时代，民间每季多开三个项目；第三时代起回报高的项目一次建两级
+	var max_new: int = MAX_NEW + (st.era - 1) * 3
 	var started: int = 0
 	for c: Array in cands:
-		if started >= MAX_NEW or funds <= 0:
+		if started >= max_new or funds <= 0:
 			break
 		var b3: int = c[1]
 		var m3: int = c[2]
@@ -592,8 +625,19 @@ func private_invest() -> void:
 		var up: int = c[4]
 		if up > 0:
 			var i3: int = up - 1
+			if not upgrade_room(counts, b3, r3):
+				continue
+			var n3: int = upgrade_slice(st.s_level[i3])
+			if n3 < st.s_level[i3]:
+				var row3: int = split_off(i3, n3)
+				if row3 >= 0:
+					i3 = row3
 			var cost3: int = upgrade_cost(i3, m3)
 			start_upgrade(i3, m3)
+			var ck: String = "%d:%d" % [b3, r3]
+			var ce: Array = counts.get(ck, [0, 0])
+			ce[0] = int(ce[0]) + st.s_level[i3]
+			counts[ck] = ce
 			funds -= cost3
 			started += 1
 			st.note("invest", "chron.private_upgrade", {"building": ct.b_id[b3], "region": ct.r_id[r3],
@@ -611,8 +655,10 @@ func private_invest() -> void:
 			continue
 		room_used[-b3 - 1] = 1
 		var lc: int = level_cost(b3, m3, false)
-		start_build(b3, r3, JCContent.OWNER_PRIVATE, m3, 1)
-		funds -= lc
+		var two: bool = st.era >= 3 and int(c[0]) >= 300_000 and funds >= lc * 2 and check_site(b3, r3, 2) == ""
+		var lv3: int = 2 if two else 1
+		start_build(b3, r3, JCContent.OWNER_PRIVATE, m3, lv3)
+		funds -= lc * lv3
 		started += 1
 		st.note("invest", "chron.private_build", {"building": ct.b_id[b3], "region": ct.r_id[r3],
 				"method": ct.m_id[m3]})
@@ -692,6 +738,54 @@ func _glutted(g: int) -> bool:
 	var pp: int = JCMath.ratio_ppm(st.price[g], maxi(1, ct.g_base[g]))
 	var d: int = maxi(1, st.f_demand[g])
 	return pp < 850_000 and st.stock[g] > d
+
+
+## 同一地区同类建筑正在改造的级数与总级数：键 "b:r" → [在改, 总]。
+func upgrade_counts() -> Dictionary:
+	var out: Dictionary = {}
+	for i: int in st.stack_count():
+		var key: String = "%d:%d" % [st.s_b[i], st.s_region[i]]
+		var e: Array = out.get(key, [0, 0])
+		e[1] = int(e[1]) + st.s_level[i]
+		if st.s_status[i] == JCState.ST_UPGRADE:
+			e[0] = int(e[0]) + st.s_level[i]
+		out[key] = e
+	return out
+
+
+## 这一处现在改不改得：同类在改的是否已过四分之一。
+static func upgrade_room(counts: Dictionary, b: int, r: int) -> bool:
+	var e: Array = counts.get("%d:%d" % [b, r], [0, 0])
+	return int(e[1]) <= 0 or JCMath.ratio_ppm(int(e[0]), int(e[1])) < UPGRADE_SHARE_MAX
+
+
+## 省人的改造合不合时宜：新做法每级少用两成以上的人，而当地被裁的那些人里失业已过四分之一，就先缓。
+func labor_ok(i: int, nm: int) -> bool:
+	var C: int = ct.c_n
+	var m: int = st.s_m[i]
+	var r: int = st.s_region[i]
+	var old_l: int = 0
+	var new_l: int = 0
+	var worst: int = 0
+	for c: int in C:
+		var lo: int = ct.m_labor[m * C + c]
+		var ln: int = ct.m_labor[nm * C + c]
+		old_l += lo
+		new_l += ln
+		if lo > ln:
+			var k: int = r * C + c
+			var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+			if sup > 0:
+				worst = maxi(worst, JCMath.ratio_ppm(maxi(0, sup - st.employed[k]), sup))
+	if old_l <= 0 or JCMath.ratio_ppm(old_l - new_l, old_l) < LABOR_CUT_PPM:
+		return true
+	return worst < LABOR_HOLD_UNEMP
+
+
+## 一次改多少级：四级以下整堆改，更大的每次改四分之一（向上取整）。
+static func upgrade_slice(levels: int) -> int:
+	@warning_ignore("integer_division")
+	return levels if levels <= 4 else (levels + 3) / 4
 
 
 ## 从一堆里分出 n 级成为新的一堆（同地区、同建筑、同方法、同所有者），返回新堆行号；分不了返回 −1。

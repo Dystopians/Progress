@@ -372,6 +372,7 @@ func _need(building: String, r: int, pressure: int, key: String) -> Dictionary:
 ## 过时、值得改造的建筑堆：新方法按现价的增益与造价、年回报。
 func obsolete(limit: int = 8) -> Array:
 	var out: Array = []
+	var counts: Dictionary = sim.inv.upgrade_counts()
 	for i: int in st.stack_count():
 		if st.s_status[i] != JCState.ST_ACTIVE or st.s_pending[i] > 0 or st.s_level[i] <= 0:
 			continue
@@ -390,10 +391,14 @@ func obsolete(limit: int = 8) -> Array:
 		var cost: int = sim.inv.upgrade_cost(i, nm)
 		var roi: int = JCMath.ratio_ppm(gain * 4, maxi(cost, 1), 0)
 		var pen: int = sim.econ.obsolete_penalty(b, st.s_m[i], sim.econ.obs_rate(), sim.econ.obs_max())
+		var sl: int = JCInvest.upgrade_slice(st.s_level[i])
 		out.append({"i": i, "uid": st.s_uid[i], "b": b, "r": r, "building": ct.b_id[b], "region": ct.r_id[r],
 				"from": ct.m_id[st.s_m[i]], "to": ct.m_id[nm], "levels": st.s_level[i], "gain_q": gain,
 				"cost": cost, "roi_ppm": roi, "penalty_ppm": pen, "owner": "gov" if st.s_owner[i] == JCContent.OWNER_GOV else "private",
-				"cmd": {"kind": "upgrade", "uid": st.s_uid[i], "method": ct.m_id[nm]}})
+				"labor_ok": sim.inv.labor_ok(i, nm), "room": JCInvest.upgrade_room(counts, b, r), "slice": sl,
+				"slice_cost": JCMath.muldiv(cost, sl, maxi(1, st.s_level[i])),
+				"cmd": {"kind": "upgrade", "uid": st.s_uid[i], "method": ct.m_id[nm]},
+				"cmd_slice": {"kind": "upgrade", "uid": st.s_uid[i], "method": ct.m_id[nm], "levels": sl}})
 	out.sort_custom(func(a: Dictionary, b2: Dictionary) -> bool:
 		return int(a["roi_ppm"]) > int(b2["roi_ppm"]) or (int(a["roi_ppm"]) == int(b2["roi_ppm"]) and int(a["uid"]) < int(b2["uid"])))
 	return out.slice(0, limit)
@@ -443,6 +448,7 @@ func merge_candidates() -> Array:
 		if rows.size() < 2:
 			continue
 		var i0: int = int(rows[0])
+		var n_old: int = sim.inv._merge_rows(st.s_b[i0], st.s_region[i0], st.s_owner[i0]).size()
 		var b: int = st.s_b[i0]
 		if ct.b_cat[b] == JCContent.CAT_FARM:
 			continue
@@ -451,7 +457,7 @@ func merge_candidates() -> Array:
 		var cost: int = sim.inv.consolidate_cost(b, r, st.s_owner[i0])
 		if cost <= 0:
 			continue
-		out.append({"b": b, "r": r, "building": ct.b_id[b], "region": ct.r_id[r], "stacks": rows.size(), "cost": cost,
+		out.append({"b": b, "r": r, "building": ct.b_id[b], "region": ct.r_id[r], "stacks": n_old, "cost": cost,
 				"owner": owner, "cmd": {"kind": "consolidate", "building": ct.b_id[b], "region": ct.r_id[r], "owner": owner}})
 	return out
 
@@ -654,6 +660,16 @@ func _add_tag(tags: PackedStringArray, t: String) -> void:
 		tags.append(t)
 
 
+## 全国吃得最差的一组，口粮满足了几成（ppm）。
+func hunger_ppm() -> int:
+	var staple: int = int(ct.nidx.get("staple", 0))
+	var worst: int = PPM
+	for k: int in st.pop.size():
+		if st.pop[k] > 0:
+			worst = mini(worst, st.sat[k * ct.n_n + staple])
+	return worst
+
+
 ## 眼下最值得研究的一门（按取向）：下一时代的关键科技及其前置最优先，再看方向、背景加速与价钱。
 func best_research(stance: String) -> int:
 	var key_set: Dictionary = {}
@@ -670,6 +686,8 @@ func best_research(stance: String) -> int:
 		if b >= 0 and ct.b_tech[b] >= 0 and st.t_done[ct.b_tech[b]] != 1:
 			for p2: Variant in tech_path(ct.b_tech[b]):
 				key_set[int(p2)] = true
+	# 有人挨饿：不管取向，先研究增产粮食的
+	var hungry: bool = hunger_ppm() < 920_000
 	var best: int = -1
 	var best_score: int = -(1 << 62)
 	for t: int in ct.t_n:
@@ -698,6 +716,8 @@ func best_research(stance: String) -> int:
 					w += 1_000_000
 		if ct.t_key[t] == 1:
 			w += 300_000
+		if hungry and tags.has("agri"):
+			w += 3_000_000
 		score = JCMath.mulppm(score, w)
 		if score > best_score:
 			best_score = score

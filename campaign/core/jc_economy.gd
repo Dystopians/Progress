@@ -343,7 +343,7 @@ func _levels() -> void:
 			JCState.ST_MOTHBALL:
 				f = 0
 			JCState.ST_UPGRADE:
-				f = 500_000
+				f = 750_000
 			JCState.ST_NEW:
 				f = 0
 		var b: int = st.s_b[i]
@@ -626,6 +626,19 @@ func _obtainable(g: int) -> bool:
 	return _obt[g] == 1
 
 
+## 新时代的需要（用电、家电、出行……）：市面上有多少货，就先按多少来安排开支（取这项需要里供给最足的那样商品）；
+## 买不到的那部分钱留给别的需要，不至于全压进积蓄、让市面萧条。满足度与体面仍按全额算，缺货照样看得出来。
+func need_avail(n: int) -> int:
+	if ct.n_era[n] <= 1 or ct.n_ess[n] == 1:
+		return PPM
+	var best: int = 0
+	for g: int in ct.n_goods[n]:
+		if ct.g_era[g] > st.era or ct.g_era_end[g] + 1 < st.era:
+			continue
+		best = maxi(best, PPM if ct.g_era[g] <= 1 else _avail(g))
+	return best
+
+
 ## 某组某项需要的花费；mult 是已经换算好的伸缩倍数（ppm，必需品传 PPM）。
 func _need_cost(n: int, r: int, c: int, persons: int, mult: int) -> int:
 	var units: int = JCMath.mulppm(persons * ct.n_qty[n * C + c], mult)
@@ -696,6 +709,10 @@ func _hh_budgets() -> void:
 		if cap_commerce[r] > 0:
 			over = clampi(JCMath.ratio_ppm(retail, cap_commerce[r]), PPM, 2_500_000)
 		margin_r[r] = JCMath.mulppm(base_margin, over)
+	# 各项需要眼下市面上能满足几成（新时代的需要才打折）
+	var n_avail: PackedInt64Array = JCMath.zeros(N)
+	for n0: int in N:
+		n_avail[n0] = need_avail(n0) if ct.need_active(n0, st.era) else 0
 	for r2: int in R:
 		for c2: int in C:
 			var k: int = r2 * C + c2
@@ -707,7 +724,7 @@ func _hh_budgets() -> void:
 			for n: int in N:
 				if not ct.need_active(n, st.era):
 					continue
-				cost1[n] = _need_cost(n, r2, c2, st.pop[k], PPM)
+				cost1[n] = JCMath.mulppm(_need_cost(n, r2, c2, st.pop[k], PPM), n_avail[n])
 				if ct.n_ess[n] == 1:
 					ess_cost += cost1[n]
 			# 积蓄规则
@@ -740,6 +757,7 @@ func _hh_budgets() -> void:
 					continue
 				var units: int = need_units(k, n2)
 				need_ref[k * N + n2] = units
+				units = JCMath.mulppm(units, n_avail[n2])
 				if units <= 0:
 					continue
 				var frac: int = f_ess if ct.n_ess[n2] == 1 else f_non

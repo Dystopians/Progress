@@ -207,6 +207,17 @@ static func _seed_flows(ct: JCContent, st: JCState) -> void:
 
 
 # ════════════════════════════ 推进一季 ════════════════════════════════════
+## 开局预演：在开局年前一年的冬季静默结算一季，让玩家看到的第一季（开局年春）就有真实的产销、物价与统计，
+## 不是一排 0。日历因此从「开局年 − 1 年冬」起算；预演留下的纪事清掉。只在刚开局（第 0 季）时有效。
+func warm_up() -> void:
+	if st.q != 0:
+		return
+	st.start_year -= 1
+	st.q = 3
+	advance([])
+	st.chron.clear()
+
+
 func advance(cmds: Array) -> Dictionary:
 	last_error = ""
 	if st.over == 1:
@@ -247,6 +258,12 @@ func advance(cmds: Array) -> Dictionary:
 		last_error = chk
 		push_error("JCSim: " + chk)
 	st.q += 1
+	# 走完四百年：到终年（剧本的 end_year，默认 2000）春天，这一局圆满结束
+	if st.over == 0 and st.year() >= int(ct.scenario.get("end_year", 2000)):
+		st.over = 1
+		st.over_reason = "complete"
+		st.over_q = st.q
+		st.note("era", "chron.game_over", {"reason": "complete"})
 	return {"ok": chk == "", "reason": chk, "results": last_results}
 
 

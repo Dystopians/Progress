@@ -1,7 +1,7 @@
 ## v2 命令（docs/57 §11）：玩家与托管发出的每个动作都是一条命令，先查后办，被拒给出原因键。
 ## 命令格式：{"kind": 种类, ...参数, "source": "player" 或 "steward:<领域>"}
 ##   build        {building, region, owner: gov|private, method?, levels?}   新建（官府出资；private 表示招商、建成归民间）
-##   upgrade      {uid, method}                                            改造一堆（官府出资）
+##   upgrade      {uid, method, levels?}                                   改造一堆（官府出资；给 levels 就只切出这几级去改）
 ##   upgrade_all  {building, region: 地区或 "", owner?}                     同类过时建筑一起改造
 ##   consolidate  {building, region, owner?}                               合并同地区同类建筑并改造，打七折
 ##   mothball     {uid} / reopen {uid} / demolish {uid, levels}            官办建筑的封存、重开、拆除
@@ -152,8 +152,15 @@ func _upgrade(c: Dictionary, doit: bool) -> Dictionary:
 		return _no("reason.bad_method")
 	if not inv.method_unlocked(m):
 		return _no("reason.tech_missing")
+	var lv: int = int(c.get("levels", 0))
 	var cost: int = inv.upgrade_cost(i, m)
+	if lv > 0 and lv < st.s_level[i]:
+		cost = JCMath.muldiv(cost, lv, st.s_level[i])
 	if doit:
+		if lv > 0 and lv < st.s_level[i]:
+			var row: int = inv.split_off(i, lv)
+			if row >= 0:
+				i = row
 		inv.start_upgrade(i, m)
 		st.s_fund[i] = 0
 		st.note("build", "chron.upgrade_order", {"building": ct.b_id[st.s_b[i]], "region": ct.r_id[st.s_region[i]],
@@ -196,18 +203,13 @@ func _consolidate(c: Dictionary, doit: bool) -> Dictionary:
 	if b < 0 or r < 0:
 		return _no("reason.bad_command")
 	var owner: int = JCContent.OWNER_GOV if String(c.get("owner", "gov")) == "gov" else JCContent.OWNER_PRIVATE
-	var n: int = 0
-	for i: int in st.stack_count():
-		if st.s_b[i] == b and st.s_region[i] == r and st.s_owner[i] == owner and st.s_status[i] == JCState.ST_ACTIVE:
-			n += 1
-	if n < 2 and inv.consolidate_cost(b, r, owner) <= 0:
-		return _no("reason.nothing_to_merge")
 	var cost: int = inv.consolidate_cost(b, r, owner)
+	if cost <= 0:
+		return _no("reason.nothing_to_merge")
 	if doit:
 		var keep: int = inv.consolidate(b, r, owner)
 		if keep < 0:
 			return _no("reason.nothing_to_merge")
-		st.s_fund[keep] = 0
 		st.note("build", "chron.consolidate", {"building": ct.b_id[b], "region": ct.r_id[r],
 				"source": String(c.get("source", "player"))})
 	return _ok({"cost": cost})

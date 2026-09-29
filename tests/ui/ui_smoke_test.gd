@@ -789,6 +789,12 @@ func test_all_overlays_build_without_missing_text() -> void:
 func test_literal_text_keys_exist() -> void:
 	var files: PackedStringArray = PackedStringArray()
 	_gd_files("res://ui", files)
+	# v2 界面（ui/campaign）的键规则不同（引擎键加 jc. 前缀），由 tests/ui/campaign_v2_ui_test.gd 检查
+	var v1: PackedStringArray = PackedStringArray()
+	for fp: String in files:
+		if not fp.begins_with("res://ui/campaign/"):
+			v1.append(fp)
+	files = v1
 	var rx_lit: RegEx = RegEx.create_from_string("\"([a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+)\"")
 	var skip_prefix: PackedStringArray = ["state.", "flow.", "derived.", "param.", "politics.", "meta.", "ev.", "overlay.",
 			"page.", "content.", "account.", "blk.", "det.", "gap.", "note.", "series.", "debug.", "res.", "user.", "onb.q"]

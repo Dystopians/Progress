@@ -48,6 +48,14 @@ func _init() -> void:
 			print("终局：%s（%d 年）" % [game.st.over_reason, game.st.year()])
 			break
 	print("用时 %.1f 秒" % [(Time.get_ticks_msec() - t0) / 1000.0])
+	# 时代时间表：本国与世界各在哪一年进入第 2—4 时代
+	var line: String = "时代：本国"
+	for e: int in range(2, 5):
+		line += " %d@%s" % [e, str(game.st.start_year + (game.st.era_q[e] >> 2)) if game.st.era_q[e] >= 0 else "—"]
+	line += "　世界"
+	for e2: int in range(2, 5):
+		line += " %d@%s" % [e2, str(game.st.start_year + (game.st.world_era_q[e2] >> 2)) if game.st.world_era_q[e2] >= 0 else "—"]
+	print(line)
 	if a.has("log"):
 		for e: Dictionary in game.steward.records.slice(maxi(0, game.steward.records.size() - 80)):
 			print("  %d %s %s %s %s" % [int(e["q"]), e["domain"], e["reason"], "成" if bool(e["ok"]) else "未成：" + String(e["why"]),

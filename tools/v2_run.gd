@@ -21,6 +21,7 @@ func _init() -> void:
 		return
 	var st: JCState = JCSim.new_state(ct, seed)
 	var sim: JCSim = JCSim.new(ct, st)
+	sim.warm_up()
 	var t0: int = Time.get_ticks_msec()
 	print("年份    人口万  产值万两 失业%  生活%  国库万  债务万  收入万  支出万  时代 世界 合法% 危机  稻米 麦粟 布匹 盐")
 	for q: int in n_q:

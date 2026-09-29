@@ -578,7 +578,7 @@ building("aluminumworks", "铝厂", "workshop", "manu", capital=2.4, era=4, tech
               "3": ART + "b14/copperworks_modern.png", "4": ART + "b14/copperworks_modern.png"},
          methods=[method("alu_electro", "电解铝", era=4, out={"aluminum": 6000},
                          inp={"bauxite": 24000, "electricity": 900}, labor={AR: 1500, GE: 60, M: 60})],
-         note="暂借炼铜厂现代期配图；需一张「电解铝厂」建筑图。")
+         note="用电把铝土炼成铝，一级每季要耗不少电。")
 
 building("electricalworks", "电气设备厂", "workshop", "manu", capital=2.2, era=4, tech="power_grid",
          art=art3("b08", "electrical", modern=ART + "b08/electrical_modern_v2.png"),
@@ -605,7 +605,7 @@ building("applianceworks", "家电厂", "workshop", "manu", capital=2.2, era=4, 
                          inp={"steel": 2000, "aluminum": 600, "electric_motor": 900, "plastic": 1500,
                               "electricity": 150},
                          labor={AR: 3000, GE: 100, M: 120})],
-         note="暂借电气设备厂配图；需一张「家电装配厂」建筑图。")
+         note="把钢、铝、电机和塑料装成电风扇、收音机、冰箱这些家用电器。")
 
 building("autoworks", "汽车厂", "workshop", "manu", capital=2.8, era=4, tech="automobile",
          art=art3("b08", "vehicle", early=ART + "b08/vehicle_early_v3.png", modern=ART + "b08/vehicle_modern_v2.png"),

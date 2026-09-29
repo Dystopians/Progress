@@ -154,14 +154,10 @@ func committed(sim: JCSim) -> int:
 	var st: JCState = sim.st
 	var tot: int = 0
 	for i: int in st.stack_count():
-		if st.s_fund[i] != 0:
+		if st.s_fund[i] == JCInvest.FUND_PRIVATE:
 			continue
-		var total: int = 0
-		if st.s_status[i] == JCState.ST_UPGRADE and st.s_target[i] >= 0:
-			total = sim.inv.upgrade_cost(i, st.s_target[i])
-		elif st.s_pending[i] > 0:
-			total = sim.inv.level_cost(st.s_b[i], st.s_m[i], st.s_owner[i] == JCContent.OWNER_GOV) * st.s_pending[i]
-		else:
+		var total: int = sim.inv.job_total(i)
+		if total <= 0:
 			continue
 		var needq: int = maxi(1, st.s_needq[i])
 		var left: int = maxi(0, needq * PPM - st.s_prog[i])
@@ -199,6 +195,9 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 	if budget <= 0:
 		return []
 	var cands: Array = []
+	# 有人挨饿：不管取向，补口粮缺口与兴修水利排在最前
+	var hungry: bool = an.hunger_ppm() < 920_000
+	var staple_goods: PackedInt64Array = ct.n_goods[int(ct.nidx.get("staple", 0))]
 	# 1) 进入下一时代的标志建筑
 	var ep: Dictionary = an.era_plan()
 	for it: Dictionary in ep.get("items", []):
@@ -225,6 +224,8 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 			w2 += 1_000_000
 		if s == "growth":
 			w2 += int(fix["roi_ppm"])
+		if hungry and staple_goods.has(g):
+			w2 += 3_000_000
 		cands.append([w2, fix["cmd"], "stw.build.shortage", {"good": ct.g_id[g], "building": fix["building"],
 				"region": fix["region"], "gap_ppm": int(sh["gap_ppm"])}, int(fix["cost"])])
 	# 3) 设施吃紧
@@ -235,6 +236,8 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 			w3 += 1_000_000
 		if s == "growth" and ["market", "carrier", "port", "road", "caravanserai"].has(bid):
 			w3 += 800_000
+		if hungry and (bid == "irrigation" or bid == "granary"):
+			w3 += 2_000_000
 		cands.append([w3, nd["cmd"], "stw.build.infra", {"building": bid, "region": nd["region"],
 				"need": String(nd["key"])}, int(nd["cost"])])
 	# 4) 失业重的地区：在当地开能用这些闲人的作坊
@@ -351,19 +354,20 @@ func _modernize(sim: JCSim, an: JCAnalyst) -> Array:
 		used += int(mc["cost"])
 		out.append(_p("modernize", mc["cmd"], "stw.mod.merge", {"building": mc["building"], "region": mc["region"],
 				"count": int(mc["stacks"]), "cost_li": int(mc["cost"]), "_cool": key, "_cool_q": 8}))
-	for ob: Dictionary in an.obsolete(12):
+	for ob: Dictionary in an.obsolete(24):
 		if out.size() >= MAX_MOD_Q:
 			break
-		if int(ob["roi_ppm"]) < min_roi:
+		if int(ob["roi_ppm"]) < min_roi or not bool(ob["labor_ok"]) or not bool(ob["room"]):
 			continue
 		var key2: String = "up:%d" % int(ob["uid"])
-		if _cooling(key2, st.q) or used + int(ob["cost"]) > budget:
+		var cost2: int = int(ob["slice_cost"])
+		if _cooling(key2, st.q) or used + cost2 > budget:
 			continue
-		if not bool(sim.cmd.check(ob["cmd"]).get("ok", false)):
+		if not bool(sim.cmd.check(ob["cmd_slice"]).get("ok", false)):
 			continue
-		used += int(ob["cost"])
-		out.append(_p("modernize", ob["cmd"], "stw.mod.upgrade", {"building": ob["building"], "region": ob["region"],
-				"method": ob["to"], "roi_ppm": int(ob["roi_ppm"]), "cost_li": int(ob["cost"]), "_cool": key2, "_cool_q": 8}))
+		used += cost2
+		out.append(_p("modernize", ob["cmd_slice"], "stw.mod.upgrade", {"building": ob["building"], "region": ob["region"],
+				"method": ob["to"], "roi_ppm": int(ob["roi_ppm"]), "cost_li": cost2, "_cool": key2, "_cool_q": 4}))
 	if s != "all":
 		for lo: Dictionary in an.losers():
 			if out.size() >= MAX_MOD_Q + 1:
@@ -456,6 +460,14 @@ func _fiscal(sim: JCSim, an: JCAnalyst) -> Array:
 		if bool(sim.cmd.check(cmd).get("ok", false)) and st.treasury > reg * 4:
 			out.append(_p("fiscal", cmd, "stw.fiscal.survey", {"hidden_ppm": int(f["hidden_ppm"]),
 					"_cool": "decree:land_survey", "_cool_q": 12}))
+	# 缺粮：招民垦荒，多开旱地（运动八季，冷却一过再看）
+	var worst_food: int = an.hunger_ppm()
+	var rc: int = int(ct.didx.get("reclamation", -1))
+	if worst_food < 920_000 and rc >= 0 and st.d_level[rc] == 0 and not _cooling("decree:reclamation", q):
+		var cmdr2: Dictionary = {"kind": "decree", "decree": "reclamation", "level": 1}
+		if bool(sim.cmd.check(cmdr2).get("ok", false)) and st.treasury > reg * 2:
+			out.append(_p("fiscal", cmdr2, "stw.fiscal.reclaim", {"hunger_ppm": worst_food, "_cool": "decree:reclamation",
+					"_cool_q": 16}))
 	# 常平仓
 	var gn: int = int(ct.didx.get("ever_normal_granary", -1))
 	if gn >= 0 and st.d_level[gn] == 0 and not _cooling("decree:granary", q):
@@ -514,7 +526,7 @@ func _trade(sim: JCSim, an: JCAnalyst) -> Array:
 		if st.d_level[sp] != lvl and not _cooling("decree:sea_policy", st.q):
 			var cmd: Dictionary = {"kind": "decree", "decree": "sea_policy", "level": lvl}
 			if bool(sim.cmd.check(cmd).get("ok", false)):
-				out.append(_p("trade", cmd, "stw.trade.sea_policy", {"level": lvl, "_cool": "decree:sea_policy", "_cool_q": 16}))
+				out.append(_p("trade", cmd, "stw.trade.sea_policy", {"decree": "sea_policy", "level": lvl, "_cool": "decree:sea_policy", "_cool_q": 16}))
 	return out
 
 

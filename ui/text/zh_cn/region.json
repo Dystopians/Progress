@@ -20,7 +20,7 @@
     "rg.acct.line": "实记 · {quarter}本区居民工资收入 {wages}、转移收入 {transfers}、个人所得税 {tax}、住房支出 {housing}。 ▸{citation}",
 
     "rg.ladder.title": "约束阶梯 · 实际产出取五项最小值",
-    "rg.ladder.head": "推算 · {region}{sector}：五项约束换算为同一产品口径（{unit}/季）后比较。",
+    "rg.ladder.head": "推算 · {region}{sector}：五项约束换算为同一种产品单位（{unit}/季）后比较。",
     "rg.ladder.cold.why": "开账状态：约束阶梯需要一次结算的产出计划与投入数据。",
     "rg.ladder.cold.when": "第一季结算后显示计划、产能、劳动、电力、材料五根横条与紧约束标记。",
     "rg.ladder.cold.rule": "规则：Q_actual = min(Q_plan, Q_capacity, Q_labor, Q_energy, Q_materials)。",
@@ -41,7 +41,7 @@
     "rg.q1.col.output": "实际产出",
     "rg.q1.col.va": "增加值 U（基年价）",
     "rg.q1.col.binding": "紧约束（算）",
-    "rg.q1.note": "产出单位为各部门的产品口径（Q_农/Q_制/Q_能/Q_服）每季；增加值按第 1 年价格。",
+    "rg.q1.note": "产出单位为各部门的产品单位（Q_农/Q_制/Q_能/Q_服）每季；增加值按第 1 年价格。",
 
     "rg.q2": "人群与就业",
     "rg.q2.col.group": "年龄·技能",

@@ -1,0 +1,226 @@
+## 四百年战役 v2（docs/57、docs/58）：开局预演、守恒与确定性、存读档与改内容后的重演、撤回、托管与顾问、
+## 合并改造（至少两处旧的、七折、官府出钱）、切片改造、引擎文案齐全、走到终年圆满结束。
+extends JWTest
+
+const SEED: int = 7
+const SAVE: String = "user://jc_saves/_test_v2.json"
+
+
+func _new(seed_v: int = SEED) -> JCGame:
+	var g: JCGame = JCGame.new()
+	g.autosave = false
+	check(g.new_game(seed_v), "开局")
+	return g
+
+
+func _state_json(g: JCGame) -> String:
+	return JSON.stringify(g.st.to_dict())
+
+
+func test_warm_up_opens_in_spring_with_real_numbers() -> void:
+	var g: JCGame = _new()
+	eq_int(g.st.year(), 1600, "开局是 1600 年")
+	eq_int(g.st.season(), 0, "开局是春季")
+	ge_int(int(g.st.last.get("pop", 0)), 10_000_000, "第一季就有人口统计")
+	ge_int(int(g.st.last.get("gdp", 0)), 1, "第一季就有产值")
+	ge_int(g.st.points, 1, "第一季就有研究点")
+	eq_int(g.st.chron.size(), 0, "预演不留纪事")
+
+
+func test_quarters_conserve_money_and_are_deterministic() -> void:
+	var a: JCGame = _new()
+	var b: JCGame = _new()
+	for i: int in 12:
+		var ra: Dictionary = a.end_turn()
+		var rb: Dictionary = b.end_turn()
+		check(bool(ra.get("ok", false)), "第 %d 季结算通过自检（含钱的守恒）：%s" % [i, String(ra.get("reason", ""))])
+		check(bool(rb.get("ok", false)), "对照局第 %d 季" % i)
+	eq_str(_state_json(a), _state_json(b), "同一种子、同样的命令，状态逐位相同")
+
+
+func test_undo_save_load_and_replay_after_content_change() -> void:
+	var g: JCGame = _new()
+	var pend0: int = 0
+	for i: int in g.st.stack_count():
+		pend0 += g.st.s_pending[i]
+	var r: Dictionary = g.order({"kind": "build", "building": "market", "region": "zhongzhou", "owner": "gov"})
+	check(bool(r.get("ok", false)), "下令营造集市：" + String(r.get("reason", "")))
+	check(g.undo_last(), "本季可以撤回")
+	var pend1: int = 0
+	for i2: int in g.st.stack_count():
+		pend1 += g.st.s_pending[i2]
+	eq_int(pend1, pend0, "撤回后在建级数回到原样")
+	eq_int(g.turn_orders().size(), 0, "撤回后本季没有命令")
+	check(bool(g.order({"kind": "build", "building": "market", "region": "zhongzhou", "owner": "gov"}).get("ok", false)), "再下一次")
+	check(bool(g.order({"kind": "research", "tech": "bookkeeping"}).get("ok", false)), "定研究方向")
+	for q: int in 4:
+		g.end_turn()
+	check(g.save_to(SAVE), "存档")
+	var h: JCGame = JCGame.new()
+	h.autosave = false
+	check(h.load_from(SAVE), "读档")
+	eq_str(_state_json(h), _state_json(g), "读回来的状态与存档时一样")
+	# 内容改过（指纹不符）：按命令簿从种子重演，结果必须一样
+	var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(SAVE))
+	d["state"]["content_hash"] = "changed"
+	var f: FileAccess = FileAccess.open(SAVE, FileAccess.WRITE)
+	f.store_string(JSON.stringify(d))
+	f.close()
+	var k: JCGame = JCGame.new()
+	k.autosave = false
+	check(k.load_from(SAVE), "内容改过的旧档也能读")
+	eq_str(k.last_error, "replayed", "走的是重演")
+	eq_int(k.st.q, g.st.q, "重演到同一季")
+	eq_str(_state_json(k), _state_json(g), "重演结果与原局逐位相同")
+	DirAccess.remove_absolute(SAVE)
+
+
+func test_steward_acts_with_reasons_that_have_text() -> void:
+	var g: JCGame = _new()
+	for d: String in JCSteward.DOMAINS:
+		check(g.set_steward(d, JCSteward.AUTO), "托管 " + d + " 设为代办")
+	for q: int in 8:
+		check(bool(g.end_turn().get("ok", false)), "托管代办的季度照常结算")
+	ge_int(g.steward.records.size(), 1, "八季里托管至少办了一件事")
+	var bad: PackedStringArray = PackedStringArray()
+	for rec: Dictionary in g.steward.records:
+		var key: String = "jc." + String(rec["reason"])
+		if not JwText.has(key):
+			bad.append(key)
+			continue
+		if JcFmt.r(String(rec["reason"]), JcFmt.slots(g, rec.get("slots", {}))) == "":
+			bad.append(key + "（槽位不全）")
+	eq_int(bad.size(), 0, "每条托管记录的理由都能说成一句话：" + ", ".join(bad.slice(0, 5)))
+
+
+func test_advisors_speak_plainly_and_their_orders_work() -> void:
+	var g: JCGame = _new()
+	g.end_turn()
+	g.end_turn()
+	var items: Array = g.advisors.items
+	ge_int(items.size(), 1, "顾问有话说")
+	for it: Dictionary in items:
+		var sl: Dictionary = JcFmt.slots(g, it.get("slots", {}))
+		check(JcFmt.r(String(it["title"]), sl) != "", "建议标题能渲染：" + String(it["title"]))
+		check(JcFmt.r(String(it["body"]), sl) != "", "建议正文能渲染：" + String(it["body"]))
+	for it2: Dictionary in items:
+		if (it2.get("cmds", []) as Array).is_empty():
+			continue
+		var r: Dictionary = g.accept_advice(String(it2["id"]))
+		if not bool(r.get("ok", false)):
+			for x: Dictionary in r.get("results", []):
+				check(JwText.has("jc." + String(x.get("reason", ""))), "被拒的原因有文案")
+		else:
+			check(g.advisors.find(String(it2["id"])).is_empty(), "办过的建议不再显示")
+		break
+
+
+## 活字印刷让印坊有了同时代的新做法：造出同地区两处旧印坊，检验合并改造。
+func _printing_setup() -> Dictionary:
+	var g: JCGame = _new()
+	var t: int = int(g.ct.tidx.get("movable_type", -1))
+	check(t >= 0, "有活字印刷这项科技")
+	g.st.t_done[t] = 1
+	var b: int = int(g.ct.bidx.get("printing", -1))
+	var target: int = g.sim.inv.best_method(b)
+	for i: int in g.st.stack_count():
+		if g.st.s_b[i] == b and g.st.s_level[i] >= 4 and g.st.s_status[i] == JCState.ST_ACTIVE and g.st.s_m[i] != target:
+			return {"g": g, "b": b, "i": i, "r": g.st.s_region[i], "owner": g.st.s_owner[i], "target": target}
+	fail("找不到够大的旧印坊")
+	return {}
+
+
+func test_merge_needs_two_old_sites_and_charges_seventy_percent() -> void:
+	var s: Dictionary = _printing_setup()
+	if s.is_empty():
+		return
+	var g: JCGame = s["g"]
+	var inv: JCInvest = g.sim.inv
+	var b: int = s["b"]
+	var r: int = s["r"]
+	var owner: int = s["owner"]
+	var own_s: String = "gov" if owner == JCContent.OWNER_GOV else "private"
+	# 只有一处旧的：不能合并（否则等于七折单改）
+	var solo: int = 0
+	for i: int in g.st.stack_count():
+		if g.st.s_b[i] == b and g.st.s_region[i] == r and g.st.s_owner[i] == owner and g.st.s_m[i] != int(s["target"]):
+			solo += 1
+	if solo == 1:
+		eq_int(inv.consolidate_cost(b, r, owner), 0, "只有一处旧印坊时没有合并价")
+	# 切出一处，凑成两处
+	var row: int = inv.split_off(int(s["i"]), 2)
+	check(row >= 0, "切出两级另成一处")
+	var full: int = 0
+	for i2: int in g.st.stack_count():
+		if g.st.s_b[i2] == b and g.st.s_region[i2] == r and g.st.s_owner[i2] == owner and g.st.s_level[i2] > 0 \
+				and g.st.s_m[i2] != int(s["target"]):
+			full += inv.upgrade_cost(i2, int(s["target"]))
+	var cost: int = inv.consolidate_cost(b, r, owner)
+	in_range_int(cost, JCMath.mulppm(full, 700_000) - 2, JCMath.mulppm(full, 700_000) + 2, "合并改造按七折计价")
+	var res: Dictionary = g.order({"kind": "consolidate", "building": "printing", "region": g.ct.r_id[r], "owner": own_s})
+	check(bool(res.get("ok", false)), "合并改造受理：" + String(res.get("reason", "")))
+	var keep: int = -1
+	for i3: int in g.st.stack_count():
+		if g.st.s_b[i3] == b and g.st.s_region[i3] == r and g.st.s_status[i3] == JCState.ST_UPGRADE:
+			keep = i3
+	check(keep >= 0, "合成的一处正在改造")
+	eq_int(g.st.s_fund[keep], JCInvest.FUND_MERGE, "合并改造由官府出钱、记为七折")
+	in_range_int(inv.job_total(keep), cost - 4, cost + 4, "实际要付的就是报的合并价")
+
+
+func test_upgrade_can_take_a_slice() -> void:
+	var s: Dictionary = _printing_setup()
+	if s.is_empty():
+		return
+	var g: JCGame = s["g"]
+	var i: int = s["i"]
+	var lv0: int = g.st.s_level[i]
+	var uid: int = g.st.s_uid[i]
+	var res: Dictionary = g.order({"kind": "upgrade", "uid": uid, "method": g.ct.m_id[int(s["target"])], "levels": 1})
+	check(bool(res.get("ok", false)), "只改一级：" + String(res.get("reason", "")))
+	var j: int = g.st.stack_of_uid(uid)
+	eq_int(g.st.s_level[j], lv0 - 1, "原处少了一级")
+	eq_int(g.st.s_status[j], JCState.ST_ACTIVE, "原处照常开工")
+	var upgrading: int = 0
+	for k: int in g.st.stack_count():
+		if g.st.s_status[k] == JCState.ST_UPGRADE:
+			upgrading += g.st.s_level[k]
+	eq_int(upgrading, 1, "只有切出的那一级在改")
+	eq_int(JCInvest.upgrade_slice(1), 1, "一级整改")
+	eq_int(JCInvest.upgrade_slice(4), 4, "四级整改")
+	eq_int(JCInvest.upgrade_slice(5), 2, "五级先改两级")
+	eq_int(JCInvest.upgrade_slice(40), 10, "四十级先改十级")
+	check(JCInvest.upgrade_room({"3:1": [0, 40]}, 3, 1), "没有在改的：可以改")
+	check_false(JCInvest.upgrade_room({"3:1": [10, 40]}, 3, 1), "已有四分之一在改：先等")
+
+
+func test_engine_text_keys_all_exist() -> void:
+	var rx: RegEx = RegEx.create_from_string("\"((?:reason|chron|stw|adv|warn|cause|need)\\.[a-z0-9_.]+)\"")
+	var missing: PackedStringArray = PackedStringArray()
+	var n: int = 0
+	for dir: String in ["res://campaign/core", "res://campaign/app"]:
+		var da: DirAccess = DirAccess.open(dir)
+		for f: String in da.get_files():
+			if not f.ends_with(".gd"):
+				continue
+			var src: String = FileAccess.get_file_as_string(dir + "/" + f)
+			for m: RegExMatch in rx.search_all(src):
+				var k: String = m.get_string(1)
+				n += 1
+				if k.begins_with("need."):
+					for suf: String in [".t", ".b"]:
+						if not JwText.has("jc." + k + suf):
+							missing.append("jc." + k + suf)
+				elif not JwText.has("jc." + k):
+					missing.append("jc." + k)
+	ge_int(n, 100, "扫到的引擎文案键")
+	eq_int(missing.size(), 0, "引擎与应用层的每个键都有文案：" + ", ".join(missing.slice(0, 8)))
+
+
+func test_game_completes_at_end_year() -> void:
+	var g: JCGame = _new()
+	g.st.q = (2000 - g.st.start_year) * 4 - 1
+	var r: Dictionary = g.end_turn()
+	check(bool(r.get("over", false)), "走到 2000 年春，这一局结束")
+	eq_str(g.st.over_reason, "complete", "结束原因是四百年走完")
+	check(JwText.has("jc.over.complete") and JwText.has("jc.go.explain.complete"), "终局有文案")

@@ -1,0 +1,142 @@
+## v2 界面的小部件：数字卡、进度条、标签、卡片、配图、折线。复用 JwUi / JwTheme 的字体与色板。
+class_name JcUi
+extends RefCounted
+
+const GOOD: String = "teal.core"
+const WARN: String = "ochre.core"
+const BAD: String = "ochre.hot"
+const MUTED: String = "text.muted"
+
+
+## 按好坏给色：好（青绿）、要注意（赭）、坏（橙红）。
+static func tone(good: bool, warn: bool = false) -> String:
+	if good:
+		return GOOD
+	return WARN if warn else BAD
+
+
+## 数字卡：小标题 + 大数字 + 一行说明（可带颜色）。
+static func tile(label: String, value: String, sub: String = "", sub_tone: String = MUTED, tip: String = "") -> PanelContainer:
+	var p: PanelContainer = JwUi.panel_style(JwTheme.box4("bg.panel", "line.hair", 1, 14, 10, 14, 10))
+	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var v: VBoxContainer = JwUi.vbox(2)
+	p.add_child(v)
+	v.add_child(JwUi.label(label, "caption", "text.muted"))
+	var big: Label = JwUi.label(value, "block_num", "text.primary")
+	v.add_child(big)
+	if sub != "":
+		v.add_child(JwUi.label(sub, "caption", sub_tone, true))
+	if tip != "":
+		p.tooltip_text = tip
+		p.mouse_filter = Control.MOUSE_FILTER_STOP
+	return p
+
+
+static func chip(text: String, tone_token: String = MUTED, filled: bool = false) -> PanelContainer:
+	var p: PanelContainer = JwUi.panel_style(JwTheme.box4("bg.raised" if not filled else "bg.abyss", tone_token, 1, 8, 2, 8, 2))
+	p.add_child(JwUi.label(text, "caption", tone_token))
+	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return p
+
+
+## 卡片：标题（可带副标题与右侧按钮区）+ 内容。返回 {root, body, head}。
+static func card(title: String, subtitle: String = "", pad: int = 14) -> Dictionary:
+	var root: PanelContainer = JwUi.panel("bg.panel", "line.hair", pad)
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var v: VBoxContainer = JwUi.vbox(10)
+	root.add_child(v)
+	var head: HBoxContainer = JwUi.hbox(10)
+	head.add_child(JwUi.label(title, "title_sub", "text.primary"))
+	if subtitle != "":
+		var s: Label = JwUi.label(subtitle, "caption", "text.muted")
+		s.size_flags_vertical = Control.SIZE_SHRINK_END
+		head.add_child(s)
+	head.add_child(JwUi.spacer())
+	v.add_child(head)
+	var body: VBoxContainer = JwUi.vbox(8)
+	v.add_child(body)
+	return {"root": root, "body": body, "head": head}
+
+
+## 配图（路径不存在就返回一块底色）。
+static func art(path: String, size: Vector2, cover: bool = true) -> Control:
+	if path != "" and ResourceLoader.exists(path):
+		var tr: TextureRect = TextureRect.new()
+		tr.texture = load(path) as Texture2D
+		tr.custom_minimum_size = size
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.clip_contents = true
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return tr
+	var c: ColorRect = ColorRect.new()
+	c.color = JwTheme.c("bg.abyss")
+	c.custom_minimum_size = size
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+static func meter(ppm: int, tone_token: String = GOOD, width: float = 140.0, height: float = 8.0,
+		marker_ppm: int = -1) -> JcMeter:
+	var m: JcMeter = JcMeter.new()
+	m.value = clampi(ppm, 0, 1_000_000)
+	m.token = tone_token
+	m.marker = marker_ppm
+	m.custom_minimum_size = Vector2(width, height)
+	m.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	return m
+
+
+## 一行：左标签、右数值，中间一条进度（可选）。
+static func row(label: String, value: String, value_tone: String = "text.primary", meter_ppm: int = -1,
+		meter_tone: String = GOOD) -> HBoxContainer:
+	var h: HBoxContainer = JwUi.hbox(10)
+	var l: Label = JwUi.label(label, "body", "text.secondary")
+	l.custom_minimum_size = Vector2(110, 0)
+	h.add_child(l)
+	if meter_ppm >= 0:
+		var m: JcMeter = meter(meter_ppm, meter_tone, 120.0)
+		m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		h.add_child(m)
+	else:
+		h.add_child(JwUi.spacer())
+	h.add_child(JwUi.label(value, "num", value_tone))
+	return h
+
+
+static func button(text: String, primary: bool = false, cb: Callable = Callable()) -> Button:
+	var b: Button = JwUi.button(text, "PrimaryButton" if primary else "")
+	if cb.is_valid():
+		b.pressed.connect(cb)
+	return b
+
+
+static func link(text: String, cb: Callable) -> Button:
+	var b: Button = JwUi.link(text)
+	b.pressed.connect(cb)
+	return b
+
+
+static func spark(values: Array, token: String = GOOD, size: Vector2 = Vector2(220, 56)) -> JcSpark:
+	var s: JcSpark = JcSpark.new()
+	s.values = values
+	s.token = token
+	s.custom_minimum_size = size
+	return s
+
+
+static func grid(cols: int, hsep: int = 10, vsep: int = 10) -> GridContainer:
+	var g: GridContainer = GridContainer.new()
+	g.columns = cols
+	g.add_theme_constant_override("h_separation", hsep)
+	g.add_theme_constant_override("v_separation", vsep)
+	g.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return g
+
+
+static func flow(hsep: int = 8, vsep: int = 8) -> HFlowContainer:
+	var f: HFlowContainer = HFlowContainer.new()
+	f.add_theme_constant_override("h_separation", hsep)
+	f.add_theme_constant_override("v_separation", vsep)
+	f.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return f

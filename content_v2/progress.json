@@ -6,7 +6,7 @@
    "id": "crop_rotation",
    "name": "轮作与新作物",
    "era": 1,
-   "cost": 7000,
+   "cost": 20000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -20,7 +20,7 @@
    "id": "water_management",
    "name": "水利营造",
    "era": 1,
-   "cost": 7000,
+   "cost": 20000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -39,7 +39,7 @@
    "id": "survey",
    "name": "土地清丈",
    "era": 1,
-   "cost": 6000,
+   "cost": 17000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -53,7 +53,7 @@
    "id": "granary_system",
    "name": "常平仓法",
    "era": 1,
-   "cost": 5000,
+   "cost": 14000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -66,7 +66,7 @@
    "id": "movable_type",
    "name": "活字印刷",
    "era": 1,
-   "cost": 7000,
+   "cost": 20000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -80,7 +80,7 @@
    "id": "herbal_medicine",
    "name": "本草",
    "era": 1,
-   "cost": 6000,
+   "cost": 17000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -100,7 +100,7 @@
    "id": "craft_guild",
    "name": "行会工场",
    "era": 1,
-   "cost": 8000,
+   "cost": 22000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -121,7 +121,7 @@
    "id": "bookkeeping",
    "name": "复式记账",
    "era": 1,
-   "cost": 10000,
+   "cost": 28000,
    "prereq": [],
    "key": true,
    "bg": [
@@ -145,7 +145,7 @@
    "id": "harbor_works",
    "name": "港务营造",
    "era": 1,
-   "cost": 8000,
+   "cost": 22000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -165,7 +165,7 @@
    "id": "navigation",
    "name": "海图与罗盘",
    "era": 1,
-   "cost": 11000,
+   "cost": 31000,
    "prereq": [
     "harbor_works"
    ],
@@ -192,7 +192,7 @@
    "id": "water_power",
    "name": "水力机械",
    "era": 1,
-   "cost": 14000,
+   "cost": 39000,
    "prereq": [
     "water_management"
    ],
@@ -207,7 +207,7 @@
    "id": "double_cropping",
    "name": "双季稻",
    "era": 2,
-   "cost": 22000,
+   "cost": 75000,
    "prereq": [
     "crop_rotation"
    ],
@@ -222,7 +222,7 @@
    "id": "sugar_refining",
    "name": "甘蔗制糖",
    "era": 2,
-   "cost": 18000,
+   "cost": 61000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -235,7 +235,7 @@
    "id": "water_frame",
    "name": "水力纺纱",
    "era": 2,
-   "cost": 24000,
+   "cost": 82000,
    "prereq": [
     "water_power"
    ],
@@ -251,7 +251,7 @@
    "id": "flying_shuttle",
    "name": "飞梭",
    "era": 2,
-   "cost": 22000,
+   "cost": 75000,
    "prereq": [
     "craft_guild"
    ],
@@ -266,7 +266,7 @@
    "id": "coal_iron",
    "name": "煤炭冶铁",
    "era": 2,
-   "cost": 26000,
+   "cost": 88000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -280,7 +280,7 @@
    "id": "banking",
    "name": "钱庄汇兑",
    "era": 2,
-   "cost": 26000,
+   "cost": 88000,
    "prereq": [
     "bookkeeping"
    ],
@@ -301,7 +301,7 @@
    "id": "canal_engineering",
    "name": "运河营造",
    "era": 2,
-   "cost": 28000,
+   "cost": 95000,
    "prereq": [
     "water_management"
    ],
@@ -316,7 +316,7 @@
    "id": "glassmaking",
    "name": "玻璃",
    "era": 2,
-   "cost": 16000,
+   "cost": 54000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -329,7 +329,7 @@
    "id": "chemistry_basic",
    "name": "皂化",
    "era": 2,
-   "cost": 14000,
+   "cost": 48000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -342,7 +342,7 @@
    "id": "ocean_navigation",
    "name": "远洋航海",
    "era": 2,
-   "cost": 30000,
+   "cost": 102000,
    "prereq": [
     "navigation"
    ],
@@ -364,7 +364,7 @@
    "id": "steam_principle",
    "name": "蒸汽原理",
    "era": 2,
-   "cost": 34000,
+   "cost": 116000,
    "prereq": [
     "water_power"
    ],
@@ -379,7 +379,7 @@
    "id": "precision_mechanics",
    "name": "精密机械",
    "era": 2,
-   "cost": 34000,
+   "cost": 116000,
    "prereq": [
     "water_power"
    ],
@@ -401,7 +401,7 @@
    "id": "steam_engine",
    "name": "蒸汽机",
    "era": 3,
-   "cost": 60000,
+   "cost": 150000,
    "prereq": [
     "steam_principle"
    ],
@@ -417,7 +417,7 @@
    "id": "coke_smelting",
    "name": "焦炭炼铁",
    "era": 3,
-   "cost": 60000,
+   "cost": 150000,
    "prereq": [
     "coal_iron"
    ],
@@ -433,7 +433,7 @@
    "id": "bessemer",
    "name": "转炉炼钢",
    "era": 3,
-   "cost": 70000,
+   "cost": 175000,
    "prereq": [
     "coke_smelting"
    ],
@@ -448,7 +448,7 @@
    "id": "machine_tools",
    "name": "机床",
    "era": 3,
-   "cost": 70000,
+   "cost": 175000,
    "prereq": [
     "bessemer",
     "precision_mechanics"
@@ -464,7 +464,7 @@
    "id": "railway",
    "name": "铁路",
    "era": 3,
-   "cost": 80000,
+   "cost": 200000,
    "prereq": [
     "steam_engine",
     "bessemer"
@@ -481,7 +481,7 @@
    "id": "chemistry",
    "name": "化学工业",
    "era": 3,
-   "cost": 65000,
+   "cost": 162000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -495,7 +495,7 @@
    "id": "fertilizer",
    "name": "化肥",
    "era": 3,
-   "cost": 70000,
+   "cost": 175000,
    "prereq": [
     "chemistry"
    ],
@@ -511,7 +511,7 @@
    "id": "cement",
    "name": "水泥",
    "era": 3,
-   "cost": 50000,
+   "cost": 125000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -525,7 +525,7 @@
    "id": "canning",
    "name": "罐头",
    "era": 3,
-   "cost": 45000,
+   "cost": 112000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -538,7 +538,7 @@
    "id": "telegraph",
    "name": "电报",
    "era": 3,
-   "cost": 60000,
+   "cost": 150000,
    "prereq": [
     "steam_engine"
    ],
@@ -559,7 +559,7 @@
    "id": "public_health",
    "name": "公共卫生",
    "era": 3,
-   "cost": 55000,
+   "cost": 138000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -579,7 +579,7 @@
    "id": "public_education",
    "name": "新式教育",
    "era": 3,
-   "cost": 55000,
+   "cost": 138000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -599,7 +599,7 @@
    "id": "sericulture_science",
    "name": "蚕桑改良",
    "era": 3,
-   "cost": 40000,
+   "cost": 100000,
    "prereq": [],
    "key": false,
    "bg": [
@@ -612,7 +612,7 @@
    "id": "dynamo",
    "name": "发电机",
    "era": 3,
-   "cost": 90000,
+   "cost": 225000,
    "prereq": [
     "steam_engine"
    ],
@@ -627,7 +627,7 @@
    "id": "internal_combustion",
    "name": "内燃机",
    "era": 3,
-   "cost": 90000,
+   "cost": 225000,
    "prereq": [
     "steam_engine"
    ],
@@ -642,7 +642,7 @@
    "id": "power_grid",
    "name": "电网",
    "era": 4,
-   "cost": 140000,
+   "cost": 350000,
    "prereq": [
     "dynamo"
    ],
@@ -657,7 +657,7 @@
    "id": "electrochemistry",
    "name": "电化学",
    "era": 4,
-   "cost": 130000,
+   "cost": 325000,
    "prereq": [
     "power_grid"
    ],
@@ -672,7 +672,7 @@
    "id": "petrochemistry",
    "name": "石油化工",
    "era": 4,
-   "cost": 150000,
+   "cost": 375000,
    "prereq": [
     "internal_combustion"
    ],
@@ -687,7 +687,7 @@
    "id": "automobile",
    "name": "汽车",
    "era": 4,
-   "cost": 150000,
+   "cost": 375000,
    "prereq": [
     "internal_combustion"
    ],
@@ -702,7 +702,7 @@
    "id": "electronics",
    "name": "电子管",
    "era": 4,
-   "cost": 140000,
+   "cost": 350000,
    "prereq": [
     "power_grid"
    ],
@@ -717,7 +717,7 @@
    "id": "television",
    "name": "电视",
    "era": 4,
-   "cost": 160000,
+   "cost": 400000,
    "prereq": [
     "electronics"
    ],
@@ -732,7 +732,7 @@
    "id": "antibiotics",
    "name": "抗生素",
    "era": 4,
-   "cost": 140000,
+   "cost": 350000,
    "prereq": [
     "public_health"
    ],
@@ -754,7 +754,7 @@
    "id": "mechanized_farming",
    "name": "农业机械化",
    "era": 4,
-   "cost": 150000,
+   "cost": 375000,
    "prereq": [
     "internal_combustion"
    ],
@@ -770,7 +770,7 @@
    "id": "automation",
    "name": "自动化",
    "era": 4,
-   "cost": 180000,
+   "cost": 450000,
    "prereq": [
     "electronics"
    ],
@@ -792,7 +792,7 @@
    "id": "computing",
    "name": "计算机",
    "era": 4,
-   "cost": 220000,
+   "cost": 550000,
    "prereq": [
     "electronics",
     "automation"
@@ -815,7 +815,7 @@
    "id": "solar_wind",
    "name": "新能源",
    "era": 4,
-   "cost": 200000,
+   "cost": 500000,
    "prereq": [
     "power_grid"
    ],
@@ -851,7 +851,7 @@
      "port": 8
     },
     "social": {
-     "literacy": 0.16
+     "literacy": 0.18
     }
    }
   },
@@ -2274,7 +2274,7 @@
      "scope": ""
     }
    ],
-   "desc": "科举考场。治理效率 +10%，士绅民心 +5，识字率增长加快。带时代标签：进入第三时代后十年内失效，可改为新式学堂或古迹。",
+   "desc": "科举考场。治理效率 +10%，士绅民心 +5，识字率增长加快。进入第三时代十年后作用消失，那时可以改成新式学堂，或留作古迹。",
    "art": "assets/landmarks/l02/landmark_imperial_exam_hall_v2.png",
    "need": {
     "techs": [
