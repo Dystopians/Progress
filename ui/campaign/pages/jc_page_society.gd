@@ -127,7 +127,7 @@ func _class_card(cv: Dictionary, era: int, total: int) -> Control:
 	h.add_child(v)
 	var top: HBoxContainer = JwUi.hbox(8)
 	top.add_child(JwUi.label(String(cv["name"]), "title_sub", "text.primary"))
-	top.add_child(JcUi.badge(JcUi.MOOD_ICON % md, 24.0, t("jc.soc.mood.%d" % md), tone))
+	top.add_child(JcUi.ringed(JcUi.MOOD_ICON % md, 24.0, t("jc.soc.mood.%d" % md), tone))
 	top.add_child(JwUi.label(t("jc.soc.mood.%d" % md), "body_bold", tone))
 	v.add_child(top)
 	var pop: int = int(cv["pop"])
@@ -209,7 +209,7 @@ func _mood_map(g: JCGame, v: Dictionary) -> Control:
 			cell.tooltip_text = rt("jc.soc.cell_tip", {"region": g.name_of("region", rid), "class": g.name_of("class", cid2),
 					"living": JcFmt.pct(int(ce2["living"]), 0), "unrest": JcFmt.pct(int(ce2["unrest"]), 0),
 					"cause": JcFmt.k(String(ce2["cause"]))})
-			var face: Control = JcUi.badge(JcUi.MOOD_ICON % md, 34.0, t("jc.soc.mood.%d" % md), String(MOOD_TONE[md]))
+			var face: Control = JcUi.ringed(JcUi.MOOD_ICON % md, 34.0, t("jc.soc.mood.%d" % md), String(MOOD_TONE[md]))
 			face.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 			cell.add_child(face)
 			var lv: Label = JwUi.label(JcFmt.pct(int(ce2["living"]), 0), "caption", String(MOOD_TONE[md]))
@@ -225,7 +225,7 @@ func _mood_map(g: JCGame, v: Dictionary) -> Control:
 	var lg: HBoxContainer = JwUi.hbox(10)
 	for md2: int in 5:
 		var it: HBoxContainer = JwUi.hbox(4)
-		it.add_child(JcUi.badge(JcUi.MOOD_ICON % md2, 18.0, t("jc.soc.mood.%d" % md2), String(MOOD_TONE[md2])))
+		it.add_child(JcUi.ringed(JcUi.MOOD_ICON % md2, 18.0, t("jc.soc.mood.%d" % md2), String(MOOD_TONE[md2])))
 		it.add_child(JwUi.label(t("jc.soc.mood.%d" % md2), "caption", "text.muted"))
 		lg.add_child(it)
 	body.add_child(lg)
@@ -245,7 +245,7 @@ func _hot_card(g: JCGame, v: Dictionary) -> Control:
 		var row: HBoxContainer = JwUi.hbox(10)
 		var rid: String = String(h["region"])
 		var md: int = cell_mood(int(h["living"]), unr)
-		row.add_child(JcUi.badge(JcUi.MOOD_ICON % md, 28.0, t("jc.soc.mood.%d" % md), String(MOOD_TONE[md])))
+		row.add_child(JcUi.ringed(JcUi.MOOD_ICON % md, 28.0, t("jc.soc.mood.%d" % md), String(MOOD_TONE[md])))
 		row.add_child(JcUi.link(g.name_of("region", rid), func() -> void:
 			session.selected_region = rid
 			goto_page("map")))

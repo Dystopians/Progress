@@ -38,6 +38,18 @@ const UI_ICON: String = "res://assets/icons/ui/%s.png"
 const PPM_ONE: int = 1_000_000
 
 
+## 科技的时代框（Codex 第七批：科技图只画主体，框按时代共用，界面叠上去）
+const TECH_FRAME: String = "res://assets/techs/frames/era_%d.svg"
+## 审阅预览的默认清单（--jc-art-preview=v7）
+const PREVIEW_V7: String = "res://docs/_drafts/asset_review/v7/additions_manifest.json"
+
+## 审阅预览：新图还在审核目录、没放进游戏路径时，用命令行 --jc-art-preview=<清单> 直接从审核目录读原图，
+## 看放进游戏是什么样子。只读，不搬文件；清单里每项的 target_file → file。
+static var _preview: Dictionary = {}
+static var _tex_cache: Dictionary = {}
+static var _box_cache: Dictionary = {}
+
+
 ## 内容表里的图是 assets/…，补上 res://。
 static func res(path: String) -> String:
 	if path == "" or path.begins_with("res://"):
@@ -46,7 +58,57 @@ static func res(path: String) -> String:
 
 
 static func has_art(path: String) -> bool:
-	return path != "" and ResourceLoader.exists(res(path))
+	return path != "" and (ResourceLoader.exists(res(path)) or _preview.has(res(path)))
+
+
+## 读审阅清单（additions_manifest.json 的 assets 与 shared_frames），返回登记了几张。
+static func preview_load(manifest: String) -> int:
+	var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(manifest))
+	if not (d is Dictionary):
+		return 0
+	var base: String = ProjectSettings.globalize_path("res://")
+	var n: int = 0
+	for key: String in ["assets", "shared_frames"]:
+		for a: Variant in (d as Dictionary).get(key, []):
+			if not (a is Dictionary):
+				continue
+			var src: String = base.path_join(String((a as Dictionary).get("file", "")))
+			if FileAccess.file_exists(src):
+				_preview[res(String((a as Dictionary).get("target_file", "")))] = src
+				n += 1
+	_tex_cache.clear()
+	return n
+
+
+## 取图：游戏路径里有就照常载入；审阅预览时从审核目录读原图（长边缩到 768 以内并做多级纹理，省内存、缩小不起锯齿）。
+static func tex(path: String) -> Texture2D:
+	var p: String = res(path)
+	if p == "":
+		return null
+	if ResourceLoader.exists(p):
+		return load(p) as Texture2D
+	if not _preview.has(p):
+		return null
+	if _tex_cache.has(p):
+		return _tex_cache[p] as Texture2D
+	var src: String = String(_preview[p])
+	var img: Image = null
+	if src.get_extension().to_lower() == "svg":
+		img = Image.new()
+		if img.load_svg_from_string(FileAccess.get_file_as_string(src), 1.0) != OK:
+			return null
+	else:
+		img = Image.load_from_file(src)
+	if img == null or img.is_empty():
+		return null
+	var m: int = maxi(img.get_width(), img.get_height())
+	if m > 768:
+		var k: float = 768.0 / float(m)
+		img.resize(maxi(1, int(img.get_width() * k)), maxi(1, int(img.get_height() * k)), Image.INTERPOLATE_LANCZOS)
+	img.generate_mipmaps()
+	var t: ImageTexture = ImageTexture.create_from_image(img)
+	_tex_cache[p] = t
+	return t
 
 
 ## 政令配图：给了档位就先找那一档的图；不分档的那张没有时，退到第 0 档的图；都没有返回不分档的路径（显示占位）。
@@ -65,9 +127,11 @@ static func decree_art(id: String, level: int = -1) -> String:
 
 ## 图标：有图用图（等比居中）；没图用占位圆章，写名字的头一个字。
 static func badge(path: String, side: float, name_text: String = "", tone_token: String = "line.strong") -> Control:
-	if has_art(path):
+	var tx: Texture2D = tex(path) if has_art(path) else null
+	if tx != null:
 		var tr: TextureRect = TextureRect.new()
-		tr.texture = load(res(path)) as Texture2D
+		tr.texture = tx
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		tr.custom_minimum_size = Vector2(side, side)
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -78,6 +142,64 @@ static func badge(path: String, side: float, name_text: String = "", tone_token:
 	gl.tone = tone_token
 	gl.custom_minimum_size = Vector2(side, side)
 	return gl
+
+
+## 圈里放图：小图（情绪小脸）外面套一道状态色的圈，图小到看不清时颜色照样说明好坏；没图时写一个字。
+static func ringed(path: String, side: float, name_text: String, tone_token: String) -> Control:
+	var gl: JcGlyph = JcGlyph.new()
+	gl.image = tex(path) if has_art(path) else null
+	gl.text = name_text.substr(0, 1)
+	gl.tone = tone_token
+	gl.custom_minimum_size = Vector2(side, side)
+	return gl
+
+
+## 科技徽章：底板 ＋ 主体图 ＋ 本时代的框（见 JcTechBadge）。tone 是状态色，dim 是还不能研究。
+static func tech_badge(id: String, era: int, side: float, name_text: String, tone_token: String, dim: bool = false) -> Control:
+	var b: JcTechBadge = JcTechBadge.new()
+	b.subject = tex(TECH_ART % id) if has_art(TECH_ART % id) else null
+	var fp: String = TECH_FRAME % clampi(era, 1, 4)
+	b.frame = tex(fp) if has_art(fp) else null
+	b.tone = tone_token
+	b.dim = dim
+	b.glyph = name_text.substr(0, 1)
+	b.custom_minimum_size = Vector2(side, side)
+	return b
+
+
+
+## 图里看得见的部分占整张的范围（0—1 的比例，alpha≥16 才算），按图缓存；读不到像素时返回整张。
+static func content_box(t: Texture2D) -> Rect2:
+	if t == null:
+		return Rect2(0, 0, 1, 1)
+	var key: int = t.get_instance_id()
+	if _box_cache.has(key):
+		return _box_cache[key] as Rect2
+	var r: Rect2 = Rect2(0, 0, 1, 1)
+	var img: Image = t.get_image()
+	if img != null and not img.is_empty():
+		if img.is_compressed():
+			img.decompress()
+		img.convert(Image.FORMAT_RGBA8)
+		var w: int = 128
+		var h: int = maxi(1, int(128.0 * float(img.get_height()) / maxf(1.0, float(img.get_width()))))
+		img.resize(w, h, Image.INTERPOLATE_BILINEAR)
+		var data: PackedByteArray = img.get_data()
+		var x0: int = w
+		var y0: int = h
+		var x1: int = -1
+		var y1: int = -1
+		for y: int in h:
+			for x: int in w:
+				if data[(y * w + x) * 4 + 3] >= 16:
+					x0 = mini(x0, x)
+					y0 = mini(y0, y)
+					x1 = maxi(x1, x)
+					y1 = maxi(y1, y)
+		if x1 >= 0:
+			r = Rect2(float(x0) / w, float(y0) / h, float(x1 - x0 + 1) / w, float(y1 - y0 + 1) / h)
+	_box_cache[key] = r
+	return r
 
 
 ## 按好坏给色：好（青绿）、要注意（赭）、坏（橙红）。
@@ -132,13 +254,15 @@ static func card(title: String, subtitle: String = "", pad: int = 14) -> Diction
 
 ## 小图标（顾问徽记、托管图标）：图在就显示，不在就什么都不放（不留色块）。
 static func icon(path: String, side: float) -> Control:
-	if path == "" or not ResourceLoader.exists(path):
+	var tx: Texture2D = tex(path) if has_art(path) else null
+	if tx == null:
 		var spacer: Control = Control.new()
 		spacer.custom_minimum_size = Vector2(0, 0)
 		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return spacer
 	var tr: TextureRect = TextureRect.new()
-	tr.texture = load(path) as Texture2D
+	tr.texture = tx
+	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	tr.custom_minimum_size = Vector2(side, side)
 	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -149,9 +273,11 @@ static func icon(path: String, side: float) -> Control:
 
 ## 配图（路径不存在就返回一块底色）。
 static func art(path: String, size: Vector2, cover: bool = true) -> Control:
-	if path != "" and ResourceLoader.exists(path):
+	var tx: Texture2D = tex(path) if has_art(path) else null
+	if tx != null:
 		var tr: TextureRect = TextureRect.new()
-		tr.texture = load(path) as Texture2D
+		tr.texture = tx
+		tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		tr.custom_minimum_size = size
 		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED if cover else TextureRect.STRETCH_KEEP_ASPECT_CENTERED

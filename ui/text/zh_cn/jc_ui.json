@@ -382,6 +382,7 @@
   "jc.pol.tax_tip.salt": "每担盐加收的钱，人人都得吃盐，税重了盐价就贵。",
   "jc.pol.taxes": "税",
   "jc.pol.taxes_sub": "点加减调一档；税重了民怨会涨",
+  "jc.preview.on": "审阅预览：直接读审核目录里的 {n} 张新图（没放进游戏路径）",
   "jc.rail.advisors": "顾问进言",
   "jc.rail.all_advice": "全部 {n} 条",
   "jc.rail.approve": "批准",

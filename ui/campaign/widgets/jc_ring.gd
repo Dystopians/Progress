@@ -12,8 +12,9 @@ var _tex: Texture2D = null
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
-	if icon_path != "" and ResourceLoader.exists(icon_path):
-		_tex = load(icon_path) as Texture2D
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	if JcUi.has_art(icon_path):
+		_tex = JcUi.tex(icon_path)
 
 
 func _draw() -> void:

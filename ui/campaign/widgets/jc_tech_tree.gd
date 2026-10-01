@@ -31,6 +31,7 @@ var _scroll_from: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 
 
 func set_data(list: Array, sel: String, era_now: int) -> void:
@@ -168,9 +169,10 @@ func _draw() -> void:
 			tint = tint.lerp(JwTheme.c("teal.core"), 0.07)
 		draw_rect(Rect2(x.x, 0.0, x.y - x.x, size.y), tint)
 		var art: String = "res://assets/techs/bg/tree_era%d.png" % e
-		if ResourceLoader.exists(art):
-			var tex: Texture2D = load(art) as Texture2D
-			draw_texture_rect(tex, Rect2(x.x, 0.0, x.y - x.x, size.y), false, Color(1, 1, 1, 0.18))
+		if JcUi.has_art(art):
+			var tex: Texture2D = JcUi.tex(art)
+			if tex != null:
+				draw_texture_rect(tex, Rect2(x.x, 0.0, x.y - x.x, size.y), false, Color(1, 1, 1, 0.18))
 		var state: String = "jc.tech.era_now" if e == cur_era else ("jc.tech.era_past" if e < cur_era else
 				("jc.tech.era_next" if e == cur_era + 1 else "jc.tech.era_far"))
 		draw_string(font, Vector2(x.x + 16.0, 30.0), JcFmt.era_name(e), HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
@@ -230,7 +232,7 @@ func _node(tv: Dictionary) -> Control:
 	var h: HBoxContainer = JwUi.hbox(10)
 	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	p.add_child(h)
-	var ic: Control = JcUi.badge(JcUi.TECH_ART % id, ICON, String(tv["name"]),
+	var ic: Control = JcUi.tech_badge(id, int(tv["era"]), ICON, String(tv["name"]),
 			JcUi.GOOD if done else (JcUi.WARN if focus else "line.strong"))
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(ic)
@@ -270,7 +272,8 @@ func _node(tv: Dictionary) -> Control:
 		var un: Dictionary = ul[k]
 		var path: String = String(un["art"])
 		if String(un["kind"]) == "decree":
-			path = JcUi.decree_art(String(un["id"]), int(un.get("level", -1)))
+			# 政令配图是横幅，缩成小图标像张小风景照；这里用通用的「政令」小图标
+			path = JcUi.CHRON_ICON % "decree"
 		var b: Control = JcUi.badge(path, UNLOCK_ICON, String(un["name"]), "line.hair")
 		b.mouse_filter = Control.MOUSE_FILTER_PASS
 		b.tooltip_text = JcPageTech.unlock_text(un)

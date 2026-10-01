@@ -56,6 +56,11 @@ func _ready() -> void:
 
 
 func _boot() -> void:
+	# 审阅预览：--jc-art-preview=v7（或清单路径）时直接从审核目录读新图，不搬文件
+	var pv: String = _arg("--jc-art-preview=")
+	if pv != "":
+		var n: int = JcUi.preview_load(JcUi.PREVIEW_V7 if pv == "v7" else pv)
+		show_toast(JwText.render("jc.preview.on", {"n": str(n)}), false)
 	var seed_arg: String = _arg("--jc-seed=")
 	var load_arg: String = _arg("--jc-load=")
 	var play_arg: String = _arg("--jc-play=")

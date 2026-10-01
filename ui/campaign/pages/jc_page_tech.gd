@@ -129,8 +129,8 @@ func _fill_detail() -> void:
 	var done: bool = bool(tv["done"])
 	var focus: bool = bool(tv["focus"])
 	var avail: bool = bool(tv["available"])
-	var ic: Control = JcUi.badge(JcUi.TECH_ART % String(tv["id"]), 128.0, String(tv["name"]),
-			JcUi.GOOD if done else (JcUi.WARN if focus else "line.strong"))
+	var ic: Control = JcUi.tech_badge(String(tv["id"]), int(tv["era"]), 128.0, String(tv["name"]),
+			JcUi.GOOD if done else (JcUi.WARN if focus else "line.strong"), not done and not avail and not focus)
 	ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	h.add_child(ic)
 	# 中间：名字、时代、说明、进度、加快、前置
@@ -180,7 +180,8 @@ func _fill_detail() -> void:
 		var item: HBoxContainer = JwUi.hbox(6)
 		var path: String = String(un["art"])
 		if String(un["kind"]) == "decree":
-			path = JcUi.decree_art(String(un["id"]), int(un.get("level", -1)))
+			# 政令配图是横幅，缩成小图标像张小风景照；这里用通用的「政令」小图标
+			path = JcUi.CHRON_ICON % "decree"
 		item.add_child(JcUi.badge(path, 40.0, String(un["name"]), "line.strong"))
 		item.add_child(JwUi.label(unlock_text(un), "caption", "text.secondary"))
 		fl.add_child(item)
