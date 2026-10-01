@@ -18,6 +18,7 @@ func build() -> void:
 			if String(it["ministry"]) == m:
 				mine.append(it)
 		var h: HBoxContainer = JwUi.hbox(10)
+		h.add_child(JcUi.icon(JcUi.ADVISOR_ART % m, 48.0))
 		h.add_child(JwUi.label(t("jc.adv.m." + m), "title_sub", "text.primary"))
 		h.add_child(JwUi.label(t("jc.adv_ov.duty." + m), "caption", "text.muted", true))
 		body.add_child(h)

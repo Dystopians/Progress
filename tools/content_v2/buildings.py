@@ -753,3 +753,42 @@ building("urbanworks", "城政", "public", "serv", owners=("gov",), capital=1.6,
                          labor={AR: 500}, eff=3.75)],
          effects={"sanitation": 800000},
          note="每级覆盖约 80 万人（卫生设施 150 万、综合公用 300 万），降低疫病风险与死亡率。")
+
+
+# 服务行（第三时代起）：茶楼酒肆，到第四时代是餐馆、影院、商场一类的现代服务业。几乎全靠人手，
+# 主要雇城里的工匠；有它，乡下闲着的人才有地方去。配图暂借通用作坊（缺专属图，见 docs/58 §7）。
+building("servicehall", "服务行", "workshop", "serv", capital=0.8, era=3, art=art3("b01", "workshop"),
+         methods=[method("service_city", "茶楼酒肆", era=3, out={"services": 4000}, inp={"wine": 400, "tea": 20},
+                         labor={AR: 2400, M: 200}),
+                  method("service_modern", "现代服务业", era=4, tech="television", out={"services": 6000},
+                         inp={"electricity": 60}, labor={AR: 2600, M: 300})],
+         note="茶楼酒肆、戏园、理发、餐馆……靠人手的买卖。日子宽裕了，人们花在这上面的钱越来越多，城里的活计也跟着多。")
+
+# ── 专属配图（Codex 第五批，docs/58 §7）：替换原先借用别家建筑的图 ─────────────
+# 每座只有一张适用的形态：按它对应的生产方式所在时代放进去，其余时代保留原图。
+_V5 = "assets/buildings/"
+ART_OVERRIDES = {
+    "paddy": {"1": _V5 + "b17/paddy_early_v3.png", "2": _V5 + "b17/paddy_early_v3.png"},
+    "coppermine": {"1": _V5 + "b17/coppermine_early.png", "2": _V5 + "b17/coppermine_early.png"},
+    "kaolinpit": {"1": _V5 + "b17/kaolinpit_early.png", "2": _V5 + "b17/kaolinpit_early.png"},
+    "sandpit": {"1": _V5 + "b17/sandpit_early.png", "2": _V5 + "b17/sandpit_early.png"},
+    "sulfurmine": {e: _V5 + "b17/sulfurmine_industrial.png" for e in ("1", "2", "3", "4")},
+    "phosphatemine": {e: _V5 + "b17/phosphatemine_industrial.png" for e in ("1", "2", "3", "4")},
+    "bauxitemine": {e: _V5 + "b17/bauxitemine_modern.png" for e in ("1", "2", "3", "4")},
+    "weaving": {"1": _V5 + "b17/weaving_early.png", "2": _V5 + "b17/weaving_early.png"},
+    "silkreel": {"1": _V5 + "b17/silkreel_early.png", "2": _V5 + "b17/silkreel_early.png"},
+    "silkweave": {"3": _V5 + "b17/silkweave_industrial.png", "4": _V5 + "b17/silkweave_industrial.png"},
+    "sawmill": {"1": _V5 + "b18/sawmill_early.png", "2": _V5 + "b18/sawmill_early.png"},
+    "steelworks": {e: _V5 + "b18/steelworks_industrial.png" for e in ("1", "2", "3", "4")},
+    "fertilizerworks": {e: _V5 + "b18/fertilizerworks_industrial.png" for e in ("1", "2", "3", "4")},
+    "railworks": {e: _V5 + "b18/railworks_industrial.png" for e in ("1", "2", "3", "4")},
+    "powerplant": {e: _V5 + "b18/powerplant_modern.png" for e in ("1", "2", "3", "4")},
+    "aluminumworks": {e: _V5 + "b18/aluminumworks_modern.png" for e in ("1", "2", "3", "4")},
+    "applianceworks": {e: _V5 + "b18/applianceworks_modern.png" for e in ("1", "2", "3", "4")},
+    "carrier": {"1": _V5 + "b18/carrier_early.png", "2": _V5 + "b18/carrier_early.png"},
+    "watermill": {"3": _V5 + "b18/watermill_industrial.png", "4": _V5 + "b18/watermill_industrial.png"},
+}
+for _b in B:
+    if _b["id"] in ART_OVERRIDES:
+        _b["art"] = dict(_b["art"] or {})
+        _b["art"].update(ART_OVERRIDES[_b["id"]])

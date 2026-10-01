@@ -21,7 +21,7 @@ func setup(p_sim: JCSim) -> void:
 ## 某组的闲人（可劳动人口 − 在岗）。
 func idle(r: int, c: int) -> int:
 	var k: int = r * ct.c_n + c
-	return maxi(0, JCMath.mulppm(st.pop[k], ct.c_work[c]) - st.employed[k])
+	return maxi(0, JCMath.mulppm(st.pop[k], sim.econ.work_ppm(c)) - st.employed[k])
 
 
 func region_pop(r: int) -> int:
@@ -495,6 +495,57 @@ func fiscal() -> Dictionary:
 			"coll_eff": st.coll_eff, "arrears": st.arrears}
 
 
+## 能拉回民心的长期政令：还没施行、眼下能施行、各阶层民心有加有减之后威信净涨的（按各阶层在威信里的分量折算）。
+## 附带「减民怨」的（工厂法、社会保险）把减掉的民怨也折进去。净民心为负、该由玩家权衡的（所得税、遣使译书……）
+## 不在其内；赈济按有没有人挨饿开关，也不在其内。
+## 返回 [{decree, gain_ppm（威信约涨多少）, cost_q（每季开支，厘）, cmd}]，不花钱的排最前，其余按每两银子换来的威信排。
+func support_decrees() -> Array:
+	var out: Array = []
+	var C: int = ct.c_n
+	var unrest_c: PackedInt64Array = JCMath.zeros(C)
+	var pw: PackedInt64Array = JCMath.zeros(C)
+	for k: int in st.pop.size():
+		var w: int = st.pop[k] / 1000
+		unrest_c[k % C] += st.unrest[k] * w
+		pw[k % C] += w
+	for c: int in C:
+		unrest_c[c] = unrest_c[c] / maxi(1, pw[c])
+	for d: int in ct.decrees.size():
+		var dd: Dictionary = ct.decrees[d]
+		var id: String = String(dd["id"])
+		if String(dd.get("kind", "toggle")) != "toggle" or st.d_level[d] != 0 or id == "famine_relief":
+			continue
+		var sup_list: Array = dd.get("support", [])
+		var gain: int = 0
+		if not sup_list.is_empty():
+			var sup: Dictionary = sup_list[0]
+			for ck: Variant in sup.keys():
+				gain += JCMath.mulppm(int(sup[ck]) * 10_000, int(JCSociety.INFLUENCE.get(String(ck), 250_000)))
+		# 减民怨：民心约按 0.6 × 民怨往下拉，所以民怨减两成，民心约涨 0.6 × 当前民怨 × 两成
+		var effs: Array = dd.get("effects", [])
+		if not effs.is_empty():
+			for e: Dictionary in effs[0]:
+				if String(e.get("target", "")) != "unrest" or float(e.get("value", 0)) >= 0.0:
+					continue
+				var cut: int = int(-float(e.get("value", 0)) * 10_000.0)
+				var scope: String = String(e.get("scope", ""))
+				for c2: int in C:
+					if scope == "all" or scope == "" or scope == ct.c_id[c2]:
+						var dsup: int = JCMath.mulppm(JCMath.mulppm(unrest_c[c2], cut), 600_000)
+						gain += JCMath.mulppm(dsup, int(JCSociety.INFLUENCE.get(ct.c_id[c2], 250_000)))
+		if gain <= 0:
+			continue
+		var cmd: Dictionary = {"kind": "decree", "decree": id, "level": 1}
+		if not bool(sim.cmd.check(cmd).get("ok", false)):
+			continue
+		var cq: int = int(dd.get("cost_q_li", 0))
+		out.append({"decree": id, "gain_ppm": gain, "cost_q": cq, "cmd": cmd,
+				"score": JCMath.muldiv(gain, 1_000_000_000, maxi(1, cq))})
+	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return int(a["score"]) > int(b["score"]) or (int(a["score"]) == int(b["score"]) and String(a["decree"]) < String(b["decree"])))
+	return out
+
+
 # ════════════════════════════ 民生 ════════════════════════════════════════
 ## 民怨最重的几组：地区、阶层、生活、民怨、失业，以及主因（缺粮、日用太紧、失业、税重）。
 func hotspots(limit: int = 4) -> Array:
@@ -506,7 +557,7 @@ func hotspots(limit: int = 4) -> Array:
 			continue
 		var r: int = k / C
 		var c: int = k % C
-		var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+		var sup: int = JCMath.mulppm(st.pop[k], sim.econ.work_ppm(c))
 		var unemp: int = 0 if sup <= 0 or ct.c_id[c] == "gentry" else JCMath.ratio_ppm(maxi(0, sup - st.employed[k]), sup)
 		var cause: String = "cause.comfort"
 		if st.sat[k * ct.n_n + staple] < 900_000:
@@ -660,6 +711,17 @@ func _add_tag(tags: PackedStringArray, t: String) -> void:
 		tags.append(t)
 
 
+## 口粮里有哪样比常价贵过一成：粮食开始紧了（还不一定有人挨饿）。
+func food_tight() -> bool:
+	var n: int = int(ct.nidx.get("staple", -1))
+	if n < 0:
+		return false
+	for g: int in ct.n_goods[n]:
+		if st.f_demand[g] > 0 and price_ppm(g) > 1_100_000:
+			return true
+	return false
+
+
 ## 全国吃得最差的一组，口粮满足了几成（ppm）。
 func hunger_ppm() -> int:
 	var staple: int = int(ct.nidx.get("staple", 0))
@@ -686,8 +748,8 @@ func best_research(stance: String) -> int:
 		if b >= 0 and ct.b_tech[b] >= 0 and st.t_done[ct.b_tech[b]] != 1:
 			for p2: Variant in tech_path(ct.b_tech[b]):
 				key_set[int(p2)] = true
-	# 有人挨饿：不管取向，先研究增产粮食的
-	var hungry: bool = hunger_ppm() < 920_000
+	# 有人吃不饱（口粮不到九成五）或口粮涨价过一成：不管取向，先研究增产粮食的
+	var hungry: bool = hunger_ppm() < 950_000 or food_tight()
 	var best: int = -1
 	var best_score: int = -(1 << 62)
 	for t: int in ct.t_n:

@@ -280,7 +280,7 @@
    "id": "banking",
    "name": "钱庄汇兑",
    "era": 2,
-   "cost": 88000,
+   "cost": 153000,
    "prereq": [
     "bookkeeping"
    ],
@@ -3276,7 +3276,7 @@
     }
    ],
    "text": "{region}飞蝗蔽日，禾苗被啃食殆尽。",
-   "art": "",
+   "art": "assets/events/ev05/event_locusts.png",
    "region": "pick",
    "chance_ppm": 20000,
    "cooldown": 16
@@ -3344,7 +3344,7 @@
     }
    ],
    "text": "{region}疫气流行，死者相枕。",
-   "art": "",
+   "art": "assets/events/ev05/event_epidemic.png",
    "region": "pick",
    "chance_ppm": 30000,
    "cooldown": 16
@@ -3388,7 +3388,7 @@
     }
    ],
    "text": "强台风登陆海岬，港口与盐田受损。",
-   "art": "",
+   "art": "assets/events/ev05/event_typhoon_v2.png",
    "region": "pick",
    "chance_ppm": 40000,
    "cooldown": 16
@@ -3439,7 +3439,7 @@
     }
    ],
    "text": "{region}流民啸聚山林，劫掠商旅。",
-   "art": "",
+   "art": "assets/events/ev05/event_displacement_bandits.png",
    "region": "pick",
    "chance_ppm": 500000,
    "cooldown": 8
@@ -3487,7 +3487,7 @@
     }
    ],
    "text": "白银持续外流，市面银根紧缩。",
-   "art": "",
+   "art": "assets/events/ev05/event_silver_shortage.png",
    "region": "none",
    "chance_ppm": 150000,
    "cooldown": 16
@@ -3545,7 +3545,7 @@
     }
    ],
    "text": "北原边境有游骑袭扰村落。",
-   "art": "",
+   "art": "assets/events/ev05/event_border_alarm.png",
    "region": "none",
    "chance_ppm": 100000,
    "cooldown": 12
@@ -3862,7 +3862,7 @@
     }
    ],
    "text": "木材价格飞涨，山林砍伐殆尽。",
-   "art": "",
+   "art": "assets/events/ev05/event_timber_depletion.png",
    "region": "none",
    "chance_ppm": 300000,
    "cooldown": 40

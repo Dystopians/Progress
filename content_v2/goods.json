@@ -601,7 +601,7 @@
    "perish_ppm": 10000,
    "base_price_li": 328,
    "durable": false,
-   "art": "",
+   "art": "assets/goods/g11/goods_wine.png",
    "note": "米酒、黄酒与烧酒，用粮食酿成。"
   },
   {
@@ -629,7 +629,7 @@
    "perish_ppm": 20000,
    "base_price_li": 1132566,
    "durable": true,
-   "art": "",
+   "art": "assets/goods/g11/goods_ships.png",
    "note": "货船与渔船，港口运货、打鱼都要用；会慢慢磨损，要不断补充。"
   },
   {
@@ -979,7 +979,7 @@
    "perish_ppm": 1000000,
    "base_price_li": 24428,
    "durable": false,
-   "art": "",
+   "art": "assets/goods/g11/goods_power_v2.png",
    "note": "蒸汽机带动的动力，当季用掉、存不住；第四时代仍可用，渐渐被电力取代。"
   },
   {
@@ -1177,6 +1177,20 @@
    "durable": false,
    "art": "assets/goods/g10/goods_computer.png",
    "note": ""
+  },
+  {
+   "id": "services",
+   "name": "服务",
+   "unit": "人次",
+   "sector": "serv",
+   "tier": 2,
+   "era": 3,
+   "era_end": 4,
+   "perish_ppm": 1000000,
+   "base_price_li": 2877,
+   "durable": false,
+   "art": "",
+   "note": "茶楼酒肆、戏园、理发、餐馆这类花钱买的服务；当季用掉，存不住。"
   }
  ]
 }

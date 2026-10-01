@@ -198,6 +198,8 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 	# 有人挨饿：不管取向，补口粮缺口与兴修水利排在最前
 	var hungry: bool = an.hunger_ppm() < 920_000
 	var staple_goods: PackedInt64Array = ct.n_goods[int(ct.nidx.get("staple", 0))]
+	# 口粮涨价过一成：还没挨饿，先把水利修起来
+	var food_tight: bool = hungry or an.food_tight()
 	# 1) 进入下一时代的标志建筑
 	var ep: Dictionary = an.era_plan()
 	for it: Dictionary in ep.get("items", []):
@@ -238,6 +240,8 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 			w3 += 800_000
 		if hungry and (bid == "irrigation" or bid == "granary"):
 			w3 += 2_000_000
+		elif food_tight and bid == "irrigation":
+			w3 += 1_500_000
 		cands.append([w3, nd["cmd"], "stw.build.infra", {"building": bid, "region": nd["region"],
 				"need": String(nd["key"])}, int(nd["cost"])])
 	# 4) 失业重的地区：在当地开能用这些闲人的作坊
@@ -474,6 +478,36 @@ func _fiscal(sim: JCSim, an: JCAnalyst) -> Array:
 		var cmd2: Dictionary = {"kind": "decree", "decree": "ever_normal_granary", "level": 1}
 		if bool(sim.cmd.check(cmd2).get("ok", false)):
 			out.append(_p("fiscal", cmd2, "stw.fiscal.granary", {"_cool": "decree:granary", "_cool_q": 16}))
+	# 民心：长期政令里挑每两银子换来威信最多的施行，一年至多一道。每季开支不超过收入的一成（威信不到四成五时一成半），
+	# 国库在留底之外还要撑得起五年；不花钱的随时可开。
+	var low: bool = st.legitimacy < 450_000
+	if not _cooling("decree:support", q):
+		for sd: Dictionary in an.support_decrees():
+			var cq: int = int(sd["cost_q"])
+			if String(sd["decree"]) == "ever_normal_granary" and not _cooling("decree:granary", q):
+				continue
+			if cq > 0:
+				if cq > JCMath.mulppm(rev, 150_000 if low else 100_000):
+					continue
+				if st.treasury < reg * (runway_target / 2 if low else runway_target) + cq * 20:
+					continue
+			var sl: Dictionary = {"decree": sd["decree"], "gain_ppm": int(sd["gain_ppm"]), "_cool": "decree:support",
+					"_cool_q": 4}
+			if cq > 0:
+				sl["cost_li"] = cq
+			out.append(_p("fiscal", sd["cmd"], "stw.fiscal.support", sl))
+			break
+	# 威信跌到四成以下、国库还宽：蠲免一年钱粮，先把民心稳住
+	var planned: bool = false
+	for p0: Dictionary in out:
+		if String(p0["cmd"].get("decree", "")) == "tax_remission":
+			planned = true
+	if st.legitimacy < 400_000 and st.treasury > reg * 16 and not planned and not _cooling("decree:remission", q):
+		var rm2: int = int(ct.didx.get("tax_remission", -1))
+		var cmdr3: Dictionary = {"kind": "decree", "decree": "tax_remission", "level": 1}
+		if rm2 >= 0 and st.d_level[rm2] == 0 and bool(sim.cmd.check(cmdr3).get("ok", false)):
+			out.append(_p("fiscal", cmdr3, "stw.fiscal.remission_legit", {"legit_ppm": st.legitimacy,
+					"_cool": "decree:remission", "_cool_q": 8}))
 	# 赈济：某地口粮满足不到八成五
 	var fr: int = int(ct.didx.get("famine_relief", -1))
 	if fr >= 0:

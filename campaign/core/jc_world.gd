@@ -305,7 +305,7 @@ func metric(name: String, arg: String, r: int) -> float:
 		"unemployment":
 			var c: int = int(ct.cidx.get(arg, 0))
 			var k: int = r * C + c
-			var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+			var sup: int = JCMath.mulppm(st.pop[k], econ.work_ppm(c))
 			return 0.0 if sup <= 0 else float(maxi(0, sup - st.employed[k])) / sup
 		"literacy":
 			return float(st.literacy[r]) / PPM

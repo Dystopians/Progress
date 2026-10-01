@@ -78,6 +78,7 @@ static func advice_card(s: JcSession, it: Dictionary, compact: bool) -> PanelCon
 	var v: VBoxContainer = JwUi.vbox(6)
 	p.add_child(v)
 	var hh: HBoxContainer = JwUi.hbox(8)
+	hh.add_child(JcUi.icon(JcUi.ADVISOR_ART % String(it["ministry"]), 30.0 if compact else 40.0))
 	hh.add_child(JcUi.chip(JwText.t("jc.adv.m." + String(it["ministry"])), tok))
 	var sl: Dictionary = JcFmt.slots(g, it.get("slots", {}))
 	hh.add_child(JwUi.label(JcFmt.r(String(it["title"]), sl), "body_bold", "text.primary", true))

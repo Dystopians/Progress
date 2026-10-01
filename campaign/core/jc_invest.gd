@@ -774,7 +774,7 @@ func labor_ok(i: int, nm: int) -> bool:
 		new_l += ln
 		if lo > ln:
 			var k: int = r * C + c
-			var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+			var sup: int = JCMath.mulppm(st.pop[k], econ.work_ppm(c))
 			if sup > 0:
 				worst = maxi(worst, JCMath.ratio_ppm(maxi(0, sup - st.employed[k]), sup))
 	if old_l <= 0 or JCMath.ratio_ppm(old_l - new_l, old_l) < LABOR_CUT_PPM:
@@ -828,7 +828,7 @@ func _roi(b: int, m: int, r: int) -> int:
 		if need <= 0:
 			continue
 		var k: int = r * C + c
-		var idle: int = maxi(0, JCMath.mulppm(st.pop[k], ct.c_work[c]) - st.employed[k])
+		var idle: int = maxi(0, JCMath.mulppm(st.pop[k], econ.work_ppm(c)) - st.employed[k])
 		util = mini(util, maxi(300_000, JCMath.ratio_ppm(idle, need)))
 	# 水力：本地区水力不够时，新开的水力作坊只能开到五成
 	if ct.m_water[m] == 1 and econ.water_cov.size() > r:

@@ -74,9 +74,9 @@ good("earthenware", "粗陶", "件", "manu", 2, perish=1, art=A + "g08/goods_ear
 good("furniture", "家具", "件", "manu", 2, perish=1, art=A + "g08/goods_furniture.png")
 good("books", "书籍", "部", "manu", 2, perish=0, art=A + "g02/goods_books.png")
 good("candles", "蜡烛", "斤", "manu", 2, perish=1, art=A + "g08/goods_candles.png")
-good("wine", "酒", "坛", "manu", 2, perish=1, art=None, note="米酒、黄酒与烧酒，用粮食酿成。")
+good("wine", "酒", "坛", "manu", 2, perish=1, art=A + "g11/goods_wine.png", note="米酒、黄酒与烧酒，用粮食酿成。")
 good("medicine", "药材成药", "剂", "manu", 2, perish=3, art=A + "g04/goods_medicine.png")
-good("ships", "船只", "艘", "manu", 3, perish=2, durable=True, art=None, note="货船与渔船，港口运货、打鱼都要用；会慢慢磨损，要不断补充。")
+good("ships", "船只", "艘", "manu", 3, perish=2, durable=True, art=A + "g11/goods_ships.png", note="货船与渔船，港口运货、打鱼都要用；会慢慢磨损，要不断补充。")
 
 # ── 第二时代 ───────────────────────────────────────────────────────────────
 good("sugarcane", "甘蔗", "担", "agri", 0, era=2, perish=20, art=A + "g07/goods_sugarcane.png")
@@ -108,7 +108,7 @@ good("beer", "啤酒", "桶", "manu", 2, era=3, perish=5, art=A + "g08/goods_bee
 good("gas", "煤气", "千方", "energy", 1, era=3, perish=100, art=A + "g03/goods_gas.png")
 good("rubber", "橡胶", "担", "agri", 0, era=3, perish=1, price=14.0, art=A + "g03/goods_rubber.png",
      note="只能进口")
-good("power", "动力", "千马力时", "energy", 1, era=3, perish=100, art=None,
+good("power", "动力", "千马力时", "energy", 1, era=3, perish=100, art=A + "g11/goods_power_v2.png",
      note="蒸汽机带动的动力，当季用掉、存不住；第四时代仍可用，渐渐被电力取代。")
 
 # ── 第四时代 ───────────────────────────────────────────────────────────────
@@ -126,3 +126,6 @@ good("television", "电视机", "台", "manu", 3, era=4, perish=1, art=A + "g10/
 good("appliances", "家用电器", "台", "manu", 3, era=4, perish=1, art=A + "g06/goods_appliances.png")
 good("automobile", "机动车", "辆", "manu", 3, era=4, perish=1, art=A + "g06/goods_automobile.png")
 good("computer", "计算机", "台", "manu", 3, era=4, perish=2, art=A + "g10/goods_computer.png")
+# 第三时代起：服务（茶楼酒肆、戏园、理发、餐馆……）。当季用掉、存不住；越富越多买，靠人手，城里的活计跟着多
+good("services", "服务", "人次", "serv", 2, era=3, perish=100, art=None,
+     note="茶楼酒肆、戏园、理发、餐馆这类花钱买的服务；当季用掉，存不住。")

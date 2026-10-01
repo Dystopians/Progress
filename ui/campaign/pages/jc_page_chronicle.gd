@@ -84,6 +84,7 @@ func _steward(g: JCGame) -> void:
 		var d: Label = JwUi.label(JcFmt.date(int(rec["q"]), g.st.start_year), "caption", "text.muted")
 		d.custom_minimum_size = Vector2(90, 0)
 		h.add_child(d)
+		h.add_child(JcUi.icon(String(JcUi.STEWARD_ART.get(String(rec["domain"]), "")), 24.0))
 		h.add_child(JcUi.chip(t("jc.stw.domain." + String(rec["domain"])), JcUi.MUTED))
 		var ok: bool = bool(rec.get("ok", false))
 		var txt: String = JcFmt.r(String(rec["reason"]), JcFmt.slots(g, rec.get("slots", {})))

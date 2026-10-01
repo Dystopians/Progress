@@ -640,6 +640,26 @@
     "gentry": 5
    },
    "taste": {}
+  },
+  {
+   "id": "leisure",
+   "name": "游乐与服务",
+   "essential": false,
+   "weight": 3,
+   "era": 3,
+   "era_end": 4,
+   "el_ppm": 1500000,
+   "own_food": false,
+   "goods": {
+    "services": 1000000
+   },
+   "qty": {
+    "peasant": 20,
+    "artisan": 60,
+    "merchant": 150,
+    "gentry": 200
+   },
+   "taste": {}
   }
  ]
 }

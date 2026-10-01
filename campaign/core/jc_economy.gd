@@ -81,6 +81,8 @@ var research_bld: int = 0
 var lab_dem: PackedInt64Array
 var lab_sup: PackedInt64Array
 var lab_fill: PackedInt64Array
+## 口粮田（稻、麦、豆）的农户到位率（R）：种粮优先，见 _labor
+var food_fill: PackedInt64Array
 var lab_used: PackedInt64Array
 
 # ── 每堆 ──
@@ -136,13 +138,15 @@ var hh_got: PackedInt64Array       # (R*C)*G
 var want_ng: PackedInt64Array      # ((R*C)*N + n)*G：每项需要对各商品的需要量（给满足度折算）
 var need_ref: PackedInt64Array     # (R*C)*N
 var inc: PackedInt64Array
-## 收入来源（(R*C)*SRC_N）：工钱、经营与地租、官府发放、亏损与出资（负数）
+## 收入来源（(R*C)*SRC_N）：工钱、经营与地租、官府发放、经营亏损（负数）
 const SRC_WAGE: int = 0
 const SRC_PROFIT: int = 1
 const SRC_GOV: int = 2
 const SRC_LOSS: int = 3
 const SRC_N: int = 4
 var inc_src: PackedInt64Array = PackedInt64Array()
+## 本季民间出资（R*C，正数）：从积蓄里出，不算收入的减项
+var invest_out: PackedInt64Array = PackedInt64Array()
 ## 真实空缺（招工）：卡在人手上的作坊还缺的人
 var vacancy: PackedInt64Array
 var margin_pool: PackedInt64Array
@@ -262,6 +266,7 @@ func _zero() -> void:
 	lab_dem = JCMath.zeros(R * C)
 	lab_sup = JCMath.zeros(R * C)
 	lab_fill = JCMath.filled(R * C, PPM)
+	food_fill = JCMath.filled(R, PPM)
 	lab_used = JCMath.zeros(R * C)
 	s_eff_lv = JCMath.zeros(S)
 	s_lfill = JCMath.zeros(S)
@@ -308,6 +313,7 @@ func _zero() -> void:
 	need_ref = JCMath.zeros(R * C * N)
 	inc = JCMath.zeros(R * C)
 	inc_src = JCMath.zeros(R * C * SRC_N)
+	invest_out = JCMath.zeros(R * C)
 	vacancy = JCMath.zeros(R * C)
 	margin_pool = JCMath.zeros(R)
 	fee_pool = JCMath.zeros(R)
@@ -398,6 +404,20 @@ func labor_need(i: int, c: int) -> int:
 	return need
 
 
+## 口粮田：农田里出产口粮（稻、麦、豆……）的做法。
+var _staple_m: PackedInt64Array = PackedInt64Array()
+
+
+func _staple_farm(m: int) -> bool:
+	if _staple_m.size() != ct.m_n:
+		_staple_m = JCMath.zeros(ct.m_n)
+		var sg: PackedInt64Array = ct.n_goods[int(ct.nidx.get("staple", 0))]
+		for m2: int in ct.m_n:
+			if ct.b_cat[ct.m_b[m2]] == JCContent.CAT_FARM and not ct.m_out_g[m2].is_empty() and sg.has(ct.m_out_g[m2][0]):
+				_staple_m[m2] = 1
+	return _staple_m[m] == 1
+
+
 var soldier_r: PackedInt64Array = PackedInt64Array()
 
 
@@ -410,10 +430,15 @@ func _labor() -> void:
 	for r0: int in R:
 		sw[r0] = st.pop[r0 * C + CL_P]
 	soldier_r = JCMath.split(soldiers, sw)
+	# 种粮优先：农户先补口粮田（稻、麦、豆）要的人手，剩下的再按比例分给别的营生（经济作物、林牧渔、矿、工程……）。
+	# 原来一律按比例分：一闹饥荒，饿死的人里大半是种粮的，口粮跟着人口一起往下掉，越饿越少。
+	var food_dem: PackedInt64Array = JCMath.zeros(R)
 	for i: int in S:
 		var r: int = st.s_region[i]
 		for c: int in C:
 			lab_dem[r * C + c] += labor_need(i, c)
+		if _staple_farm(st.s_m[i]):
+			food_dem[r] += labor_need(i, CL_P)
 	for j: int in job_value.size():
 		var r2: int = job_region[j]
 		var w: int = maxi(1, st.wage[r2 * C + CL_A])
@@ -422,13 +447,18 @@ func _labor() -> void:
 	for r3: int in R:
 		for c2: int in C:
 			var k: int = r3 * C + c2
-			lab_sup[k] = JCMath.mulppm(st.pop[k], ct.c_work[c2])
+			lab_sup[k] = JCMath.mulppm(st.pop[k], work_ppm(c2))
 			var sup: int = lab_sup[k]
 			if c2 == CL_P:
 				sup = maxi(0, sup - soldier_r[r3])
-			lab_fill[k] = PPM if lab_dem[k] <= 0 else mini(PPM, JCMath.ratio_ppm(sup, lab_dem[k]))
-			if c2 == CL_P:
+				var fd: int = food_dem[r3]
+				food_fill[r3] = PPM if fd <= 0 else mini(PPM, JCMath.ratio_ppm(sup, fd))
+				var rest: int = maxi(0, sup - JCMath.mulppm(fd, food_fill[r3]))
+				var od: int = lab_dem[k] - fd
+				lab_fill[k] = PPM if od <= 0 else mini(PPM, JCMath.ratio_ppm(rest, od))
 				lab_dem[k] += soldier_r[r3]
+			else:
+				lab_fill[k] = PPM if lab_dem[k] <= 0 else mini(PPM, JCMath.ratio_ppm(sup, lab_dem[k]))
 	for i2: int in S:
 		if s_eff_lv[i2] <= 0:
 			continue
@@ -436,13 +466,14 @@ func _labor() -> void:
 		var r4: int = st.s_region[i2]
 		var f: int = PPM
 		var tot_l: int = 0
+		var food: bool = _staple_farm(m2)
 		for c4: int in C:
 			tot_l += ct.m_labor[m2 * C + c4]
 		for c3: int in C:
 			var need_c: int = ct.m_labor[m2 * C + c3]
 			if need_c <= 0:
 				continue
-			var fc: int = lab_fill[r4 * C + c3]
+			var fc: int = food_fill[r4] if food and c3 == CL_P else lab_fill[r4 * C + c3]
 			# 主力阶层缺多少减多少；只占少数的（掌柜、账房）缺了，别的阶层顶上，只按份额减产
 			var share: int = JCMath.ratio_ppm(need_c, maxi(1, tot_l))
 			if share < MAIN_INPUT_PPM:
@@ -552,6 +583,9 @@ func need_shares(n: int, r: int) -> PackedInt64Array:
 		# 新时代的商品：进入那个时代后慢慢普及，而且市面上得真有货（没货时只留一成，好让缺口显出来）
 		if ct.g_era[g] > 1 and w > 0:
 			w = JCMath.mulppm(JCMath.mulppm(w, adoption(ct.g_era[g])), _avail(g))
+		elif w > 0:
+			# 同一项需要里的几样可以互相顶替：哪样上季供不上，就少买它、多买别的（开平方减缓，免得来回震荡）
+			w = JCMath.mulppm(w, JCMath.isqrt(maxi(300_000, _avail(g)) * PPM))
 		out[k] = w
 		tot += w
 	if tot <= 0:
@@ -573,6 +607,27 @@ func need_mult(n: int, b: int) -> int:
 		1_500_000:
 			m = JCMath.muldiv(b, JCMath.isqrt(b * PPM), PPM)
 	return JCMath.mulppm(m, a)
+
+
+## 出来干活的人占多大比例（各阶层的基础比例 × 时代折扣）：到了第四时代，上学的年头变长、有了养老，
+## 农业也有了机械化，劳动人口的比例在 25 年里慢慢降 15%。（第三时代不降：那时种地还靠人手，
+## 一降就缺粮。）
+const WORK_CUT_ERA3: int = 0
+const WORK_CUT_ERA4: int = 150_000
+
+var _work_q: int = -1
+var _work_f: int = PPM
+
+
+func participation_ppm() -> int:
+	if _work_q != st.q:
+		_work_q = st.q
+		_work_f = PPM - JCMath.mulppm(WORK_CUT_ERA3, adoption(3)) - JCMath.mulppm(WORK_CUT_ERA4, adoption(4))
+	return _work_f
+
+
+func work_ppm(c: int) -> int:
+	return JCMath.mulppm(ct.c_work[c], participation_ppm())
 
 
 ## 普及度（ppm）：第一时代的东西恒为满；更晚时代的，本国进入那个时代之前为零，之后 ADOPT_Q 季从一成涨到满。
@@ -1266,11 +1321,20 @@ func _satisfaction() -> void:
 
 ## 世人期待的日用倍数：只跟着外面的世界走——世界进入新时代后，四十年里从上一档涨到这一档。
 ## 本国自己先进了新时代，百姓不会因此更不满（日子本来就在变好）；落后于世界才会。
+## 百姓对日子的期望：一半看外国（世界的时代），一半看身边（本国的时代）；各自在进入新时代后的
+## 40 年里慢慢涨上去。落后于世界照样吃亏，但不会被一个够不着的标准一直往下压。
 func expect_mult() -> int:
-	var e: int = clampi(st.world_era, 1, 4)
+	var world: int = _expect_for(st.world_era, st.world_era_q)
+	var own: int = _expect_for(st.era, st.era_q)
+	@warning_ignore("integer_division")
+	return (world + own) / 2
+
+
+func _expect_for(era_v: int, era_q: PackedInt64Array) -> int:
+	var e: int = clampi(era_v, 1, 4)
 	if e <= 1:
 		return comfort_expect[1]
-	var q0: int = st.world_era_q[e] if st.world_era_q.size() > e and st.world_era_q[e] >= 0 else st.q
+	var q0: int = era_q[e] if era_q.size() > e and era_q[e] >= 0 else st.q
 	var ramp: int = clampi(JCMath.ratio_ppm(st.q - q0, 160), 0, PPM)
 	return comfort_expect[e - 1] + JCMath.mulppm(comfort_expect[e] - comfort_expect[e - 1], ramp)
 
@@ -1665,7 +1729,9 @@ func _gov_pay(line: int, amount: int) -> int:
 	return amount
 
 
-## 民间出资：按各地区商贾、士绅储蓄的比例分摊（记为他们本季收入的减项）。
+## 民间出资：按各地区商贾、士绅储蓄的比例分摊，直接从积蓄里出——这是把银子换成产业，不是收入少了。
+## （原来记成收入的减项，第三时代民间大兴土木时，商贾当季的日常开支被一并压下去三成。）
+## 出资额另记在 invest_out，给界面与诊断看。
 func _private_pay(total: int) -> void:
 	if total <= 0:
 		return
@@ -1675,8 +1741,10 @@ func _private_pay(total: int) -> void:
 		w[r * 2 + 1] = maxi(0, st.savings[r * C + CL_G] + inc[r * C + CL_G])
 	var parts: PackedInt64Array = JCMath.split(total, w)
 	for r2: int in R:
-		_pay(r2, CL_M, -parts[r2 * 2], SRC_LOSS)
-		_pay(r2, CL_G, -parts[r2 * 2 + 1], SRC_LOSS)
+		st.savings[r2 * C + CL_M] -= parts[r2 * 2]
+		st.savings[r2 * C + CL_G] -= parts[r2 * 2 + 1]
+		invest_out[r2 * C + CL_M] += parts[r2 * 2]
+		invest_out[r2 * C + CL_G] += parts[r2 * 2 + 1]
 
 
 func _pay(r: int, c: int, amount: int, src: int = SRC_PROFIT) -> void:

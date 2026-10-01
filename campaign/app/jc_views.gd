@@ -63,8 +63,8 @@ func regions() -> Array:
 			liv += st.living[k] * w
 			unr += st.unrest[k] * w
 			if ct.c_id[c] != "gentry":
-				sup += JCMath.mulppm(st.pop[k], ct.c_work[c])
-				emp += mini(st.employed[k], JCMath.mulppm(st.pop[k], ct.c_work[c]))
+				sup += JCMath.mulppm(st.pop[k], g.sim.econ.work_ppm(c))
+				emp += mini(st.employed[k], JCMath.mulppm(st.pop[k], g.sim.econ.work_ppm(c)))
 		var pw: int = maxi(1, pop / 1000)
 		var living: int = liv / pw
 		var unrest: int = unr / pw
@@ -193,7 +193,7 @@ func region_detail(rid: String) -> Dictionary:
 	var C: int = ct.c_n
 	for c: int in C:
 		var k: int = r * C + c
-		var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+		var sup: int = JCMath.mulppm(st.pop[k], g.sim.econ.work_ppm(c))
 		classes.append({"class": ct.c_id[c], "name": ct.c_name[c], "pop": st.pop[k], "living": st.living[k],
 				"comfort": st.comfort[k], "unrest": st.unrest[k], "wage": st.wage[k],
 				"income_pc": st.income[k] / maxi(1, st.pop[k] / 1000),
@@ -677,8 +677,8 @@ func society() -> Dictionary:
 			liv += st.living[k] * w
 			com += st.comfort[k] * w
 			unr += st.unrest[k] * w
-			sup += JCMath.mulppm(st.pop[k], ct.c_work[c])
-			emp += mini(st.employed[k], JCMath.mulppm(st.pop[k], ct.c_work[c]))
+			sup += JCMath.mulppm(st.pop[k], g.sim.econ.work_ppm(c))
+			emp += mini(st.employed[k], JCMath.mulppm(st.pop[k], g.sim.econ.work_ppm(c)))
 			for n: int in N:
 				needs[n] += st.sat[k * N + n] * w
 		var pw: int = maxi(1, pop / 1000)

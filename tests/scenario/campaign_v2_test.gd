@@ -1,5 +1,6 @@
 ## 四百年战役 v2（docs/57、docs/58）：开局预演、守恒与确定性、存读档与改内容后的重演、撤回、托管与顾问、
-## 合并改造（至少两处旧的、七折、官府出钱）、切片改造、引擎文案齐全、走到终年圆满结束。
+## 合并改造（至少两处旧的、七折、官府出钱）、切片改造、引擎文案齐全、走到终年圆满结束；
+## 劳动人口比例、服务业、种粮优先、民间出资从积蓄出、拉民心的政令清单与顾问建议。
 extends JWTest
 
 const SEED: int = 7
@@ -224,3 +225,116 @@ func test_game_completes_at_end_year() -> void:
 	check(bool(r.get("over", false)), "走到 2000 年春，这一局结束")
 	eq_str(g.st.over_reason, "complete", "结束原因是四百年走完")
 	check(JwText.has("jc.over.complete") and JwText.has("jc.go.explain.complete"), "终局有文案")
+
+
+func test_work_share_falls_with_schooling_and_pensions() -> void:
+	var g: JCGame = _new()
+	var e: JCEconomy = g.sim.econ
+	eq_int(e.participation_ppm(), 1_000_000, "第一时代出来干活的比例不打折")
+	# 进入第三时代满 25 年：按 WORK_CUT_ERA3（眼下为 0，种地还靠人手）
+	g.st.era = 3
+	g.st.era_q[2] = 0
+	g.st.era_q[3] = 0
+	g.st.q = JCEconomy.ADOPT_Q + 10
+	eq_int(e.participation_ppm(), 1_000_000 - JCEconomy.WORK_CUT_ERA3, "第三时代按设定的折扣（眼下不降）")
+	# 第四时代满 25 年：再少 WORK_CUT_ERA4
+	g.st.era = 4
+	g.st.era_q[4] = 0
+	g.st.q += 1
+	eq_int(e.participation_ppm(), 1_000_000 - JCEconomy.WORK_CUT_ERA3 - JCEconomy.WORK_CUT_ERA4, "第四时代普及后再降一截")
+	var c: int = int(g.ct.cidx.get("artisan", 1))
+	eq_int(e.work_ppm(c), JCMath.mulppm(g.ct.c_work[c], e.participation_ppm()), "各阶层按同一折扣")
+
+
+func test_service_trade_is_wired() -> void:
+	var g: JCGame = _new()
+	var gi: int = int(g.ct.gidx.get("services", -1))
+	var b: int = int(g.ct.bidx.get("servicehall", -1))
+	var n: int = int(g.ct.nidx.get("leisure", -1))
+	check(gi >= 0 and b >= 0 and n >= 0, "服务、服务行、游乐与服务都在内容里")
+	if gi < 0 or b < 0 or n < 0:
+		return
+	check(g.ct.n_goods[n].has(gi), "游乐与服务这项需要买的是服务")
+	var makes: bool = false
+	for m: int in g.ct.b_methods[b]:
+		if g.ct.m_out_g[m].has(gi):
+			makes = true
+	check(makes, "服务行产出服务")
+	eq_int(g.ct.n_era[n], 3, "第三时代起才有这项需要（开局的校准不受影响）")
+
+
+func test_staple_farms_get_peasants_first() -> void:
+	var g: JCGame = _new()
+	var e: JCEconomy = g.sim.econ
+	var ct: JCContent = g.ct
+	var paddy: int = int(ct.midx.get("paddy_rice", -1))
+	var cotton: int = int(ct.midx.get("dry_cotton", -1))
+	check(paddy >= 0 and cotton >= 0, "有水田种稻、旱地种棉两种做法")
+	if paddy < 0 or cotton < 0:
+		return
+	check(e._staple_farm(paddy), "种稻是口粮田")
+	check(not e._staple_farm(cotton), "种棉不是口粮田")
+	# 各地农户只剩三成：口粮田的人手到位率不低于别的营生
+	var P: int = int(ct.cidx.get("peasant", 0))
+	for r: int in ct.r_n:
+		g.st.pop[r * ct.c_n + P] = g.st.pop[r * ct.c_n + P] * 3 / 10
+	check(bool(g.end_turn().get("ok", false)), "人手大缺的一季照常结算")
+	var short_any: bool = false
+	for r2: int in ct.r_n:
+		ge_int(e.food_fill[r2], e.lab_fill[r2 * ct.c_n + P], "口粮田先补人手（%s）" % ct.r_id[r2])
+		if e.lab_fill[r2 * ct.c_n + P] < 1_000_000:
+			short_any = true
+	check(short_any, "农户确实不够用（别的营生缺人）")
+
+
+func test_private_investment_comes_out_of_savings() -> void:
+	var g: JCGame = _new()
+	var e: JCEconomy = g.sim.econ
+	var C: int = g.ct.c_n
+	var sav0: int = 0
+	var inc0: int = 0
+	var out0: int = 0
+	for r: int in g.ct.r_n:
+		for c: int in [e.CL_M, e.CL_G]:
+			sav0 += g.st.savings[r * C + c]
+			inc0 += e.inc[r * C + c]
+			out0 += e.invest_out[r * C + c]
+	e._private_pay(1_000_000)
+	var sav1: int = 0
+	var inc1: int = 0
+	var out1: int = 0
+	for r2: int in g.ct.r_n:
+		for c2: int in [e.CL_M, e.CL_G]:
+			sav1 += g.st.savings[r2 * C + c2]
+			inc1 += e.inc[r2 * C + c2]
+			out1 += e.invest_out[r2 * C + c2]
+	eq_int(sav0 - sav1, 1_000_000, "民间出资从商贾、士绅的积蓄里扣")
+	eq_int(inc1, inc0, "不算成当季收入的减项（不压日常开支）")
+	eq_int(out1 - out0, 1_000_000, "出资额另有记录")
+
+
+func test_support_decrees_are_ranked_and_offered() -> void:
+	var g: JCGame = _new()
+	var list: Array = g.analyst.support_decrees()
+	ge_int(list.size(), 1, "开局就有能拉民心的政令可选")
+	var seen_paid: bool = false
+	for sd: Dictionary in list:
+		check(int(sd["gain_ppm"]) > 0, "清单里的政令威信净涨：" + String(sd["decree"]))
+		check(String(sd["decree"]) != "famine_relief", "赈济不在清单里（按有没有人挨饿开关）")
+		check(bool(g.sim.cmd.check(sd["cmd"]).get("ok", false)), "清单里的政令眼下能施行：" + String(sd["decree"]))
+		if int(sd["cost_q"]) > 0:
+			seen_paid = true
+		else:
+			check(not seen_paid, "不花钱的排在花钱的前面")
+	# 威信跌破五成：民政顾问推荐清单里的第一道，建议能渲染、能照办
+	g.st.legitimacy = 400_000
+	g.advisors.refresh(g.sim, g.analyst)
+	var found: bool = false
+	for it: Dictionary in g.advisors.items:
+		if not String(it["id"]).begins_with("minzheng.support."):
+			continue
+		found = true
+		var sl: Dictionary = JcFmt.slots(g, it.get("slots", {}))
+		check(JcFmt.r(String(it["title"]), sl) != "" and JcFmt.r(String(it["body"]), sl) != "", "建议能渲染")
+		ge_int((it.get("cmds", []) as Array).size(), 1, "建议带着能办的命令")
+	check(found, "威信不到五成时，民政顾问推荐拉民心的政令")

@@ -591,8 +591,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/farm_early.png",
-    "2": "assets/buildings/b02/farm_early.png",
+    "1": "assets/buildings/b17/paddy_early_v3.png",
+    "2": "assets/buildings/b17/paddy_early_v3.png",
     "3": "assets/buildings/b02/farm_industrial.png",
     "4": "assets/buildings/b02/farm_modern.png"
    },
@@ -1357,8 +1357,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
+    "1": "assets/buildings/b17/coppermine_early.png",
+    "2": "assets/buildings/b17/coppermine_early.png",
     "3": "assets/buildings/b02/mine_industrial.png",
     "4": "assets/buildings/b02/mine_modern.png"
    },
@@ -1453,8 +1453,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
+    "1": "assets/buildings/b17/kaolinpit_early.png",
+    "2": "assets/buildings/b17/kaolinpit_early.png",
     "3": "assets/buildings/b02/mine_industrial.png",
     "4": "assets/buildings/b02/mine_modern.png"
    },
@@ -1811,10 +1811,10 @@
    "tech": "chemistry",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "1": "assets/buildings/b17/sulfurmine_industrial.png",
+    "2": "assets/buildings/b17/sulfurmine_industrial.png",
+    "3": "assets/buildings/b17/sulfurmine_industrial.png",
+    "4": "assets/buildings/b17/sulfurmine_industrial.png"
    },
    "methods": [
     {
@@ -1862,10 +1862,10 @@
    "tech": "fertilizer",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "1": "assets/buildings/b17/phosphatemine_industrial.png",
+    "2": "assets/buildings/b17/phosphatemine_industrial.png",
+    "3": "assets/buildings/b17/phosphatemine_industrial.png",
+    "4": "assets/buildings/b17/phosphatemine_industrial.png"
    },
    "methods": [
     {
@@ -1935,8 +1935,8 @@
    "tech": "glassmaking",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
+    "1": "assets/buildings/b17/sandpit_early.png",
+    "2": "assets/buildings/b17/sandpit_early.png",
     "3": "assets/buildings/b02/mine_industrial.png",
     "4": "assets/buildings/b02/mine_modern.png"
    },
@@ -2036,10 +2036,10 @@
    "tech": "electrochemistry",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/mine_early.png",
-    "2": "assets/buildings/b02/mine_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "1": "assets/buildings/b17/bauxitemine_modern.png",
+    "2": "assets/buildings/b17/bauxitemine_modern.png",
+    "3": "assets/buildings/b17/bauxitemine_modern.png",
+    "4": "assets/buildings/b17/bauxitemine_modern.png"
    },
    "methods": [
     {
@@ -2209,8 +2209,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b06/textile_early.png",
-    "2": "assets/buildings/b06/textile_early.png",
+    "1": "assets/buildings/b17/weaving_early.png",
+    "2": "assets/buildings/b17/weaving_early.png",
     "3": "assets/buildings/b06/textile_industrial.png",
     "4": "assets/buildings/b06/textile_modern.png"
    },
@@ -2331,8 +2331,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b11/sericulture_early.png",
-    "2": "assets/buildings/b11/sericulture_early.png",
+    "1": "assets/buildings/b17/silkreel_early.png",
+    "2": "assets/buildings/b17/silkreel_early.png",
     "3": "assets/buildings/b11/sericulture_industrial.png",
     "4": "assets/buildings/b11/sericulture_modern.png"
    },
@@ -2432,8 +2432,8 @@
    "art": {
     "1": "assets/buildings/b06/textile_early.png",
     "2": "assets/buildings/b06/textile_early.png",
-    "3": "assets/buildings/b06/textile_industrial.png",
-    "4": "assets/buildings/b06/textile_modern.png"
+    "3": "assets/buildings/b17/silkweave_industrial.png",
+    "4": "assets/buildings/b17/silkweave_industrial.png"
    },
    "methods": [
     {
@@ -2656,8 +2656,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b05/forestry_industrial.png",
-    "2": "assets/buildings/b05/forestry_industrial.png",
+    "1": "assets/buildings/b18/sawmill_early.png",
+    "2": "assets/buildings/b18/sawmill_early.png",
     "3": "assets/buildings/b05/forestry_industrial.png",
     "4": "assets/buildings/b05/forestry_modern.png"
    },
@@ -2875,10 +2875,10 @@
    "tech": "bessemer",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b07/steel_industrial_v2.png",
-    "2": "assets/buildings/b07/steel_industrial_v2.png",
-    "3": "assets/buildings/b07/steel_industrial_v2.png",
-    "4": "assets/buildings/b07/steel_modern.png"
+    "1": "assets/buildings/b18/steelworks_industrial.png",
+    "2": "assets/buildings/b18/steelworks_industrial.png",
+    "3": "assets/buildings/b18/steelworks_industrial.png",
+    "4": "assets/buildings/b18/steelworks_industrial.png"
    },
    "methods": [
     {
@@ -4894,10 +4894,10 @@
    "tech": "fertilizer",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b07/chemical_early.png",
-    "2": "assets/buildings/b07/chemical_early.png",
-    "3": "assets/buildings/b07/chemical_industrial.png",
-    "4": "assets/buildings/b07/chemical_modern.png"
+    "1": "assets/buildings/b18/fertilizerworks_industrial.png",
+    "2": "assets/buildings/b18/fertilizerworks_industrial.png",
+    "3": "assets/buildings/b18/fertilizerworks_industrial.png",
+    "4": "assets/buildings/b18/fertilizerworks_industrial.png"
    },
    "methods": [
     {
@@ -5077,10 +5077,10 @@
    "tech": "railway",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b07/steel_industrial_v2.png",
-    "2": "assets/buildings/b07/steel_industrial_v2.png",
-    "3": "assets/buildings/b07/steel_industrial_v2.png",
-    "4": "assets/buildings/b07/steel_modern.png"
+    "1": "assets/buildings/b18/railworks_industrial.png",
+    "2": "assets/buildings/b18/railworks_industrial.png",
+    "3": "assets/buildings/b18/railworks_industrial.png",
+    "4": "assets/buildings/b18/railworks_industrial.png"
    },
    "methods": [
     {
@@ -5283,10 +5283,10 @@
    "tech": "power_grid",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b02/power_modern.png",
-    "2": "assets/buildings/b02/power_modern.png",
-    "3": "assets/buildings/b02/power_modern.png",
-    "4": "assets/buildings/b02/power_modern.png"
+    "1": "assets/buildings/b18/powerplant_modern.png",
+    "2": "assets/buildings/b18/powerplant_modern.png",
+    "3": "assets/buildings/b18/powerplant_modern.png",
+    "4": "assets/buildings/b18/powerplant_modern.png"
    },
    "methods": [
     {
@@ -5517,10 +5517,10 @@
    "tech": "electrochemistry",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b14/copperworks_modern.png",
-    "2": "assets/buildings/b14/copperworks_modern.png",
-    "3": "assets/buildings/b14/copperworks_modern.png",
-    "4": "assets/buildings/b14/copperworks_modern.png"
+    "1": "assets/buildings/b18/aluminumworks_modern.png",
+    "2": "assets/buildings/b18/aluminumworks_modern.png",
+    "3": "assets/buildings/b18/aluminumworks_modern.png",
+    "4": "assets/buildings/b18/aluminumworks_modern.png"
    },
    "methods": [
     {
@@ -5731,10 +5731,10 @@
    "tech": "automation",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b08/electrical_modern_v2.png",
-    "2": "assets/buildings/b08/electrical_modern_v2.png",
-    "3": "assets/buildings/b08/electrical_modern_v2.png",
-    "4": "assets/buildings/b08/electrical_modern_v2.png"
+    "1": "assets/buildings/b18/applianceworks_modern.png",
+    "2": "assets/buildings/b18/applianceworks_modern.png",
+    "3": "assets/buildings/b18/applianceworks_modern.png",
+    "4": "assets/buildings/b18/applianceworks_modern.png"
    },
    "methods": [
     {
@@ -5932,8 +5932,8 @@
     "freight": 9000
    },
    "art": {
-    "1": "assets/buildings/b08/vehicle_early_v3.png",
-    "2": "assets/buildings/b08/vehicle_early_v3.png",
+    "1": "assets/buildings/b18/carrier_early.png",
+    "2": "assets/buildings/b18/carrier_early.png",
     "3": "assets/buildings/b08/vehicle_industrial.png",
     "4": "assets/buildings/b08/vehicle_modern_v2.png"
    },
@@ -6443,8 +6443,8 @@
    "art": {
     "1": "assets/buildings/b02/power_early.png",
     "2": "assets/buildings/b02/power_early.png",
-    "3": "assets/buildings/b02/power_industrial.png",
-    "4": "assets/buildings/b02/power_modern.png"
+    "3": "assets/buildings/b18/watermill_industrial.png",
+    "4": "assets/buildings/b18/watermill_industrial.png"
    },
    "methods": [
     {
@@ -7115,6 +7115,80 @@
     }
    ],
    "note": "每级覆盖约 80 万人（卫生设施 150 万、综合公用 300 万），降低疫病风险与死亡率。"
+  },
+  {
+   "id": "servicehall",
+   "name": "服务行",
+   "category": "workshop",
+   "sector": "serv",
+   "owners": [
+    "private",
+    "gov"
+   ],
+   "land": "",
+   "deposit": "",
+   "coast": false,
+   "cost_li": 25600000,
+   "maint_li": 384000,
+   "build_q": 4,
+   "era": 3,
+   "era_end": 4,
+   "tech": "",
+   "effects": {},
+   "art": {
+    "1": "assets/buildings/b01/workshop_early.png",
+    "2": "assets/buildings/b01/workshop_early.png",
+    "3": "assets/buildings/b01/workshop_industrial.png",
+    "4": "assets/buildings/b01/workshop_modern.png"
+   },
+   "methods": [
+    {
+     "id": "service_city",
+     "name": "茶楼酒肆",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "services": 4000000
+     },
+     "inp": {
+      "wine": 400000,
+      "tea": 20000
+     },
+     "labor": {
+      "artisan": 2400,
+      "merchant": 200
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "eff_ppm": 1000000,
+     "note": ""
+    },
+    {
+     "id": "service_modern",
+     "name": "现代服务业",
+     "era": 4,
+     "era_end": 4,
+     "tech": "television",
+     "out": {
+      "services": 6000000
+     },
+     "inp": {
+      "electricity": 60000
+     },
+     "labor": {
+      "artisan": 2600,
+      "merchant": 300
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "eff_ppm": 1000000,
+     "note": ""
+    }
+   ],
+   "note": "茶楼酒肆、戏园、理发、餐馆……靠人手的买卖。日子宽裕了，人们花在这上面的钱越来越多，城里的活计也跟着多。"
   }
  ],
  "maint_mix": {

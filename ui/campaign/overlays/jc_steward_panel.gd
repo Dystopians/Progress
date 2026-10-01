@@ -41,6 +41,7 @@ func _domain_box(g: JCGame, d: String) -> PanelContainer:
 	var v: VBoxContainer = JwUi.vbox(6)
 	p.add_child(v)
 	var h: HBoxContainer = JwUi.hbox(10)
+	h.add_child(JcUi.icon(String(JcUi.STEWARD_ART.get(d, "")), 52.0))
 	var nv: VBoxContainer = JwUi.vbox(2)
 	nv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	nv.add_child(JwUi.label(t("jc.stw.domain." + d), "title_sub", "text.primary"))

@@ -66,7 +66,7 @@
     "reason.exit.recompute": "需重新计算 ▸ 试算",
     "reason.exit.archive": "查看发展档案（代价：无）",
     "reason.exit.new_game": "打开存档管理，读取匹配的存档或开新局（代价：无）",
-    "reason.exit.view_debt": "查看债务与到期台账（代价：无）",
+    "reason.exit.view_debt": "查看债务与到期账目（代价：无）",
     "reason.exit.keep": "保留该条目，已阅读（代价：见上）",
     "reason.window.election": "的选举",
     "reason.window.review": "的预算审查窗口",

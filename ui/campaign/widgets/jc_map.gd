@@ -11,6 +11,10 @@ const GEO_PATH: String = "res://assets/map/jc_geo.json"
 const BASE_PATH: String = "res://assets/map/jc_base.png"
 ## 值越大越好的图层（颜色从橙红到青绿）；其余反过来
 const GOOD_HIGH: PackedStringArray = ["living", "literacy", "industry", "pop"]
+## 左上角的罗盘题名框（Codex 第五批）：原图里有画的部分与题名框内框（相对裁出的部分）
+const FRAME_PATH: String = "res://assets/map/decor/map_compass_frame_v2.png"
+const FRAME_SRC: Rect2 = Rect2(64, 416, 1128, 406)
+const FRAME_TEXT: Rect2 = Rect2(380, 158, 662, 101)
 
 var geo: Dictionary = {}
 var base_tex: Texture2D = null
@@ -23,7 +27,9 @@ var names: Dictionary = {}          # rid → 地名
 var routes: Array = []              # [{partner, name, route, exports, imports}]
 var partner_names: Dictionary = {}
 var markers: Dictionary = {}        # rid → {icons: [贴图路径], alert: 警示键}
+var frame_title: String = ""        # 题名框里的字；空串就不画题名框
 var _tex_cache: Dictionary = {}
+var _frame_tex: Texture2D = null
 var selected: String = ""
 var hovered: String = ""
 var _t: float = 0.0
@@ -52,6 +58,8 @@ func _load() -> void:
 			polys[String(rid)] = pv
 	if ResourceLoader.exists(BASE_PATH):
 		base_tex = load(BASE_PATH) as Texture2D
+	if ResourceLoader.exists(FRAME_PATH):
+		_frame_tex = load(FRAME_PATH) as Texture2D
 
 
 func _process(delta: float) -> void:
@@ -209,6 +217,25 @@ func _draw() -> void:
 			draw_string_outline(font2, at2, sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, 5, Color(0.03, 0.07, 0.10, 0.9))
 			draw_string(font2, at2, sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, JwTheme.c("focus.ring"))
 		_draw_markers(rid3, pos + Vector2(0, fs2 + 16), sc)
+	_draw_frame()
+
+
+## 罗盘题名框：贴在地图左上角，框里写标题（底下先铺一层纸色，字才看得清）。
+func _draw_frame() -> void:
+	if frame_title == "" or _frame_tex == null:
+		return
+	var mw: float = map_size.x * _scale()
+	var w: float = clampf(mw * 0.3, 220.0, 400.0)
+	var k: float = w / FRAME_SRC.size.x
+	var at: Vector2 = _offset() + Vector2(14.0, 12.0)
+	var box: Rect2 = Rect2(at + FRAME_TEXT.position * k, FRAME_TEXT.size * k)
+	draw_rect(box, Color(0.93, 0.90, 0.82, 0.92), true)
+	draw_texture_rect_region(_frame_tex, Rect2(at, FRAME_SRC.size * k), FRAME_SRC)
+	var font: Font = JwTheme.font("title_block")
+	var fs: int = int(clampf(box.size.y * 0.55, 12.0, 22.0))
+	var tw: float = font.get_string_size(frame_title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var p: Vector2 = Vector2(box.position.x + (box.size.x - tw) * 0.5, box.position.y + box.size.y * 0.5 + fs * 0.36)
+	draw_string(font, p, frame_title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0.10, 0.13, 0.16))
 
 
 ## 地区名下：主要产业的小图（圆形底）；有事时在地名左上角画警示记号。

@@ -58,7 +58,7 @@ tech("flying_shuttle", "飞梭", 2, 22000, prereq=["craft_guild"], bg=["weaving"
      desc="织布用工减少四成；可建成衣坊。")
 tech("coal_iron", "煤炭冶铁", 2, 26000, bg=["coalmine", "ironworks"],
      desc="冶铁、打铁、制陶、烧砖改烧煤，缓解木炭短缺。")
-tech("banking", "钱庄汇兑", 2, 26000, prereq=["bookkeeping"], bg=["market"],
+tech("banking", "钱庄汇兑", 2, 45000, prereq=["bookkeeping"], bg=["market"],
      effects=[mod("invest_prop", 15)], desc="钱庄兴起：民间投资意愿 +15%，可以推行「钱庄准入」、借商债。")
 tech("canal_engineering", "运河营造", 2, 28000, prereq=["water_management"], bg=["irrigation"],
      desc="可以开凿运河，大幅降低有河地区的物流成本。")
@@ -532,3 +532,18 @@ event("university_expansion", "大学扩建", 4, 4, [["literacy", ">", 0.6]],
       [opt("扩建大学", cost=1200000, effects=[mod("research_speed", 10)], duration=80, support={"gentry": 3}),
        opt("暂缓", support={"gentry": -2})],
       "大学请求扩建。", art=EA + "ev04/event_university_expansion.png", chance=0.05, cooldown=80)
+
+
+# ── 事件画（Codex 第五批，docs/58 §7）：原来没有配图的七个事件 ─────────────────
+EVENT_ART = {
+    "locusts": EA + "ev05/event_locusts.png",
+    "epidemic": EA + "ev05/event_epidemic.png",
+    "typhoon": EA + "ev05/event_typhoon_v2.png",
+    "bandits": EA + "ev05/event_displacement_bandits.png",
+    "silver_drain": EA + "ev05/event_silver_shortage.png",
+    "border_raid": EA + "ev05/event_border_alarm.png",
+    "wood_shortage": EA + "ev05/event_timber_depletion.png",
+}
+for _e in E:
+    if _e["id"] in EVENT_ART and not _e.get("art"):
+        _e["art"] = EVENT_ART[_e["id"]]

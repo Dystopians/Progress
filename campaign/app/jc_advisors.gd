@@ -249,9 +249,23 @@ func _minzheng(sim: JCSim, an: JCAnalyst) -> Array:
 			_:
 				if st.budget[JCState.BUD_RELIEF] < 1_500_000:
 					cmds2.append({"kind": "budget", "line": JCState.BUD_RELIEF, "level": 1_500_000})
+		# 失业那半句只在跟失业有关时才说（士绅没有失业一说，写「失业 0%」反而让人糊涂）
+		var sl2: Dictionary = {"region": hs["region"], "class": hs["class"], "unrest_ppm": int(hs["unrest"]), "cause": cause}
+		if cause == "cause.jobless" or int(hs["unemp"]) >= 50_000:
+			sl2["unemp_ppm"] = int(hs["unemp"])
 		out.append(_item("minzheng", "unrest.%s.%s" % [hs["region"], hs["class"]], 2, "adv.min.unrest.t",
-				"adv.min.unrest.b", {"region": hs["region"], "class": hs["class"], "unrest_ppm": int(hs["unrest"]),
-				"cause": cause, "unemp_ppm": int(hs["unemp"])}, cmds2, int(hs["unrest"]) / 2))
+				"adv.min.unrest.b", sl2, cmds2, int(hs["unrest"]) / 2))
+	# 威信不到五成：推荐每两银子换来威信最多的长期政令（与托管用的是同一份清单）
+	if st.legitimacy < 500_000:
+		var sds: Array = an.support_decrees()
+		if not sds.is_empty():
+			var sd: Dictionary = sds[0]
+			var sl: Dictionary = {"decree": sd["decree"], "gain_ppm": int(sd["gain_ppm"]), "legit_ppm": st.legitimacy}
+			if int(sd["cost_q"]) > 0:
+				sl["cost_li"] = int(sd["cost_q"])
+			out.append(_item("minzheng", "support." + String(sd["decree"]), 2 if st.legitimacy < 400_000 else 1,
+					"adv.min.support.t", "adv.min.support.b", sl, [sd["cmd"]], 300_000 + (500_000 - st.legitimacy),
+					int(sd["cost_q"])))
 	var sev: int = st.cr_stage[JCState.CR_LIVELIHOOD] if st.cr_stage.size() > JCState.CR_LIVELIHOOD else 0
 	if sev >= 2:
 		out.append(_item("minzheng", "crisis", 3, "adv.min.crisis.t", "adv.min.crisis.b", {"stage": sev}, [], 900_000))

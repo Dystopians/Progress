@@ -1308,7 +1308,7 @@
   "commerce_tax_ppm": 20000,
   "customs_ppm": 50000,
   "hidden_land_ppm": 120000,
-  "hidden_growth_ppm": 2000,
+  "hidden_growth_ppm": 2400,
   "soldiers": 385472,
   "soldier_wage_li": 1800,
   "soldier_ration_milli": 600,

@@ -81,6 +81,9 @@ NEEDS = [
          taste={r: {"appliances": 0.5, "radio": 0.25, "television": 0.25}
                 for r in ("beiyuan", "zhongzhou", "haijia", "xiling")}),
     dict(id="car", name="出行", weight=3, era=4, el=1.5, goods={"automobile": 1.0}, qty={P: 0.0003, AR: 0.001, M: 0.004, GE: 0.005}),
+    # 第三时代起：上茶楼、看戏、下馆子……日子宽裕了花得越来越多（弹性 1.5），是城里活计的一大来源
+    dict(id="leisure", name="游乐与服务", weight=3, era=3, el=1.5, goods={"services": 1.0},
+         qty={P: 0.02, AR: 0.06, M: 0.15, GE: 0.2}),
 ]
 
 # ── 地区 ──────────────────────────────────────────────────────────────────
@@ -161,7 +164,7 @@ GOV = dict(
     commerce_tax=0.02,              # 商税：非农产品销售额的比例
     customs=0.05,                   # 关税：进出口额的比例
     hidden_land=0.12,               # 开局隐田比例
-    hidden_growth=0.002,            # 隐田每年增长（占在册田亩）
+    hidden_growth=0.0024,           # 隐田每年增长（占在册田亩）
     soldiers_per_capita=0.016,     # 兵额占人口
     soldier_wage=1.8,               # 兵饷（两 / 人 / 季，按农户阶层领取）
     soldier_ration=0.6,             # 军粮（石 / 人 / 季）

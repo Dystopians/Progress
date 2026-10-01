@@ -21,8 +21,8 @@
     "gloss.slot.part": "{region} {used}/{total}",
 
     "gloss.info_class.term": "实 · 算 · 预",
-    "gloss.info_class.def": "界面上的每个数都属于三类之一：「实」是已结算、能在台账找到出处的数；「算」是由已结算状态按公开规则确定性算出的数；「预」是依赖未来的情景预测，一律带区间与情景名。",
-    "gloss.info_class.inst": "国库现金 {cash} 是「实」：它能在台账里逐笔追到出处。",
+    "gloss.info_class.def": "界面上的每个数都属于三类之一：「实」是已结算、能在账目找到出处的数；「算」是由已结算状态按公开规则确定性算出的数；「预」是依赖未来的情景预测，一律带区间与情景名。",
+    "gloss.info_class.inst": "国库现金 {cash} 是「实」：它能在账目里逐笔追到出处。",
 
     "gloss.gov_cash.term": "国库现金",
     "gloss.gov_cash.def": "政府账户上的现金。每笔付款先看现金，不足先按规则融资，仍不足的部分转为欠付，国库余额永远不为负。",
@@ -93,7 +93,7 @@
     "gloss.unemployment.inst": "当前失业率 {rate}。",
 
     "gloss.event.term": "事件",
-    "gloss.event.def": "按公开条件与概率触发的事件，只改变预期、信任、支持、集团立场与行政能力，不动任何账本；情景预测不含事件。",
+    "gloss.event.def": "按公开条件与概率触发的事件，只改变预期、信任、支持、集团立场与行政能力，不动任何账目；情景预测不含事件。",
     "gloss.event.inst": "本局至今触发事件 {n} 次。",
 
     "gloss.shock.term": "外生冲击",

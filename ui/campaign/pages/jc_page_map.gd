@@ -70,6 +70,7 @@ func refresh() -> void:
 	map.routes = views().routes()
 	map.selected = session.selected_region
 	map.markers = marker_data(_regions)
+	map.frame_title = rt("jc.map.frame_title", {"date": JcFmt.date(g.st.q, g.st.start_year)})
 	(_layer_btns[session.map_layer] as Button).set_pressed_no_signal(true)
 	_apply_layer()
 	map.queue_redraw()

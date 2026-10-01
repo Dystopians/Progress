@@ -117,12 +117,12 @@ func demography() -> void:
 				birth = JCMath.mulppm(birth, PPM - JCMath.mulppm(st.literacy[r], 350_000 if st.era >= 4 else 120_000))
 			birth = JCMath.mulppm(birth, clampi(f, 600_000, PPM))
 			# 生计紧：没活干、日子紧的人家晚婚少育（失业三成时少生一成五；日用只有期待一半时再少一成）
-			var sup_b: int = JCMath.mulppm(p, ct.c_work[c])
+			var sup_b: int = JCMath.mulppm(p, econ.work_ppm(c))
 			var idle_b: int = 0 if sup_b <= 0 else JCMath.ratio_ppm(maxi(0, sup_b - st.employed[k]), sup_b)
 			birth = JCMath.mulppm(birth, PPM - JCMath.mulppm(mini(idle_b, 400_000), 250_000))
 			birth = JCMath.mulppm(birth, 900_000 + JCMath.mulppm(mini(st.comfort[k], PPM), 100_000))
 			var death: int = 8_600
-			# 时代本身带来的普遍改善（吃得更好、常识与防疫）：不靠设施，第二时代起逐步降
+			# 时代本身带来的普遍改善（吃得更好、常识与防疫）：不靠设施，第四时代才有
 			death = JCMath.mulppm(death, PPM - ERA_DEATH_CUT[clampi(st.era, 1, 4)])
 			# 医药与卫生降死亡率：前现代效果有限（第一时代至多一成），到第四时代才显著
 			death = JCMath.mulppm(death, PPM - JCMath.mulppm(h, 50_000 + (st.era - 1) * 70_000) - JCMath.mulppm(s, 40_000 + (st.era - 1) * 30_000))
@@ -148,26 +148,26 @@ func _mobility() -> void:
 		var kM: int = r * C + M
 		var kG: int = r * C + Gc
 		# 作坊缺人、村里有闲人：农户进城做工
-		var vacA: int = maxi(0, st.jobs[kA] - JCMath.mulppm(st.pop[kA], ct.c_work[A]))
-		var idleP: int = maxi(0, JCMath.mulppm(st.pop[kP], ct.c_work[P]) - st.employed[kP])
+		var vacA: int = maxi(0, st.jobs[kA] - JCMath.mulppm(st.pop[kA], econ.work_ppm(A)))
+		var idleP: int = maxi(0, JCMath.mulppm(st.pop[kP], econ.work_ppm(P)) - st.employed[kP])
 		var move_w: int = mini(mini(vacA, idleP), JCMath.mulppm(st.pop[kP], 20_000))
 		move_w = JCMath.mulppm(move_w, up)
-		_move(kP, kA, JCMath.ratio_ppm(move_w, ct.c_work[P], 0) * 1)
+		_move(kP, kA, JCMath.ratio_ppm(move_w, econ.work_ppm(P), 0) * 1)
 		# 工匠闲人多、农活缺人：回乡
-		var idleA: int = maxi(0, JCMath.mulppm(st.pop[kA], ct.c_work[A]) - st.employed[kA])
-		var vacP: int = maxi(0, st.jobs[kP] - JCMath.mulppm(st.pop[kP], ct.c_work[P]))
+		var idleA: int = maxi(0, JCMath.mulppm(st.pop[kA], econ.work_ppm(A)) - st.employed[kA])
+		var vacP: int = maxi(0, st.jobs[kP] - JCMath.mulppm(st.pop[kP], econ.work_ppm(P)))
 		if idleA > JCMath.mulppm(st.pop[kA], 60_000):
-			_move(kA, kP, JCMath.muldiv(mini(idleA, vacP + JCMath.mulppm(idleA, 100_000)), PPM, ct.c_work[A]) / 10)
+			_move(kA, kP, JCMath.muldiv(mini(idleA, vacP + JCMath.mulppm(idleA, 100_000)), PPM, econ.work_ppm(A)) / 10)
 		# 商贾缺人：工匠转行
-		var vacM: int = maxi(0, st.jobs[kM] - JCMath.mulppm(st.pop[kM], ct.c_work[M]))
-		_move(kA, kM, JCMath.mulppm(mini(JCMath.muldiv(vacM, PPM, ct.c_work[M]), JCMath.mulppm(st.pop[kA], 10_000)), up))
+		var vacM: int = maxi(0, st.jobs[kM] - JCMath.mulppm(st.pop[kM], econ.work_ppm(M)))
+		_move(kA, kM, JCMath.mulppm(mini(JCMath.muldiv(vacM, PPM, econ.work_ppm(M)), JCMath.mulppm(st.pop[kA], 10_000)), up))
 		# 商贾闲人多：转回工匠
-		var idleM: int = maxi(0, JCMath.mulppm(st.pop[kM], ct.c_work[M]) - st.employed[kM])
+		var idleM: int = maxi(0, JCMath.mulppm(st.pop[kM], econ.work_ppm(M)) - st.employed[kM])
 		if idleM > JCMath.mulppm(st.pop[kM], 100_000):
-			_move(kM, kA, JCMath.muldiv(idleM, PPM, ct.c_work[M]) / 20)
+			_move(kM, kA, JCMath.muldiv(idleM, PPM, econ.work_ppm(M)) / 20)
 		# 士绅：识字的人随读书机会增长，下限为人口的 2.5%
 		var pop_r: int = region_pop(r)
-		var vacG: int = maxi(0, st.jobs[kG] - JCMath.mulppm(st.pop[kG], ct.c_work[Gc]))
+		var vacG: int = maxi(0, st.jobs[kG] - JCMath.mulppm(st.pop[kG], econ.work_ppm(Gc)))
 		var want_g: int = maxi(JCMath.mulppm(pop_r, 25_000), JCMath.mulppm(pop_r, JCMath.mulppm(st.literacy[r], 150_000)))
 		# 读书人愿不愿意「入士」要看士绅的日子：人均收入不到工匠的两倍半就不去挤了；
 		# 士绅人均收入跌到工匠的一倍半以下，一部分士绅改行做工商（保底人口的 2.5%）
@@ -177,7 +177,7 @@ func _mobility() -> void:
 		if pc_g * 2 < pc_a * 3 and st.pop[kG] > JCMath.mulppm(pop_r, 25_000):
 			_move(kG, kA, mini(JCMath.mulppm(st.pop[kG], 5_000), st.pop[kG] - JCMath.mulppm(pop_r, 25_000)))
 		if (st.pop[kG] < want_g and attractive) or vacG > 0:
-			var mv: int = mini(JCMath.mulppm(st.pop[kM] + st.pop[kA], 3_000), maxi(want_g - st.pop[kG], JCMath.muldiv(vacG, PPM, ct.c_work[Gc])))
+			var mv: int = mini(JCMath.mulppm(st.pop[kM] + st.pop[kA], 3_000), maxi(want_g - st.pop[kG], JCMath.muldiv(vacG, PPM, econ.work_ppm(Gc))))
 			mv = JCMath.mulppm(mv, up)
 			# 读书出身的士人多来自工匠与殷实农户，少数来自商贾
 			@warning_ignore("integer_division")
@@ -208,7 +208,7 @@ func _migration() -> void:
 		var attract: PackedInt64Array = JCMath.zeros(R)
 		for r: int in R:
 			var k: int = r * C + c
-			var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+			var sup: int = JCMath.mulppm(st.pop[k], econ.work_ppm(c))
 			var emp: int = PPM if sup <= 0 else mini(PPM, JCMath.ratio_ppm(st.employed[k], sup))
 			attract[r] = JCMath.mulppm(st.living[k], emp)
 		for r2: int in R:
@@ -284,7 +284,7 @@ func living_and_unrest() -> void:
 			if st.arrears > 0 and (cid == "peasant" or cid == "gentry"):
 				t += 150_000
 			# 失业
-			var sup: int = JCMath.mulppm(st.pop[k], ct.c_work[c])
+			var sup: int = JCMath.mulppm(st.pop[k], econ.work_ppm(c))
 			if sup > 0 and cid != "gentry":
 				var idle: int = maxi(0, sup - st.employed[k])
 				# 农户的闲人多半在自家田里帮工（分的是一家的收成），民怨比城里没活干的人轻

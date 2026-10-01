@@ -6,6 +6,16 @@ const GOOD: String = "teal.core"
 const WARN: String = "ochre.core"
 const BAD: String = "ochre.hot"
 const MUTED: String = "text.muted"
+## 顾问五部的徽记、托管六领域的图标（Codex 第五批）
+const ADVISOR_ART: String = "res://assets/advisors/advisor_%s.png"
+const STEWARD_ART: Dictionary = {
+	"research": "res://assets/icons/campaign/steward_research.png",
+	"build": "res://assets/icons/campaign/steward_construction.png",
+	"modernize": "res://assets/icons/campaign/steward_modernization.png",
+	"fiscal": "res://assets/icons/campaign/steward_fiscal.png",
+	"trade": "res://assets/icons/campaign/steward_trade.png",
+	"events": "res://assets/icons/campaign/steward_events.png",
+}
 
 
 ## 按好坏给色：好（青绿）、要注意（赭）、坏（橙红）。
@@ -56,6 +66,23 @@ static func card(title: String, subtitle: String = "", pad: int = 14) -> Diction
 	var body: VBoxContainer = JwUi.vbox(8)
 	v.add_child(body)
 	return {"root": root, "body": body, "head": head}
+
+
+## 小图标（顾问徽记、托管图标）：图在就显示，不在就什么都不放（不留色块）。
+static func icon(path: String, side: float) -> Control:
+	if path == "" or not ResourceLoader.exists(path):
+		var spacer: Control = Control.new()
+		spacer.custom_minimum_size = Vector2(0, 0)
+		spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return spacer
+	var tr: TextureRect = TextureRect.new()
+	tr.texture = load(path) as Texture2D
+	tr.custom_minimum_size = Vector2(side, side)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return tr
 
 
 ## 配图（路径不存在就返回一块底色）。
