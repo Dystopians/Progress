@@ -34,6 +34,8 @@ const BUILD_WAGE_PPM: int = 500000
 const MAIN_INPUT_PPM: int = 250_000
 ## 辅料缺了至少也按这个份额减产（一样没有也不至于一点不受影响）
 const MINOR_INPUT_FLOOR: int = 100_000
+## 每季损耗到这个比例以上的货（电、动力、煤气、服务）存不住，同一季里要先产出来再给别人用（见 _active_ranks）
+const PERISH_ENERGY_PPM: int = 500_000
 ## 日用水平的上下限（ppm）
 const BASKET_MIN: int = 20_000
 const BASKET_MAX: int = 6_000_000
@@ -1022,11 +1024,30 @@ func _active_ranks() -> Dictionary:
 	var rank: Dictionary = {}
 	for m2: Variant in ms.keys():
 		rank[int(m2)] = 0
+	# 当季用掉、存不住的能源（电、动力、煤气、服务）：先产出来，用它的作坊排在后面；它自己要的煤之类用季初的库存。
+	# 原来遇上「电厂要煤、煤矿要电、电缆要电」这种循环，名次排乱：煤矿排在电厂前面开工，那时还没电，煤矿停工；
+	# 电发出来时用电的作坊都开过工了，存不住的电白白作废——电气时代煤、电一起崩掉。
+	# （自己也要用存不住的东西的做法不提前，比如炼焦兼出煤气却要用电。）
+	var first: Dictionary = {}
+	for m4: Variant in ms.keys():
+		var mf: int = int(m4)
+		var makes: bool = false
+		var needs: bool = false
+		for g0: int in ct.m_out_g[mf]:
+			if ct.g_perish[g0] >= PERISH_ENERGY_PPM:
+				makes = true
+		for g1: int in ct.m_in_g[mf]:
+			if ct.g_perish[g1] >= PERISH_ENERGY_PPM:
+				needs = true
+		if makes and not needs:
+			first[mf] = true
 	var limit: int = ms.size() + 1
 	for it: int in limit:
 		var changed: bool = false
 		for m3: Variant in ms.keys():
 			var mi: int = int(m3)
+			if first.has(mi):
+				continue
 			var r: int = 0
 			var ig: PackedInt64Array = ct.m_in_g[mi]
 			for k2: int in ig.size():

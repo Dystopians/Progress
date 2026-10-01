@@ -278,6 +278,9 @@ func goods() -> Array:
 		var pp: int = JCMath.ratio_ppm(st.price[gi], maxi(1, ct.g_base[gi]))
 		var sq: int = JCMath.ratio_ppm(st.stock[gi], maxi(1, d), 0)
 		var gap: int = st.f_unmet[gi] + st.f_imp[gi]
+		# 想要的货里有几成靠进口或没买到（给人看，最多 100%）
+		var want: int = st.f_hh[gi] + st.f_use[gi] + st.f_gov[gi] + st.f_exp[gi] + st.f_unmet[gi]
+		var short: int = mini(JCMath.PPM, JCMath.ratio_ppm(gap, maxi(1, want)))
 		var state: String = "ok"
 		if d > 0 and (JCMath.ratio_ppm(gap, d) > 100_000 or pp > 1_300_000):
 			state = "short"
@@ -288,7 +291,7 @@ func goods() -> Array:
 				"art": ct.g_art[gi], "price": st.price[gi], "price_ppm": pp, "base": ct.g_base[gi],
 				"prod": st.f_prod[gi], "hh": st.f_hh[gi], "use": st.f_use[gi], "gov": st.f_gov[gi],
 				"exp": st.f_exp[gi], "imp": st.f_imp[gi], "unmet": st.f_unmet[gi], "demand": d, "stock": st.stock[gi],
-				"stock_q": sq, "state": state})
+				"stock_q": sq, "short_ppm": short, "state": state})
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		var sa: int = SECTOR_ORDER.find(String(a["sector"]))
 		var sb: int = SECTOR_ORDER.find(String(b["sector"]))
@@ -325,6 +328,7 @@ func goods_chain(gid: String) -> Dictionary:
 							"main": ct.m_in_share[m][k] >= JCEconomy.MAIN_INPUT_PPM,
 							"price_ppm": JCMath.ratio_ppm(st.price[g2], maxi(1, ct.g_base[g2]))})
 				producers[key] = {"building": ct.b_id[st.s_b[i]], "building_name": ct.b_name[st.s_b[i]],
+						"art": ct.building_art(st.s_b[i], maxi(st.era, ct.m_era[m])),
 						"method": key, "method_name": ct.m_name[m], "levels": 0, "u_acc": 0, "inputs": ins,
 						"out_q": ct.m_out_q[m][ct.m_out_g[m].find(gi)]}
 			var pr: Dictionary = producers[key]
@@ -334,6 +338,7 @@ func goods_chain(gid: String) -> Dictionary:
 			var key2: String = ct.m_id[m]
 			if not consumers.has(key2):
 				consumers[key2] = {"kind": "method", "building": ct.b_id[st.s_b[i]], "building_name": ct.b_name[st.s_b[i]],
+						"art": ct.building_art(st.s_b[i], maxi(st.era, ct.m_era[m])),
 						"method": key2, "method_name": ct.m_name[m], "levels": 0,
 						"out": ct.g_id[ct.m_out_g[m][0]] if not ct.m_out_g[m].is_empty() else ""}
 			consumers[key2]["levels"] = int(consumers[key2]["levels"]) + st.s_level[i]
@@ -360,7 +365,7 @@ func goods_chain(gid: String) -> Dictionary:
 	var options: Array = []
 	for m2: int in g.analyst.producer_methods(gi):
 		options.append({"building": ct.b_id[ct.m_b[m2]], "building_name": ct.b_name[ct.m_b[m2]], "method": ct.m_id[m2],
-				"method_name": ct.m_name[m2]})
+				"method_name": ct.m_name[m2], "art": ct.building_art(ct.m_b[m2], maxi(st.era, ct.m_era[m2]))})
 	var fix: Dictionary = g.analyst.best_fix(gi)
 	var row: Dictionary = {}
 	for gv: Dictionary in goods():
@@ -426,7 +431,7 @@ func chain_graph(gid: String) -> Dictionary:
 	var cell: Callable = func(x3: int) -> Dictionary:
 		var id3: String = ct.g_id[x3]
 		return {"id": id3, "name": String(names.get(id3, ct.g_name[x3])), "state": String(state.get(id3, "ok")),
-				"fill": g.sim.econ.in_fill[x3] if g.sim.econ.in_fill.size() > x3 else PPM}
+				"fill": g.sim.econ.in_fill[x3] if g.sim.econ.in_fill.size() > x3 else PPM, "art": ct.g_art[x3]}
 	var o_up1: Array = []
 	for a: int in up1.slice(0, 6):
 		o_up1.append(cell.call(a))
@@ -583,6 +588,32 @@ func techs() -> Dictionary:
 		if t0 >= 0:
 			for p: Variant in g.analyst.tech_path(t0):
 				key_set[int(p)] = true
+	# 每项科技解锁什么：建筑、新做法、政令（给科技树上的小图标与详情）
+	var unlocks: Array = []
+	for t0: int in ct.t_n:
+		unlocks.append([])
+	for b: int in ct.b_n:
+		if ct.b_tech[b] >= 0:
+			(unlocks[ct.b_tech[b]] as Array).append({"kind": "building", "id": ct.b_id[b], "name": ct.b_name[b],
+					"art": ct.building_art(b, maxi(ct.t_era[ct.b_tech[b]], ct.b_era[b]))})
+	for m: int in ct.m_n:
+		if ct.m_tech[m] >= 0 and ct.b_tech[ct.m_b[m]] != ct.m_tech[m]:
+			var bm: int = ct.m_b[m]
+			(unlocks[ct.m_tech[m]] as Array).append({"kind": "method", "id": ct.m_id[m], "name": ct.m_name[m],
+					"building": ct.b_name[bm], "art": ct.building_art(bm, maxi(ct.t_era[ct.m_tech[m]], ct.m_era[m]))})
+	for d: int in ct.decrees.size():
+		var dt: int = int(ct.tidx.get(String(ct.decrees[d].get("tech", "")), -1))
+		if dt >= 0:
+			(unlocks[dt] as Array).append({"kind": "decree", "id": String(ct.decrees[d]["id"]),
+					"name": String(ct.decrees[d]["name"]), "art": ""})
+		# 分档政令里要某项科技才能选的那几档（如政体：活字印刷后可行开明君主）
+		var lt: Array = ct.decrees[d].get("level_tech", [])
+		var lvn: Array = ct.decrees[d].get("levels", [])
+		for lv: int in lt.size():
+			var lt_i: int = int(ct.tidx.get(String(lt[lv]), -1))
+			if lt_i >= 0 and lv < lvn.size():
+				(unlocks[lt_i] as Array).append({"kind": "decree", "id": String(ct.decrees[d]["id"]), "level": lv,
+						"name": String(ct.decrees[d]["name"]), "level_name": String(lvn[lv]), "art": ""})
 	var list: Array = []
 	for t: int in ct.t_n:
 		var prereq: Array = []
@@ -602,7 +633,7 @@ func techs() -> Dictionary:
 				"progress": st.t_prog[t], "done": st.t_done[t] == 1, "available": g.sim.world.tech_available(t),
 				"focus": st.focus == t, "key": ct.t_key[t] == 1, "era_key": key_set.has(t), "prereq": prereq,
 				"bg_domestic": dom, "bg_foreign": fo, "bg": bg_names, "eta_q": (left + speed - 1) / maxi(1, speed),
-				"known_abroad": _known_abroad(t)})
+				"known_abroad": _known_abroad(t), "unlocks": unlocks[t]})
 	return {"list": list, "points": st.points, "pool": st.rpool, "focus": ct.t_id[st.focus] if st.focus >= 0 else "",
 			"era": st.era}
 
@@ -638,12 +669,22 @@ func policy() -> Dictionary:
 		var dd: Dictionary = ct.decrees[d]
 		var tech: String = String(dd.get("tech", ""))
 		var locked: bool = st.era < int(dd.get("era", 1)) or (tech != "" and st.t_done[int(ct.tidx.get(tech, 0))] != 1)
+		# 分档政令每一档的门槛：{era, tech, locked}
+		var lv_gate: Array = []
+		var lera: Array = dd.get("level_era", [])
+		var ltech: Array = dd.get("level_tech", [])
+		for li: int in (dd.get("levels", []) as Array).size():
+			var le: int = int(lera[li]) if li < lera.size() else 1
+			var lt: String = String(ltech[li]) if li < ltech.size() else ""
+			var lk: bool = st.era < le or (lt != "" and st.t_done[int(ct.tidx.get(lt, 0))] != 1)
+			lv_gate.append({"era": le, "tech": lt, "locked": lk})
 		decrees.append({"id": String(dd["id"]), "name": String(dd["name"]), "desc": String(dd.get("desc", "")),
 				"kind": String(dd.get("kind", "toggle")), "levels": dd.get("levels", []), "level": st.d_level[d],
 				"cost_once": int(dd.get("cost_once_li", 0)), "cost_q": int(dd.get("cost_q_li", 0)),
 				"duration": int(dd.get("duration", 0)), "until": st.d_until[d], "cool": st.d_cool[d], "locked": locked,
-				"tech": tech, "era": int(dd.get("era", 1)), "support": dd.get("support", [])})
-	return {"taxes": taxes, "budget": lines, "decrees": decrees, "rev": Array(st.rev), "exp": Array(st.exp),
+				"tech": tech, "era": int(dd.get("era", 1)), "support": dd.get("support", []), "level_gate": lv_gate})
+	return {"taxes": taxes, "budget": lines, "decrees": decrees, "regime": g.analyst.regime_profile(),
+			"rev": Array(st.rev), "exp": Array(st.exp),
 			"fiscal": g.analyst.fiscal(), "loan_limit": g.sim.cmd.loan_limit(), "debt": st.debt,
 			"rate": JCMath.mulppm(st.debt_rate_ppm, g.sim.mods.mult_ppm("interest_rate"))}
 
@@ -685,8 +726,11 @@ func society() -> Dictionary:
 		var need_list: Array = []
 		for n2: int in N:
 			if ct.need_active(n2, st.era) and ct.n_qty[n2 * C + c] > 0:
+				# 分组（民生页按组排图标）：温饱、衣食住用、讲究、新时代才有的
+				var grp: String = "ess" if ct.n_ess[n2] == 1 else ("new" if ct.n_era[n2] > 1 else
+						("daily" if ct.n_weight[n2] >= 3 else "fine"))
 				need_list.append({"need": ct.n_id[n2], "name": ct.n_name[n2], "sat": needs[n2] / pw,
-						"essential": ct.n_ess[n2] == 1})
+						"essential": ct.n_ess[n2] == 1, "group": grp, "weight": ct.n_weight[n2]})
 		classes.append({"class": ct.c_id[c], "name": ct.c_name[c], "note": ct.c_note[c], "pop": pop,
 				"income_pc": inc / pw, "src": Array(src), "living": liv / pw, "comfort": com / pw, "unrest": unr / pw,
 				"support": st.support[c], "unemp": PPM - JCMath.ratio_ppm(emp, maxi(1, sup)), "needs": need_list})
@@ -694,8 +738,13 @@ func society() -> Dictionary:
 	for h: Dictionary in g.analyst.hotspots(5):
 		hot.append({"region": h["region"], "class": h["class"], "living": h["living"], "unrest": h["unrest"],
 				"unemp": h["unemp"], "cause": h["cause"], "pop": h["pop"]})
+	# 民心地图：每个地区、每个阶层一格
+	var cells: Array = []
+	for h2: Dictionary in g.analyst.hotspots(ct.r_n * C):
+		cells.append({"region": h2["region"], "class": h2["class"], "living": h2["living"], "unrest": h2["unrest"],
+				"unemp": h2["unemp"], "cause": h2["cause"], "pop": h2["pop"]})
 	return {"classes": classes, "expect": e.expect_mult(), "legitimacy": st.legitimacy, "regions": regions(),
-			"hotspots": hot, "world_era": st.world_era}
+			"hotspots": hot, "cells": cells, "world_era": st.world_era, "era": st.era}
 
 
 # ════════════════════════════ 外贸 ════════════════════════════════════════
@@ -725,8 +774,10 @@ func trade() -> Dictionary:
 				"appear_era": int(pd.get("appear_era", 1)), "dev": st.p_dev[p], "era": e.partner_era(p),
 				"relation": st.p_rel[p], "treaty": st.p_treaty[p] == 1, "treaty_cost": g.sim.cmd.treaty_cost(p),
 				"exports": st.p_exp[p], "imports": st.p_imp[p], "wants": wants, "offers": offers})
-	return {"partners": partners, "sea_cap": e.cap_sea, "sea_used": e.used_sea, "land_cap": e.cap_land,
-			"land_used": e.used_land, "customs": st.tax_customs_ppm, "world_era": st.world_era, "era": st.era}
+	# 运力取上一季结算记下的（读档后经济步还没跑，e 上的临时量是 0）
+	var lt: Dictionary = st.last
+	return {"partners": partners, "sea_cap": int(lt.get("sea_cap", e.cap_sea)), "sea_used": int(lt.get("sea_used", e.used_sea)),
+			"land_cap": int(lt.get("land_cap", e.cap_land)), "land_used": int(lt.get("land_used", e.used_land)), "customs": st.tax_customs_ppm, "world_era": st.world_era, "era": st.era}
 
 
 # ════════════════════════════ 纪事 ════════════════════════════════════════
@@ -737,6 +788,84 @@ func chronicle(limit: int = 200) -> Array:
 	for i: int in range(n - 1, maxi(-1, n - 1 - limit), -1):
 		out.append(st.chron[i])
 	return out
+
+
+## 国史：大事（新的在前），每条带上配图的来历（内容表里的图给路径，按约定命名的图给类型与 id），
+## 以及逐年的统计（给年代评语与小曲线）。
+## 每条：{q, year, season, kind, key, args, big, tone, art_path, art_type, art_id}
+func annals() -> Dictionary:
+	var ct: JCContent = g.ct
+	var st: JCState = g.st
+	var out: Array = []
+	for i: int in range(st.annals.size() - 1, -1, -1):
+		var e: Dictionary = st.annals[i]
+		var key: String = String(e["key"])
+		var a: Dictionary = e.get("args", {})
+		var qq: int = int(e["q"])
+		@warning_ignore("integer_division")
+		var yy: int = st.start_year + qq / 4
+		var it: Dictionary = {"q": qq, "year": yy, "season": qq % 4,
+				"kind": String(e["kind"]), "key": key, "args": a, "big": false, "tone": "text.secondary",
+				"art_path": "", "art_type": "", "art_id": ""}
+		if String(e["kind"]) == "milestone":
+			it["big"] = true
+			it["tone"] = "teal.core"
+			it["art_type"] = "milestone"
+			it["art_id"] = String(a.get("art", ""))
+		match key:
+			"chron.era_enter":
+				var en: int = int(a.get("era", 1))
+				it["big"] = true
+				it["tone"] = "teal.core"
+				it["art_path"] = String(ct.eras[en - 1].get("art", "")) if en >= 1 and en <= ct.eras.size() else ""
+			"chron.world_era":
+				it["big"] = true
+				it["art_type"] = "milestone"
+				it["art_id"] = "world_era%d" % int(a.get("era", 2))
+			"chron.landmark_done":
+				it["big"] = true
+				it["tone"] = "teal.core"
+				var l: int = -1
+				for li: int in ct.landmarks.size():
+					if String(ct.landmarks[li]["id"]) == String(a.get("landmark", "")):
+						l = li
+				it["art_path"] = String(ct.landmarks[l].get("art", "")) if l >= 0 else ""
+			"chron.event_answered":
+				it["tone"] = "ochre.core"
+				var ev: int = -1
+				for ei: int in ct.events.size():
+					if String(ct.events[ei]["id"]) == String(a.get("event", "")):
+						ev = ei
+				it["art_path"] = String(ct.events[ev].get("art", "")) if ev >= 0 else ""
+			"chron.crisis_up":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "milestone"
+				it["art_id"] = ["bankruptcy", "revolt", "mandate_shaken"][clampi(int(a.get("track", 0)), 0, 2)]
+			"chron.crisis_down":
+				it["tone"] = "teal.core"
+			"chron.game_over":
+				it["big"] = true
+				var why: String = String(a.get("reason", "complete"))
+				it["tone"] = "teal.core" if why == "complete" else "ochre.hot"
+				it["art_type"] = "milestone"
+				it["art_id"] = "complete_2000" if why == "complete" else "gameover_" + why
+			"chron.tech_done":
+				it["art_type"] = "tech"
+				it["art_id"] = String(a.get("tech", ""))
+			"chron.decree":
+				it["art_type"] = "decree"
+				it["art_id"] = String(a.get("decree", ""))
+			"chron.treaty":
+				it["art_type"] = "milestone"
+				it["art_id"] = "treaty"
+			"chron.partner_appear":
+				for p: int in ct.partners.size():
+					if String(ct.partners[p]["id"]) == String(a.get("partner", "")):
+						it["art_path"] = String(ct.partners[p].get("art", ""))
+		out.append(it)
+	return {"list": out, "hist": st.hist, "start_year": st.start_year, "year": st.year(), "era": st.era,
+			"world_era": st.world_era, "end_year": int(ct.scenario.get("end_year", 2000))}
 
 
 func steward_log(limit: int = 120) -> Array:

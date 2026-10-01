@@ -70,7 +70,12 @@ const FIELDS: PackedStringArray = [
 	"cr_stage", "cr_since", "cr_bad",
 ]
 ## 进存档、不进哈希
-const EXTRA: PackedStringArray = ["chron", "hist", "last"]
+const EXTRA: PackedStringArray = ["chron", "hist", "last", "annals", "marks"]
+## 收进国史的纪事（另有里程碑与升到第二级以上的危机）：纪事只留最近 400 条、多是民间开坊的流水账，国史不会被刷掉
+const ANNAL_KEYS: PackedStringArray = ["chron.era_enter", "chron.world_era", "chron.game_over", "chron.tech_done",
+	"chron.landmark_done", "chron.event_answered", "chron.treaty", "chron.partner_appear", "chron.decree",
+	"chron.crisis_down"]
+const ANNAL_MAX: int = 3000
 
 # ── 元 ──
 var q: int = 0
@@ -223,6 +228,9 @@ var cr_bad: PackedInt64Array = PackedInt64Array()
 var chron: Array = []
 ## 历年曲线：每年春季一条 {year, gdp, pop, treasury, living, era, ...}
 var hist: Array = []
+## 国史（只收大事，见 note）与已达成的里程碑（id → 第几季；以 _ 开头的是计数）
+var annals: Array = []
+var marks: Dictionary = {}
 ## 上季摘要（给界面与分析用）
 var last: Dictionary = {}
 
@@ -237,6 +245,14 @@ func note(kind: String, key: String, args: Dictionary = {}) -> void:
 	chron.append({"q": q, "kind": kind, "key": key, "args": args})
 	if chron.size() > 400:
 		chron = chron.slice(chron.size() - 400)
+	# 国史：大事另记一份（赈济这种随灾情开开关关的不记）
+	var big: bool = kind == "milestone" or ANNAL_KEYS.has(key) or (key == "chron.crisis_up" and int(args.get("stage", 0)) >= 2)
+	if key == "chron.decree" and String(args.get("decree", "")) == "famine_relief":
+		big = false
+	if big:
+		annals.append({"q": q, "kind": kind, "key": key, "args": args})
+		if annals.size() > ANNAL_MAX:
+			annals = annals.slice(annals.size() - ANNAL_MAX)
 
 
 func gi(r: int, c: int, cn: int) -> int:

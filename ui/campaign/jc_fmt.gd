@@ -191,7 +191,12 @@ static func _slot(game: JCGame, ks: String, v: Variant, raw: Dictionary) -> Stri
 		"reason":
 			return t("jc.over.%s" % String(v))
 		"option":
-			return str(int(v) + 1)
+			# 事件的选项：写出选的是哪一条；找不到文字才写「第几项」
+			if game != null and raw.has("event"):
+				var ot: String = game.event_option(String(raw["event"]), int(v))
+				if ot != "":
+					return ot
+			return JwText.render("jc.fmt.option_n", {"n": str(int(v) + 1)})
 		"value":
 			if String(raw.get("tax", "")) == "salt":
 				return money(int(v)) + t("jc.u.per_dan")
@@ -200,6 +205,8 @@ static func _slot(game: JCGame, ks: String, v: Variant, raw: Dictionary) -> Stri
 			return str(v)
 		"amount", "cost", "treasury", "limit":
 			return money(int(v))
+		"pop":
+			return people(int(v))
 		"pct":
 			return pct(int(v), 0)
 		"runway", "quarters":

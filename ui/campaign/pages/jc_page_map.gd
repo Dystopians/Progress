@@ -10,6 +10,8 @@ var hover_card: PanelContainer = null
 var _layer_btns: Dictionary = {}
 var _regions: Array = []
 var strip: HBoxContainer = null
+var _sp: PanelContainer = null
+var _narrow: bool = false
 
 
 func build() -> void:
@@ -19,7 +21,7 @@ func build() -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	h.add_child(left)
-	var lb: HBoxContainer = JwUi.hbox(4)
+	var lb: HFlowContainer = JcUi.flow(4, 4)
 	lb.add_child(JwUi.label(JwText.t("jc.map.layer"), "caption", "text.muted"))
 	var grp: ButtonGroup = ButtonGroup.new()
 	for id: String in LAYERS:
@@ -38,7 +40,7 @@ func build() -> void:
 	var holder: Control = Control.new()
 	holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	holder.custom_minimum_size = Vector2(560, 380)
+	holder.custom_minimum_size = Vector2(400, 380)
 	left.add_child(holder)
 	map = JcMap.new()
 	map.name = "Map"
@@ -54,8 +56,21 @@ func build() -> void:
 	sp.custom_minimum_size = Vector2(420, 0)
 	sp.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	h.add_child(sp)
+	_sp = sp
 	side = JwUi.vbox(10)
 	sp.add_child(JwUi.scroll(side))
+
+
+## 窄的时候右侧详情收到 340 宽，地图多留一点；上面四张地区卡改成短行。
+func relayout(w: float) -> void:
+	if _sp == null or w <= 0.0:
+		return
+	var n: bool = w < 1150.0
+	_sp.custom_minimum_size.x = 340.0 if n else 420.0
+	if n != _narrow:
+		_narrow = n
+		if not _regions.is_empty():
+			_fill_strip()
 
 
 func refresh() -> void:
@@ -111,16 +126,22 @@ func _fill_strip() -> void:
 		v.add_child(JwUi.label(String(rv["name"]), "body_bold", "text.primary"))
 		var liv: int = int(rv["living"])
 		var unr: int = int(rv["unrest"])
-		v.add_child(JwUi.label(rt("jc.map.strip_line", {"pop": JcFmt.people(int(rv["pop"])), "living": JcFmt.pct(liv, 0)}),
-				"caption", JcUi.tone(liv >= 950_000, liv >= 850_000)))
-		v.add_child(JwUi.label(rt("jc.map.strip_line2", {"unrest": JcFmt.pct(unr, 0), "unemp": JcFmt.pct(int(rv["unemp"]), 0)}),
-				"caption", JcUi.tone(unr < 250_000, unr < 450_000)))
+		var unr_s: Dictionary = {"unrest": JcFmt.pct(unr, 0), "unemp": JcFmt.pct(int(rv["unemp"]), 0)}
+		if _narrow:
+			v.add_child(JwUi.label(JcFmt.people(int(rv["pop"])), "caption", "text.secondary"))
+			v.add_child(JwUi.label(rt("jc.map.strip_living", {"living": JcFmt.pct(liv, 0)}), "caption",
+					JcUi.tone(liv >= 950_000, liv >= 850_000)))
+			v.add_child(JwUi.label(rt("jc.map.strip_unrest", unr_s), "caption", JcUi.tone(unr < 250_000, unr < 450_000)))
+		else:
+			v.add_child(JwUi.label(rt("jc.map.strip_line", {"pop": JcFmt.people(int(rv["pop"])), "living": JcFmt.pct(liv, 0)}),
+					"caption", JcUi.tone(liv >= 950_000, liv >= 850_000)))
+			v.add_child(JwUi.label(rt("jc.map.strip_line2", unr_s), "caption", JcUi.tone(unr < 250_000, unr < 450_000)))
 		if String(rv.get("alert", "")) != "":
 			v.add_child(JwUi.label(t("jc.map.alert." + String(rv["alert"])), "caption", JcUi.BAD))
 		var tops: PackedStringArray = PackedStringArray()
 		for tp: Dictionary in (rv["top"] as Array).slice(0, 3):
 			tops.append(String(tp["name"]))
-		if not tops.is_empty():
+		if not tops.is_empty() and not _narrow:
 			var l: Label = JwUi.label(t("jc.name_sep").join(tops), "caption", "text.muted")
 			l.clip_text = true
 			v.add_child(l)

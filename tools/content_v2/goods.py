@@ -127,5 +127,5 @@ good("appliances", "家用电器", "台", "manu", 3, era=4, perish=1, art=A + "g
 good("automobile", "机动车", "辆", "manu", 3, era=4, perish=1, art=A + "g06/goods_automobile.png")
 good("computer", "计算机", "台", "manu", 3, era=4, perish=2, art=A + "g10/goods_computer.png")
 # 第三时代起：服务（茶楼酒肆、戏园、理发、餐馆……）。当季用掉、存不住；越富越多买，靠人手，城里的活计跟着多
-good("services", "服务", "人次", "serv", 2, era=3, perish=100, art=None,
+good("services", "服务", "人次", "serv", 2, era=3, perish=100, art=A + "g12/goods_services.png",
      note="茶楼酒肆、戏园、理发、餐馆这类花钱买的服务；当季用掉，存不住。")

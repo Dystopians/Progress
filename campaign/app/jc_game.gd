@@ -433,6 +433,17 @@ func decree_level_name(id: String, lvl: int) -> String:
 	return String(lv[lvl]) if lvl >= 0 and lvl < lv.size() else ""
 
 
+## 事件某个选项的文字（纪事、命令簿里写「选了哪一条」）；找不到返回空串。
+func event_option(id: String, idx: int) -> String:
+	if ct == null:
+		return ""
+	var e: int = int(ct.eidx.get(id, -1))
+	if e < 0:
+		return ""
+	var opts: Array = ct.events[e].get("options", [])
+	return String((opts[idx] as Dictionary).get("text", "")) if idx >= 0 and idx < opts.size() else ""
+
+
 ## 某一堆建筑（按编号）是什么、在哪：{building, region}；找不到返回空字典。
 func stack_info(uid: int) -> Dictionary:
 	if not is_ready():

@@ -2,6 +2,25 @@
 class_name JcPageOverview
 extends JcPage
 
+## 页面宽度不到这个数（界面放大、窗口小）就把并排的两块改成上下排，走势改两列。
+const NARROW_W: float = 1100.0
+
+var _narrow: bool = false
+
+
+func relayout(w: float) -> void:
+	var n: bool = w > 0.0 and w < NARROW_W
+	if n != _narrow:
+		_narrow = n
+		refresh()
+
+
+## 并排的两块：宽的时候左右放，窄的时候上下放。
+func _pair(sep: int) -> BoxContainer:
+	if _narrow:
+		return JwUi.vbox(sep)
+	return JwUi.hbox(sep)
+
 
 func refresh() -> void:
 	clear()
@@ -30,13 +49,13 @@ func refresh() -> void:
 			JcUi.tone(leg >= 450_000, leg >= 300_000), t("jc.ov.legit_tip")))
 	content.add_child(tiles)
 	# ── 时代与危机 ──
-	var two: HBoxContainer = JwUi.hbox(14)
+	var two: BoxContainer = _pair(14)
 	two.add_child(_era_card(g, v))
 	two.add_child(_crisis_card(v))
 	content.add_child(two)
 	# ── 走势 ──
 	var tr: Dictionary = JcUi.card(t("jc.ov.trend"), t("jc.ov.trend_sub"))
-	var sg: GridContainer = JcUi.grid(4, 16, 8)
+	var sg: GridContainer = JcUi.grid(2 if _narrow else 4, 16, 8)
 	var series: Array = [["gdp", "jc.ov.gdp", JcUi.GOOD], ["pop", "jc.ov.pop", "series.3"], ["living", "jc.ov.living", JcUi.WARN],
 			["treasury", "jc.ov.treasury", "series.4"]]
 	for s: Array in series:
@@ -55,7 +74,7 @@ func refresh() -> void:
 		(tr["body"] as VBoxContainer).add_child(JwUi.para(t("jc.ov.trend_empty"), "text.muted"))
 	content.add_child(tr["root"])
 	# ── 小舆图 + 民心 ──
-	var row3: HBoxContainer = JwUi.hbox(14)
+	var row3: BoxContainer = _pair(14)
 	row3.add_child(_mini_map())
 	var sc: Dictionary = JcUi.card(t("jc.ov.support"), t("jc.ov.support_sub"))
 	var sb: GridContainer = JcUi.grid(2, 24, 6)
@@ -81,12 +100,11 @@ func _urgent(box: VBoxContainer) -> void:
 		if String(gv["state"]) == "short" and int(gv["demand"]) > 0:
 			shorts.append(gv)
 	shorts.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var ga: int = JCMath.ratio_ppm(int(a["unmet"]) + int(a["imp"]), int(a["demand"]))
-		return ga > JCMath.ratio_ppm(int(b["unmet"]) + int(b["imp"]), int(b["demand"])))
+		return int(a["short_ppm"]) > int(b["short_ppm"]) or (int(a["short_ppm"]) == int(b["short_ppm"]) and int(a["g"]) < int(b["g"])))
 	var n: int = 0
 	for gv2: Dictionary in shorts.slice(0, 3):
 		var gid: String = String(gv2["id"])
-		var gap: int = JCMath.ratio_ppm(int(gv2["unmet"]) + int(gv2["imp"]), int(gv2["demand"]))
+		var gap: int = int(gv2["short_ppm"])
 		box.add_child(JcUi.link(rt("jc.ov.urgent_good", {"good": String(gv2["name"]), "gap": JcFmt.pct(gap, 0)}), func() -> void:
 			session.selected_good = gid
 			goto_page("industry")))

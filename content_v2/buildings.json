@@ -7138,8 +7138,8 @@
    "art": {
     "1": "assets/buildings/b01/workshop_early.png",
     "2": "assets/buildings/b01/workshop_early.png",
-    "3": "assets/buildings/b01/workshop_industrial.png",
-    "4": "assets/buildings/b01/workshop_modern.png"
+    "3": "assets/buildings/b19/servicehall_industrial.png",
+    "4": "assets/buildings/b19/servicehall_modern.png"
    },
    "methods": [
     {

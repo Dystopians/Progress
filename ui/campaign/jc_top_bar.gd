@@ -15,6 +15,10 @@ var _crisis: HBoxContainer = null
 var _steward_btn: Button = null
 var _end_btn: Button = null
 var _ff: MenuButton = null
+var _row: HBoxContainer = null
+var _sep: VSeparator = null
+var _compact: bool = false
+var _props: int = 0
 
 
 func setup(s: JcSession, r: Node) -> void:
@@ -24,14 +28,17 @@ func setup(s: JcSession, r: Node) -> void:
 	add_theme_stylebox_override("panel", JwTheme.box4("bg.abyss", "", 0, 16, 8, 16, 8))
 	custom_minimum_size = Vector2(0, 64)
 	var h: HBoxContainer = JwUi.hbox(20)
+	_row = h
 	add_child(h)
 	var dv: VBoxContainer = JwUi.vbox(0)
+	dv.alignment = BoxContainer.ALIGNMENT_CENTER
 	_date = JwUi.label("", "title_block", "text.primary")
-	_era = JwUi.label("", "caption", "text.muted")
 	dv.add_child(_date)
-	dv.add_child(_era)
 	h.add_child(dv)
-	h.add_child(VSeparator.new())
+	# 本国与世界的时代那一行由外壳摆到页签行右端（界面放大后顶栏挤不下）
+	_era = JwUi.label("", "body", "text.secondary")
+	_sep = VSeparator.new()
+	h.add_child(_sep)
 	var tv: VBoxContainer = JwUi.vbox(0)
 	tv.add_child(JwUi.label(JwText.t("jc.top.treasury"), "caption", "text.muted"))
 	var tr: HBoxContainer = JwUi.hbox(8)
@@ -114,6 +121,26 @@ func refresh() -> void:
 		chip.tooltip_text = JwText.t("jc.crisis.tip.%d" % tr)
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		_crisis.add_child(chip)
-	var props: int = int(s["proposals"])
-	_steward_btn.text = JwText.t("jc.top.steward") + ((" · " + JwText.render("jc.top.proposals", {"n": str(props)})) if props > 0 else "")
+	_props = int(s["proposals"])
+	_steward_text()
 	_end_btn.disabled = bool(s["over"])
+
+
+## 「本国：… 世界：…」那一行（外壳取走，放在页签行）。
+func era_label() -> Label:
+	return _era
+
+
+## 窄窗口（逻辑宽度不到 1500，比如 1920 宽屏开 150%、2560 宽屏开 200%）：收紧间距、去掉竖线、待批只写个数。
+func set_compact(on: bool) -> void:
+	_compact = on
+	_row.add_theme_constant_override("separation", 10 if on else 20)
+	_sep.visible = not on
+	_steward_text()
+
+
+func _steward_text() -> void:
+	var tail: String = ""
+	if _props > 0:
+		tail = " · " + (str(_props) if _compact else JwText.render("jc.top.proposals", {"n": str(_props)}))
+	_steward_btn.text = JwText.t("jc.top.steward") + tail

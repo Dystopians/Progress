@@ -115,7 +115,15 @@ class Calib:
                 vals = {x: q * JOINT_REL.get(x, 1.0) for x, q in m["out"].items()}
                 share = vals[gid] / (sum(vals.values()) or 1.0)
                 unit = cost * share / m["out"][gid]
-                new[gid] = unit * (1 + MARKUP.get(b["category"], 0.18)) / (1 - L_AVG) / (1 - self.tax_rate(b))
+                mult = (1 + MARKUP.get(b["category"], 0.18)) / (1 - L_AVG) / (1 - self.tax_rate(b))
+                new[gid] = unit * mult
+                # 副产品：这个做法的其余产出都已由各自的主做法定价（皂烛兼营的蜡烛按手工蜡烛定价……）。
+                # 这样货按「整个做法照常加成后该收的钱，减去其余产出按常价卖得的钱」定价，免得联产的做法在常价下必亏、
+                # 全国没人做（原来肥皂、啤酒、煤气、石灰岩几百年都缺）。
+                others = [x for x in m["out"] if x != gid]
+                if others and all(prim[x][1] is not None and prim[x][1]["id"] != m["id"] for x in others):
+                    credit = sum(q * price[x] for x, q in m["out"].items() if x != gid)
+                    new[gid] = max(new[gid], (cost * mult - credit) / m["out"][gid])
             diff = max(abs(new[k] - price[k]) / max(price[k], 1e-9) for k in price)
             price = new
             if diff < 1e-10:

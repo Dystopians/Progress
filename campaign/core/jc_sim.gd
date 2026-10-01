@@ -216,6 +216,10 @@ func warm_up() -> void:
 	st.q = 3
 	advance([])
 	st.chron.clear()
+	# 预演不进国史：开国从玩家的第一季算起，这一条当场记上（开局翻国史就有第一页）
+	st.annals.clear()
+	st.marks.clear()
+	_mark("founding", "founding", {"year": st.year()})
 
 
 func advance(cmds: Array) -> Dictionary:
@@ -251,6 +255,7 @@ func advance(cmds: Array) -> Dictionary:
 	econ.cover_treasury()
 	soc.crisis()
 	_record()
+	_milestones()
 	st.compact_stacks()
 	st.rng_state = rng.state
 	var chk: String = check()
@@ -324,3 +329,69 @@ func check() -> String:
 	if st.treasury < 0:
 		return "国库为负：%d" % st.treasury
 	return ""
+
+
+# ── 里程碑（进国史，配图见 docs/60 §4.2）──────────────────────────────────
+## 第一次有某种做法开工
+const MILESTONE_METHODS: Dictionary = {
+	"first_waterframe": ["spin_water"],
+	"canal_open": ["canal_lock", "canal_steam"],
+	"first_steam": ["steam_power"],
+	"first_steel": ["steel_bessemer", "steel_electric"],
+	"first_railway": ["road_rail", "carrier_rail"],
+	"first_power": ["power_coal", "power_oil", "hydro", "wind"],
+	"first_car": ["auto_assembly"],
+}
+## 第一次掌握某项科技
+const MILESTONE_TECHS: Dictionary = {
+	"first_bank": "banking", "ocean_fleet": "ocean_navigation", "first_telegraph": "telegraph",
+	"first_tv": "television", "first_computer": "computing",
+}
+## 人口关口（人）
+const POP_MARKS: PackedInt64Array = [30_000_000, 40_000_000, 50_000_000, 60_000_000]
+## 盛世：连续多少季百姓生活与威信都高（每个时代至多一次）
+const GOLDEN_Q: int = 20
+
+
+func _milestones() -> void:
+	if not st.marks.has("founding"):
+		_mark("founding", "founding", {"year": st.year()})
+	var active: Dictionary = {}
+	for i: int in st.stack_count():
+		if st.s_level[i] > 0 and st.s_status[i] == JCState.ST_ACTIVE:
+			active[ct.m_id[st.s_m[i]]] = st.s_region[i]
+	for id: Variant in MILESTONE_METHODS.keys():
+		if st.marks.has(id):
+			continue
+		for mid: Variant in MILESTONE_METHODS[id]:
+			if active.has(String(mid)):
+				_mark(String(id), String(id), {"region": ct.r_id[int(active[String(mid)])]})
+				break
+	for id2: Variant in MILESTONE_TECHS.keys():
+		if st.marks.has(id2):
+			continue
+		var t: int = int(ct.tidx.get(String(MILESTONE_TECHS[id2]), -1))
+		if t >= 0 and st.t_done[t] == 1:
+			_mark(String(id2), String(id2), {"tech": String(MILESTONE_TECHS[id2])})
+	var pop: int = soc.total_pop()
+	for pm: int in POP_MARKS:
+		@warning_ignore("integer_division")
+		var pk: String = "pop_%d" % (pm / 10_000_000)
+		if pop >= pm and not st.marks.has(pk):
+			_mark(pk, "pop_milestone", {"pop": pm})
+	var gk: String = "golden_%d" % st.era
+	if not st.marks.has(gk):
+		var good: bool = int(st.last.get("living", 0)) >= 1_050_000 and st.legitimacy >= 550_000
+		var streak: int = int(st.marks.get("_golden", 0)) + 1 if good else 0
+		st.marks["_golden"] = streak
+		if streak >= GOLDEN_Q:
+			st.marks["_golden"] = 0
+			_mark(gk, "golden_age", {"era": st.era})
+
+
+func _mark(id: String, art: String, args: Dictionary) -> void:
+	st.marks[id] = st.q
+	var a: Dictionary = args.duplicate()
+	a["id"] = id
+	a["art"] = art
+	st.note("milestone", "chron.milestone.%s" % (art if art == "pop_milestone" or art == "golden_age" else id), a)

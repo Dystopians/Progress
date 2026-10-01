@@ -4,13 +4,13 @@
 ## ui_scale 的确定顺序（前者优先）：
 ##   1 命令行 `--ui-scale=1.00|1.25|1.50`（测试与验收一律走这条）；
 ##   2 用户设置 user://ui_settings.cfg 的 [display] ui_scale；
-##   3 snap({1.00, 1.25, 1.50}, screen_get_dpi / 96)，clamp 到 [1.00, 1.50]。
+##   3 snap({1.00, 1.25, 1.50, 1.75, 2.00}, screen_get_dpi / 96)，clamp 到 [1.00, 2.00]。
 ## 禁止使用 DisplayServer.screen_get_scale()：它在 Windows 上恒返回 1.0（B-16）。
 class_name JwScale
 extends RefCounted
 
 const SETTINGS_PATH: String = "user://ui_settings.cfg"
-const STEPS: PackedFloat64Array = [1.0, 1.25, 1.5]
+const STEPS: PackedFloat64Array = [1.0, 1.25, 1.5, 1.75, 2.0]
 
 ## 宽档
 enum WBand { WIDE = 0, MID = 1, UNSUPPORTED = 2 }
@@ -43,7 +43,7 @@ static func snap(v: float) -> float:
 		if d < best_d:
 			best_d = d
 			best = s
-	return clampf(best, 1.0, 1.5)
+	return clampf(best, 1.0, 2.0)
 
 
 ## 解析 ui_scale，并返回 {scale, source, dpi}（启动时写调试日志）。

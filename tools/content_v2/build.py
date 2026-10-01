@@ -288,7 +288,8 @@ def export(cal, res):
     decrees_out = [dict(id=d["id"], name=d["name"], era=d["era"], era_end=d["era_end"], kind=d["kind"],
                         desc=d["desc"], tech=d["tech"] or "", levels=d["levels"], default=d["default"],
                         cost_once_li=i_li(d["cost_once"]), cost_q_li=i_li(d["cost_q"]), duration=d["duration"],
-                        effects=[mods(x) for x in d["effects"]], support=d["support"], cooldown=d["cooldown"])
+                        effects=[mods(x) for x in d["effects"]], support=d["support"], cooldown=d["cooldown"],
+                        level_era=d["level_era"], level_tech=d["level_tech"])
                    for d in prog.D]
     partners_out = [dict(id=p["id"], name=p["name"], route=p["route"], dev_ppm=i_ppm(p["dev"]),
                          rate_ppm=i_ppm(p["rate"]), relation=p["relation"], appear_era=p.get("appear_era", 1),

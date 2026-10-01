@@ -84,11 +84,15 @@ func shortages(limit: int = 6) -> Array:
 		var gap: int = st.f_unmet[g] + st.f_imp[g]
 		var gap_ppm: int = JCMath.ratio_ppm(gap, d)
 		var pp: int = price_ppm(g)
+		# 给人看的缺口：想要的货（买到的 + 没买到的）里，有几成靠进口或根本没买到，最多 100%。
+		# gap_ppm 对原料是拿「实际用掉的量」作分母，原料大缺时会冒出 1,865% 这种数；排序与轻重仍用它。
+		var want: int = st.f_hh[g] + st.f_use[g] + st.f_gov[g] + st.f_exp[g] + st.f_unmet[g]
+		var short_ppm: int = mini(PPM, JCMath.ratio_ppm(gap, maxi(1, want)))
 		if gap_ppm < 100_000 and pp < 1_300_000:
 			continue
 		var value: int = JCMath.value(maxi(gap, JCMath.mulppm(d, maxi(0, pp - PPM) / 3)), st.price[g])
 		var fix: Dictionary = best_fix(g)
-		out.append({"g": g, "id": ct.g_id[g], "gap": gap, "gap_ppm": gap_ppm, "price_ppm": pp,
+		out.append({"g": g, "id": ct.g_id[g], "gap": gap, "gap_ppm": gap_ppm, "short_ppm": short_ppm, "price_ppm": pp,
 				"imports": st.f_imp[g], "value": value, "fix": fix})
 	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return int(a["value"]) > int(b["value"]) or (int(a["value"]) == int(b["value"]) and int(a["g"]) < int(b["g"])))
@@ -822,3 +826,171 @@ func export_room() -> Array:
 			out.append({"p": p, "partner": String(ct.partners[p]["id"]), "g": g, "good": ct.g_id[g],
 					"price_ppm": JCMath.ratio_ppm(price, maxi(1, st.price[g])), "cap": int(wants[gk][1])})
 	return out
+
+
+# ════════════════════════════ 国家形态 ════════════════════════════════════
+const REGIMES: PackedStringArray = ["empire", "enlightened", "constitutional", "republic", "socialist"]
+
+
+## 国家形态：看政体与施行中的政令、税负、拨款，算出几个取向——仁政（正）与严苛（负）、集权与放任、开放与闭关、
+## 维新与守旧（各 −100…100），以及重农 / 重商 / 重工；再给一句评语（宽容仁厚的帝国、堕落的工人国家……）与依据。
+## 只是给玩家看的评语，不影响模拟。
+## 返回 {regime, tone, economy, title, axes: {benevolent, central, open, reform}, econ: {agrarian, mercantile, industrial},
+##       good: [政令名…], harsh: [政令名…], notes: [{key, slots}]}
+func regime_profile() -> Dictionary:
+	var reg: int = clampi(maxi(0, _dlvl("regime")), 0, REGIMES.size() - 1)
+	var regime: String = REGIMES[reg]
+	var ben: int = 0
+	var cen: int = [20, 10, -5, -15, 25][reg]
+	var opn: int = 0
+	var ref: int = (st.era - 1) * 15 + [0, 5, 20, 20, 15][reg]
+	var agr: int = 0
+	var mer: int = 0
+	var ind: int = 0
+	var good: PackedStringArray = PackedStringArray()
+	var harsh: PackedStringArray = PackedStringArray()
+	var notes: Array = []
+	# 仁政与严苛
+	for p: Array in [["famine_relief", 15], ["ever_normal_granary", 10], ["tax_remission", 15], ["promote_schools", 8],
+			["compulsory_school", 10], ["social_insurance", 20], ["factory_act", 10], ["environment_law", 5]]:
+		if _don(String(p[0])):
+			ben += int(p[1])
+			good.append(_dname(String(p[0])))
+	for p2: Array in [["corvee_works", 20], ["sell_titles", 10]]:
+		if _don(String(p2[0])):
+			ben -= int(p2[1])
+			harsh.append(_dname(String(p2[0])))
+	var salt: int = _dlvl("salt_policy")
+	if salt == 2:
+		ben -= 15
+		cen += 10
+		harsh.append(_dlevel_name("salt_policy"))
+	var lab: int = _dlvl("labor_policy")
+	if st.era >= 3 and lab == 0:
+		ben -= 25
+		harsh.append(_dlevel_name("labor_policy"))
+	elif st.era >= 3 and lab == 2:
+		ben += 10
+		good.append(_dlevel_name("labor_policy"))
+	var base_land: int = int(ct.scenario.get("gov", {}).get("land_tax_ppm", 90000))
+	var dl: int = st.tax_land_ppm - base_land
+	if dl <= -20_000:
+		ben += 10
+		notes.append({"key": "jc.regime.n.light_tax", "slots": {"v": -dl}})
+	elif dl >= 20_000:
+		ben -= 15
+		notes.append({"key": "jc.regime.n.heavy_tax", "slots": {"v": dl}})
+	if st.budget[JCState.BUD_RELIEF] < 600_000:
+		ben -= 10
+		notes.append({"key": "jc.regime.n.no_relief", "slots": {}})
+	if st.arrears > 0:
+		ben -= 20
+		notes.append({"key": "jc.regime.n.arrears", "slots": {}})
+	# 集权与放任
+	for p3: Array in [["land_survey", 10], ["single_whip", 10], ["central_bank", 10], ["income_tax", 10]]:
+		if _don(String(p3[0])):
+			cen += int(p3[1])
+	var rail: int = _dlvl("railway_policy")
+	if st.era >= 3:
+		cen += [-10, 0, 15][clampi(rail, 0, 2)]
+	var sea: int = _dlvl("sea_policy")
+	if sea == 0:
+		cen += 10
+	var cp: int = _dlvl("commerce_policy")
+	if cp == 2:
+		cen -= 10
+	if _don("banking_license"):
+		cen -= 5
+	# 开放与闭关
+	opn += [-40, 0, 30][clampi(sea, 0, 2)]
+	for p4: Array in [["foreign_learning", 15], ["tea_horse", 5], ["navigation_act", 5], ["protective_tariff", -15]]:
+		if _don(String(p4[0])):
+			opn += int(p4[1])
+	if st.tax_customs_ppm > 100_000:
+		opn -= 10
+	# 维新与守旧
+	for p5: Array in [["foreign_learning", 15], ["official_press", 5], ["compulsory_school", 15]]:
+		if _don(String(p5[0])):
+			ref += int(p5[1])
+	if cp == 0:
+		ref -= 10
+	if sea == 0:
+		ref -= 10
+	# 重农 / 重商 / 重工
+	if cp == 0:
+		agr += 30
+	elif cp == 2:
+		mer += 30
+	for p6: Array in [["ever_normal_granary", 5], ["reclamation", 5]]:
+		if _don(String(p6[0])):
+			agr += int(p6[1])
+	for p7: Array in [["banking_license", 10], ["navigation_act", 10], ["tea_horse", 5]]:
+		if _don(String(p7[0])):
+			mer += int(p7[1])
+	if sea == 2:
+		mer += 10
+	for p8: Array in [["industrial_charter", 15], ["factory_act", 5], ["protective_tariff", 10]]:
+		if _don(String(p8[0])):
+			ind += int(p8[1])
+	if st.era >= 3:
+		ind += 10 + (5 if rail >= 0 else 0)
+	var economy: String = "balanced"
+	var best: int = 15
+	for e: Array in [["agrarian", agr], ["mercantile", mer], ["industrial", ind]]:
+		if int(e[1]) >= best:
+			best = int(e[1])
+			economy = String(e[0])
+	var tone: String = "benevolent" if ben >= 25 else ("harsh" if ben <= -20 else "steady")
+	# 评语：政体 × 施政风格；几种特别的组合另有说法
+	var title: String = "jc.regime.title.%s.%s" % [regime, tone]
+	if regime == "socialist" and lab == 0:
+		# 工人国家禁罢工：不管别的政令多宽厚，都按严苛算（徽记、颜色跟着评语走）
+		title = "jc.regime.title.socialist.harsh"
+		tone = "harsh"
+	elif regime == "empire" and sea == 0 and cp == 0:
+		title = "jc.regime.title.empire.closed"
+	elif regime == "empire" and opn >= 25 and economy == "mercantile" and tone != "harsh":
+		title = "jc.regime.title.empire.trading"
+	elif regime == "republic" and economy == "mercantile" and opn >= 20:
+		title = "jc.regime.title.republic.merchant"
+	return {"regime": regime, "tone": tone, "economy": economy, "title": title,
+			"regime_name": _dlevel_name("regime"),
+			"axes": {"benevolent": clampi(ben, -100, 100), "central": clampi(cen, -100, 100),
+				"open": clampi(opn, -100, 100), "reform": clampi(ref, -100, 100)},
+			"econ": {"agrarian": agr, "mercantile": mer, "industrial": ind},
+			"good": Array(good), "harsh": Array(harsh), "notes": notes}
+
+
+func _didx(id: String) -> int:
+	return int(ct.didx.get(id, -1))
+
+
+## 政令眼下在第几档（没有这道政令时为 −1）。
+func _dlvl(id: String) -> int:
+	var d: int = _didx(id)
+	return st.d_level[d] if d >= 0 else -1
+
+
+## 开关类开着、或运动类正在进行。
+func _don(id: String) -> bool:
+	var d: int = _didx(id)
+	if d < 0 or st.d_level[d] <= 0:
+		return false
+	if String(ct.decrees[d].get("kind", "toggle")) == "campaign":
+		return st.d_until[d] > st.q
+	return true
+
+
+func _dname(id: String) -> String:
+	var d: int = _didx(id)
+	return String(ct.decrees[d]["name"]) if d >= 0 else id
+
+
+## 分档政令眼下那一档的名字。
+func _dlevel_name(id: String) -> String:
+	var d: int = _didx(id)
+	if d < 0:
+		return id
+	var lv: Array = ct.decrees[d].get("levels", [])
+	var i: int = st.d_level[d]
+	return String(lv[i]) if i >= 0 and i < lv.size() else _dname(id)

@@ -229,7 +229,7 @@ func _build(sim: JCSim, an: JCAnalyst) -> Array:
 		if hungry and staple_goods.has(g):
 			w2 += 3_000_000
 		cands.append([w2, fix["cmd"], "stw.build.shortage", {"good": ct.g_id[g], "building": fix["building"],
-				"region": fix["region"], "gap_ppm": int(sh["gap_ppm"])}, int(fix["cost"])])
+				"region": fix["region"], "gap_ppm": int(sh["short_ppm"])}, int(fix["cost"])])
 	# 3) 设施吃紧
 	for nd: Dictionary in an.infra_needs():
 		var bid: String = String(nd["building"])

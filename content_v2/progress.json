@@ -927,7 +927,9 @@
      "peasant": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "single_whip",
@@ -962,7 +964,9 @@
      "gentry": -3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "ever_normal_granary",
@@ -991,7 +995,9 @@
      "peasant": 4
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "sea_policy",
@@ -1048,7 +1054,9 @@
      "gentry": -5
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "commerce_policy",
@@ -1107,7 +1115,9 @@
      "artisan": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "salt_policy",
@@ -1159,7 +1169,9 @@
      "merchant": -5
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "famine_relief",
@@ -1188,7 +1200,9 @@
      "peasant": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "promote_schools",
@@ -1222,7 +1236,9 @@
      "gentry": 4
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "foreign_learning",
@@ -1257,7 +1273,9 @@
      "merchant": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "tea_horse",
@@ -1296,7 +1314,9 @@
      "merchant": 2
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "sell_titles",
@@ -1327,7 +1347,9 @@
      "merchant": 2
     }
    ],
-   "cooldown": 24
+   "cooldown": 24,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "corvee_works",
@@ -1356,7 +1378,9 @@
      "peasant": -8
     }
    ],
-   "cooldown": 16
+   "cooldown": 16,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "reclamation",
@@ -1385,7 +1409,9 @@
      "peasant": 3
     }
    ],
-   "cooldown": 16
+   "cooldown": 16,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "tax_remission",
@@ -1415,7 +1441,9 @@
      "gentry": 3
     }
    ],
-   "cooldown": 16
+   "cooldown": 16,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "banking_license",
@@ -1450,7 +1478,9 @@
      "gentry": -2
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "industrial_charter",
@@ -1481,7 +1511,9 @@
      "gentry": -3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "official_press",
@@ -1515,7 +1547,9 @@
      "gentry": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "navigation_act",
@@ -1549,7 +1583,9 @@
      "merchant": 4
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "factory_act",
@@ -1584,7 +1620,9 @@
      "merchant": -5
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "railway_policy",
@@ -1630,7 +1668,9 @@
      "peasant": 2
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "income_tax",
@@ -1660,7 +1700,9 @@
      "gentry": -6
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "protective_tariff",
@@ -1695,7 +1737,9 @@
      "merchant": -2
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "compulsory_school",
@@ -1725,7 +1769,9 @@
      "peasant": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "central_bank",
@@ -1759,7 +1805,9 @@
      "merchant": 3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "social_insurance",
@@ -1794,7 +1842,9 @@
      "peasant": 6
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   },
   {
    "id": "environment_law",
@@ -1829,7 +1879,178 @@
      "merchant": -3
     }
    ],
-   "cooldown": 8
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
+  },
+  {
+   "id": "regime",
+   "name": "政体",
+   "era": 1,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "国家由谁做主。君主集权最稳当；开明君主肯听读书人与商贾的话，研究略快；君主立宪、议会共和让商贾更敢投资；社会主义由国家主导生产，工人农户拥护，商贾士绅反对，民间投资大减。换一次要等四年才能再换。",
+   "tech": "",
+   "levels": [
+    "君主集权",
+    "开明君主",
+    "君主立宪",
+    "议会共和",
+    "社会主义"
+   ],
+   "default": 0,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [],
+    [
+     {
+      "target": "research_speed",
+      "value": 5,
+      "scope": ""
+     },
+     {
+      "target": "admin_eff",
+      "value": 3,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": 10,
+      "scope": ""
+     },
+     {
+      "target": "interest_rate",
+      "value": -10,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": 15,
+      "scope": ""
+     },
+     {
+      "target": "literacy_rate",
+      "value": 10,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": -40,
+      "scope": ""
+     },
+     {
+      "target": "unrest",
+      "value": -15,
+      "scope": "artisan"
+     }
+    ]
+   ],
+   "support": [
+    {},
+    {
+     "gentry": 2,
+     "merchant": 3
+    },
+    {
+     "merchant": 6,
+     "artisan": 2,
+     "gentry": -2
+    },
+    {
+     "merchant": 8,
+     "artisan": 4,
+     "peasant": 2,
+     "gentry": -8
+    },
+    {
+     "artisan": 10,
+     "peasant": 6,
+     "merchant": -15,
+     "gentry": -10
+    }
+   ],
+   "cooldown": 16,
+   "level_era": [
+    1,
+    2,
+    3,
+    3,
+    4
+   ],
+   "level_tech": [
+    "",
+    "movable_type",
+    "telegraph",
+    "public_education",
+    "power_grid"
+   ]
+  },
+  {
+   "id": "labor_policy",
+   "name": "劳工",
+   "era": 3,
+   "era_end": 4,
+   "kind": "level",
+   "desc": "工人能不能罢工、结社。严禁罢工让东家放心开厂，工匠怨气更重；工会合法则反过来。",
+   "tech": "",
+   "levels": [
+    "严禁罢工",
+    "不加干预",
+    "工会合法"
+   ],
+   "default": 1,
+   "cost_once_li": 0,
+   "cost_q_li": 0,
+   "duration": 0,
+   "effects": [
+    [
+     {
+      "target": "unrest",
+      "value": 10,
+      "scope": "artisan"
+     },
+     {
+      "target": "invest_workshop",
+      "value": 10,
+      "scope": ""
+     }
+    ],
+    [],
+    [
+     {
+      "target": "unrest",
+      "value": -10,
+      "scope": "artisan"
+     },
+     {
+      "target": "invest_workshop",
+      "value": -10,
+      "scope": ""
+     }
+    ]
+   ],
+   "support": [
+    {
+     "merchant": 5,
+     "artisan": -8
+    },
+    {},
+    {
+     "artisan": 8,
+     "merchant": -5
+    }
+   ],
+   "cooldown": 8,
+   "level_era": [],
+   "level_tech": []
   }
  ],
  "partners": [

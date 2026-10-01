@@ -711,7 +711,7 @@
    "era": 2,
    "era_end": 4,
    "perish_ppm": 10000,
-   "base_price_li": 591,
+   "base_price_li": 4940,
    "durable": false,
    "art": "assets/goods/g08/goods_soap.png",
    "note": ""
@@ -935,7 +935,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 50000,
-   "base_price_li": 507,
+   "base_price_li": 686,
    "durable": false,
    "art": "assets/goods/g08/goods_beer_v2.png",
    "note": ""
@@ -949,7 +949,7 @@
    "era": 3,
    "era_end": 4,
    "perish_ppm": 1000000,
-   "base_price_li": 1345,
+   "base_price_li": 2166,
    "durable": false,
    "art": "assets/goods/g03/goods_gas.png",
    "note": ""
@@ -1189,7 +1189,7 @@
    "perish_ppm": 1000000,
    "base_price_li": 2877,
    "durable": false,
-   "art": "",
+   "art": "assets/goods/g12/goods_services.png",
    "note": "茶楼酒肆、戏园、理发、餐馆这类花钱买的服务；当季用掉，存不住。"
   }
  ]

@@ -756,8 +756,9 @@ building("urbanworks", "城政", "public", "serv", owners=("gov",), capital=1.6,
 
 
 # 服务行（第三时代起）：茶楼酒肆，到第四时代是餐馆、影院、商场一类的现代服务业。几乎全靠人手，
-# 主要雇城里的工匠；有它，乡下闲着的人才有地方去。配图暂借通用作坊（缺专属图，见 docs/58 §7）。
-building("servicehall", "服务行", "workshop", "serv", capital=0.8, era=3, art=art3("b01", "workshop"),
+# 主要雇城里的工匠；有它，乡下闲着的人才有地方去。配图：工业期是茶楼酒肆，现代期是餐馆、影院、商场（Codex 第六批）。
+building("servicehall", "服务行", "workshop", "serv", capital=0.8, era=3,
+         art=art3("b01", "workshop", industrial=ART + "b19/servicehall_industrial.png", modern=ART + "b19/servicehall_modern.png"),
          methods=[method("service_city", "茶楼酒肆", era=3, out={"services": 4000}, inp={"wine": 400, "tea": 20},
                          labor={AR: 2400, M: 200}),
                   method("service_modern", "现代服务业", era=4, tech="television", out={"services": 6000},

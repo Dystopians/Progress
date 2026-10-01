@@ -17,14 +17,16 @@ func refresh() -> void:
 		(c1["body"] as VBoxContainer).add_child(JwUi.para(t("jc.mod.none"), "text.muted"))
 	for gr: Dictionary in groups:
 		var row: HBoxContainer = JwUi.hbox(10)
-		var txt: String = rt("jc.mod.group", {"building": g.name_of("building", String(gr["building"])),
+		# 回报为负：不写「一年回报 −379%」这种数，直说改了会亏
+		var txt: String = rt("jc.mod.group" if int(gr["roi_ppm"]) >= 0 else "jc.mod.group_loss", {"building": g.name_of("building", String(gr["building"])),
 				"owner": t("jc.owner." + String(gr["owner"])), "count": str(int(gr["count"])), "levels": str(int(gr["levels"])),
 				"method": g.name_of("method", String(gr["to"])), "cost": JcFmt.money(int(gr["cost"])),
 				"roi": JcFmt.pct(int(gr["roi_ppm"]), 0)})
 		row.add_child(JwUi.label(txt, "body", "text.secondary", true))
 		var cmd: Dictionary = gr["cmd"]
 		var roi: int = int(gr["roi_ppm"])
-		row.add_child(JcUi.chip(t("jc.mod.worth") if roi >= 150_000 else t("jc.mod.slow"), JcUi.tone(roi >= 150_000, roi >= 50_000)))
+		var chip: String = "jc.mod.worth" if roi >= 150_000 else ("jc.mod.slow" if roi >= 0 else "jc.mod.loss")
+		row.add_child(JcUi.chip(t(chip), JcUi.tone(roi >= 150_000, roi >= 50_000)))
 		row.add_child(JcUi.button(t("jc.mod.upgrade_all"), roi >= 150_000, func() -> void: session.order(cmd)))
 		(c1["body"] as VBoxContainer).add_child(row)
 	content.add_child(c1["root"])
@@ -51,7 +53,7 @@ func refresh() -> void:
 	var c3: Dictionary = JcUi.card(t("jc.mod.each"), t("jc.mod.each_sub"))
 	for ob: Dictionary in v["stacks"]:
 		var row3: HBoxContainer = JwUi.hbox(10)
-		row3.add_child(JwUi.label(rt("jc.mod.each_row", {"building": g.name_of("building", String(ob["building"])),
+		row3.add_child(JwUi.label(rt("jc.mod.each_row" if int(ob["roi_ppm"]) >= 0 else "jc.mod.each_row_loss", {"building": g.name_of("building", String(ob["building"])),
 				"region": g.name_of("region", String(ob["region"])), "from": g.name_of("method", String(ob["from"])),
 				"to": g.name_of("method", String(ob["to"])), "levels": str(int(ob["levels"])), "cost": JcFmt.money(int(ob["cost"])),
 				"roi": JcFmt.pct(int(ob["roi_ppm"]), 0), "pen": JcFmt.pct(int(ob["penalty_ppm"]), 0)}), "body", "text.secondary", true))

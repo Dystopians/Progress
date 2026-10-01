@@ -84,7 +84,8 @@ static func advice_card(s: JcSession, it: Dictionary, compact: bool) -> PanelCon
 	hh.add_child(JwUi.label(JcFmt.r(String(it["title"]), sl), "body_bold", "text.primary", true))
 	v.add_child(hh)
 	v.add_child(JwUi.para(JcFmt.r(String(it["body"]), sl), "text.secondary"))
-	var bh: HBoxContainer = JwUi.hbox(8)
+	# 按钮行放不下（右栏收窄时）就把「不必再提」折到下一行
+	var bh: HFlowContainer = JcUi.flow(8, 6)
 	var cmds: Array = it.get("cmds", [])
 	if not cmds.is_empty():
 		var lab: String = JwText.t("jc.adv.do")

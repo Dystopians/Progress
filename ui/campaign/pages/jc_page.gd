@@ -24,10 +24,31 @@ func setup(s: JcSession, r: Node, id: String) -> void:
 
 
 ## 默认结构：一个可纵向滚动的内容栏。需要别的布局的页面重写 build()。
+## 横向也允许滚：界面放大后内容再宽也不会钻到右边顾问栏底下，最多出一条横向滚动条。
 func build() -> void:
 	content = JwUi.vbox(14)
-	_scroll = JwUi.scroll(content)
+	_scroll = JwUi.scroll(content, true)
 	add_child(_scroll)
+
+
+## 页面实际能用的宽度（页面栈的宽减去左右边距）；还没排版时是 0。
+func avail_width() -> float:
+	var p: Control = get_parent_control()
+	if p == null:
+		return 0.0
+	return p.size.x - float(get_theme_constant("margin_left") + get_theme_constant("margin_right"))
+
+
+func _ready() -> void:
+	var p: Control = get_parent_control()
+	if p != null:
+		p.resized.connect(func() -> void: relayout(avail_width()))
+	relayout(avail_width())
+
+
+## 页面栈的宽度变了（拖窗口、调界面大小）时调用；要随宽度改排版的页面重写它。w ≤ 0 表示还没排版。
+func relayout(_w: float) -> void:
+	pass
 
 
 func refresh() -> void:

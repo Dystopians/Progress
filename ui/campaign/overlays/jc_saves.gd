@@ -45,6 +45,37 @@ func build() -> void:
 			if session.load_slot(slot):
 				close()))
 		body.add_child(row)
+	# 界面大小：100%—200%，立即生效
+	body.add_child(JwUi.hsep())
+	var sc: HBoxContainer = JwUi.hbox(8)
+	sc.add_child(JwUi.label(t("jc.sv.scale"), "body_bold", "text.primary"))
+	var win: Window = get_window()
+	var cur: float = JwScale.snap(win.content_scale_factor) if win != null else 1.0
+	var top: float = float(root_ui.call("max_ui_scale")) if root_ui != null and root_ui.has_method("max_ui_scale") else 2.0
+	for v: float in JwScale.STEPS:
+		var vv: float = v
+		var sb: Button = JcUi.button("%d%%" % int(round(v * 100.0)), is_equal_approx(v, cur), func() -> void:
+			if root_ui != null and root_ui.has_method("set_ui_scale"):
+				root_ui.call("set_ui_scale", vv)
+			else:
+				get_window().content_scale_factor = vv
+				JwScale.save_scale(vv)
+			on_changed())
+		# 屏幕放不下的档（放大后不到 1280×720）不让选
+		if v > top + 0.001:
+			sb.disabled = true
+			sb.tooltip_text = t("jc.sv.scale_too_big")
+		sc.add_child(sb)
+	body.add_child(sc)
+	body.add_child(JwUi.label(t("jc.sv.scale_tip"), "caption", "text.muted", true))
+	# 退出：每年春天自动存档；想从这一季接着玩，先存一个档
+	body.add_child(JwUi.hsep())
+	var q: HBoxContainer = JwUi.hbox(10)
+	var qn: Label = JwUi.label(t("jc.sv.quit_note"), "caption", "text.muted", true)
+	qn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	q.add_child(qn)
+	q.add_child(JcUi.button(t("jc.sv.quit"), false, func() -> void: get_tree().quit()))
+	body.add_child(q)
 
 
 ## 存档名去掉文件名里不能用的字符（斜杠、冒号、问号等），最长 40 字。

@@ -155,11 +155,12 @@ D = []
 
 
 def decree(id, name, era, kind, desc, tech=None, levels=None, default=0, cost_once=0, cost_q=0, duration=0,
-           effects=None, support=None, cooldown=8, exclusive=None, era_end=4):
+           effects=None, support=None, cooldown=8, exclusive=None, era_end=4, level_era=None, level_tech=None):
+    """level_era / level_tech：分档政令每一档各自要进入哪个时代、掌握哪项科技（空串 = 不要求）。"""
     D.append(dict(id=id, name=name, era=era, era_end=era_end, kind=kind, desc=desc, tech=tech,
                   levels=levels or [], default=default, cost_once=cost_once, cost_q=cost_q,
                   duration=duration, effects=effects or [], support=support or [], cooldown=cooldown,
-                  exclusive=exclusive))
+                  exclusive=exclusive, level_era=level_era or [], level_tech=level_tech or []))
 
 
 decree("land_survey", "清丈田亩", 1, "campaign", tech="survey", duration=8, cost_once=300000, cost_q=50000,
@@ -250,6 +251,25 @@ decree("social_insurance", "社会保险", 4, "toggle", cost_q=300000,
        desc="养老、失业与医疗保险：各阶层不满大减，财政负担显著。")
 decree("environment_law", "环境保护法", 4, "toggle", effects=[[mod("pollution_cut", 50), mod("workshop_cost", 5)]],
        support=[{"gentry": 4, "merchant": -3}], desc="限制排放：污染事件减半，工厂成本 +5%。")
+# 上层建筑：政体与劳工（默认档没有任何效果，托管不会去动，留给玩家拿主意；政令页据此给出「国家形态」的评价）
+decree("regime", "政体", 1, "level", levels=["君主集权", "开明君主", "君主立宪", "议会共和", "社会主义"], default=0,
+       level_era=[1, 2, 3, 3, 4], level_tech=["", "movable_type", "telegraph", "public_education", "power_grid"],
+       effects=[[], [mod("research_speed", 5), mod("admin_eff", 3)],
+                [mod("invest_prop", 10), mod("interest_rate", -10)],
+                [mod("invest_prop", 15), mod("literacy_rate", 10)],
+                [mod("invest_prop", -40), mod("unrest", -15, "artisan")]],
+       support=[{}, {"gentry": 2, "merchant": 3},
+                {"merchant": 6, "artisan": 2, "gentry": -2},
+                {"merchant": 8, "artisan": 4, "peasant": 2, "gentry": -8},
+                {"artisan": 10, "peasant": 6, "merchant": -15, "gentry": -10}],
+       cooldown=16,
+       desc="国家由谁做主。君主集权最稳当；开明君主肯听读书人与商贾的话，研究略快；君主立宪、议会共和让商贾更敢投资；"
+            "社会主义由国家主导生产，工人农户拥护，商贾士绅反对，民间投资大减。换一次要等四年才能再换。")
+decree("labor_policy", "劳工", 3, "level", levels=["严禁罢工", "不加干预", "工会合法"], default=1,
+       effects=[[mod("unrest", 10, "artisan"), mod("invest_workshop", 10)], [],
+                [mod("unrest", -10, "artisan"), mod("invest_workshop", -10)]],
+       support=[{"merchant": 5, "artisan": -8}, {}, {"artisan": 8, "merchant": -5}],
+       desc="工人能不能罢工、结社。严禁罢工让东家放心开厂，工匠怨气更重；工会合法则反过来。")
 
 # ════════════════════════════ 贸易伙伴 ════════════════════════════════════
 # dev：开局发展度（1.55 表示第一时代、离第二时代还差 45%）；rate：每年基础增长；

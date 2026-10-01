@@ -1,6 +1,6 @@
 ## 四百年战役 v2（docs/57、docs/58）：开局预演、守恒与确定性、存读档与改内容后的重演、撤回、托管与顾问、
 ## 合并改造（至少两处旧的、七折、官府出钱）、切片改造、引擎文案齐全、走到终年圆满结束；
-## 劳动人口比例、服务业、种粮优先、民间出资从积蓄出、拉民心的政令清单与顾问建议。
+## 劳动人口比例、服务业、联产品定价、种粮优先、民间出资从积蓄出、拉民心的政令清单与顾问建议。
 extends JWTest
 
 const SEED: int = 7
@@ -25,7 +25,9 @@ func test_warm_up_opens_in_spring_with_real_numbers() -> void:
 	ge_int(int(g.st.last.get("pop", 0)), 10_000_000, "第一季就有人口统计")
 	ge_int(int(g.st.last.get("gdp", 0)), 1, "第一季就有产值")
 	ge_int(g.st.points, 1, "第一季就有研究点")
-	eq_int(g.st.chron.size(), 0, "预演不留纪事")
+	eq_int(g.st.chron.size(), 1, "预演不留纪事，只记开国一条")
+	eq_int(g.st.annals.size(), 1, "国史第一页是开国")
+	eq_str(String(g.st.annals[0]["key"]), "chron.milestone.founding", "开国这一条")
 
 
 func test_quarters_conserve_money_and_are_deterministic() -> void:
@@ -263,6 +265,26 @@ func test_service_trade_is_wired() -> void:
 	eq_int(g.ct.n_era[n], 3, "第三时代起才有这项需要（开局的校准不受影响）")
 
 
+## 一个做法出两样货、另一样已经由别的做法定了价（皂烛兼营的蜡烛按手工蜡烛定价）：按常价算，兼营不比老做法差。
+## 原来肥皂只分到兼营 5% 的成本，兼营在常价下必亏，全国没人做肥皂，「皂」这项需要几百年都是 0%。
+func test_joint_methods_pay_at_base_prices() -> void:
+	var g: JCGame = _new()
+	var ct: JCContent = g.ct
+	var b: int = int(ct.bidx.get("chandlery", -1))
+	var m0: int = int(ct.midx.get("candle_hand", -1))
+	var m1: int = int(ct.midx.get("candle_soap", -1))
+	check(b >= 0 and m0 >= 0 and m1 >= 0, "有皂烛坊的手工蜡烛与皂烛兼营两种做法")
+	if b < 0 or m0 < 0 or m1 < 0:
+		return
+	for gid: String in ["candles", "soap", "cooking_oil"]:
+		var gi: int = int(ct.gidx.get(gid, -1))
+		if gi >= 0:
+			g.st.price[gi] = ct.g_base[gi]
+	for r: int in ct.r_n:
+		ge_int(g.sim.inv.level_profit(b, m1, r), g.sim.inv.level_profit(b, m0, r),
+				"%s：按常价，皂烛兼营每级的利润不低于手工蜡烛" % ct.r_id[r])
+
+
 func test_staple_farms_get_peasants_first() -> void:
 	var g: JCGame = _new()
 	var e: JCEconomy = g.sim.econ
@@ -338,3 +360,26 @@ func test_support_decrees_are_ranked_and_offered() -> void:
 		check(JcFmt.r(String(it["title"]), sl) != "" and JcFmt.r(String(it["body"]), sl) != "", "建议能渲染")
 		ge_int((it.get("cmds", []) as Array).size(), 1, "建议带着能办的命令")
 	check(found, "威信不到五成时，民政顾问推荐拉民心的政令")
+
+
+## 国家形态的评语：用户举的两个例子——善政加君主集权是「宽容仁厚的帝国」，社会主义却严禁罢工是「堕落的工人国家」。
+func test_regime_titles_follow_decrees() -> void:
+	var g: JCGame = _new()
+	var ct: JCContent = g.ct
+	eq_str(String(g.analyst.regime_profile()["regime"]), "empire", "开局是君主集权")
+	for id: String in ["ever_normal_granary", "promote_schools", "tax_remission"]:
+		g.st.d_level[int(ct.didx[id])] = 1
+		g.st.d_until[int(ct.didx[id])] = g.st.q + 8
+	var rp: Dictionary = g.analyst.regime_profile()
+	eq_str(String(rp["title"]), "jc.regime.title.empire.benevolent", "善政 + 君主集权")
+	eq_str(JwText.t(String(rp["title"])), "宽容仁厚的帝国", "评语文字")
+	g.st.era = 4
+	g.st.d_level[int(ct.didx["regime"])] = 4
+	g.st.d_level[int(ct.didx["labor_policy"])] = 0
+	rp = g.analyst.regime_profile()
+	eq_str(String(rp["regime"]), "socialist", "改成社会主义")
+	eq_str(JwText.t(String(rp["title"])), "堕落的工人国家", "社会主义却严禁罢工")
+	eq_str(String(rp["tone"]), "harsh", "徽记与颜色跟着评语按严苛算")
+	g.st.d_level[int(ct.didx["labor_policy"])] = 2
+	rp = g.analyst.regime_profile()
+	check(String(rp["title"]) != "jc.regime.title.socialist.harsh", "工会合法就不是「堕落」")

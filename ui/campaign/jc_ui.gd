@@ -18,6 +18,68 @@ const STEWARD_ART: Dictionary = {
 }
 
 
+## 第七批图片的路径约定（docs/60）：图到了放进去就生效，没到时显示占位圆章。
+const TECH_ART: String = "res://assets/techs/t01/tech_%s.png"
+const DECREE_ART: String = "res://assets/decrees/d01/decree_%s.png"
+const DECREE_LEVEL_ART: String = "res://assets/decrees/d01/decree_%s_%d.png"
+const REGIME_ART: String = "res://assets/regime/r01/regime_%s_%s.png"
+const POLICY_ICON: String = "res://assets/icons/policy/%s.png"
+const CLASS_ART: String = "res://assets/classes/c01/class_%s_e%d_%s.png"
+const NEED_ICON: String = "res://assets/icons/needs/need_%s.png"
+const MOOD_ICON: String = "res://assets/icons/mood/mood_%d.png"
+const LIFE_ART: String = "res://assets/scenes/life/life_%s_e%d.png"
+const CHRON_ICON: String = "res://assets/icons/chronicle/chr_%s.png"
+const MILESTONE_ART: String = "res://assets/chronicle/m01/milestone_%s.png"
+const SECTOR_ICON: String = "res://assets/icons/sector/sector_%s.png"
+const SECTOR_ART: String = "res://assets/scenes/sector/sector_%s_e%d.png"
+const STATUS_ICON: String = "res://assets/icons/status/%s.png"
+const UI_ICON: String = "res://assets/icons/ui/%s.png"
+## 满额（ppm）
+const PPM_ONE: int = 1_000_000
+
+
+## 内容表里的图是 assets/…，补上 res://。
+static func res(path: String) -> String:
+	if path == "" or path.begins_with("res://"):
+		return path
+	return "res://" + path
+
+
+static func has_art(path: String) -> bool:
+	return path != "" and ResourceLoader.exists(res(path))
+
+
+## 政令配图：给了档位就先找那一档的图；不分档的那张没有时，退到第 0 档的图；都没有返回不分档的路径（显示占位）。
+static func decree_art(id: String, level: int = -1) -> String:
+	if level >= 0:
+		var lp: String = DECREE_LEVEL_ART % [id, level]
+		if has_art(lp):
+			return lp
+	var p: String = DECREE_ART % id
+	if not has_art(p):
+		var l0: String = DECREE_LEVEL_ART % [id, 0]
+		if has_art(l0):
+			return l0
+	return p
+
+
+## 图标：有图用图（等比居中）；没图用占位圆章，写名字的头一个字。
+static func badge(path: String, side: float, name_text: String = "", tone_token: String = "line.strong") -> Control:
+	if has_art(path):
+		var tr: TextureRect = TextureRect.new()
+		tr.texture = load(res(path)) as Texture2D
+		tr.custom_minimum_size = Vector2(side, side)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return tr
+	var gl: JcGlyph = JcGlyph.new()
+	gl.text = name_text.substr(0, 1)
+	gl.tone = tone_token
+	gl.custom_minimum_size = Vector2(side, side)
+	return gl
+
+
 ## 按好坏给色：好（青绿）、要注意（赭）、坏（橙红）。
 static func tone(good: bool, warn: bool = false) -> String:
 	if good:

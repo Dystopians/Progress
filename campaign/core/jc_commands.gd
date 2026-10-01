@@ -308,6 +308,13 @@ func _decree(c: Dictionary, doit: bool) -> Dictionary:
 		return _no("reason.bad_command")
 	if lvl == st.d_level[d]:
 		return _no("reason.no_change")
+	# 分档政令：每一档各自的时代与科技门槛（政体：开明君主要第二时代与活字印刷……）
+	var lera: Array = dd.get("level_era", [])
+	if lvl < lera.size() and st.era < int(lera[lvl]):
+		return _no("reason.era_too_early")
+	var ltech: Array = dd.get("level_tech", [])
+	if lvl < ltech.size() and String(ltech[lvl]) != "" and st.t_done[int(ct.tidx.get(String(ltech[lvl]), 0))] != 1:
+		return _no("reason.tech_missing")
 	if st.q < st.d_cool[d] and lvl > 0:
 		return _no("reason.cooling", {"until": st.d_cool[d]})
 	var once: int = int(dd.get("cost_once_li", 0))

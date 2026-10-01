@@ -139,7 +139,7 @@ func _gongbu(sim: JCSim, an: JCAnalyst) -> Array:
 		var fix: Dictionary = sh["fix"]
 		var essential: bool = JCSteward._is_livelihood_good(ct, g)
 		var sev: int = 2 if (essential or int(sh["gap_ppm"]) > 250_000) else 1
-		var slots: Dictionary = {"good": ct.g_id[g], "gap_ppm": int(sh["gap_ppm"]), "price_ppm": int(sh["price_ppm"])}
+		var slots: Dictionary = {"good": ct.g_id[g], "gap_ppm": int(sh["short_ppm"]), "price_ppm": int(sh["price_ppm"])}
 		var cmds: Array = []
 		var body: String = "adv.gongbu.shortage.b_none"
 		if not fix.is_empty():
