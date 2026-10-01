@@ -593,8 +593,8 @@
    "art": {
     "1": "assets/buildings/b17/paddy_early_v3.png",
     "2": "assets/buildings/b17/paddy_early_v3.png",
-    "3": "assets/buildings/b02/farm_industrial.png",
-    "4": "assets/buildings/b02/farm_modern.png"
+    "3": "assets/buildings/b20/paddy_industrial.png",
+    "4": "assets/buildings/b20/paddy_modern.png"
    },
    "methods": [
     {
@@ -1359,8 +1359,8 @@
    "art": {
     "1": "assets/buildings/b17/coppermine_early.png",
     "2": "assets/buildings/b17/coppermine_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "3": "assets/buildings/b20/coppermine_industrial.png",
+    "4": "assets/buildings/b20/coppermine_modern.png"
    },
    "methods": [
     {
@@ -1455,8 +1455,8 @@
    "art": {
     "1": "assets/buildings/b17/kaolinpit_early.png",
     "2": "assets/buildings/b17/kaolinpit_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "3": "assets/buildings/b20/kaolinpit_industrial.png",
+    "4": "assets/buildings/b20/kaolinpit_modern.png"
    },
    "methods": [
     {
@@ -1937,8 +1937,8 @@
    "art": {
     "1": "assets/buildings/b17/sandpit_early.png",
     "2": "assets/buildings/b17/sandpit_early.png",
-    "3": "assets/buildings/b02/mine_industrial.png",
-    "4": "assets/buildings/b02/mine_modern.png"
+    "3": "assets/buildings/b20/sandpit_industrial.png",
+    "4": "assets/buildings/b20/sandpit_modern.png"
    },
    "methods": [
     {
@@ -2211,8 +2211,8 @@
    "art": {
     "1": "assets/buildings/b17/weaving_early.png",
     "2": "assets/buildings/b17/weaving_early.png",
-    "3": "assets/buildings/b06/textile_industrial.png",
-    "4": "assets/buildings/b06/textile_modern.png"
+    "3": "assets/buildings/b20/weaving_industrial.png",
+    "4": "assets/buildings/b20/weaving_modern.png"
    },
    "methods": [
     {
@@ -2333,8 +2333,8 @@
    "art": {
     "1": "assets/buildings/b17/silkreel_early.png",
     "2": "assets/buildings/b17/silkreel_early.png",
-    "3": "assets/buildings/b11/sericulture_industrial.png",
-    "4": "assets/buildings/b11/sericulture_modern.png"
+    "3": "assets/buildings/b20/silkreel_industrial.png",
+    "4": "assets/buildings/b20/silkreel_modern.png"
    },
    "methods": [
     {
@@ -2430,8 +2430,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b06/textile_early.png",
-    "2": "assets/buildings/b06/textile_early.png",
+    "1": "assets/buildings/b20/silkweave_early.png",
+    "2": "assets/buildings/b20/silkweave_early.png",
     "3": "assets/buildings/b17/silkweave_industrial.png",
     "4": "assets/buildings/b17/silkweave_industrial.png"
    },
@@ -2658,8 +2658,8 @@
    "art": {
     "1": "assets/buildings/b18/sawmill_early.png",
     "2": "assets/buildings/b18/sawmill_early.png",
-    "3": "assets/buildings/b05/forestry_industrial.png",
-    "4": "assets/buildings/b05/forestry_modern.png"
+    "3": "assets/buildings/b20/sawmill_industrial.png",
+    "4": "assets/buildings/b20/sawmill_modern.png"
    },
    "methods": [
     {
@@ -4636,7 +4636,7 @@
     "1": "assets/buildings/b02/power_industrial.png",
     "2": "assets/buildings/b02/power_industrial.png",
     "3": "assets/buildings/b02/power_industrial.png",
-    "4": "assets/buildings/b02/power_modern.png"
+    "4": "assets/buildings/b20/steamplant_modern.png"
    },
    "methods": [
     {
@@ -5934,8 +5934,8 @@
    "art": {
     "1": "assets/buildings/b18/carrier_early.png",
     "2": "assets/buildings/b18/carrier_early.png",
-    "3": "assets/buildings/b08/vehicle_industrial.png",
-    "4": "assets/buildings/b08/vehicle_modern_v2.png"
+    "3": "assets/buildings/b20/carrier_industrial.png",
+    "4": "assets/buildings/b20/carrier_modern.png"
    },
    "methods": [
     {
@@ -6441,8 +6441,8 @@
     "waterpower": 6
    },
    "art": {
-    "1": "assets/buildings/b02/power_early.png",
-    "2": "assets/buildings/b02/power_early.png",
+    "1": "assets/buildings/b20/watermill_early.png",
+    "2": "assets/buildings/b20/watermill_early.png",
     "3": "assets/buildings/b18/watermill_industrial.png",
     "4": "assets/buildings/b18/watermill_industrial.png"
    },
@@ -7136,8 +7136,8 @@
    "tech": "",
    "effects": {},
    "art": {
-    "1": "assets/buildings/b01/workshop_early.png",
-    "2": "assets/buildings/b01/workshop_early.png",
+    "1": "assets/buildings/b20/servicehall_early.png",
+    "2": "assets/buildings/b20/servicehall_early.png",
     "3": "assets/buildings/b19/servicehall_industrial.png",
     "4": "assets/buildings/b19/servicehall_modern.png"
    },

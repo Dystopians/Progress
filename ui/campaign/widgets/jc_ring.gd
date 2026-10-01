@@ -26,7 +26,8 @@ func _draw() -> void:
 	var f: float = clampf(float(value) / 1_000_000.0, 0.0, 1.0)
 	if f > 0.0:
 		draw_arc(c, r - w * 0.5, -PI * 0.5, -PI * 0.5 + TAU * f, 48, JwTheme.c(tone), w, true)
-	var inner: float = (r - w) * 1.25
+	# 图标四周本来留有透明边，放大一点看着才饱满（看得见的部分仍在圈内）
+	var inner: float = (r - w) * 1.5
 	if _tex != null:
 		draw_texture_rect(_tex, Rect2(c - Vector2(inner, inner) * 0.5, Vector2(inner, inner)), false)
 	elif text != "":

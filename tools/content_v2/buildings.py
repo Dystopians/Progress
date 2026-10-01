@@ -789,6 +789,18 @@ ART_OVERRIDES = {
     "carrier": {"1": _V5 + "b18/carrier_early.png", "2": _V5 + "b18/carrier_early.png"},
     "watermill": {"3": _V5 + "b18/watermill_industrial.png", "4": _V5 + "b18/watermill_industrial.png"},
 }
+# ── 第七批补齐（Codex v7，docs/60 §7）：补上缺的那几档形态 ─────────────────────
+_V7 = "assets/buildings/b20/"
+for _id, _forms in {
+    "paddy": ("industrial", "modern"), "coppermine": ("industrial", "modern"), "kaolinpit": ("industrial", "modern"),
+    "sandpit": ("industrial", "modern"), "weaving": ("industrial", "modern"), "silkreel": ("industrial", "modern"),
+    "sawmill": ("industrial", "modern"), "carrier": ("industrial", "modern"),
+    "silkweave": ("early",), "watermill": ("early",), "steamplant": ("modern",), "servicehall": ("early",),
+}.items():
+    _ov = ART_OVERRIDES.setdefault(_id, {})
+    for _f in _forms:
+        for _e in {"early": ("1", "2"), "industrial": ("3",), "modern": ("4",)}[_f]:
+            _ov[_e] = f"{_V7}{_id}_{_f}.png"
 for _b in B:
     if _b["id"] in ART_OVERRIDES:
         _b["art"] = dict(_b["art"] or {})

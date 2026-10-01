@@ -31,22 +31,25 @@ func refresh() -> void:
 	var hist: Array = v["hist"]
 	var ago: Dictionary = hist[maxi(0, hist.size() - 2)] if hist.size() >= 2 else {}
 	# ── 大数 ──
-	var tiles: HBoxContainer = JwUi.hbox(10)
+	# 六个大数，各配一个小图标；窄的时候排成两行三列
+	var tiles: GridContainer = JcUi.grid(3 if _narrow else 6, 10, 10)
 	tiles.add_child(JcUi.tile(t("jc.ov.pop"), JcFmt.people(int(v["pop"])), _delta_people(int(v["pop"]), int(ago.get("pop", 0))),
-			JcUi.MUTED, t("jc.ov.pop_tip")))
+			JcUi.MUTED, t("jc.ov.pop_tip"), JcUi.UI_ICON % "stat_pop", JcUi.trend_icon(int(v["pop"]), int(ago.get("pop", 0)))))
 	tiles.add_child(JcUi.tile(t("jc.ov.gdp"), JcFmt.money(int(v["gdp"])), _delta_pct(int(v["gdp"]), int(ago.get("gdp", 0))),
-			JcUi.MUTED, t("jc.ov.gdp_tip")))
+			JcUi.MUTED, t("jc.ov.gdp_tip"), JcUi.UI_ICON % "stat_gdp", JcUi.trend_icon(int(v["gdp"]), int(ago.get("gdp", 0)))))
 	var bal: int = int(v["balance"])
-	tiles.add_child(JcUi.tile(t("jc.ov.treasury"), JcFmt.money(int(v["treasury"])),
-			rt("jc.ov.balance", {"v": JcFmt.money_signed(bal)}), JcUi.tone(bal >= 0), t("jc.ov.treasury_tip")))
+	var tre: int = int(v["treasury"])
+	tiles.add_child(JcUi.tile(t("jc.ov.treasury"), JcFmt.money(tre),
+			rt("jc.ov.balance", {"v": JcFmt.money_signed(bal)}), JcUi.tone(bal >= 0), t("jc.ov.treasury_tip"), JcUi.UI_ICON % "stat_treasury",
+			JcUi.trend_icon(tre, maxi(1, tre - bal))))
 	var liv: int = int(v["living"])
 	tiles.add_child(JcUi.tile(t("jc.ov.living"), JcFmt.pct(liv, 0), rt("jc.ov.expect", {"v": JcFmt.times(int(v["expect"]))}),
-			JcUi.tone(liv >= 950_000, liv >= 850_000), t("jc.ov.living_tip")))
+			JcUi.tone(liv >= 950_000, liv >= 850_000), t("jc.ov.living_tip"), JcUi.UI_ICON % "stat_living"))
 	var un: int = int(v["unemp"])
-	tiles.add_child(JcUi.tile(t("jc.ov.unemp"), JcFmt.pct(un), "", JcUi.MUTED, t("jc.ov.unemp_tip")))
+	tiles.add_child(JcUi.tile(t("jc.ov.unemp"), JcFmt.pct(un), "", JcUi.MUTED, t("jc.ov.unemp_tip"), JcUi.UI_ICON % "stat_unemp"))
 	var leg: int = int(v["legitimacy"])
 	tiles.add_child(JcUi.tile(t("jc.ov.legit"), JcFmt.pct(leg, 0), rt("jc.ov.prestige", {"v": str(int(v["prestige"]))}),
-			JcUi.tone(leg >= 450_000, leg >= 300_000), t("jc.ov.legit_tip")))
+			JcUi.tone(leg >= 450_000, leg >= 300_000), t("jc.ov.legit_tip"), JcUi.UI_ICON % "stat_legitimacy"))
 	content.add_child(tiles)
 	# ── 时代与危机 ──
 	var two: BoxContainer = _pair(14)
@@ -166,6 +169,10 @@ func _era_card(g: JCGame, v: Dictionary) -> PanelContainer:
 	var title: String = rt("jc.ov.era_title", {"era": JcFmt.era_name(mini(4, era + 1))}) if era < 4 else t("jc.ov.era_final")
 	var c: Dictionary = JcUi.card(title, rt("jc.ov.era_now", {"era": JcFmt.era_name(era), "world": JcFmt.era_name(world)}))
 	var body: VBoxContainer = c["body"]
+	var head: HBoxContainer = c["head"]
+	var ei: Control = JcUi.icon(JcUi.UI_ICON % ("era_%d" % mini(4, era + 1)), 30.0)
+	head.add_child(ei)
+	head.move_child(ei, 0)
 	(c["head"] as HBoxContainer).add_child(JcUi.link(t("jc.ov.era_book"), func() -> void: open_overlay("era", {"kind": "book"})))
 	if era >= 4:
 		body.add_child(JwUi.para(t("jc.ov.era_final_body"), "text.secondary"))
@@ -208,13 +215,16 @@ func _crisis_card(v: Dictionary) -> PanelContainer:
 		var tr: int = int(cr["track"])
 		var stg: int = int(cr["stage"])
 		var h: HBoxContainer = JwUi.hbox(10)
-		var nm: Label = JwUi.label(t("jc.crisis.%d" % tr), "body_bold", "text.primary")
-		nm.custom_minimum_size = Vector2(90, 0)
+		var nm: HBoxContainer = JcUi.icon_label(JcUi.UI_ICON % JcUi.CRISIS_ICON[tr], t("jc.crisis.%d" % tr), "body_bold",
+				"text.primary", 26.0)
+		nm.custom_minimum_size = Vector2(124, 0)
 		h.add_child(nm)
 		var m: JcMeter = JcUi.meter(int(cr["severity"]), JcUi.GOOD if stg == 0 else (JcUi.WARN if stg == 1 else JcUi.BAD), 160.0, 10.0)
 		m.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		h.add_child(m)
-		h.add_child(JcUi.chip(t("jc.stage.%d" % stg), JcUi.GOOD if stg == 0 else (JcUi.WARN if stg == 1 else JcUi.BAD)))
+		# 阶段徽章同形异色，旁边照样写阶段文字
+		h.add_child(JcUi.chip(t("jc.stage.%d" % stg), JcUi.GOOD if stg == 0 else (JcUi.WARN if stg == 1 else JcUi.BAD), false,
+				JcUi.UI_ICON % ("stage_%d" % clampi(stg, 0, 3))))
 		body.add_child(h)
 		body.add_child(JwUi.para(t("jc.crisis.explain.%d" % tr), "text.muted"))
 	return c["root"]

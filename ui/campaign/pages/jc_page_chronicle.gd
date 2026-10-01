@@ -11,6 +11,8 @@ const BIG_W: float = 300.0
 const BIG_H: float = 168.0
 ## 默认展开最近几个年代
 const OPEN_DECADES: int = 6
+## 三个栏目的小图标
+const TAB_ICON: Dictionary = {"annals": "era", "chron": "event", "steward": "steward"}
 
 var _tab: String = "annals"
 var _kind: String = "all"
@@ -25,6 +27,7 @@ func refresh() -> void:
 	var tabs: HBoxContainer = JwUi.hbox(4)
 	for id: String in ["annals", "chron", "steward"]:
 		var b: Button = JwUi.button(t("jc.chr.tab." + id), "TabBtn")
+		JcUi.set_icon(b, JcUi.CHRON_ICON % String(TAB_ICON[id]), 20)
 		b.toggle_mode = true
 		b.set_pressed_no_signal(_tab == id)
 		b.pressed.connect(func() -> void:
@@ -46,6 +49,10 @@ func _annals(g: JCGame) -> void:
 	var v: Dictionary = views().annals()
 	var list: Array = v["list"]
 	var hist: Array = v["hist"]
+	# 卷轴页眉：「国史」两个字压在卷轴上（墨色）
+	var hd: Control = JcUi.ornament(JcUi.CHRON_DECOR % "scroll_header", t("jc.chr.tab.annals"), 76.0, "title_block", "bg.abyss")
+	hd.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	content.add_child(hd)
 	content.add_child(JwUi.para(t("jc.chr.ann.intro"), "text.muted"))
 	var tl: JcTimeline = JcTimeline.new()
 	tl.custom_minimum_size = Vector2(0, 78)
@@ -95,6 +102,10 @@ func _annals(g: JCGame) -> void:
 		var hs: Array = hs_dec.get(d3, [])
 		if not items.is_empty() or not hs.is_empty():
 			var open: bool = bool(_open.get(d3, n < OPEN_DECADES))
+			if n > 0 and JcUi.has_art(JcUi.CHRON_DECOR % "divider"):
+				var dv: Control = JcUi.ornament(JcUi.CHRON_DECOR % "divider", "", 26.0)
+				dv.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+				content.add_child(dv)
 			content.add_child(_decade(g, d3, items, hs, open))
 			n += 1
 		d3 -= 10
@@ -109,7 +120,9 @@ func _decade(g: JCGame, d: int, items: Array, hs: Array, open: bool) -> Control:
 	var v: VBoxContainer = JwUi.vbox(10)
 	card.add_child(v)
 	var head: HBoxContainer = JwUi.hbox(12)
-	head.add_child(JwUi.label(rt("jc.chr.ann.decade", {"d": str(d)}), "title_block", "text.primary"))
+	# 年代题签框里写「1720 年代」
+	head.add_child(JcUi.ornament(JcUi.CHRON_DECOR % "decade_frame", rt("jc.chr.ann.decade", {"d": str(d)}), 60.0, "title_sub",
+			"text.primary"))
 	var age: String = _age(hs, items)
 	var age_tone: String = JcUi.GOOD if age == "golden" or age == "peace" else (JcUi.BAD if age == "chaos" or age == "peril"
 			else (JcUi.WARN if age == "lean" else "text.secondary"))

@@ -797,6 +797,13 @@ func annals() -> Dictionary:
 	var ct: JCContent = g.ct
 	var st: JCState = g.st
 	var out: Array = []
+	# 世界进入各时代的那一季（判断本国是不是领先世界进入新时代）
+	var world_q: Dictionary = {}
+	for e0: Dictionary in st.annals:
+		if String(e0["key"]) == "chron.world_era":
+			var we: int = int((e0.get("args", {}) as Dictionary).get("era", 0))
+			if not world_q.has(we):
+				world_q[we] = int(e0["q"])
 	for i: int in range(st.annals.size() - 1, -1, -1):
 		var e: Dictionary = st.annals[i]
 		var key: String = String(e["key"])
@@ -818,6 +825,11 @@ func annals() -> Dictionary:
 				it["big"] = true
 				it["tone"] = "teal.core"
 				it["art_path"] = String(ct.eras[en - 1].get("art", "")) if en >= 1 and en <= ct.eras.size() else ""
+				# 比世界先进这个时代：换成「领先世界」那张（本国新物博览会）
+				if en >= 2 and (not world_q.has(en) or int(world_q[en]) > qq):
+					it["art_path"] = ""
+					it["art_type"] = "milestone"
+					it["art_id"] = "lead_era"
 			"chron.world_era":
 				it["big"] = true
 				it["art_type"] = "milestone"
@@ -842,6 +854,8 @@ func annals() -> Dictionary:
 				it["tone"] = "ochre.hot"
 				it["art_type"] = "milestone"
 				it["art_id"] = ["bankruptcy", "revolt", "mandate_shaken"][clampi(int(a.get("track", 0)), 0, 2)]
+				if int(a.get("track", 0)) == 1 and String(a.get("why", "")) == "hunger":
+					it["art_id"] = "famine"
 			"chron.crisis_down":
 				it["tone"] = "teal.core"
 			"chron.game_over":
@@ -856,6 +870,12 @@ func annals() -> Dictionary:
 			"chron.decree":
 				it["art_type"] = "decree"
 				it["art_id"] = String(a.get("decree", ""))
+				# 改政体是大事：大卡，配「政体更替」
+				if String(a.get("decree", "")) == "regime":
+					it["big"] = true
+					it["tone"] = "teal.core"
+					it["art_type"] = "milestone"
+					it["art_id"] = "regime_change"
 			"chron.treaty":
 				it["art_type"] = "milestone"
 				it["art_id"] = "treaty"

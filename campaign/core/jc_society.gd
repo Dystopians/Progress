@@ -363,9 +363,12 @@ func crisis() -> void:
 		if pw > 0:
 			worst_unrest = maxi(worst_unrest, un / pw)
 			worst_food = mini(worst_food, fd / pw)
-	var sev: int = maxi(worst_unrest, 3 * maxi(0, 900_000 - worst_food))
+	var hunger: int = 3 * maxi(0, 900_000 - worst_food)
+	var sev: int = maxi(worst_unrest, hunger)
 	severity[JCState.CR_LIVELIHOOD] = mini(PPM, sev)
-	_set_stage(JCState.CR_LIVELIHOOD, 3 if sev >= 700_000 else (2 if sev >= 500_000 else (1 if sev >= 300_000 else 0)))
+	# 纪事里记下民生危机主要是因为挨饿还是民怨（国史配「大饥荒」还是「民变四起」）
+	_set_stage(JCState.CR_LIVELIHOOD, 3 if sev >= 700_000 else (2 if sev >= 500_000 else (1 if sev >= 300_000 else 0)),
+			{"why": "hunger" if hunger >= worst_unrest else "unrest"})
 	# 合法性
 	var leg: int = st.legitimacy
 	severity[JCState.CR_LEGITIMACY] = clampi(JCMath.mulppm(PPM - leg, 1_600_000) - 400_000, 0, PPM)
@@ -380,11 +383,13 @@ func crisis() -> void:
 			st.note("crisis", "chron.game_over", {"reason": reasons[t]})
 
 
-func _set_stage(t: int, stage: int) -> void:
+func _set_stage(t: int, stage: int, extra: Dictionary = {}) -> void:
 	if stage != st.cr_stage[t]:
+		var args: Dictionary = {"track": t, "stage": stage}
+		args.merge(extra)
 		if stage > st.cr_stage[t]:
-			st.note("crisis", "chron.crisis_up", {"track": t, "stage": stage})
+			st.note("crisis", "chron.crisis_up", args)
 		elif st.cr_stage[t] >= 2 and stage < st.cr_stage[t]:
-			st.note("crisis", "chron.crisis_down", {"track": t, "stage": stage})
+			st.note("crisis", "chron.crisis_down", args)
 		st.cr_stage[t] = stage
 		st.cr_since[t] = st.q

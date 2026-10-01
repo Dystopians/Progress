@@ -145,7 +145,8 @@ func _good_tile(gv: Dictionary) -> Control:
 		line = JwText.render("jc.ind.tile_short", {"v": JcFmt.qty(gap, unit), "pct": JcFmt.pct(int(gv.get("short_ppm", 0)), 0)})
 	else:
 		line = t("jc.ind.stock_lots") if sq > 100_000_000 else JwText.render("jc.ind.stock_q", {"q": JcFmt._dec(sq, 1_000_000, 1)})
-	v.add_child(JwUi.label(line, "caption", JcUi.BAD if state == "short" else "text.muted"))
+	v.add_child(JcUi.icon_label(JcUi.STATUS_ICON % ("status_" + state), line, "caption",
+			JcUi.BAD if state == "short" else "text.muted", 16.0))
 	var gid: String = String(gv["id"])
 	b.pressed.connect(func() -> void:
 		session.selected_good = gid
@@ -204,6 +205,11 @@ func _chain(gid: String) -> void:
 	if ch.is_empty():
 		return
 	var gv: Dictionary = ch["good"]
+	# 这一行业在本时代的横幅（农林牧渔、手工与制造、能源、服务各四个时代）
+	var sec: String = String(gv.get("sector", ""))
+	var banner: String = JcUi.SECTOR_ART % [sec, clampi(g.st.era, 1, 4)]
+	if sec != "" and JcUi.has_art(banner):
+		chain_box.add_child(JcUi.art(banner, Vector2(0, 96)))
 	var head: HBoxContainer = JwUi.hbox(12)
 	head.add_child(JcUi.art(String(gv.get("art", "")), Vector2(64, 64), false))
 	var hv: VBoxContainer = JwUi.vbox(2)
@@ -212,6 +218,14 @@ func _chain(gid: String) -> void:
 	hv.add_child(JwUi.label(rt("jc.ind.head", {"price": JcFmt.money(int(gv.get("price", 0))), "unit": String(gv.get("unit", "")),
 			"ratio": JcFmt.pct(int(gv.get("price_ppm", 0)), 0), "state": t("jc.ind.state." + state)}), "body",
 			JcUi.BAD if state == "short" else (JcUi.WARN if state == "glut" else "text.secondary")))
+	# 货的层级（原料 / 半成品 / 成品 / 机器）与供需状况的小标签
+	var tags: HBoxContainer = JwUi.hbox(6)
+	var tier: int = int(gv.get("tier", -1))
+	if tier >= 0:
+		tags.add_child(JcUi.chip(t("jc.ind.tier.%d" % clampi(tier, 0, 3)), "text.secondary", false, JcUi.TIER_ICON % clampi(tier, 0, 3)))
+	tags.add_child(JcUi.chip(t("jc.ind.state." + state), JcUi.BAD if state == "short" else (JcUi.WARN if state == "glut" else JcUi.GOOD),
+			false, JcUi.STATUS_ICON % ("status_" + state)))
+	hv.add_child(tags)
 	head.add_child(hv)
 	chain_box.add_child(head)
 	# 产业链图：上下游一眼看清，点格子跳过去
@@ -267,7 +281,8 @@ func _chain(gid: String) -> void:
 				fl.add_child(chip_b)
 			pb.add_child(fl)
 	for sl: Dictionary in ch["sellers"]:
-		pb.add_child(JwUi.label(rt("jc.ind.seller", {"partner": String(sl["name"])}), "caption", "text.secondary"))
+		pb.add_child(JcUi.icon_label(JcUi.STATUS_ICON % "status_import", rt("jc.ind.seller", {"partner": String(sl["name"])}),
+				"caption", "text.secondary", 18.0))
 	chain_box.add_child(pc["root"])
 	# 到哪去
 	var cc: Dictionary = JcUi.card(t("jc.ind.to"))
@@ -291,7 +306,8 @@ func _chain(gid: String) -> void:
 		csh.add_child(lb)
 		cb.add_child(csh)
 	for by: Dictionary in ch["buyers"]:
-		cb.add_child(JwUi.label(rt("jc.ind.buyer", {"partner": String(by["name"])}), "body", "text.secondary"))
+		cb.add_child(JcUi.icon_label(JcUi.STATUS_ICON % "status_export", rt("jc.ind.buyer", {"partner": String(by["name"])}),
+				"body", "text.secondary", 20.0))
 	if (ch["needs"] as Array).is_empty() and (ch["consumers"] as Array).is_empty() and (ch["buyers"] as Array).is_empty():
 		cb.add_child(JwUi.para(t("jc.ind.no_consumer"), "text.muted"))
 	chain_box.add_child(cc["root"])

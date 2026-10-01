@@ -61,7 +61,9 @@ func refresh() -> void:
 	oh.add_child(JwUi.spacer())
 	var orders: Array = g.turn_orders()
 	if not orders.is_empty():
-		oh.add_child(JcUi.button(JwText.t("jc.rail.undo"), false, func() -> void: session.undo()))
+		var ub: Button = JcUi.button(JwText.t("jc.rail.undo"), false, func() -> void: session.undo())
+		JcUi.set_icon(ub, JcUi.UI_ICON % "btn_undo", 20)
+		oh.add_child(ub)
 	box.add_child(oh)
 	if orders.is_empty():
 		box.add_child(JwUi.para(JwText.t("jc.rail.no_orders"), "text.muted"))

@@ -59,18 +59,21 @@ func build() -> void:
 	var now: Dictionary = g.status()
 	if not before.is_empty():
 		var tiles: HBoxContainer = JwUi.hbox(10)
+		# 四个大数各配图标，变化那一行配涨跌箭头
 		var d_tr: int = int(now["treasury"]) - int(before["treasury"])
 		tiles.add_child(JcUi.tile(t("jc.ov.treasury"), JcFmt.money(int(now["treasury"])), JcFmt.money_signed(d_tr),
-				JcUi.tone(d_tr >= 0)))
+				JcUi.tone(d_tr >= 0), "", JcUi.UI_ICON % "stat_treasury", JcUi.trend_icon(int(now["treasury"]), int(before["treasury"]))))
 		var d_liv: int = int(now["living"]) - int(before["living"])
 		tiles.add_child(JcUi.tile(t("jc.ov.living"), JcFmt.pct(int(now["living"]), 0), JcFmt.pct_signed(d_liv),
-				JcUi.tone(d_liv >= 0, d_liv > -20_000)))
+				JcUi.tone(d_liv >= 0, d_liv > -20_000), "", JcUi.UI_ICON % "stat_living",
+				JcUi.trend_icon(int(now["living"]), int(before["living"]))))
 		var d_leg: int = int(now["legitimacy"]) - int(before["legitimacy"])
 		tiles.add_child(JcUi.tile(t("jc.ov.legit"), JcFmt.pct(int(now["legitimacy"]), 0), JcFmt.pct_signed(d_leg),
-				JcUi.tone(d_leg >= 0, d_leg > -20_000)))
+				JcUi.tone(d_leg >= 0, d_leg > -20_000), "", JcUi.UI_ICON % "stat_legitimacy",
+				JcUi.trend_icon(int(now["legitimacy"]), int(before["legitimacy"]))))
 		var d_pop: int = int(now["pop"]) - int(before["pop"])
 		tiles.add_child(JcUi.tile(t("jc.ov.pop"), JcFmt.people(int(now["pop"])), ("+" if d_pop >= 0 else "") + JcFmt.people(d_pop),
-				JcUi.MUTED))
+				JcUi.MUTED, "", JcUi.UI_ICON % "stat_pop", JcUi.trend_icon(int(now["pop"]), int(before["pop"]))))
 		body.add_child(tiles)
 	# 大事
 	var notes: Array = ctx.get("notes", [])

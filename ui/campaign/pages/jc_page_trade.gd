@@ -124,7 +124,9 @@ func _rel_key(rel: int) -> String:
 func _goods_list(title: String, items: Array, selling: bool) -> VBoxContainer:
 	var vb: VBoxContainer = JwUi.vbox(2)
 	vb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vb.add_child(JwUi.label(title, "caption", "text.muted"))
+	# 他们要买的＝本国能出口的，他们要卖的＝会进口来的
+	vb.add_child(JcUi.icon_label(JcUi.STATUS_ICON % ("status_export" if selling else "status_import"), title, "caption", "text.muted",
+			18.0))
 	if items.is_empty():
 		vb.add_child(JwUi.label(t("jc.trd.nothing"), "caption", "text.muted"))
 	for it: Dictionary in items:

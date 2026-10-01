@@ -383,3 +383,29 @@ func test_regime_titles_follow_decrees() -> void:
 	g.st.d_level[int(ct.didx["labor_policy"])] = 2
 	rp = g.analyst.regime_profile()
 	check(String(rp["title"]) != "jc.regime.title.socialist.harsh", "工会合法就不是「堕落」")
+
+
+## 民生危机记下主因：挨饿时国史配「大饥荒」，民怨时配「民变四起」。
+func test_livelihood_crisis_records_hunger_or_unrest() -> void:
+	var g: JCGame = _new()
+	var soc: JCSociety = g.sim.soc
+	var st: JCState = g.st
+	var staple: int = int(g.ct.nidx["staple"])
+	for k: int in st.pop.size():
+		st.sat[k * soc.N + staple] = 600_000
+		st.unrest[k] = 0
+	soc.crisis()
+	var e: Dictionary = st.annals[st.annals.size() - 1]
+	eq_str(String(e["key"]), "chron.crisis_up", "民生危机升级记进国史")
+	eq_str(String((e["args"] as Dictionary).get("why", "")), "hunger", "口粮只满足六成：主因是挨饿")
+	var first: Dictionary = (g.views().annals()["list"] as Array)[0]
+	eq_str(String(first["art_id"]), "famine", "国史配「大饥荒」")
+	# 换成吃得饱、民怨很重
+	var g2: JCGame = _new()
+	var soc2: JCSociety = g2.sim.soc
+	for k2: int in g2.st.pop.size():
+		g2.st.unrest[k2] = 900_000
+	soc2.crisis()
+	var e2: Dictionary = g2.st.annals[g2.st.annals.size() - 1]
+	eq_str(String((e2["args"] as Dictionary).get("why", "")), "unrest", "民怨九成：主因是民怨")
+	eq_str(String(((g2.views().annals()["list"] as Array)[0] as Dictionary)["art_id"]), "revolt", "国史配「民变四起」")

@@ -123,7 +123,7 @@ func _fill_strip() -> void:
 		var v: VBoxContainer = JwUi.vbox(2)
 		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		p.add_child(v)
-		v.add_child(JwUi.label(String(rv["name"]), "body_bold", "text.primary"))
+		v.add_child(JcUi.icon_label(JcUi.UI_ICON % ("region_" + rid), String(rv["name"]), "body_bold", "text.primary", 22.0))
 		var liv: int = int(rv["living"])
 		var unr: int = int(rv["unrest"])
 		var unr_s: Dictionary = {"unrest": JcFmt.pct(unr, 0), "unemp": JcFmt.pct(int(rv["unemp"]), 0)}
@@ -228,6 +228,8 @@ func _side(g: JCGame) -> void:
 	var rv: Dictionary = d["region"]
 	side.add_child(JcUi.art(String(rv["art"]), Vector2(396, 220)))
 	var hh: HBoxContainer = JwUi.hbox(8)
+	var ric: Control = JcUi.icon(JcUi.UI_ICON % ("region_" + session.selected_region), 34.0)
+	hh.add_child(ric)
 	hh.add_child(JwUi.title(String(rv["name"]), "title_block"))
 	if bool(rv["capital"]):
 		hh.add_child(JcUi.chip(t("jc.map.capital"), JcUi.WARN))

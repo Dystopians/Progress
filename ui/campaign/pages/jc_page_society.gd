@@ -193,9 +193,12 @@ func _mood_map(g: JCGame, v: Dictionary) -> Control:
 		cells[String(ce["region"]) + ":" + String(ce["class"])] = ce
 	for rv: Dictionary in v["regions"]:
 		var rid: String = String(rv["region"]) if rv.has("region") else String(rv.get("id", ""))
-		grid.add_child(JcUi.link(g.name_of("region", rid), func() -> void:
+		var rh: HBoxContainer = JwUi.hbox(4)
+		rh.add_child(JcUi.icon(JcUi.UI_ICON % ("region_" + rid), 22.0))
+		rh.add_child(JcUi.link(g.name_of("region", rid), func() -> void:
 			session.selected_region = rid
 			goto_page("map")))
+		grid.add_child(rh)
 		for cid2: String in classes:
 			var ce2: Dictionary = cells.get(rid + ":" + cid2, {})
 			if ce2.is_empty():

@@ -7,6 +7,11 @@ var session: JcSession = null
 var root_ui: Node = null
 var _date: Label = null
 var _era: Label = null
+var _world: Label = null
+var _era_box: HBoxContainer = null
+var _era_icon: TextureRect = null
+var _world_icon: TextureRect = null
+var _btn_icons: Array = []
 var _treasury: Label = null
 var _balance: Label = null
 var _legit: Label = null
@@ -35,8 +40,16 @@ func setup(s: JcSession, r: Node) -> void:
 	_date = JwUi.label("", "title_block", "text.primary")
 	dv.add_child(_date)
 	h.add_child(dv)
-	# 本国与世界的时代那一行由外壳摆到页签行右端（界面放大后顶栏挤不下）
+	# 本国与世界的时代那一行由外壳摆到页签行右端（界面放大后顶栏挤不下），各配时代小图标
+	_era_box = JwUi.hbox(6)
+	_era_icon = _era_tex()
 	_era = JwUi.label("", "body", "text.secondary")
+	_world_icon = _era_tex()
+	_world = JwUi.label("", "body", "text.secondary")
+	for c: Control in [_era_icon, _era, _world_icon, _world]:
+		c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		_era_box.add_child(c)
+	_world_icon.custom_minimum_size = Vector2(22, 22)
 	_sep = VSeparator.new()
 	h.add_child(_sep)
 	var tv: VBoxContainer = JwUi.vbox(0)
@@ -93,6 +106,18 @@ func setup(s: JcSession, r: Node) -> void:
 	_end_btn.tooltip_text = JwText.t("jc.top.end_turn_tip")
 	_end_btn.pressed.connect(func() -> void: session.end_turn())
 	h.add_child(_end_btn)
+	_btn_icons = [[_steward_btn, "btn_steward"], [sv, "btn_saves"], [hp, "btn_help"], [_ff, "btn_ff"], [_end_btn, "btn_end_turn"]]
+	set_compact(false)
+
+
+func _era_tex() -> TextureRect:
+	var tr: TextureRect = TextureRect.new()
+	tr.custom_minimum_size = Vector2(22, 22)
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return tr
 
 
 func refresh() -> void:
@@ -101,7 +126,10 @@ func refresh() -> void:
 	var g: JCGame = session.game
 	var s: Dictionary = g.status()
 	_date.text = JcFmt.date(int(s["q"]), g.st.start_year)
-	_era.text = JwText.render("jc.top.era", {"era": JcFmt.era_name(int(s["era"])), "world": JcFmt.era_name(int(s["world_era"]))})
+	_era.text = JwText.render("jc.top.era_own", {"era": JcFmt.era_name(int(s["era"]))})
+	_world.text = JwText.render("jc.top.era_world", {"world": JcFmt.era_name(int(s["world_era"]))})
+	_era_icon.texture = JcUi.tex(JcUi.UI_ICON % ("era_%d" % clampi(int(s["era"]), 1, 4)))
+	_world_icon.texture = JcUi.tex(JcUi.UI_ICON % ("era_%d" % clampi(int(s["world_era"]), 1, 4)))
 	_treasury.text = JcFmt.money(int(s["treasury"]))
 	var bal: int = int(s["balance"])
 	_balance.text = JwText.render("jc.top.per_q", {"v": JcFmt.money_signed(bal)})
@@ -117,7 +145,7 @@ func refresh() -> void:
 	for tr: int in 3:
 		var stg: int = int(cr[tr])
 		var chip: PanelContainer = JcUi.chip(JwText.t("jc.crisis.short.%d" % tr) + " " + JwText.t("jc.stage.%d" % stg),
-				JcUi.GOOD if stg == 0 else (JcUi.WARN if stg == 1 else JcUi.BAD))
+				JcUi.GOOD if stg == 0 else (JcUi.WARN if stg == 1 else JcUi.BAD), false, JcUi.UI_ICON % JcUi.CRISIS_ICON[tr])
 		chip.tooltip_text = JwText.t("jc.crisis.tip.%d" % tr)
 		chip.mouse_filter = Control.MOUSE_FILTER_STOP
 		_crisis.add_child(chip)
@@ -127,8 +155,8 @@ func refresh() -> void:
 
 
 ## 「本国：… 世界：…」那一行（外壳取走，放在页签行）。
-func era_label() -> Label:
-	return _era
+func era_box() -> HBoxContainer:
+	return _era_box
 
 
 ## 窄窗口（逻辑宽度不到 1500，比如 1920 宽屏开 150%、2560 宽屏开 200%）：收紧间距、去掉竖线、待批只写个数。
@@ -136,6 +164,12 @@ func set_compact(on: bool) -> void:
 	_compact = on
 	_row.add_theme_constant_override("separation", 10 if on else 20)
 	_sep.visible = not on
+	# 按钮的小图标只在宽窗口上显示（窄窗口顶栏放不下）
+	for bi: Array in _btn_icons:
+		if on:
+			(bi[0] as Button).icon = null
+		else:
+			JcUi.set_icon(bi[0] as Button, JcUi.UI_ICON % String(bi[1]), 22)
 	_steward_text()
 
 

@@ -173,6 +173,15 @@ def write_json(name, obj):
     return text
 
 
+def _no_art(o):
+    """去掉所有 art 键（配图路径），算内容哈希用。"""
+    if isinstance(o, dict):
+        return {k: _no_art(v) for k, v in o.items() if k != "art"}
+    if isinstance(o, list):
+        return [_no_art(v) for v in o]
+    return o
+
+
 def mods(lst):
     return [dict(target=m["target"], value=m["value"], scope=m["scope"]) for m in lst]
 
@@ -315,7 +324,9 @@ def export(cal, res):
                                                   partners=partners_out,
                                                   tech_order={str(k): v for k, v in prog.TECH_ORDER.items()},
                                                   landmarks=landmarks_out, events=events_out)))
-    h = hashlib.sha256("\n".join(texts).encode("utf-8")).hexdigest()
+    # 内容哈希不算配图：图换了、补了都不该让存档作废（存档里内容哈希对不上就要从种子重放）
+    h = hashlib.sha256("\n".join(json.dumps(_no_art(json.loads(t)), ensure_ascii=False, sort_keys=True)
+                                  for t in texts).encode("utf-8")).hexdigest()
     write_json("meta.json", {"schema": "jc.meta", "version": 1, "content_hash": h,
                              "files": ["goods.json", "buildings.json", "society.json", "scenario.json",
                                        "progress.json"]})

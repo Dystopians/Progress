@@ -109,12 +109,13 @@ func _build_shell() -> void:
 		b.button_group = group
 		b.name = "Tab_" + id
 		b.pressed.connect(func() -> void: show_page(id))
+		JcUi.set_icon(b, JcUi.UI_ICON % ("tab_" + id), 22)
 		th.add_child(b)
 		_tabs[id] = b
 	th.add_child(JwUi.spacer())
-	var era_l: Label = top_bar.era_label()
-	era_l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	th.add_child(era_l)
+	var era_b: HBoxContainer = top_bar.era_box()
+	era_b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	th.add_child(era_b)
 	shell.add_child(tabs)
 	var main: HBoxContainer = JwUi.hbox(0)
 	main.size_flags_vertical = Control.SIZE_EXPAND_FILL

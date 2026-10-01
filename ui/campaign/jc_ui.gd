@@ -34,6 +34,10 @@ const SECTOR_ICON: String = "res://assets/icons/sector/sector_%s.png"
 const SECTOR_ART: String = "res://assets/scenes/sector/sector_%s_e%d.png"
 const STATUS_ICON: String = "res://assets/icons/status/%s.png"
 const UI_ICON: String = "res://assets/icons/ui/%s.png"
+const TIER_ICON: String = "res://assets/icons/status/tier_%d.png"
+## 三条危机线的小图标（财政、民生、威信），与各阶段的警钟徽章（同形异色，旁边一定写阶段文字）
+const CRISIS_ICON: PackedStringArray = ["crisis_fiscal", "crisis_livelihood", "crisis_mandate"]
+const CHRON_DECOR: String = "res://assets/ui/chronicle/%s.png"
 ## 满额（ppm）
 const PPM_ONE: int = 1_000_000
 
@@ -168,6 +172,52 @@ static func tech_badge(id: String, era: int, side: float, name_text: String, ton
 
 
 
+## 只取图里看得见的那一块（细长装饰四周有大片透明边，整张缩放会小得看不清），按图缓存。
+static func cropped(path: String) -> Texture2D:
+	var t: Texture2D = tex(path) if has_art(path) else null
+	if t == null:
+		return null
+	var key: String = "crop:" + res(path)
+	if _tex_cache.has(key):
+		return _tex_cache[key] as Texture2D
+	var b: Rect2 = content_box(t)
+	var w: float = float(t.get_width())
+	var h: float = float(t.get_height())
+	var r: Rect2 = Rect2(b.position.x * w, b.position.y * h, b.size.x * w, b.size.y * h).grow(minf(w, h) * 0.03)
+	r = r.intersection(Rect2(0, 0, w, h))
+	var at: AtlasTexture = AtlasTexture.new()
+	at.atlas = t
+	at.region = r
+	_tex_cache[key] = at
+	return at
+
+
+## 装饰上压一行字：装饰按原比例放（高 h），字居中压在上面（字由界面排，不画进图里）。没图时只有字。
+static func ornament(path: String, text: String, h: float, role: String = "title_sub", tone_token: String = "text.primary") -> Control:
+	var tx: Texture2D = cropped(path)
+	var l: Label = JwUi.label(text, role, tone_token)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	if tx == null:
+		return l
+	var holder: Control = Control.new()
+	var w: float = h * float(tx.get_width()) / maxf(1.0, float(tx.get_height()))
+	holder.custom_minimum_size = Vector2(maxf(w, l.get_minimum_size().x + 24.0), h)
+	holder.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tr: TextureRect = TextureRect.new()
+	tr.texture = tx
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(tr)
+	l.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	holder.add_child(l)
+	return holder
+
+
 ## 图里看得见的部分占整张的范围（0—1 的比例，alpha≥16 才算），按图缓存；读不到像素时返回整张。
 static func content_box(t: Texture2D) -> Rect2:
 	if t == null:
@@ -209,16 +259,59 @@ static func tone(good: bool, warn: bool = false) -> String:
 	return WARN if warn else BAD
 
 
-## 数字卡：小标题 + 大数字 + 一行说明（可带颜色）。
-static func tile(label: String, value: String, sub: String = "", sub_tone: String = MUTED, tip: String = "") -> PanelContainer:
+## 按钮配小图标（图在才配；icon_max_width 限住大小，原图再大也只画这么大）。
+static func set_icon(b: Button, path: String, side: int = 22) -> void:
+	var tx: Texture2D = tex(path) if has_art(path) else null
+	b.icon = tx
+	if tx != null:
+		b.add_theme_constant_override("icon_max_width", side)
+		b.expand_icon = false
+		b.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+
+
+## 走势小箭头：比上一期涨了、跌了、差不多（变化不到 0.2% 算持平）。
+static func trend_icon(now: int, before: int) -> String:
+	if before <= 0:
+		return ""
+	var r: int = JCMath.ratio_ppm(now - before, before)
+	return STATUS_ICON % ("trend_up" if r >= 2_000 else ("trend_down" if r <= -2_000 else "trend_flat"))
+
+
+## 带小图标的标签：图 + 字（图不在就只有字）。
+static func icon_label(path: String, text: String, role: String = "body", tone_token: String = "text.secondary",
+		side: float = 20.0) -> HBoxContainer:
+	var h: HBoxContainer = JwUi.hbox(5)
+	h.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if has_art(path):
+		h.add_child(icon(path, side))
+	var l: Label = JwUi.label(text, role, tone_token)
+	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	h.add_child(l)
+	return h
+
+
+## 数字卡：小标题 + 大数字 + 一行说明（可带颜色）；给了图标就放在左边。
+static func tile(label: String, value: String, sub: String = "", sub_tone: String = MUTED, tip: String = "",
+		icon_path: String = "", sub_icon: String = "") -> PanelContainer:
 	var p: PanelContainer = JwUi.panel_style(JwTheme.box4("bg.panel", "line.hair", 1, 14, 10, 14, 10))
 	p.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var v: VBoxContainer = JwUi.vbox(2)
-	p.add_child(v)
+	if has_art(icon_path):
+		var hb: HBoxContainer = JwUi.hbox(10)
+		var ic: Control = icon(icon_path, 34.0)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		hb.add_child(ic)
+		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		hb.add_child(v)
+		p.add_child(hb)
+	else:
+		p.add_child(v)
 	v.add_child(JwUi.label(label, "caption", "text.muted"))
 	var big: Label = JwUi.label(value, "block_num", "text.primary")
 	v.add_child(big)
-	if sub != "":
+	if sub != "" and has_art(sub_icon):
+		v.add_child(icon_label(sub_icon, sub, "caption", sub_tone, 16.0))
+	elif sub != "":
 		v.add_child(JwUi.label(sub, "caption", sub_tone, true))
 	if tip != "":
 		p.tooltip_text = tip
@@ -226,9 +319,12 @@ static func tile(label: String, value: String, sub: String = "", sub_tone: Strin
 	return p
 
 
-static func chip(text: String, tone_token: String = MUTED, filled: bool = false) -> PanelContainer:
+static func chip(text: String, tone_token: String = MUTED, filled: bool = false, icon_path: String = "") -> PanelContainer:
 	var p: PanelContainer = JwUi.panel_style(JwTheme.box4("bg.raised" if not filled else "bg.abyss", tone_token, 1, 8, 2, 8, 2))
-	p.add_child(JwUi.label(text, "caption", tone_token))
+	if has_art(icon_path):
+		p.add_child(icon_label(icon_path, text, "caption", tone_token, 16.0))
+	else:
+		p.add_child(JwUi.label(text, "caption", tone_token))
 	p.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	return p
 

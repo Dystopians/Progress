@@ -4,11 +4,14 @@
 ##       <输出目录> <镜头,镜头,...> [--jc-seed=7 | --jc-play=res://tools/playscripts_v2/steward_balanced.json --jc-until=1700]
 ## 镜头：页面名（overview / map / industry / modern / tech / policy / society / trade / chronicle），
 ##       o:<弹窗>（steward / advisors / build / era / era_nation / era_world / event / receipt / help / saves / newgame / gameover），
-##       map@<地区>（舆图并选中该地区），industry@<商品>（产业页并选中该商品）。
-## 每张存为 <输出目录>/v2_<镜头>.png（冒号与 @ 换成下划线）。
+##       map@<地区>（舆图并选中该地区），industry@<商品>（产业页并选中该商品）；
+##       页面名后加 +<像素> 先把页面往下滚这么多再截（如 policy+900 看政令卡）。
+## 每张存为 <输出目录>/v2_<镜头>.png（冒号、@ 与 + 换成下划线）。
 extends SceneTree
 
 const WAIT: int = 24
+## 截图前多少帧把页面滚到位
+const SCROLL_AT: int = 12
 
 var _out_dir: String = "user://v2_shots"
 var _shots: PackedStringArray = PackedStringArray()
@@ -17,6 +20,7 @@ var _frames: int = 0
 var _idx: int = 0
 var _next_at: int = 40
 var _shot_at: int = -1
+var _scroll_to: int = -1
 
 
 func _init() -> void:
@@ -51,8 +55,15 @@ func _on_frame() -> void:
 	if _frames == _next_at:
 		_setup(_shots[_idx])
 		_shot_at = _frames + WAIT
+	elif _frames == _shot_at - SCROLL_AT and _scroll_to >= 0:
+		# 页面排好版之后再滚（太早滚会被内容高度夹回 0）
+		var pg: Node = (_main.get("pages") as Dictionary).get(String(_main.get("current")), null)
+		var sc: Variant = pg.get("_scroll") if pg != null else null
+		if sc is ScrollContainer:
+			(sc as ScrollContainer).scroll_vertical = _scroll_to
+		_scroll_to = -1
 	elif _frames == _shot_at:
-		var name: String = _shots[_idx].replace(":", "_").replace("@", "_")
+		var name: String = _shots[_idx].replace(":", "_").replace("@", "_").replace("+", "_")
 		var path: String = _out_dir.path_join("v2_%s.png" % name)
 		var img: Image = root.get_texture().get_image()
 		var err: int = img.save_png(path)
@@ -84,6 +95,11 @@ func _setup(shot: String) -> void:
 		_main.call("open_overlay", id, ctx)
 		return
 	var page: String = shot
+	_scroll_to = -1
+	if shot.contains("+"):
+		_scroll_to = int(shot.get_slice("+", 1))
+		shot = shot.get_slice("+", 0)
+		page = shot
 	if shot.contains("@"):
 		page = shot.get_slice("@", 0)
 		var arg: String = shot.get_slice("@", 1)
