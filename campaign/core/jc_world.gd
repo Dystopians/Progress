@@ -239,9 +239,11 @@ func world_year() -> void:
 		base += mods.sum("relation_all") / 100 + mods.scoped("relation", String(ct.partners[p5]["id"])) / 100
 		base -= maxi(0, econ.partner_era(p5) - st.era) * 5
 		st.p_rel[p5] = JCMath.approach(st.p_rel[p5], clampi(base, -100, 100), 300_000)
-	# 国望每年自然消退 1 点
+	# 国望每年自然向 0 回归 1 点（战败、条约留下的屈辱也会慢慢淡去）
 	if st.prestige > 0:
 		st.prestige -= 1
+	elif st.prestige < 0:
+		st.prestige += 1
 
 
 # ════════════════════════════ 地标 ════════════════════════════════════════
@@ -522,9 +524,20 @@ func pre_economy() -> void:
 		var forest: int = JCContent.LAND_TYPES.find("forest")
 		for r: int in ct.r_n:
 			var fk: int = r * JCContent.LT_N + forest
-			if st.land[fk] > econ.land_used[fk] + 1:
+			# 刚读档、经济还没结算过一季时，用地表是空的：按各建筑的级数现算
+			var used: int = econ.land_used[fk] if econ.land_used.size() > fk else _land_used_now(r, forest)
+			if st.land[fk] > used + 1:
 				st.land[fk] -= 1
 				st.land[r * JCContent.LT_N + dry] += 1
+
+
+## 某地区某类地眼下用了几级（与经济结算里的算法相同：所有在册的级数，不论开工与否）。
+func _land_used_now(r: int, lt: int) -> int:
+	var n: int = 0
+	for i: int in st.stack_count():
+		if st.s_region[i] == r and ct.b_land[st.s_b[i]] == lt and st.s_level[i] > 0:
+			n += st.s_level[i]
+	return n
 
 
 ## 经济结算之后：常平仓收储、捐纳、所得税。

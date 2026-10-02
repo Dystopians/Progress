@@ -7,6 +7,9 @@
 """
 
 
+import politics as pol  # noqa: E402
+
+
 def mod(target, value, scope=""):
     return {"target": target, "value": value, "scope": scope}
 
@@ -111,7 +114,8 @@ tech("television", "电视", 4, 160000, prereq=["electronics"], bg=["electronics
 tech("antibiotics", "抗生素", 4, 140000, prereq=["public_health"], bg=["clinic", "herbalist"],
      effects=[mod("health_eff", 40)], desc="现代药厂与区域医疗中心，死亡率大降。")
 tech("mechanized_farming", "农业机械化", 4, 150000, prereq=["internal_combustion"], bg=["dryfarm", "paddy"],
-     desc="农田可改为机械化种法，用工减少七成。")
+     effects=[mod("farm_yield", 20)],
+     desc="农田可改为机械化种法，用工减少六成；良种与机井灌溉跟着推广，各地农田增产两成。")
 tech("automation", "自动化", 4, 180000, prereq=["electronics"], bg=["machineworks", "electricalworks"],
      effects=[mod("workshop_labor", -10)], desc="家电厂、工业装备厂、精密工具。")
 tech("computing", "计算机", 4, 220000, prereq=["electronics", "automation"], bg=["electronicsworks", "school"],
@@ -252,19 +256,11 @@ decree("social_insurance", "社会保险", 4, "toggle", cost_q=300000,
 decree("environment_law", "环境保护法", 4, "toggle", effects=[[mod("pollution_cut", 50), mod("workshop_cost", 5)]],
        support=[{"gentry": 4, "merchant": -3}], desc="限制排放：污染事件减半，工厂成本 +5%。")
 # 上层建筑：政体与劳工（默认档没有任何效果，托管不会去动，留给玩家拿主意；政令页据此给出「国家形态」的评价）
-decree("regime", "政体", 1, "level", levels=["君主集权", "开明君主", "君主立宪", "议会共和", "社会主义"], default=0,
-       level_era=[1, 2, 3, 3, 4], level_tech=["", "movable_type", "telegraph", "public_education", "power_grid"],
-       effects=[[], [mod("research_speed", 5), mod("admin_eff", 3)],
-                [mod("invest_prop", 10), mod("interest_rate", -10)],
-                [mod("invest_prop", 15), mod("literacy_rate", 10)],
-                [mod("invest_prop", -40), mod("unrest", -15, "artisan")]],
-       support=[{}, {"gentry": 2, "merchant": 3},
-                {"merchant": 6, "artisan": 2, "gentry": -2},
-                {"merchant": 8, "artisan": 4, "peasant": 2, "gentry": -8},
-                {"artisan": 10, "peasant": 6, "merchant": -15, "gentry": -10}],
-       cooldown=16,
-       desc="国家由谁做主。君主集权最稳当；开明君主肯听读书人与商贾的话，研究略快；君主立宪、议会共和让商贾更敢投资；"
-            "社会主义由国家主导生产，工人农户拥护，商贾士绅反对，民间投资大减。换一次要等四年才能再换。")
+# 政体：档位就是 politics.REGIMES 的顺序。不能直接下令换，只能靠改革局势、革命、政变、战败（见 politics.py）。
+decree("regime", "政体", 1, "level", levels=[r["name"] for r in pol.REGIMES], default=0,
+       level_era=[r["era"] for r in pol.REGIMES], level_tech=["" for _ in pol.REGIMES],
+       effects=[r["effects"] for r in pol.REGIMES], support=[r["support"] for r in pol.REGIMES], cooldown=16,
+       desc="国家由谁做主。政体不能直接下令更换：在「政治改革」里推行改革，或者遇上革命、政变、战败，才会改变。")
 decree("labor_policy", "劳工", 3, "level", levels=["严禁罢工", "不加干预", "工会合法"], default=1,
        effects=[[mod("unrest", 10, "artisan"), mod("invest_workshop", 10)], [],
                 [mod("unrest", -10, "artisan"), mod("invest_workshop", -10)]],

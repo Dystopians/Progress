@@ -770,6 +770,8 @@ func _hh_budgets() -> void:
 	var n_avail: PackedInt64Array = JCMath.zeros(N)
 	for n0: int in N:
 		n_avail[n0] = need_avail(n0) if ct.need_active(n0, st.era) else 0
+	# 日用开支的修正（经济危机时人人捂紧钱袋：口粮与盐照买，其余少买，钱留作积蓄）
+	var spend_m: int = mods.mult_ppm("spending")
 	for r2: int in R:
 		for c2: int in C:
 			var k: int = r2 * C + c2
@@ -800,14 +802,17 @@ func _hh_budgets() -> void:
 			budget[k] = b
 			# 日用水平向「能负担的」靠拢
 			var cap_b: int = BASKET_MAX_RICH if (c2 == CL_M or c2 == CL_G) else BASKET_MAX
-			st.basket[k] = JCMath.approach(st.basket[k], _afford_basket(cost1, b - ess_cost, cap_b), 150_000)
+			var free_b: int = b - ess_cost
+			if free_b > 0:
+				free_b = JCMath.mulppm(free_b, spend_m)
+			st.basket[k] = JCMath.approach(st.basket[k], _afford_basket(cost1, free_b, cap_b), 150_000)
 			# 钱不够时：先保口粮与盐，其余各项按同一比例缩减（不是把排在后面的整项砍光）
 			var non_cost: int = 0
 			for n1: int in N:
 				if ct.n_ess[n1] != 1 and ct.need_active(n1, st.era):
 					non_cost += JCMath.mulppm(cost1[n1], need_mult(n1, st.basket[k]))
 			var f_ess: int = PPM if ess_cost <= b else JCMath.ratio_ppm(b, ess_cost)
-			var left_non: int = maxi(0, b - ess_cost)
+			var left_non: int = maxi(0, free_b)
 			var f_non: int = PPM if non_cost <= left_non else JCMath.ratio_ppm(left_non, non_cost)
 			for n2: int in N:
 				if not ct.need_active(n2, st.era):
@@ -1856,7 +1861,8 @@ func _stock() -> void:
 		st.f_use[g] = used_in[g]
 		st.f_gov[g] = gov_q[g] + firm_q[g]
 		st.f_exp[g] = exp_q[g]
-		st.f_demand[g] = want_tot[g] + used_in[g] + exp_q[g]
+		# 需求 = 居民与官府要的 + 作为原料用掉的 + 作为原料想要却没买到的 + 出口
+		st.f_demand[g] = want_tot[g] + used_in[g] + short_in[g] + exp_q[g]
 
 
 # ── 价格 ────────────────────────────────────────────────────────────────
@@ -1865,7 +1871,8 @@ func _prices() -> void:
 	var lvl: int = PPM + mods.delta_ppm("price_level")
 	for g: int in G:
 		var flow_in: int = prod[g] + imp_q[g]
-		var demand: int = want_tot[g] + used_in[g] + exp_q[g]
+		# 原料没买到的量也算需求：紧缺的原料该涨价，涨了才有人去开矿、建厂（原来缺七成，价还在常价上下）
+		var demand: int = want_tot[g] + used_in[g] + short_in[g] + exp_q[g]
 		# 库存目标：可储存的商品留四分之一季的需求，易腐的不留；库存偏离只按四分之一算进紧张度
 		var tgt_stock: int = 0 if ct.g_perish[g] >= 200_000 else JCMath.mulppm(demand, 250_000)
 		@warning_ignore("integer_division")
@@ -1987,14 +1994,24 @@ func _summary() -> void:
 		by_sector[ct.b_sector[st.s_b[i]]] += va
 	var sup: int = 0
 	var used: int = 0
+	# 城镇（工匠、商贾）与农村（农户）分开算：村里闲着的农户多半在自家田里帮工、分一家的收成，是富余劳力，
+	# 和城里找不到活的人不一样
+	var sup_town: int = 0
+	var used_town: int = 0
 	for r: int in R:
 		for c: int in C:
 			if c == CL_G:
 				continue
+			var u: int = mini(lab_used[r * C + c], lab_sup[r * C + c])
 			sup += lab_sup[r * C + c]
-			used += mini(lab_used[r * C + c], lab_sup[r * C + c])
+			used += u
+			if c != CL_P:
+				sup_town += lab_sup[r * C + c]
+				used_town += u
 	summary = {
 		"gdp": gdp, "sector_va": Array(by_sector), "unemp_ppm": PPM - JCMath.ratio_ppm(used, sup),
+		"unemp_town_ppm": PPM - JCMath.ratio_ppm(used_town, sup_town),
+		"unemp_rural_ppm": PPM - JCMath.ratio_ppm(used - used_town, sup - sup_town),
 		"sea_cap": cap_sea, "sea_used": used_sea, "land_cap": cap_land, "land_used": used_land,
 		"exports": JCMath.sum(exp_v), "imports": JCMath.sum(imp_cost), "retail": JCMath.sum(spent),
 		"research_bld": research_bld,

@@ -94,9 +94,9 @@ def crop_methods(prefix, crops, base_labor, tools, draft, extra_era2=None):
                          inp={"tools": tools, "draft_animal": draft // 2, "fertilizer": qty // 400 + 20},
                          labor={P: int(base_labor * 0.8)}, upgrade_cost=0.15, upgrade_q=1))
         ms.append(method(f"{prefix}_{gid}_mech", label + "（机械化）", era=4, tech="mechanized_farming",
-                         out={gid: int(qty * 2.4)},
+                         out={gid: int(qty * 2.2)},
                          inp={"machinery": 30, "refined_fuel": 400, "fertilizer": qty // 300 + 30},
-                         labor={P: int(base_labor * 0.3)}, upgrade_cost=0.4, upgrade_q=2))
+                         labor={P: int(base_labor * 0.4)}, upgrade_cost=0.4, upgrade_q=2))
     return ms
 
 
@@ -170,19 +170,19 @@ building("ironmine", "铁矿", "mine", "manu", deposit="iron", capital=1.4, art=
          methods=[method("ironmine_trad", "露天采矿", out={"iron_ore": 40000}, inp={"tools": 220},
                          labor={AR: 4000, P: 2000}),
                   method("ironmine_steam", "竖井采矿", era=3, tech="steam_engine", out={"iron_ore": 80000},
-                         inp={"tools": 200, "power": 60, "coal": 2000}, labor={AR: 5000}),
+                         inp={"tools": 200, "power": 60, "coal": 2000}, labor={AR: 3000, P: 2000}),
                   method("ironmine_mech", "机械采矿", era=4, tech="power_grid", out={"iron_ore": 150000},
-                         inp={"machinery": 20, "electricity": 150}, labor={AR: 3000})])
+                         inp={"machinery": 20, "electricity": 150}, labor={AR: 1800, P: 1200})])
 
 building("coppermine", "铜矿", "mine", "manu", deposit="copper", capital=1.4, art=MINE_ART,
          methods=[method("coppermine_trad", "采铜", out={"copper_ore": 22000}, inp={"tools": 220},
                          labor={AR: 4000, P: 2000}),
                   method("coppermine_steam", "竖井采铜", era=3, tech="steam_engine",
                          out={"copper_ore": 45000}, inp={"tools": 200, "power": 60, "coal": 2000},
-                         labor={AR: 5000}),
+                         labor={AR: 3000, P: 2000}),
                   method("coppermine_mech", "机械采铜", era=4, tech="power_grid",
                          out={"copper_ore": 90000}, inp={"machinery": 20, "electricity": 150},
-                         labor={AR: 3000})])
+                         labor={AR: 1800, P: 1200})])
 
 building("kaolinpit", "瓷土采场", "mine", "manu", deposit="kaolin", capital=1.2, art=MINE_ART,
          methods=[method("kaolin_trad", "采瓷土", out={"kaolin": 30000}, inp={"tools": 100},
@@ -205,9 +205,9 @@ building("coalmine", "煤矿", "mine", "energy", deposit="coal", capital=1.4, ar
          methods=[method("coal_trad", "平硐采煤", out={"coal": 50000}, inp={"tools": 200},
                          labor={AR: 3000, P: 2500}),
                   method("coal_steam", "竖井煤矿", era=3, tech="steam_engine", out={"coal": 140000},
-                         inp={"tools": 200, "power": 80}, labor={AR: 6000}),
+                         inp={"tools": 200, "power": 80}, labor={AR: 3500, P: 2500}),
                   method("coal_mech", "机械化煤矿", era=4, tech="power_grid", out={"coal": 300000},
-                         inp={"machinery": 30, "electricity": 200}, labor={AR: 4000})])
+                         inp={"machinery": 30, "electricity": 200}, labor={AR: 2200, P: 1800})])
 
 building("saltworks", "盐场", "mine", "manu", deposit="salt", capital=1.2,
          art=art3("b11", "saltworks", industrial=ART + "b11/saltworks_industrial_v3.png"),
@@ -515,8 +515,11 @@ building("fertilizerworks", "化肥厂", "workshop", "manu", capital=2.0, era=3,
          art=art3("b07", "chemical"),
          methods=[method("fert_phosphate", "磷肥", era=3, out={"fertilizer": 12000},
                          inp={"phosphate": 14000, "chemicals": 2000, "power": 40}, labor={AR: 1800, M: 60}),
-                  method("fert_synthetic", "合成氨", era=4, tech="petrochemistry", out={"fertilizer": 40000},
-                         inp={"phosphate": 20000, "refined_fuel": 6000, "electricity": 300}, labor={AR: 1600, GE: 80, M: 80})])
+                  # 合成氨（哈伯法）：空气里的氮加煤制的氢，不靠磷矿；化肥从此不再受矿藏卡脖子
+                  method("fert_ammonia", "合成氨（煤制）", era=3, out={"fertilizer": 12000},
+                         inp={"coal": 5000, "power": 40}, labor={AR: 1700, GE: 40, M: 60}),
+                  method("fert_synthetic", "合成氨（石化）", era=4, tech="petrochemistry", out={"fertilizer": 40000},
+                         inp={"refined_fuel": 6000, "electricity": 300}, labor={AR: 1600, GE: 80, M: 80})])
 
 building("machineworks", "机械厂", "workshop", "manu", capital=2.0, era=2, tech="water_power",
          art=art3("b07", "machineworks"),

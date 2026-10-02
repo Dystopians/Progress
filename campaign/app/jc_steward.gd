@@ -609,4 +609,110 @@ func _events(sim: JCSim, an: JCAnalyst) -> Array:
 		if best >= 0:
 			out.append(_p("events", {"kind": "event", "event": String(ed["id"]), "option": best}, "stw.events.pick",
 					{"event": String(ed["id"]), "option": best}))
+	# 政局的关口（docs/61）
+	for sv: Variant in st.sit:
+		var sd: Dictionary = sv
+		var ask: Dictionary = sd.get("ask", {})
+		if ask.is_empty():
+			continue
+		var set_id: String = String(ask.get("set", ""))
+		var opt: String = _situation_pick(sim, sd, set_id, s)
+		if opt != "":
+			out.append(_p("events", {"kind": "situation", "sid": int(sd["sid"]), "option": opt, "sit": String(sd.get("k", "")),
+					"set": set_id}, "stw.events.situation",
+					{"sit": String(sd.get("k", "")), "set": set_id, "opt": opt, "reform": String(sd.get("id", ""))}))
+	var rf_id: String = _reform_pick(sim, s)
+	if rf_id != "":
+		out.append(_p("events", {"kind": "reform", "reform": rf_id}, "stw.events.reform",
+				{"reform": rf_id, "regime_from": sim.politics.regime_id(),
+				"regime": sim.politics.regime_id(sim.politics.reform_target(sim.ct.reforms[int(sim.ct.refidx[rf_id])]))}))
 	return out
+
+
+## 托管要不要推一项改革：政体已经落后于时代、革命压力过了四成，或者是军政府、割据、保护国这种过渡的政体时，
+## 从能推的改革里挑一项（顾百姓的偏向立宪、共和、还政于民；求增长的偏向开明、立宪、商人议政、市场化；
+## 省钱的同顾百姓，但只在开办费不到国库两成时推）。国库至少够开办费的三倍。
+const REFORM_PREF: Dictionary = {
+	"people": ["independence", "unify", "civil_rule", "constitution", "republic", "democratize", "enlighten", "market"],
+	"growth": ["independence", "unify", "enlighten", "constitution", "merchant_rule", "market", "republic", "civil_rule"],
+	"frugal": ["independence", "unify", "civil_rule", "enlighten", "constitution", "republic", "democratize", "market"],
+}
+
+
+func _reform_pick(sim: JCSim, s: String) -> String:
+	var st: JCState = sim.st
+	var pol: JCPolitics = sim.politics
+	if st.era < 2 or not pol.active("reform").is_empty():
+		return ""
+	var cur: String = pol.regime_id()
+	var outdated: bool = false
+	for f: Variant in pol.revolution_factors():
+		if String((f as Array)[0]) == "outdated":
+			outdated = true
+	# 第二时代：君主集权跟不上了也想开明一些
+	if st.era >= 2 and cur == "empire" and st.world_era >= 2:
+		outdated = true
+	var urgent: bool = outdated or (st.pres.size() > 0 and st.pres[0] >= 400_000) or cur in ["junta", "warlords", "protectorate"]
+	if not urgent:
+		return ""
+	for id: Variant in REFORM_PREF.get(s, REFORM_PREF["people"]):
+		var rid: String = String(id)
+		if not sim.ct.refidx.has(rid) or pol.reform_check(rid) != "":
+			continue
+		var cost: int = int(sim.ct.reforms[int(sim.ct.refidx[rid])].get("cost_start_li", 0))
+		if st.treasury < cost * 3 or (s == "frugal" and cost * 5 > st.treasury):
+			continue
+		return rid
+	return ""
+
+
+## 政局关口怎么选（按事件领域的取向）：先顾百姓的肯花钱安抚、以工代赈；求增长的推改革、兵力够就镇压；
+## 省钱的选不花钱的。打得过才抵抗，战局不利就求和。钱不够的选项跳过。
+func _situation_pick(sim: JCSim, sd: Dictionary, set_id: String, s: String) -> String:
+	var pol: JCPolitics = sim.politics
+	var prefs: Array = []
+	match set_id:
+		"stage:backlash":
+			match s:
+				"people":
+					prefs = ["buy", "compromise"]
+				"growth":
+					prefs = ["push", "buy", "compromise"]
+				_:
+					prefs = ["compromise"]
+		"stage:rally":
+			prefs = ["ride", "steady"] if s == "growth" else ["steady"]
+		"revolution":
+			match s:
+				"people":
+					prefs = ["appease", "concede"]
+				"growth":
+					prefs = ["repress", "appease", "concede"] if pol.army() >= 900_000 else ["appease", "concede"]
+				_:
+					prefs = ["concede"]
+		"invasion":
+			if pol.war_strength() > int(sd.get("enemy", PPM)) + 100_000:
+				prefs = ["resist"]
+			elif s == "frugal":
+				prefs = ["negotiate"]
+			else:
+				prefs = ["selfstrength", "negotiate"]
+		"war":
+			prefs = ["sue"] if int(sd.get("p", 0)) < -400_000 or pol.war_drift(sd) < -50_000 else ["fight"]
+		"depression":
+			match s:
+				"people":
+					prefs = ["works", "let"]
+				"growth":
+					prefs = ["works", "tariff", "let"]
+				_:
+					prefs = ["let"]
+	for o: Variant in prefs:
+		var c: Dictionary = {"kind": "situation", "sid": int(sd["sid"]), "option": String(o)}
+		if not bool(sim.cmd.check(c).get("ok", false)):
+			continue
+		# 以工代赈要办好几季：国库至少够四季的工程款才选
+		if String(o) == "works" and sim.st.treasury < pol.works_per_q() * 4:
+			continue
+		return String(o)
+	return ""

@@ -1,11 +1,13 @@
-## 政令与财政：顶上是「国家形态」（按政体与施政给一句评语，配徽记与四个取向的刻度条）；
-## 收支一览、四种税（加减一档）、七项拨款（加减一成）；政令按六类分组、做成带配图的卡片（开关 / 档位 / 发起）；借贷。
+## 政令页，两个页签：
+##   政令与财政：收支一览、四种税（加减一档）、七项拨款（加减一成）；政令按六类分组、做成带配图的卡片（开关 / 档位 / 发起）；借贷。
+##   政治改革（JcPolTab）：当今国家、眼下的局势与待决关口、可以推行的改革、两种压力、各种政体、政体更替史。
+## 政体不在政令里：只能推行改革，或在革命、战败等外部局势里改变。
 class_name JcPagePolicy
 extends JcPage
 
 ## 政令分组（界面上的分类；内容表里新加的政令没写进来时归到「其他」）
 const CATEGORIES: Array = [
-	["state", ["regime", "labor_policy"]],
+	["state", ["labor_policy"]],
 	["fiscal", ["single_whip", "land_survey", "tax_remission", "sell_titles", "salt_policy", "income_tax", "banking_license",
 			"central_bank"]],
 	["welfare", ["ever_normal_granary", "famine_relief", "reclamation", "corvee_works", "social_insurance"]],
@@ -19,6 +21,11 @@ const ART_H: float = 150.0
 ## 每按一下调多少：地丁、商税按千分之五，盐课按五十厘，关税按一个百分点
 const TAX_STEP: Dictionary = {"land": 5_000, "salt": 50, "commerce": 5_000, "customs": 10_000}
 const BUDGET_STEP: int = 100_000
+const TABS: PackedStringArray = ["fiscal", "politics"]
+
+var _tab: String = "fiscal"
+## 别处要求打开的页签（弹窗、右栏「去看看」）：下次刷新时切过去
+static var want_tab: String = ""
 
 
 func refresh() -> void:
@@ -26,10 +33,32 @@ func refresh() -> void:
 	if not session.has_game():
 		return
 	var g: JCGame = game()
+	if want_tab != "":
+		_tab = want_tab
+		want_tab = ""
+	var tabs: HBoxContainer = JwUi.hbox(4)
+	var asks: int = g.situation_asks()
+	for id: String in TABS:
+		var lab: String = t("jc.pol.tab." + id)
+		if id == "politics" and asks > 0:
+			lab = rt("jc.pol.tab.politics_n", {"n": str(asks)})
+		var b: Button = JwUi.button(lab, "TabBtn")
+		JcUi.set_icon(b, JcUi.UI_ICON % ("tab_" + id), 20)
+		b.toggle_mode = true
+		b.set_pressed_no_signal(_tab == id)
+		b.pressed.connect(func() -> void:
+			_tab = id
+			refresh())
+		tabs.add_child(b)
+	content.add_child(tabs)
+	if _tab == "politics":
+		JcPolTab.new(self, g).build(content)
+		return
 	var v: Dictionary = views().policy()
 	var f: Dictionary = v["fiscal"]
+	# ── 当今国家（一行，详情在「政治改革」）──
+	content.add_child(_regime_line(g, v["regime"]))
 	# ── 收支 ──
-	content.add_child(_regime_card(g, v["regime"]))
 	var tiles: HBoxContainer = JwUi.hbox(10)
 	tiles.add_child(JcUi.tile(t("jc.pol.rev"), JcFmt.money(int(f["rev"])), t("jc.pol.per_q"), JcUi.MUTED, t("jc.pol.rev_tip")))
 	tiles.add_child(JcUi.tile(t("jc.pol.exp"), JcFmt.money(int(f["exp"])), t("jc.pol.per_q"), JcUi.MUTED, t("jc.pol.exp_tip")))
@@ -124,83 +153,27 @@ func _budget_card(v: Dictionary) -> PanelContainer:
 
 
 # ── 国家形态 ─────────────────────────────────────────────────────────────
-func _regime_card(g: JCGame, rp: Dictionary) -> PanelContainer:
-	var card: PanelContainer = JwUi.panel("bg.panel", "line.hair", 16)
+## 一行：徽记、评语、政体；点「政治改革」看详情、推行改革。
+func _regime_line(g: JCGame, rp: Dictionary) -> PanelContainer:
+	var card: PanelContainer = JwUi.panel("bg.panel", "line.hair", 10)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var h: HBoxContainer = JwUi.hbox(20)
+	var h: HBoxContainer = JwUi.hbox(12)
 	card.add_child(h)
 	var tone: String = String(rp["tone"])
 	var tone_tok: String = JcUi.GOOD if tone == "benevolent" else (JcUi.BAD if tone == "harsh" else "line.strong")
-	var title: String = t(String(rp["title"]))
-	var em: Control = JcUi.badge(JcUi.REGIME_ART % [String(rp["regime"]), tone], 150.0, title, tone_tok)
-	em.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	h.add_child(em)
-	var v: VBoxContainer = JwUi.vbox(6)
-	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(v)
-	v.add_child(JwUi.label(t("jc.regime.head"), "caption", "text.muted"))
-	v.add_child(JwUi.label(title, "title_page", tone_tok if tone != "steady" else "text.primary"))
-	v.add_child(JwUi.label(rt("jc.regime.sub", {"regime": String(rp["regime_name"]), "era": JcFmt.era_name(g.st.era)}),
-			"body", "text.secondary"))
-	var lines: PackedStringArray = PackedStringArray()
-	var good: Array = rp["good"]
-	var harsh: Array = rp["harsh"]
-	# 君主国说「朝廷」，共和国与工人国家说「政府」
-	var gov: String = t("jc.regime.gov.state" if String(rp["regime"]) in ["republic", "socialist"] else "jc.regime.gov.court")
-	if not good.is_empty():
-		lines.append(rt("jc.regime.s.good", {"list": t("jc.name_sep").join(PackedStringArray(good)), "gov": gov}))
-	if not harsh.is_empty():
-		lines.append(rt("jc.regime.s.harsh", {"list": t("jc.name_sep").join(PackedStringArray(harsh))}))
-	for n: Dictionary in rp["notes"]:
-		var sl: Dictionary = (n["slots"] as Dictionary).duplicate()
-		sl["gov"] = gov
-		if sl.has("v"):
-			sl["v"] = JcFmt._dec(absi(int(sl["v"])), 10_000, 1)
-		lines.append(rt(String(n["key"]), sl))
-	if good.is_empty() and harsh.is_empty() and (rp["notes"] as Array).is_empty():
-		lines.append(t("jc.regime.s.none"))
-	lines.append(rt("jc.regime.s.econ", {"v": t("jc.regime.econ." + String(rp["economy"]))}))
-	v.add_child(JwUi.label("".join(lines), "body", "text.secondary", true))
-	# 四个取向：左边是负的一头，右边是正的一头
-	var axes: Dictionary = rp["axes"]
-	var gr: GridContainer = JcUi.grid(4, 10, 6)
-	gr.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	for ax: Array in [["benevolent", "harsh", "benevolent", JcUi.BAD, JcUi.GOOD], ["central", "laissez", "central", JcUi.WARN, JcUi.WARN],
-			["open", "closed", "open", JcUi.WARN, JcUi.GOOD], ["reform", "traditional", "reform", JcUi.WARN, JcUi.GOOD]]:
-		# 左：负的一头（严苛、放任、闭关、守旧）；右：正的一头
-		var neg: String = String(ax[1])
-		var pos: String = String(ax[2])
-		var lh: HBoxContainer = JwUi.hbox(6)
-		lh.add_child(JcUi.badge(JcUi.POLICY_ICON % ("axis_" + neg), 24.0, t("jc.regime.ax." + neg), "line.strong"))
-		var ll: Label = JwUi.label(t("jc.regime.ax." + neg), "caption", "text.secondary")
-		ll.custom_minimum_size = Vector2(44, 0)
-		lh.add_child(ll)
-		gr.add_child(lh)
-		var am: JcAxis = JcAxis.new()
-		am.value = int(axes[String(ax[0])])
-		am.left_tone = String(ax[3])
-		am.right_tone = String(ax[4])
-		am.custom_minimum_size = Vector2(260, 20)
-		gr.add_child(am)
-		var rh: HBoxContainer = JwUi.hbox(6)
-		var rl: Label = JwUi.label(t("jc.regime.ax." + pos), "caption", "text.secondary")
-		rl.custom_minimum_size = Vector2(44, 0)
-		rh.add_child(rl)
-		rh.add_child(JcUi.badge(JcUi.POLICY_ICON % ("axis_" + pos), 24.0, t("jc.regime.ax." + pos), "line.strong"))
-		gr.add_child(rh)
-		gr.add_child(JwUi.spacer())
-	v.add_child(gr)
-	var ec: HBoxContainer = JwUi.hbox(8)
-	ec.add_child(JwUi.label(t("jc.regime.ec_head"), "caption", "text.muted"))
-	var econ: Dictionary = rp["econ"]
-	for k: String in ["agrarian", "mercantile", "industrial"]:
-		var on: bool = String(rp["economy"]) == k
-		var item: HBoxContainer = JwUi.hbox(4)
-		item.add_child(JcUi.badge(JcUi.POLICY_ICON % ("axis_" + k), 22.0, t("jc.regime.ec." + k), JcUi.GOOD if on else "line.hair"))
-		item.add_child(JwUi.label(rt("jc.regime.ec_item", {"name": t("jc.regime.ec." + k), "v": str(int(econ[k]))}), "caption",
-				JcUi.GOOD if on else "text.muted"))
-		ec.add_child(item)
-	v.add_child(ec)
+	var title: String = JcPolTab.title_text(rp)
+	h.add_child(JcUi.badge(JcUi.regime_art(String(rp["regime"]), tone), 48.0, JcPolTab.glyph(g, String(rp["regime"])), tone_tok))
+	var nv: VBoxContainer = JwUi.vbox(2)
+	nv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nv.add_child(JwUi.label(title, "title_sub", tone_tok if tone != "steady" else "text.primary", true))
+	nv.add_child(JwUi.label(rt("jc.regime.sub", {"regime": String(rp["regime_name"]), "era": JcFmt.era_name(g.st.era)}),
+			"caption", "text.secondary"))
+	h.add_child(nv)
+	var b: Button = JcUi.button(t("jc.pol.to_politics"), false, func() -> void:
+		_tab = "politics"
+		refresh())
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	h.add_child(b)
 	return card
 
 

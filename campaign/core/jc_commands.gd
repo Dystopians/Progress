@@ -13,6 +13,9 @@
 ##   treaty       {partner}                                                签商约
 ##   event        {event, option}                                          回应待决事件
 ##   landmark     {landmark, region, full}                                 开建地标
+##   reform       {reform}                                                 推行改革局势（docs/61）
+##   situation    {sid, option}                                            回应局势的待决关口
+##   reform_abandon {sid}                                                  放弃推行中的改革
 class_name JCCommands
 extends RefCounted
 
@@ -26,14 +29,17 @@ var st: JCState
 var mods: JCMods
 var inv: JCInvest
 var world: JCWorld
+var politics: JCPolitics
 
 
-func setup(p_ct: JCContent, p_st: JCState, p_mods: JCMods, p_inv: JCInvest, p_world: JCWorld) -> void:
+func setup(p_ct: JCContent, p_st: JCState, p_mods: JCMods, p_inv: JCInvest, p_world: JCWorld,
+		p_politics: JCPolitics = null) -> void:
 	ct = p_ct
 	st = p_st
 	mods = p_mods
 	inv = p_inv
 	world = p_world
+	politics = p_politics
 
 
 func apply_all(cmds: Array) -> Array:
@@ -106,6 +112,16 @@ func _run(c: Dictionary, doit: bool) -> Dictionary:
 			return _event(c, doit)
 		"landmark":
 			return _landmark(c, doit)
+		"reform":
+			if politics != null:
+				return politics.start_reform(String(c.get("reform", "")), doit, String(c.get("source", "player")))
+		"situation":
+			if politics != null:
+				return politics.answer(int(c.get("sid", -1)), String(c.get("option", "")), doit, false,
+						String(c.get("source", "player")))
+		"reform_abandon":
+			if politics != null:
+				return politics.abandon(int(c.get("sid", -1)), doit)
 	return _no("reason.bad_command")
 
 
@@ -296,6 +312,12 @@ func _decree(c: Dictionary, doit: bool) -> Dictionary:
 	var dd: Dictionary = ct.decrees[d]
 	var lvl: int = int(c.get("level", 1))
 	var kind: String = String(dd.get("kind", "toggle"))
+	# 政体只能靠改革局势、革命、政变、战败改变（JCPolitics）
+	if String(dd["id"]) == "regime":
+		return _no("reason.regime_by_reform")
+	# 不平等条约期间不能闭关
+	if String(dd["id"]) == "sea_policy" and lvl == 0 and st.treaty_until > st.q:
+		return _no("reason.treaty_bound", {"until": st.treaty_until})
 	if st.era < int(dd.get("era", 1)):
 		return _no("reason.era_too_early")
 	var tech: String = String(dd.get("tech", ""))
@@ -345,6 +367,9 @@ func _tax(c: Dictionary, doit: bool) -> Dictionary:
 	var bnd: Array = TAX_BOUNDS[kind]
 	if v < int(bnd[0]) or v > int(bnd[1]):
 		return _no("reason.out_of_range", {"lo": bnd[0], "hi": bnd[1]})
+	# 不平等条约期间，关税由不得自己定
+	if kind == "customs" and st.treaty_until > st.q and v > JCPolitics.TREATY_CUSTOMS_PPM:
+		return _no("reason.treaty_bound", {"until": st.treaty_until})
 	if doit:
 		match kind:
 			"land":

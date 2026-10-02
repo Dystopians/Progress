@@ -4,7 +4,8 @@
 ##       <输出目录> <镜头,镜头,...> [--jc-seed=7 | --jc-play=res://tools/playscripts_v2/steward_balanced.json --jc-until=1700]
 ## 镜头：页面名（overview / map / industry / modern / tech / policy / society / trade / chronicle），
 ##       o:<弹窗>（steward / advisors / build / era / era_nation / era_world / event / receipt / help / saves / newgame / gameover），
-##       map@<地区>（舆图并选中该地区），industry@<商品>（产业页并选中该商品）；
+##       map@<地区>（舆图并选中该地区），industry@<商品>（产业页并选中该商品），policy@politics（政令页的「政治改革」页签）；
+##       o:situation 是「政局待决」弹窗；
 ##       页面名后加 +<像素> 先把页面往下滚这么多再截（如 policy+900 看政令卡）。
 ## 每张存为 <输出目录>/v2_<镜头>.png（冒号、@ 与 + 换成下划线）。
 extends SceneTree
@@ -107,4 +108,6 @@ func _setup(shot: String) -> void:
 			session.selected_region = arg
 		elif page == "industry":
 			session.selected_good = arg
+		elif page == "policy":
+			JcPagePolicy.want_tab = arg
 	_main.call("show_page", page)

@@ -409,3 +409,134 @@ func test_livelihood_crisis_records_hunger_or_unrest() -> void:
 	var e2: Dictionary = g2.st.annals[g2.st.annals.size() - 1]
 	eq_str(String((e2["args"] as Dictionary).get("why", "")), "unrest", "民怨九成：主因是民怨")
 	eq_str(String(((g2.views().annals()["list"] as Array)[0] as Dictionary)["art_id"]), "revolt", "国史配「民变四起」")
+
+
+# ════════════════════════════ 政治改革（docs/61） ═════════════════════════
+## 加钱时把开局货币一起加上，守恒自检照样成立。
+func _rich(g: JCGame, li: int) -> void:
+	g.st.treasury += li
+	g.st.money0 += li
+
+
+func test_regime_changes_only_through_politics() -> void:
+	var g: JCGame = _new()
+	var r: Dictionary = g.check({"kind": "decree", "decree": "regime", "level": 1})
+	eq_str(String(r.get("reason", "")), "reason.regime_by_reform", "政体不能直接下令换")
+	for dv: Dictionary in g.views().policy()["decrees"]:
+		check(String(dv["id"]) != "regime", "政令列表里没有政体")
+	var pv: Dictionary = g.views().politics()
+	eq_int((pv["regimes"] as Array).size(), g.ct.regimes.size(), "政治改革页列出全部政体")
+	ge_int(g.ct.regimes.size(), 10, "至少十种政体")
+
+
+func test_reform_runs_through_two_stages_to_new_regime() -> void:
+	var g: JCGame = _new()
+	var st: JCState = g.st
+	g.steward.set_mode("events", JCSteward.OFF)
+	st.era = 2
+	st.t_done[int(g.ct.tidx["movable_type"])] = 1
+	_rich(g, 2_000_000_000)
+	var r: Dictionary = g.order({"kind": "reform", "reform": "enlighten"})
+	check(bool(r.get("ok", false)), "推行开明改革：" + String(r.get("reason", "")))
+	eq_int(st.sit.size(), 1, "有一个改革局势")
+	eq_str(String(g.check({"kind": "reform", "reform": "enlighten"}).get("reason", "")), "reason.reform_busy", "同时只推一项")
+	var asked: PackedStringArray = PackedStringArray()
+	for i: int in 40:
+		var rr: Dictionary = g.end_turn()
+		check(bool(rr.get("ok", false)), "改革期间照常结算：" + String(rr.get("reason", "")))
+		for sv: Dictionary in g.views().pending_situations():
+			var set_id: String = String(sv["ask"]["set"])
+			asked.append(set_id)
+			var opt: String = "push" if set_id == "backlash" else "ride"
+			var ra: Dictionary = g.order({"kind": "situation", "sid": int(sv["sid"]), "option": opt})
+			check(bool(ra.get("ok", false)), "回应关口：" + String(ra.get("reason", "")))
+		if g.sim.politics.regime_id() == "enlightened":
+			break
+	eq_str(g.sim.politics.regime_id(), "enlightened", "改革推完，政体改成开明君主")
+	eq_str(",".join(asked), "backlash,rally", "三成五、七成各有一个关口")
+	eq_int(st.reg_hist.size(), 1, "政体更替记下一笔")
+	var found: bool = false
+	for e: Dictionary in st.annals:
+		if String(e["key"]) == "chron.regime_change":
+			found = true
+	check(found, "政体更替进了国史")
+
+
+func test_revolution_breaks_out_and_concession_changes_regime() -> void:
+	var g: JCGame = _new()
+	var st: JCState = g.st
+	var pol: JCPolitics = g.sim.politics
+	st.era = 3
+	st.legitimacy = 200_000
+	st.pres[0] = 1_000_000
+	pol.step()
+	var rv: Dictionary = pol.active("revolution")
+	check(not rv.is_empty(), "革命压力满了就爆发革命")
+	check(not (rv.get("ask", {}) as Dictionary).is_empty(), "一爆发就要拿主意")
+	var to: String = pol.regime_id(int(rv["to"]))
+	check(to != "empire", "革命要改政体：" + to)
+	var r: Dictionary = g.order({"kind": "situation", "sid": int(rv["sid"]), "option": "concede"})
+	check(bool(r.get("ok", false)), "让步：" + String(r.get("reason", "")))
+	eq_str(pol.regime_id(), to, "让步就立刻改政体")
+	check(pol.active("revolution").is_empty(), "革命平息")
+	le_int(st.pres[0], 600_000, "革命压力减半")
+
+
+func test_invasion_settled_by_unequal_treaty() -> void:
+	var g: JCGame = _new()
+	var st: JCState = g.st
+	var pol: JCPolitics = g.sim.politics
+	st.world_era = 3
+	st.pres[1] = 1_000_000
+	st.d_level[int(g.ct.didx["sea_policy"])] = 0
+	pol.step()
+	var iv: Dictionary = pol.active("invasion")
+	check(not iv.is_empty(), "列强压力满了就兵临城下")
+	var silver0: int = st.silver
+	var r: Dictionary = g.order({"kind": "situation", "sid": int(iv["sid"]), "option": "negotiate"})
+	check(bool(r.get("ok", false)), "议和：" + String(r.get("reason", "")))
+	check(st.treaty_until > st.q, "签了不平等条约")
+	le_int(st.tax_customs_ppm, 20_000, "关税压到 2% 以下")
+	check(st.d_level[int(g.ct.didx["sea_policy"])] != 0, "被迫开海")
+	check(st.silver < silver0, "赔款流出国外")
+	ge_int(st.treasury, 0, "国库不够时当场借，不会变负")
+	eq_str(String(g.check({"kind": "tax", "tax": "customs", "value": 50_000}).get("reason", "")), "reason.treaty_bound", "条约期间不能加关税")
+	eq_str(String(g.check({"kind": "decree", "decree": "sea_policy", "level": 0}).get("reason", "")), "reason.treaty_bound", "条约期间不能闭关")
+	var rr: Dictionary = g.end_turn()
+	check(bool(rr.get("ok", false)), "议和后照常结算（钱守恒）：" + String(rr.get("reason", "")))
+
+
+func test_depression_public_works_hire_and_conserve_money() -> void:
+	var g: JCGame = _new()
+	var st: JCState = g.st
+	var pol: JCPolitics = g.sim.politics
+	g.steward.set_mode("events", JCSteward.OFF)
+	st.era = 3
+	pol._start_depression()
+	var dp: Dictionary = pol.active("depression")
+	check(not dp.is_empty(), "经济危机")
+	_rich(g, 5_000_000_000)
+	var r: Dictionary = g.order({"kind": "situation", "sid": int(dp["sid"]), "option": "works"})
+	check(bool(r.get("ok", false)), "以工代赈：" + String(r.get("reason", "")))
+	ge_int(pol.public_works().size(), 1, "各地区分到公共工程")
+	var rr: Dictionary = g.end_turn()
+	check(bool(rr.get("ok", false)), "办工程的一季照常结算（钱守恒）：" + String(rr.get("reason", "")))
+	var n: int = 0
+	for j: int in g.sim.econ.job_value.size():
+		if g.sim.econ.job_stack[j] < 0 and g.sim.econ.job_landmark[j] < 0:
+			n += 1
+	ge_int(n, 1, "公共工程登记成营造工程")
+	eq_int(g.sim.mods.sum("spending"), -800, "以工代赈时日用开支只降 8%")
+
+
+func test_politics_state_survives_save_and_load() -> void:
+	var g: JCGame = _new()
+	g.st.era = 3
+	g.sim.politics._start_depression()
+	g.st.reg_hist.append({"q": 3, "from": 0, "to": 1, "how": "reform"})
+	g.st.treaty_until = 99
+	var d: Variant = JSON.parse_string(JSON.stringify(g.st.to_dict()))
+	var st2: JCState = JCState.from_dict(d as Dictionary)
+	eq_str(st2.state_hash(), g.st.state_hash(), "存档读回，状态哈希一致（局势、政体史、条约都在）")
+	eq_int(st2.sit.size(), 1, "局势读回")
+	eq_int(st2.treaty_until, 99, "条约期限读回")

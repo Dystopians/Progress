@@ -119,6 +119,12 @@ static func order_text(g: JCGame, cmd: Dictionary) -> String:
 			raw["value"] = int(cmd.get("level", 0))
 		"event":
 			raw["option"] = int(cmd.get("option", 0))
+		"situation":
+			raw.erase("option")
+			raw.erase("sid")
+			raw["opt"] = String(cmd.get("option", ""))
+		"reform_abandon":
+			raw.erase("sid")
 		"loan", "repay":
 			raw["amount_li"] = int(cmd.get("amount", 0))
 	var s: Dictionary = JcFmt.slots(g, raw)

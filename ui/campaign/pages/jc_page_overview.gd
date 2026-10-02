@@ -45,8 +45,10 @@ func refresh() -> void:
 	var liv: int = int(v["living"])
 	tiles.add_child(JcUi.tile(t("jc.ov.living"), JcFmt.pct(liv, 0), rt("jc.ov.expect", {"v": JcFmt.times(int(v["expect"]))}),
 			JcUi.tone(liv >= 950_000, liv >= 850_000), t("jc.ov.living_tip"), JcUi.UI_ICON % "stat_living"))
-	var un: int = int(v["unemp"])
-	tiles.add_child(JcUi.tile(t("jc.ov.unemp"), JcFmt.pct(un), "", JcUi.MUTED, t("jc.ov.unemp_tip"), JcUi.UI_ICON % "stat_unemp"))
+	# 失业：大字是城镇失业（工匠、商贾找不到活的），小字是农村富余劳力（村里闲着、在自家田里帮工的农户）
+	var un: int = int(v["unemp_town"])
+	tiles.add_child(JcUi.tile(t("jc.ov.unemp"), JcFmt.pct(un), rt("jc.ov.unemp_rural", {"v": JcFmt.pct(int(v["unemp_rural"]), 0)}),
+			JcUi.tone(un < 80_000, un < 150_000), t("jc.ov.unemp_tip"), JcUi.UI_ICON % "stat_unemp"))
 	var leg: int = int(v["legitimacy"])
 	tiles.add_child(JcUi.tile(t("jc.ov.legit"), JcFmt.pct(leg, 0), rt("jc.ov.prestige", {"v": str(int(v["prestige"]))}),
 			JcUi.tone(leg >= 450_000, leg >= 300_000), t("jc.ov.legit_tip"), JcUi.UI_ICON % "stat_legitimacy"))

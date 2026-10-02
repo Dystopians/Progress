@@ -23,6 +23,9 @@ const TECH_ART: String = "res://assets/techs/t01/tech_%s.png"
 const DECREE_ART: String = "res://assets/decrees/d01/decree_%s.png"
 const DECREE_LEVEL_ART: String = "res://assets/decrees/d01/decree_%s_%d.png"
 const REGIME_ART: String = "res://assets/regime/r01/regime_%s_%s.png"
+## 政局（docs/61、docs/62）：改革局势与外部局势的配图
+const REFORM_ART: String = "res://assets/politics/p01/reform_%s.png"
+const SITUATION_ART: String = "res://assets/politics/p01/situation_%s.png"
 const POLICY_ICON: String = "res://assets/icons/policy/%s.png"
 const CLASS_ART: String = "res://assets/classes/c01/class_%s_e%d_%s.png"
 const NEED_ICON: String = "res://assets/icons/needs/need_%s.png"
@@ -113,6 +116,14 @@ static func tex(path: String) -> Texture2D:
 	var t: ImageTexture = ImageTexture.create_from_image(img)
 	_tex_cache[p] = t
 	return t
+
+
+## 政体徽记：先找这种施政风格的，没有就用「持重」那张（新政体的徽记可能只画了一张）。
+static func regime_art(id: String, tone: String) -> String:
+	var p: String = REGIME_ART % [id, tone]
+	if has_art(p):
+		return p
+	return REGIME_ART % [id, "steady"]
 
 
 ## 政令配图：给了档位就先找那一档的图；不分档的那张没有时，退到第 0 档的图；都没有返回不分档的路径（显示占位）。

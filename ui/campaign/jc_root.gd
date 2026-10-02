@@ -213,6 +213,8 @@ func _on_turn_done(receipt: Dictionary) -> void:
 	_last_world = st.world_era
 	if not st.pend.is_empty() and int(session.game.steward.mode["events"]) != JCSteward.AUTO:
 		open_overlay("event", {})
+	elif session.game.situation_asks() > 0 and int(session.game.steward.mode["events"]) != JCSteward.AUTO:
+		open_overlay("situation", {})
 	elif not receipt.is_empty():
 		if JcReceipt.is_notable(receipt):
 			open_overlay("receipt", receipt)
@@ -232,6 +234,8 @@ func open_overlay(id: String, context: Dictionary = {}) -> JcOverlay:
 			o = JcAdvisorPanel.new()
 		"event":
 			o = JcEventOverlay.new()
+		"situation":
+			o = JcSituationOverlay.new()
 		"era":
 			o = JcEraOverlay.new()
 		"build":

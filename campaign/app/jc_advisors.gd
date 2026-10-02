@@ -48,6 +48,7 @@ func refresh(sim: JCSim, an: JCAnalyst) -> void:
 	all.append_array(_xuezheng(sim, an))
 	all.append_array(_minzheng(sim, an))
 	all.append_array(_shibo(sim, an))
+	all.append_array(_politics(sim))
 	var keep: Array = []
 	for it: Dictionary in all:
 		if int(dismissed.get(String(it["id"]), -1)) > st.q:
@@ -80,6 +81,42 @@ func _item(ministry: String, id: String, sev: int, title: String, body: String, 
 			c2.append(d)
 	return {"id": ministry + "." + id, "ministry": ministry, "sev": sev, "title": title, "body": body, "slots": slots,
 			"cmds": c2, "weight": clampi(weight, 0, 999_999), "cost_li": cost}
+
+
+# ── 政局（docs/61）：待决的关口、革命压力、列强压力 ──────────────────────────
+func _politics(sim: JCSim) -> Array:
+	var st: JCState = sim.st
+	var pol: JCPolitics = sim.politics
+	var out: Array = []
+	for sv: Variant in st.sit:
+		var sd: Dictionary = sv
+		var ask: Dictionary = sd.get("ask", {})
+		if ask.is_empty():
+			continue
+		out.append(_item("minzheng", "ask." + str(int(sd["sid"])), 3, "adv.pol.ask.t", "adv.pol.ask.b",
+				{"sit": String(sd.get("k", "")), "reform": String(sd.get("id", "")), "until": int(ask.get("until", 0))}, [], 950_000))
+	if st.era >= 3 and st.pres.size() > 0 and st.pres[0] >= 500_000 and pol.active("revolution").is_empty():
+		var top: Array = _top_factor(pol.revolution_factors())
+		out.append(_item("minzheng", "rev_pressure", 3 if st.pres[0] >= 800_000 else 2, "adv.pol.rev.t", "adv.pol.rev.b",
+				{"pct": st.pres[0], "factor": String(top[0]) if not top.is_empty() else ""}, [], st.pres[0] / 2))
+	if st.world_era >= 3 and st.pres.size() > 1 and st.pres[1] >= 500_000 and pol.active("invasion").is_empty():
+		var top2: Array = _top_factor(pol.foreign_factors())
+		var cmds: Array = []
+		if st.budget[JCState.BUD_ARMY] < 1_200_000:
+			cmds.append({"kind": "budget", "line": JCState.BUD_ARMY, "level": mini(1_500_000, st.budget[JCState.BUD_ARMY] + 300_000)})
+		out.append(_item("shibo", "for_pressure", 3 if st.pres[1] >= 800_000 else 2, "adv.pol.for.t", "adv.pol.for.b",
+				{"pct": st.pres[1], "factor": String(top2[0]) if not top2.is_empty() else ""}, cmds, st.pres[1] / 2))
+	return out
+
+
+## 压力来由里最大的一项（只看往上推的）：[键, ppm]；没有时返回空。
+func _top_factor(factors: Array) -> Array:
+	var best: Array = []
+	for f: Variant in factors:
+		var fa: Array = f
+		if int(fa[1]) > 0 and (best.is_empty() or int(fa[1]) > int(best[1])):
+			best = fa
+	return best
 
 
 # ── 户部：钱粮 ──────────────────────────────────────────────────────────

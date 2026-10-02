@@ -2,7 +2,7 @@
 class_name JcHelp
 extends JcOverlay
 
-const SECTIONS: PackedStringArray = ["goal", "turn", "money", "people", "chain", "era", "steward", "keys"]
+const SECTIONS: PackedStringArray = ["goal", "turn", "money", "people", "mood", "politics", "chain", "era", "steward", "keys"]
 
 
 func build() -> void:

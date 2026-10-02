@@ -31,7 +31,7 @@ func _init() -> void:
 		quit(1)
 		return
 	var t0: int = Time.get_ticks_msec()
-	print("年份    人口万  产值万两 失业%  生活%  国库万  债务万  收支万  时代 世界 合法% 危机 研究点 托管办")
+	print("年份    人口万  产值万两 失业%  生活%  国库万  债务万  收支万  时代 世界 合法% 危机 研究点 托管办 城镇失业% 政体 局势 革命压 列强压")
 	if not ps.bind(game):
 		print("脚本有误：", ps.errors)
 	var until_q: int = ps.until_q(game)
@@ -56,6 +56,11 @@ func _init() -> void:
 	for e2: int in range(2, 5):
 		line += " %d@%s" % [e2, str(game.st.start_year + (game.st.world_era_q[e2] >> 2)) if game.st.world_era_q[e2] >= 0 else "—"]
 	print(line)
+	# 政局大事（docs/61）
+	for e3: Dictionary in game.st.annals:
+		if String(e3["kind"]) == "politics":
+			print("  政局 %d%s q:%d %s %s" % [game.st.start_year + (int(e3["q"]) >> 2), ["春", "夏", "秋", "冬"][int(e3["q"]) % 4],
+					int(e3["q"]), String(e3["key"]).trim_prefix("chron."), JSON.stringify(e3["args"])])
 	if a.has("log"):
 		for e: Dictionary in game.steward.records.slice(maxi(0, game.steward.records.size() - 80)):
 			print("  %d %s %s %s %s" % [int(e["q"]), e["domain"], e["reason"], "成" if bool(e["ok"]) else "未成：" + String(e["why"]),
@@ -72,4 +77,14 @@ func _row(g: JCGame, done: int) -> void:
 		float(l.get("pop", 0)) / 10000.0, float(l.get("gdp", 0)) / U, float(l.get("unemp_ppm", 0)) / 10000.0,
 		float(l.get("living", 0)) / 10000.0, float(st.treasury) / U, float(st.debt) / U, float(int(f["balance"])) / U,
 		st.era, st.world_era, float(st.legitimacy) / 10000.0, st.cr_stage[0], st.cr_stage[1], st.cr_stage[2],
-		st.points, done])
+		st.points, done]
+		+ "  %5.1f %s %s %3d %3d" % [float(g.sim.politics.urban_unemployment()) / 10000.0, g.sim.politics.regime_id(),
+		_sits(st), st.pres[0] / 10000 if st.pres.size() > 0 else 0, st.pres[1] / 10000 if st.pres.size() > 1 else 0])
+
+
+## 进行中的局势，一个字母一种：R 改革、V 革命、I 列强叩关、W 战事、D 经济危机；没有写「-」。
+func _sits(st: JCState) -> String:
+	var out: String = ""
+	for sv: Variant in st.sit:
+		out += {"reform": "R", "revolution": "V", "invasion": "I", "war": "W", "depression": "D"}.get(String((sv as Dictionary).get("k", "")), "?")
+	return out if out != "" else "-"

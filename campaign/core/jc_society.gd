@@ -5,8 +5,13 @@ extends RefCounted
 const PPM: int = 1_000_000
 ## 危机：严重度阈值（ppm）与终局窗口（季）
 const FINAL_WINDOW_Q: int = 8
-## 各时代普遍的死亡率下降（ppm，下标是时代）
-const ERA_DEATH_CUT: PackedInt64Array = [0, 0, 0, 0, 150_000]
+## 各时代普遍的死亡率下降（ppm，下标是时代）：种痘与防疫、吃得更好、卫生常识——不靠设施。
+## 人口转型先是死亡率降、出生率还高（人口猛增），后来出生率才跟着降。原来第三时代不降、第四时代只降一成五，
+## 而出生率第三时代就随识字往下压，次序反了：二十世纪人口反而一路减少。
+const ERA_DEATH_CUT: PackedInt64Array = [0, 0, 20_000, 80_000, 300_000]
+## 第四时代少生：识字的人家少生，满识字时最多少四成半；进入第四时代后五十年里慢慢到位（养老、上学年头长了以后才少生）
+const FERTILITY_CUT_MAX: int = 450_000
+const FERTILITY_RAMP_Q: int = 200
 const INFLUENCE: Dictionary = {"peasant": 300_000, "artisan": 150_000, "merchant": 200_000, "gentry": 350_000}
 
 var ct: JCContent
@@ -101,6 +106,8 @@ func total_pop() -> int:
 func demography() -> void:
 	var staple: int = int(ct.nidx.get("staple", 0))
 	var mort_mult: int = mods.mult_ppm("mortality")
+	var fert_ramp: int = fertility_ramp()
+	var era_cut: int = era_death_cut()
 	for r: int in R:
 		var pop_r: int = maxi(region_pop(r), 1)
 		var h: int = mini(PPM, JCMath.ratio_ppm(econ.health_cov[r], pop_r))
@@ -112,9 +119,9 @@ func demography() -> void:
 				continue
 			var f: int = st.sat[k * N + staple]
 			var birth: int = 9_300
-			# 第三时代起识字率高的地方少生（人口转型：先是死亡率降，后是出生率降）
-			if st.era >= 3:
-				birth = JCMath.mulppm(birth, PPM - JCMath.mulppm(st.literacy[r], 350_000 if st.era >= 4 else 120_000))
+			# 第四时代起识字率高的地方少生，进入第四时代后慢慢到位（人口转型：先是死亡率降，后是出生率降）
+			if st.era >= 4:
+				birth = JCMath.mulppm(birth, PPM - JCMath.mulppm(st.literacy[r], JCMath.mulppm(FERTILITY_CUT_MAX, fert_ramp)))
 			birth = JCMath.mulppm(birth, clampi(f, 600_000, PPM))
 			# 生计紧：没活干、日子紧的人家晚婚少育（失业三成时少生一成五；日用只有期待一半时再少一成）
 			var sup_b: int = JCMath.mulppm(p, econ.work_ppm(c))
@@ -123,7 +130,7 @@ func demography() -> void:
 			birth = JCMath.mulppm(birth, 900_000 + JCMath.mulppm(mini(st.comfort[k], PPM), 100_000))
 			var death: int = 8_600
 			# 时代本身带来的普遍改善（吃得更好、常识与防疫）：不靠设施，第四时代才有
-			death = JCMath.mulppm(death, PPM - ERA_DEATH_CUT[clampi(st.era, 1, 4)])
+			death = JCMath.mulppm(death, PPM - era_cut)
 			# 医药与卫生降死亡率：前现代效果有限（第一时代至多一成），到第四时代才显著
 			death = JCMath.mulppm(death, PPM - JCMath.mulppm(h, 50_000 + (st.era - 1) * 70_000) - JCMath.mulppm(s, 40_000 + (st.era - 1) * 30_000))
 			if f < 950_000:
@@ -134,6 +141,25 @@ func demography() -> void:
 			st.pop[k] = maxi(0, p + b_n - d_n)
 	_mobility()
 	_migration()
+
+
+## 时代带来的普遍死亡率下降：随进入那个时代后的普及（约二十五年）慢慢到位，不在进时代那一季一下子降下来。
+func era_death_cut() -> int:
+	var cut: int = 0
+	for e: int in range(2, 5):
+		if st.era < e:
+			break
+		cut += JCMath.mulppm(ERA_DEATH_CUT[e] - ERA_DEATH_CUT[e - 1], econ.adoption(e))
+	return cut
+
+
+## 第四时代少生到位了几成：进入第四时代那一季起，FERTILITY_RAMP_Q 季里从零涨到满。
+func fertility_ramp() -> int:
+	if st.era < 4:
+		return 0
+	var q0: int = st.era_q[4] if st.era_q.size() > 4 and st.era_q[4] >= 0 else st.q
+	@warning_ignore("integer_division")
+	return clampi((st.q - q0) * PPM / FERTILITY_RAMP_Q, 0, PPM)
 
 
 func _mobility() -> void:

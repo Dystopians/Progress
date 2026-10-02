@@ -26,6 +26,8 @@ var ct: JCContent
 var st: JCState
 var mods: JCMods
 var econ: JCEconomy
+## 政局（以工代赈）；没接上时为空
+var politics: JCPolitics = null
 
 
 func setup(p_ct: JCContent, p_st: JCState, p_mods: JCMods, p_econ: JCEconomy) -> void:
@@ -154,8 +156,7 @@ func check_site(b: int, r: int, levels: int) -> String:
 			return "reason.no_land"
 	var dep: String = ct.b_deposit[b]
 	if dep != "":
-		var dcap: int = int(ct.r_deposit[r].get(dep, 0))
-		if deposit_in_use(r, b) + levels > dcap:
+		if deposit_in_use(r, b) + levels > deposit_cap(r, dep):
 			return "reason.no_deposit"
 	if ct.b_coast[b] == 1 and ct.r_coast[r] != 1:
 		return "reason.no_coast"
@@ -163,6 +164,24 @@ func check_site(b: int, r: int, levels: int) -> String:
 	if (id == "canal" or id == "watermill") and ct.r_river[r] != 1:
 		return "reason.no_river"
 	return ""
+
+
+## 某地区某种矿眼下能开到几级：开局的储量 × 采矿技术的倍数。矿物（煤、铁、铜、瓷土……）第三时代蒸汽抽水、
+## 打深井，最多到 1.6 倍；第四时代机械化开采与地质勘探，最多到 2.5 倍；石油第四时代勘探到 2.5 倍；
+## 水力、盐场看天看海，不变。倍数随进入时代后的普及慢慢涨上去。
+const DEEP_DEPOSITS: PackedStringArray = ["coal", "iron", "copper", "sulfur", "phosphate", "kaolin", "bauxite", "stone", "sand"]
+
+
+func deposit_cap(r: int, dep: String) -> int:
+	var base: int = int(ct.r_deposit[r].get(dep, 0))
+	if base <= 0:
+		return 0
+	var mult: int = PPM
+	if DEEP_DEPOSITS.has(dep):
+		mult += JCMath.mulppm(600_000, econ.adoption(3)) + JCMath.mulppm(900_000, econ.adoption(4))
+	elif dep == "oil":
+		mult += JCMath.mulppm(1_500_000, econ.adoption(4))
+	return JCMath.mulppm(base, mult)
 
 
 func land_in_use(r: int, lt: int) -> int:
@@ -322,6 +341,14 @@ func plan_jobs() -> void:
 		gov_left -= v2
 		if v2 > 0:
 			econ.add_job(-1, l, st.l_region[l], v2, 0)
+	# 以工代赈（经济危机时选了「以工代赈」）：国库出钱办公共工程，按各地区闲人多少分摊；
+	# 只雇工匠、买建材，不留下建筑（after_economy 跳过不属于任何建筑与地标的工程）
+	if politics != null:
+		for pw: Variant in politics.public_works():
+			var v3: int = mini(int((pw as Array)[1]), gov_left)
+			gov_left -= v3
+			if v3 > 0:
+				econ.add_job(-1, -1, int((pw as Array)[0]), v3, 0)
 
 
 func _private_funds() -> int:
@@ -467,9 +494,35 @@ func market_room(g: int) -> int:
 			room += maxi(0, int(wants[ct.g_id[g]][1]) / 2 - st.f_exp[g] / maxi(1, _wanters(g)))
 	if st.premium[g] > 100_000:
 		room += JCMath.mulppm(st.f_demand[g], st.premium[g] / 4)
+	# 第三时代起，闲人越多，民间越敢先把厂建起来：招进来的人领了工钱，转过来就是销路
+	# （每闲一成，多看一个百分点的需求，最多三个百分点）。积压了照样会压价、减产，不会无限建下去。
+	if st.era >= 3:
+		room += JCMath.mulppm(st.f_demand[g], mini(30_000, JCMath.mulppm(_idle_share(), 100_000)))
 	# 库存积压则减
 	room -= maxi(0, st.stock[g] - st.f_demand[g])
 	return room
+
+
+## 全国（士绅之外）可干活的人里闲着的比例，按季缓存。
+var _idle_q: int = -1
+var _idle_v: int = 0
+
+
+func _idle_share() -> int:
+	if _idle_q == st.q:
+		return _idle_v
+	_idle_q = st.q
+	var sup: int = 0
+	var emp: int = 0
+	for k: int in st.pop.size():
+		var c: int = k % ct.c_n
+		if c == econ.CL_G:
+			continue
+		var s: int = JCMath.mulppm(st.pop[k], econ.work_ppm(c))
+		sup += s
+		emp += mini(st.employed[k], s)
+	_idle_v = 0 if sup <= 0 else JCMath.ratio_ppm(maxi(0, sup - emp), sup)
+	return _idle_v
 
 
 ## 在建（和改造中）的产能：每季还会多出多少该商品。
@@ -702,8 +755,13 @@ func upgrade_sane(m_old: int, m_new: int, levels: int = 1) -> bool:
 
 
 ## 某商品眼下的富余：上季产量与进口减去各方用掉的，加半数库存（易腐的就只看当季富余）。
+## 生产用料排在居民之前：居民的日用（电、布、器物……）新厂开起来就让出来，不算占着；
+## 只有温饱（口粮、盐）那部分是先给居民留足的，要扣掉。原来连居民的日用也扣，电永远「没有富余」，
+## 用电的厂（电缆、电机、铝、电炉钢……）一家也建不起来，现代工业起不来。
 func input_room(g: int) -> int:
-	var flow: int = st.f_prod[g] + st.f_imp[g] - st.f_use[g] - st.f_hh[g] - st.f_gov[g] - st.f_exp[g]
+	var ess: int = econ.reserve_ess[g] if econ.reserve_ess.size() > g else st.f_hh[g]
+	var hh_keep: int = mini(st.f_hh[g], ess)
+	var flow: int = st.f_prod[g] + st.f_imp[g] - st.f_use[g] - hh_keep - st.f_gov[g] - st.f_exp[g]
 	@warning_ignore("integer_division")
 	return maxi(0, flow) + st.stock[g] / 2
 
@@ -829,6 +887,10 @@ func _roi(b: int, m: int, r: int) -> int:
 			continue
 		var k: int = r * C + c
 		var idle: int = maxi(0, JCMath.mulppm(st.pop[k], econ.work_ppm(c)) - st.employed[k])
+		# 招工匠时，本地区村里闲着的农户也招得来（进城做工，阶层流动随后把他们算成工匠），按六成算
+		if c == econ.CL_A:
+			var kp: int = r * C + econ.CL_P
+			idle += JCMath.mulppm(maxi(0, JCMath.mulppm(st.pop[kp], econ.work_ppm(econ.CL_P)) - st.employed[kp]), 600_000)
 		util = mini(util, maxi(300_000, JCMath.ratio_ppm(idle, need)))
 	# 水力：本地区水力不够时，新开的水力作坊只能开到五成
 	if ct.m_water[m] == 1 and econ.water_cov.size() > r:
@@ -846,6 +908,9 @@ func _roi(b: int, m: int, r: int) -> int:
 		var f: int = econ.in_fill[g] if econ.in_fill.size() > g else PPM
 		if sh[k2] < JCEconomy.MAIN_INPUT_PPM:
 			f = PPM - JCMath.mulppm(maxi(sh[k2], JCEconomy.MINOR_INPUT_FLOOR), PPM - f)
+		elif f < 500_000:
+			# 主料连一半都不到：再开一家只会一起停工、还占着人手，不投
+			f = 0
 		elif f < 700_000:
 			# 主料眼下就不够七成：再开一家只会一起挨饿，按平方重罚
 			f = JCMath.mulppm(f, f)

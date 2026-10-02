@@ -86,6 +86,37 @@ func test_every_overlay_builds_with_text() -> void:
 	eq_int(jc_miss.size(), 0, "各覆盖层没有缺文案：" + ", ".join(jc_miss.slice(0, 8)))
 
 
+## 政治改革页签与政局弹窗（docs/61）：有改革、革命、经济危机、待决关口时都建得起来，文案不缺。
+func test_politics_tab_and_situation_overlay_build_with_text() -> void:
+	var s: JcSession = JcSession.new()
+	check(s.new_game(13), "另开一局")
+	s.game.autosave = false
+	s.end_turn()
+	var g: JCGame = s.game
+	g.st.era = 3
+	g.st.world_era = 3
+	g.st.legitimacy = 200_000
+	g.st.pres[0] = 1_000_000
+	g.sim.politics.step()
+	g.sim.politics._start_depression()
+	check(g.situation_asks() >= 2, "革命与经济危机都在等着拿主意")
+	JcPagePolicy.want_tab = "politics"
+	var pg: JcPage = JcPagePolicy.new()
+	pg.setup(s, null, "policy")
+	pg.refresh()
+	ge_int(pg.content.get_child_count(), 4, "政治改革页签建起来了")
+	pg.free()
+	var o: JcOverlay = JcSituationOverlay.new()
+	o.setup(s, null, "situation", {})
+	ge_int(o.body.get_child_count(), 2, "政局弹窗列出待决的关口")
+	o.free()
+	var jc_miss: PackedStringArray = PackedStringArray()
+	for k: String in JwText.missing_keys():
+		if k.begins_with("jc."):
+			jc_miss.append(k)
+	eq_int(jc_miss.size(), 0, "政治改革没有缺文案：" + ", ".join(jc_miss.slice(0, 8)))
+
+
 func test_v2_ui_only_goes_through_the_facade() -> void:
 	var files: PackedStringArray = PackedStringArray()
 	_gd_files("res://ui/campaign", files)

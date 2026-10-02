@@ -1,7 +1,7 @@
 ## v2 每季结算（docs/57）。一季的顺序：
 ##   命令 → 政令期限与限时修正 → 修正汇总 → 年成 → 国家开支到位率 → 常平仓与垦荒
 ##   → 营造登记 → 经济结算 → 营造推进 → 常平仓收储、捐纳、所得税 → 治理与征收率
-##   → 人口、识字、生活与民怨 → 研究、时代、世界进程 → 民间投资与收缩 → 事件 → 危机 → 记录
+##   → 人口、识字、生活与民怨 → 研究、时代、世界进程 → 民间投资与收缩 → 事件 → 政局（docs/61）→ 危机 → 记录
 ## 每季末核对：货币守恒（Σ 储蓄 + 国库 == 开局货币 + 累计白银净流入）、人口与库存非负。
 class_name JCSim
 extends RefCounted
@@ -17,6 +17,7 @@ var inv: JCInvest = JCInvest.new()
 var soc: JCSociety = JCSociety.new()
 var world: JCWorld = JCWorld.new()
 var cmd: JCCommands = JCCommands.new()
+var politics: JCPolitics = JCPolitics.new()
 var last_results: Array = []
 var last_error: String = ""
 
@@ -32,7 +33,9 @@ func _wire() -> void:
 	inv.setup(ct, st, mods, econ)
 	soc.setup(ct, st, mods, econ, rng)
 	world.setup(ct, st, mods, econ, soc, rng)
-	cmd.setup(ct, st, mods, inv, world)
+	politics.setup(ct, st, mods, econ, soc, world, rng)
+	inv.politics = politics
+	cmd.setup(ct, st, mods, inv, world, politics)
 	mods.rebuild(st, ct)
 
 
@@ -151,6 +154,10 @@ static func new_state(ct: JCContent, seed: int) -> JCState:
 	st.cr_stage = JCMath.zeros(3)
 	st.cr_since = JCMath.zeros(3)
 	st.cr_bad = JCMath.zeros(3)
+	st.sit = []
+	st.sit_cool = JCMath.zeros(JCPolitics.KINDS.size())
+	st.pres = JCMath.zeros(2)
+	st.reg_hist = []
 	_seed_flows(ct, st)
 	st.money0 = JCMath.sum(st.savings) + st.treasury
 	return st
@@ -252,6 +259,7 @@ func advance(cmds: Array) -> Dictionary:
 	inv.closures()
 	inv.private_invest()
 	world.events()
+	politics.step()
 	econ.cover_treasury()
 	soc.crisis()
 	_record()

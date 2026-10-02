@@ -29,7 +29,8 @@ func overview() -> Dictionary:
 				"since": st.cr_since[t]})
 	return {
 		"pop": int(l.get("pop", 0)), "gdp": int(l.get("gdp", 0)), "living": int(l.get("living", 0)),
-		"unemp": int(l.get("unemp_ppm", 0)), "treasury": st.treasury, "balance": int(f["balance"]),
+		"unemp": int(l.get("unemp_ppm", 0)), "unemp_town": int(l.get("unemp_town_ppm", 0)),
+		"unemp_rural": int(l.get("unemp_rural_ppm", 0)), "treasury": st.treasury, "balance": int(f["balance"]),
 		"rev": int(f["rev"]), "exp": int(f["exp"]), "debt": st.debt, "legitimacy": st.legitimacy,
 		"prestige": st.prestige, "era": st.era, "world_era": st.world_era, "points": st.points,
 		"support": Array(st.support), "classes": Array(g.ct.c_id), "crisis": crisis, "hist": hist,
@@ -198,8 +199,11 @@ func region_detail(rid: String) -> Dictionary:
 				"comfort": st.comfort[k], "unrest": st.unrest[k], "wage": st.wage[k],
 				"income_pc": st.income[k] / maxi(1, st.pop[k] / 1000),
 				"unemp": 0 if sup <= 0 else JCMath.ratio_ppm(maxi(0, sup - st.employed[k]), sup)})
-	return {"region": reg, "buildings": list, "land": land, "classes": classes,
-			"deposits": ct.r_deposit[r].duplicate()}
+	# 矿藏按眼下的采矿技术能开到的级数（第三、四时代比开局多）
+	var deps: Dictionary = {}
+	for dk: Variant in ct.r_deposit[r].keys():
+		deps[String(dk)] = g.sim.inv.deposit_cap(r, String(dk))
+	return {"region": reg, "buildings": list, "land": land, "classes": classes, "deposits": deps}
 
 
 func stack_view(i: int) -> Dictionary:
@@ -667,6 +671,8 @@ func policy() -> Dictionary:
 	var decrees: Array = []
 	for d: int in ct.decrees.size():
 		var dd: Dictionary = ct.decrees[d]
+		if String(dd["id"]) == "regime":
+			continue
 		var tech: String = String(dd.get("tech", ""))
 		var locked: bool = st.era < int(dd.get("era", 1)) or (tech != "" and st.t_done[int(ct.tidx.get(tech, 0))] != 1)
 		# 分档政令每一档的门槛：{era, tech, locked}
@@ -687,6 +693,117 @@ func policy() -> Dictionary:
 			"rev": Array(st.rev), "exp": Array(st.exp),
 			"fiscal": g.analyst.fiscal(), "loan_limit": g.sim.cmd.loan_limit(), "debt": st.debt,
 			"rate": JCMath.mulppm(st.debt_rate_ppm, g.sim.mods.mult_ppm("interest_rate"))}
+
+
+# ════════════════════════════ 政治改革（docs/61） ═════════════════════════
+## 政体（各政体的效果与民心）、可推行的改革、进行中的局势（含待决关口与各选项能不能选）、
+## 革命压力与列强压力（及每季的来由）、政体更替史。
+func politics() -> Dictionary:
+	var ct: JCContent = g.ct
+	var st: JCState = g.st
+	var pol: JCPolitics = g.sim.politics
+	var cur: int = pol.regime()
+	var d_reg: int = int(ct.didx.get("regime", -1))
+	var effs: Array = (ct.decrees[d_reg] as Dictionary).get("effects", []) if d_reg >= 0 else []
+	var sups: Array = (ct.decrees[d_reg] as Dictionary).get("support", []) if d_reg >= 0 else []
+	var seen: Dictionary = {cur: true}
+	for h: Variant in st.reg_hist:
+		seen[int((h as Dictionary)["from"])] = true
+		seen[int((h as Dictionary)["to"])] = true
+	var regimes: Array = []
+	for i: int in ct.regimes.size():
+		var rd: Dictionary = ct.regimes[i]
+		regimes.append({"id": String(rd["id"]), "name": String(rd["name"]), "desc": String(rd.get("desc", "")),
+				"era": int(rd.get("era", 1)), "current": i == cur, "seen": seen.has(i),
+				"effects": effs[i] if i < effs.size() else [], "support": sups[i] if i < sups.size() else {}})
+	var cur_id: String = pol.regime_id()
+	var reforms: Array = []
+	for rf: Dictionary in ct.reforms:
+		var to: int = pol.reform_target(rf)
+		var why: String = pol.reform_check(String(rf["id"]))
+		reforms.append({"id": String(rf["id"]), "name": String(rf["name"]), "desc": String(rf.get("desc", "")),
+				"from": rf.get("frm", []), "here": (rf.get("frm", []) as Array).has(cur_id),
+				"to": pol.regime_id(to) if to >= 0 else "", "era": int(rf.get("era", 1)), "tech": String(rf.get("tech", "")),
+				"quarters": int(rf.get("quarters", 12)), "cost_start": int(rf.get("cost_start_li", 0)),
+				"cost_q": int(rf.get("cost_q_li", 0)), "pro": rf.get("pro", []), "con": rf.get("con", []),
+				"ok": why == "", "reason": why, "rate": pol.reform_rate(rf)})
+	var sits: Array = []
+	for s: Variant in st.sit:
+		sits.append(_situation(s as Dictionary))
+	var pres: Array = [
+		{"kind": "revolution", "v": st.pres[0] if st.pres.size() > 0 else 0, "on": st.era >= 3,
+				"factors": pol.revolution_factors(), "cool": pol.cool_until("revolution")},
+		{"kind": "foreign", "v": st.pres[1] if st.pres.size() > 1 else 0, "on": st.world_era >= 3,
+				"factors": pol.foreign_factors(), "cool": pol.cool_until("invasion")},
+	]
+	var hist: Array = []
+	for h2: Variant in st.reg_hist:
+		var hd: Dictionary = h2
+		hist.append({"q": int(hd["q"]), "from": pol.regime_id(int(hd["from"])), "to": pol.regime_id(int(hd["to"])),
+				"how": String(hd.get("how", ""))})
+	return {"regime": g.analyst.regime_profile(), "regime_id": cur_id, "regimes": regimes, "reforms": reforms,
+			"situations": sits, "pressures": pres, "history": hist, "treaty_until": st.treaty_until,
+			"reform_cool": pol.cool_until("reform"), "q": st.q, "urban_unemp": pol.urban_unemployment(),
+			"army": pol.army(), "war_strength": pol.war_strength(), "dep_cool": pol.cool_until("depression")}
+
+
+## 一个进行中的局势：进度、每季走势、待决关口的选项（花费、能不能选、原因）。
+func _situation(s: Dictionary) -> Dictionary:
+	var ct: JCContent = g.ct
+	var st: JCState = g.st
+	var pol: JCPolitics = g.sim.politics
+	var k: String = String(s.get("k", ""))
+	var out: Dictionary = {"sid": int(s["sid"]), "k": k, "p": int(s.get("p", 0)), "q0": int(s.get("q0", 0)),
+			"reform": String(s.get("id", "")), "to": pol.regime_id(int(s["to"])) if s.has("to") else "",
+			"agg": s.get("agg", []), "left": int(s.get("left", 0)), "opt": String(s.get("opt", "")),
+			"stage": int(s.get("stage", 0)), "rate": 0, "marks": [], "ask": {}}
+	match k:
+		"reform":
+			var rf_i: int = int(ct.refidx.get(String(s.get("id", "")), -1))
+			if rf_i >= 0:
+				var rf: Dictionary = ct.reforms[rf_i]
+				out["rate"] = pol.reform_rate(rf)
+				out["pro"] = rf.get("pro", [])
+				out["con"] = rf.get("con", [])
+				out["cost_q"] = int(rf.get("cost_q_li", 0))
+			var marks: Array = []
+			for sg: Dictionary in ct.reform_stages:
+				marks.append(int(sg["at"]))
+			out["marks"] = marks
+		"revolution":
+			out["rate"] = pol.revolution_rate()
+		"war":
+			out["rate"] = pol.war_drift(s)
+			out["enemy"] = int(s.get("enemy", 0))
+			out["ours"] = pol.war_strength()
+			out["left_q"] = maxi(0, JCPolitics.WAR_MAX_Q - (st.q - int(s.get("q0", st.q))))
+		"invasion":
+			out["enemy"] = int(s.get("enemy", 0))
+			out["ours"] = pol.war_strength()
+		"depression":
+			out["works_q"] = pol.works_per_q()
+	var ask: Dictionary = s.get("ask", {})
+	if not ask.is_empty():
+		var set_id: String = String(ask.get("set", ""))
+		var opts: Array = []
+		for o: Variant in pol.option_set(set_id):
+			var od: Dictionary = o
+			var oid: String = String(od["id"])
+			var chk: Dictionary = g.sim.cmd.check({"kind": "situation", "sid": int(s["sid"]), "option": oid})
+			opts.append({"id": oid, "cost": pol.option_cost(od), "ok": bool(chk.get("ok", false)),
+					"reason": String(chk.get("reason", "")), "def": od, "works_q": pol.works_per_q() if oid == "works" else 0})
+		out["ask"] = {"set": set_id.trim_prefix("stage:"), "until": int(ask.get("until", 0)), "options": opts,
+				"default": pol.option_default(set_id)}
+	return out
+
+
+## 等着拿主意的局势（给弹窗与右侧栏）。
+func pending_situations() -> Array:
+	var out: Array = []
+	for s: Variant in g.st.sit:
+		if not ((s as Dictionary).get("ask", {}) as Dictionary).is_empty():
+			out.append(_situation(s as Dictionary))
+	return out
 
 
 # ════════════════════════════ 民生 ════════════════════════════════════════
@@ -879,6 +996,76 @@ func annals() -> Dictionary:
 			"chron.treaty":
 				it["art_type"] = "milestone"
 				it["art_id"] = "treaty"
+			"chron.regime_change":
+				it["big"] = true
+				it["tone"] = "teal.core"
+				it["art_type"] = "milestone"
+				var how: String = String(a.get("how", ""))
+				var to_id: String = String(a.get("regime", ""))
+				it["art_id"] = "regime_change"
+				if to_id == "warlords":
+					it["art_id"] = "warlords"
+					it["tone"] = "ochre.hot"
+				elif to_id == "protectorate":
+					it["art_id"] = "protectorate"
+					it["tone"] = "ochre.hot"
+				elif String(a.get("regime_from", "")) == "protectorate":
+					it["art_id"] = "independence"
+				elif how == "revolution" and to_id == "junta":
+					it["art_id"] = "coup"
+					it["tone"] = "ochre.hot"
+				elif how == "revolution" or how == "concession":
+					it["art_id"] = "revolution"
+			"chron.reform_start", "chron.reform_stage", "chron.reform_done", "chron.reform_failed", "chron.reform_abandoned":
+				it["art_type"] = "reform"
+				it["art_id"] = String(a.get("reform", ""))
+				it["tone"] = "ochre.hot" if key == "chron.reform_failed" else "text.secondary"
+			"chron.revolution_start":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "situation"
+				it["art_id"] = "revolution"
+			"chron.revolution_crushed":
+				it["art_type"] = "milestone"
+				it["art_id"] = "revolution_crushed"
+			"chron.invasion_start":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "situation"
+				it["art_id"] = "invasion"
+			"chron.war_start":
+				it["art_type"] = "situation"
+				it["art_id"] = "war"
+			"chron.war_won":
+				it["big"] = true
+				it["tone"] = "teal.core"
+				it["art_type"] = "milestone"
+				it["art_id"] = "war_won"
+			"chron.war_lost":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "milestone"
+				it["art_id"] = "war_lost"
+			"chron.treaty_unequal":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "milestone"
+				it["art_id"] = "unequal_treaty"
+			"chron.selfstrength":
+				it["art_type"] = "milestone"
+				it["art_id"] = "selfstrength"
+			"chron.depression_start":
+				it["big"] = true
+				it["tone"] = "ochre.hot"
+				it["art_type"] = "situation"
+				it["art_id"] = "depression"
+			"chron.depression_end":
+				it["art_type"] = "milestone"
+				it["art_id"] = "recovery"
+				it["tone"] = "teal.core"
+			"chron.situation_answer":
+				it["art_type"] = "situation"
+				it["art_id"] = String(a.get("sit", ""))
 			"chron.partner_appear":
 				for p: int in ct.partners.size():
 					if String(ct.partners[p]["id"]) == String(a.get("partner", "")):

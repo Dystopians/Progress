@@ -102,7 +102,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "grain": 115200000
+      "grain": 105600000
      },
      "inp": {
       "machinery": 30000,
@@ -110,7 +110,7 @@
       "fertilizer": 190000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -192,7 +192,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "beans": 98400000
+      "beans": 90200000
      },
      "inp": {
       "machinery": 30000,
@@ -200,7 +200,7 @@
       "fertilizer": 166000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -282,7 +282,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "cotton": 21600000
+      "cotton": 19800000
      },
      "inp": {
       "machinery": 30000,
@@ -290,7 +290,7 @@
       "fertilizer": 60000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -372,7 +372,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "hemp": 33600000
+      "hemp": 30800000
      },
      "inp": {
       "machinery": 30000,
@@ -380,7 +380,7 @@
       "fertilizer": 76000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -462,7 +462,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "oilseed": 48000000
+      "oilseed": 44000000
      },
      "inp": {
       "machinery": 30000,
@@ -470,7 +470,7 @@
       "fertilizer": 96000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -552,7 +552,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "vegetables": 384000000
+      "vegetables": 352000000
      },
      "inp": {
       "machinery": 30000,
@@ -560,7 +560,7 @@
       "fertilizer": 563000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -693,7 +693,7 @@
      "era_end": 4,
      "tech": "mechanized_farming",
      "out": {
-      "rice": 120000000
+      "rice": 110000000
      },
      "inp": {
       "machinery": 30000,
@@ -701,7 +701,7 @@
       "fertilizer": 196000
      },
      "labor": {
-      "peasant": 7293
+      "peasant": 9724
      },
      "water": false,
      "upgrade_cost_ppm": 400000,
@@ -1304,7 +1304,8 @@
       "coal": 2000000
      },
      "labor": {
-      "artisan": 5000
+      "artisan": 3000,
+      "peasant": 2000
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -1326,7 +1327,8 @@
       "electricity": 150000
      },
      "labor": {
-      "artisan": 3000
+      "artisan": 1800,
+      "peasant": 1200
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -1400,7 +1402,8 @@
       "coal": 2000000
      },
      "labor": {
-      "artisan": 5000
+      "artisan": 3000,
+      "peasant": 2000
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -1422,7 +1425,8 @@
       "electricity": 150000
      },
      "labor": {
-      "artisan": 3000
+      "artisan": 1800,
+      "peasant": 1200
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -1666,7 +1670,8 @@
       "power": 80000
      },
      "labor": {
-      "artisan": 6000
+      "artisan": 3500,
+      "peasant": 2500
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -1688,7 +1693,8 @@
       "electricity": 200000
      },
      "labor": {
-      "artisan": 4000
+      "artisan": 2200,
+      "peasant": 1800
      },
      "water": false,
      "upgrade_cost_ppm": 350000,
@@ -4925,8 +4931,32 @@
      "note": ""
     },
     {
+     "id": "fert_ammonia",
+     "name": "合成氨（煤制）",
+     "era": 3,
+     "era_end": 4,
+     "tech": "",
+     "out": {
+      "fertilizer": 12000000
+     },
+     "inp": {
+      "coal": 5000000,
+      "power": 40000
+     },
+     "labor": {
+      "artisan": 1700,
+      "gentry": 40,
+      "merchant": 60
+     },
+     "water": false,
+     "upgrade_cost_ppm": 350000,
+     "upgrade_q": 2,
+     "eff_ppm": 1000000,
+     "note": ""
+    },
+    {
      "id": "fert_synthetic",
-     "name": "合成氨",
+     "name": "合成氨（石化）",
      "era": 4,
      "era_end": 4,
      "tech": "petrochemistry",
@@ -4934,7 +4964,6 @@
       "fertilizer": 40000000
      },
      "inp": {
-      "phosphate": 20000000,
       "refined_fuel": 6000000,
       "electricity": 300000
      },

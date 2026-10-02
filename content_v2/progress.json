@@ -763,8 +763,14 @@
     "dryfarm",
     "paddy"
    ],
-   "effects": [],
-   "desc": "农田可改为机械化种法，用工减少七成。"
+   "effects": [
+    {
+     "target": "farm_yield",
+     "value": 20,
+     "scope": ""
+    }
+   ],
+   "desc": "农田可改为机械化种法，用工减少六成；良种与机井灌溉跟着推广，各地农田增产两成。"
   },
   {
    "id": "automation",
@@ -1889,14 +1895,19 @@
    "era": 1,
    "era_end": 4,
    "kind": "level",
-   "desc": "国家由谁做主。君主集权最稳当；开明君主肯听读书人与商贾的话，研究略快；君主立宪、议会共和让商贾更敢投资；社会主义由国家主导生产，工人农户拥护，商贾士绅反对，民间投资大减。换一次要等四年才能再换。",
+   "desc": "国家由谁做主。政体不能直接下令更换：在「政治改革」里推行改革，或者遇上革命、政变、战败，才会改变。",
    "tech": "",
    "levels": [
     "君主集权",
     "开明君主",
     "君主立宪",
     "议会共和",
-    "社会主义"
+    "社会主义",
+    "商人共和",
+    "军政府",
+    "军阀割据",
+    "一党执政",
+    "保护国"
    ],
    "default": 0,
    "cost_once_li": 0,
@@ -1951,6 +1962,116 @@
       "value": -15,
       "scope": "artisan"
      }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": 20,
+      "scope": ""
+     },
+     {
+      "target": "customs_eff",
+      "value": 10,
+      "scope": ""
+     },
+     {
+      "target": "export_price",
+      "value": 5,
+      "scope": "all"
+     }
+    ],
+    [
+     {
+      "target": "unrest",
+      "value": -10,
+      "scope": ""
+     },
+     {
+      "target": "admin_eff",
+      "value": 5,
+      "scope": ""
+     },
+     {
+      "target": "research_speed",
+      "value": -10,
+      "scope": ""
+     },
+     {
+      "target": "invest_prop",
+      "value": -10,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "admin_eff",
+      "value": -25,
+      "scope": ""
+     },
+     {
+      "target": "tax_eff",
+      "value": -15,
+      "scope": ""
+     },
+     {
+      "target": "land_tax_eff",
+      "value": -15,
+      "scope": ""
+     },
+     {
+      "target": "hidden_growth",
+      "value": 50,
+      "scope": ""
+     },
+     {
+      "target": "unrest",
+      "value": 10,
+      "scope": ""
+     },
+     {
+      "target": "invest_prop",
+      "value": -20,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": 5,
+      "scope": ""
+     },
+     {
+      "target": "research_speed",
+      "value": 5,
+      "scope": ""
+     },
+     {
+      "target": "admin_eff",
+      "value": 5,
+      "scope": ""
+     },
+     {
+      "target": "unrest",
+      "value": -5,
+      "scope": ""
+     }
+    ],
+    [
+     {
+      "target": "invest_prop",
+      "value": 10,
+      "scope": ""
+     },
+     {
+      "target": "research_speed",
+      "value": -10,
+      "scope": ""
+     },
+     {
+      "target": "export_price",
+      "value": -10,
+      "scope": "all"
+     }
     ]
    ],
    "support": [
@@ -1975,6 +2096,36 @@
      "peasant": 6,
      "merchant": -15,
      "gentry": -10
+    },
+    {
+     "merchant": 12,
+     "artisan": 2,
+     "peasant": -4,
+     "gentry": -6
+    },
+    {
+     "gentry": 2,
+     "merchant": -4,
+     "artisan": -6,
+     "peasant": -2
+    },
+    {
+     "peasant": -6,
+     "artisan": -6,
+     "merchant": -6,
+     "gentry": -6
+    },
+    {
+     "artisan": 3,
+     "peasant": 2,
+     "merchant": -4,
+     "gentry": -4
+    },
+    {
+     "merchant": 2,
+     "artisan": -6,
+     "peasant": -6,
+     "gentry": -8
     }
    ],
    "cooldown": 16,
@@ -1983,14 +2134,24 @@
     2,
     3,
     3,
-    4
+    4,
+    2,
+    2,
+    3,
+    4,
+    3
    ],
    "level_tech": [
     "",
-    "movable_type",
-    "telegraph",
-    "public_education",
-    "power_grid"
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
    ]
   },
   {
@@ -4626,5 +4787,600 @@
    "chance_ppm": 50000,
    "cooldown": 80
   }
- ]
+ ],
+ "regimes": [
+  {
+   "id": "empire",
+   "name": "君主集权",
+   "noun": "帝国",
+   "era": 1,
+   "desc": "皇帝一人独断，官僚层层执行。最稳当，也最难变。"
+  },
+  {
+   "id": "enlightened",
+   "name": "开明君主",
+   "noun": "王朝",
+   "era": 2,
+   "desc": "君主肯听读书人与商贾的话：研究略快，衙门更有章法。"
+  },
+  {
+   "id": "constitutional",
+   "name": "君主立宪",
+   "noun": "立宪王国",
+   "era": 3,
+   "desc": "有宪法、有议会，君主保留尊位：商贾敢投资，借钱也便宜。"
+  },
+  {
+   "id": "republic",
+   "name": "议会共和",
+   "noun": "共和国",
+   "era": 3,
+   "desc": "不再有君主，议会与内阁执政：商贾、工匠拥护，士绅失势。"
+  },
+  {
+   "id": "socialist",
+   "name": "社会主义",
+   "noun": "工人国家",
+   "era": 4,
+   "desc": "国家主导生产，工人农户拥护，商贾士绅反对，民间投资大减。"
+  },
+  {
+   "id": "merchant_republic",
+   "name": "商人共和",
+   "noun": "商人共和国",
+   "era": 2,
+   "desc": "富商巨贾组成议会掌国：投资与外贸兴旺，农户与士绅被冷落。"
+  },
+  {
+   "id": "junta",
+   "name": "军政府",
+   "noun": "军政府",
+   "era": 2,
+   "desc": "将领掌权，枪杆子说了算：秩序好了，民怨被压下去，研究与投资都受拖累。"
+  },
+  {
+   "id": "warlords",
+   "name": "军阀割据",
+   "noun": "割据之国",
+   "era": 3,
+   "desc": "中央号令不出京城，各地拥兵自重：税收不上来，隐田疯长，人人不安。要「统一全国」才能结束。"
+  },
+  {
+   "id": "one_party",
+   "name": "一党执政",
+   "noun": "党治国家",
+   "era": 4,
+   "desc": "一个政党统揽全局，集中力量办大事：动员力强，异议被压住。"
+  },
+  {
+   "id": "protectorate",
+   "name": "保护国",
+   "noun": "保护国",
+   "era": 3,
+   "desc": "战败后受列强控制：关税、外交由人做主，外国资本涌入，百姓屈辱。要「收回主权」才能结束。"
+  }
+ ],
+ "reforms": [
+  {
+   "id": "enlighten",
+   "name": "开明改革",
+   "frm": [
+    "empire"
+   ],
+   "to": {
+    "any": "enlightened"
+   },
+   "era": 2,
+   "tech": "movable_type",
+   "quarters": 12,
+   "cost_start_li": 200000000,
+   "cost_q_li": 30000000,
+   "pro": [
+    "merchant",
+    "gentry"
+   ],
+   "con": [],
+   "desc": "开言路、设书局，延揽读书人与商贾议政。"
+  },
+  {
+   "id": "merchant_rule",
+   "name": "商人议政",
+   "frm": [
+    "enlightened",
+    "constitutional"
+   ],
+   "to": {
+    "any": "merchant_republic"
+   },
+   "era": 2,
+   "tech": "banking",
+   "quarters": 12,
+   "cost_start_li": 500000000,
+   "cost_q_li": 60000000,
+   "pro": [
+    "merchant"
+   ],
+   "con": [
+    "gentry",
+    "peasant"
+   ],
+   "desc": "让富商组成的议会掌握国政，以商立国。"
+  },
+  {
+   "id": "constitution",
+   "name": "立宪运动",
+   "frm": [
+    "empire",
+    "enlightened"
+   ],
+   "to": {
+    "any": "constitutional"
+   },
+   "era": 3,
+   "tech": "telegraph",
+   "quarters": 16,
+   "cost_start_li": 600000000,
+   "cost_q_li": 80000000,
+   "pro": [
+    "merchant",
+    "artisan"
+   ],
+   "con": [
+    "gentry"
+   ],
+   "desc": "制定宪法、召开议会，君主保留尊位。"
+  },
+  {
+   "id": "republic",
+   "name": "共和改制",
+   "frm": [
+    "constitutional",
+    "enlightened",
+    "merchant_republic"
+   ],
+   "to": {
+    "any": "republic"
+   },
+   "era": 3,
+   "tech": "public_education",
+   "quarters": 16,
+   "cost_start_li": 800000000,
+   "cost_q_li": 100000000,
+   "pro": [
+    "merchant",
+    "artisan",
+    "peasant"
+   ],
+   "con": [
+    "gentry"
+   ],
+   "desc": "废除君位，由议会与内阁治国。"
+  },
+  {
+   "id": "civil_rule",
+   "name": "还政于民",
+   "frm": [
+    "junta"
+   ],
+   "to": {
+    "any": "republic"
+   },
+   "era": 3,
+   "tech": "",
+   "quarters": 12,
+   "cost_start_li": 500000000,
+   "cost_q_li": 60000000,
+   "pro": [
+    "merchant",
+    "artisan"
+   ],
+   "con": [
+    "gentry"
+   ],
+   "desc": "将领交出权力，恢复议会与选举。"
+  },
+  {
+   "id": "restoration",
+   "name": "君主复辟",
+   "frm": [
+    "republic",
+    "junta",
+    "warlords"
+   ],
+   "to": {
+    "any": "constitutional"
+   },
+   "era": 3,
+   "tech": "",
+   "quarters": 12,
+   "cost_start_li": 600000000,
+   "cost_q_li": 80000000,
+   "pro": [
+    "gentry"
+   ],
+   "con": [
+    "merchant",
+    "artisan"
+   ],
+   "desc": "请回君主，以立宪之名恢复旧秩序。"
+  },
+  {
+   "id": "unify",
+   "name": "统一全国",
+   "frm": [
+    "warlords"
+   ],
+   "to": {
+    "3": "republic",
+    "4": "one_party"
+   },
+   "era": 3,
+   "tech": "",
+   "quarters": 16,
+   "cost_start_li": 1200000000,
+   "cost_q_li": 200000000,
+   "pro": [
+    "peasant",
+    "artisan",
+    "merchant"
+   ],
+   "con": [
+    "gentry"
+   ],
+   "desc": "削平割据，重建中央号令（蒸汽时代建共和，电气时代由一党统一）。"
+  },
+  {
+   "id": "independence",
+   "name": "收回主权",
+   "frm": [
+    "protectorate"
+   ],
+   "to": {
+    "any": "_prev"
+   },
+   "era": 3,
+   "tech": "",
+   "quarters": 20,
+   "cost_start_li": 1500000000,
+   "cost_q_li": 200000000,
+   "pro": [
+    "peasant",
+    "artisan",
+    "merchant",
+    "gentry"
+   ],
+   "con": [],
+   "desc": "废除不平等条约，请走外国顾问，恢复受制之前的政体。"
+  },
+  {
+   "id": "socialism",
+   "name": "社会主义改造",
+   "frm": [
+    "republic",
+    "one_party",
+    "junta",
+    "constitutional"
+   ],
+   "to": {
+    "any": "socialist"
+   },
+   "era": 4,
+   "tech": "power_grid",
+   "quarters": 20,
+   "cost_start_li": 1500000000,
+   "cost_q_li": 250000000,
+   "pro": [
+    "artisan",
+    "peasant"
+   ],
+   "con": [
+    "merchant",
+    "gentry"
+   ],
+   "desc": "工厂、土地收归公有，由国家统一安排生产。"
+  },
+  {
+   "id": "one_party_rule",
+   "name": "一党建国",
+   "frm": [
+    "republic",
+    "junta"
+   ],
+   "to": {
+    "any": "one_party"
+   },
+   "era": 4,
+   "tech": "",
+   "quarters": 12,
+   "cost_start_li": 1000000000,
+   "cost_q_li": 150000000,
+   "pro": [
+    "artisan"
+   ],
+   "con": [
+    "merchant"
+   ],
+   "desc": "由一个政党统揽军政，集中力量建设国家。"
+  },
+  {
+   "id": "market",
+   "name": "市场化改革",
+   "frm": [
+    "socialist"
+   ],
+   "to": {
+    "any": "one_party"
+   },
+   "era": 4,
+   "tech": "",
+   "quarters": 16,
+   "cost_start_li": 1000000000,
+   "cost_q_li": 120000000,
+   "pro": [
+    "merchant",
+    "peasant"
+   ],
+   "con": [
+    "artisan"
+   ],
+   "desc": "放开市场、允许私营，执政党不变。"
+  },
+  {
+   "id": "democratize",
+   "name": "民主化",
+   "frm": [
+    "one_party",
+    "socialist"
+   ],
+   "to": {
+    "any": "republic"
+   },
+   "era": 4,
+   "tech": "",
+   "quarters": 16,
+   "cost_start_li": 1000000000,
+   "cost_q_li": 120000000,
+   "pro": [
+    "merchant",
+    "gentry"
+   ],
+   "con": [
+    "artisan"
+   ],
+   "desc": "开放党禁、举行选举。"
+  }
+ ],
+ "reform_stages": [
+  {
+   "id": "backlash",
+   "at": 350000,
+   "default": "compromise",
+   "options": [
+    {
+     "id": "push",
+     "progress": 100000,
+     "pro": 2,
+     "con": -8
+    },
+    {
+     "id": "compromise",
+     "progress": -100000,
+     "pro": -3,
+     "con": 5
+    },
+    {
+     "id": "buy",
+     "progress": 30000,
+     "con": 2,
+     "cost_rev": 300000
+    }
+   ]
+  },
+  {
+   "id": "rally",
+   "at": 700000,
+   "default": "steady",
+   "options": [
+    {
+     "id": "ride",
+     "progress": 150000,
+     "pro": 4,
+     "con": -4,
+     "unrest": 5
+    },
+    {
+     "id": "steady",
+     "progress": 0,
+     "pro": -2
+    },
+    {
+     "id": "slow",
+     "progress": -150000,
+     "pro": -5,
+     "con": 4
+    }
+   ]
+  }
+ ],
+ "crises": {
+  "revolution": {
+   "default": "wait",
+   "every": 3,
+   "options": [
+    {
+     "id": "repress",
+     "cost_rev": 400000
+    },
+    {
+     "id": "concede"
+    },
+    {
+     "id": "appease",
+     "cost_rev": 800000
+    },
+    {
+     "id": "wait"
+    }
+   ],
+   "effects": [
+    {
+     "target": "unrest",
+     "value": 10,
+     "scope": ""
+    },
+    {
+     "target": "invest_prop",
+     "value": -20,
+     "scope": ""
+    }
+   ]
+  },
+  "invasion": {
+   "default": "negotiate",
+   "every": 0,
+   "options": [
+    {
+     "id": "resist"
+    },
+    {
+     "id": "negotiate"
+    },
+    {
+     "id": "selfstrength",
+     "cost_rev": 500000
+    }
+   ],
+   "effects": [
+    {
+     "target": "unrest",
+     "value": 3,
+     "scope": ""
+    },
+    {
+     "target": "invest_prop",
+     "value": -10,
+     "scope": ""
+    }
+   ]
+  },
+  "war": {
+   "default": "fight",
+   "every": 4,
+   "options": [
+    {
+     "id": "fight"
+    },
+    {
+     "id": "sue"
+    }
+   ],
+   "effects": [
+    {
+     "target": "invest_prop",
+     "value": -25,
+     "scope": ""
+    },
+    {
+     "target": "research_speed",
+     "value": -10,
+     "scope": ""
+    },
+    {
+     "target": "unrest",
+     "value": 5,
+     "scope": ""
+    }
+   ]
+  },
+  "depression": {
+   "default": "let",
+   "every": 0,
+   "options": [
+    {
+     "id": "let",
+     "quarters": 6,
+     "spending": -18,
+     "invest": -50
+    },
+    {
+     "id": "works",
+     "quarters": 10,
+     "spending": -8,
+     "invest": -30,
+     "works_rev": 200000
+    },
+    {
+     "id": "tariff",
+     "quarters": 10,
+     "spending": -12,
+     "invest": -35
+    }
+   ],
+   "effects": [
+    {
+     "target": "unrest",
+     "value": 5,
+     "scope": "artisan"
+    },
+    {
+     "target": "unrest",
+     "value": 5,
+     "scope": "merchant"
+    }
+   ]
+  }
+ },
+ "pressure": {
+  "rev_legit_k": 120000,
+  "rev_class_floor": 300000,
+  "rev_class_k": {
+   "peasant": 60000,
+   "artisan": 100000,
+   "merchant": 60000,
+   "gentry": 40000
+  },
+  "rev_unemp_floor": 80000,
+  "rev_unemp_k": 150000,
+  "rev_harsh": 3000,
+  "rev_depression": 8000,
+  "rev_decay": 8000,
+  "rev_legit_hi": 450000,
+  "rev_legit_hi_k": 150000,
+  "rev_outdated": {
+   "empire": [
+    4000,
+    12000
+   ],
+   "enlightened": [
+    0,
+    6000
+   ],
+   "constitutional": [
+    0,
+    2000
+   ],
+   "junta": [
+    5000,
+    5000
+   ],
+   "warlords": [
+    10000,
+    10000
+   ],
+   "protectorate": [
+    8000,
+    8000
+   ]
+  },
+  "for_gap_k": 10000,
+  "for_weak_k": 10000,
+  "for_closed": 6000,
+  "for_prestige_floor": 10,
+  "for_prestige_k": 300,
+  "for_decay": 6000,
+  "for_lead_k": 10000,
+  "dep_base": 6000,
+  "dep_boom": 8000,
+  "dep_cool_q": 40
+ }
 }

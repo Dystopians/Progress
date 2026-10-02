@@ -68,6 +68,7 @@ const FIELDS: PackedStringArray = [
 	"e_cool", "pend",
 	"tm_target", "tm_scope", "tm_value", "tm_until",
 	"cr_stage", "cr_since", "cr_bad",
+	"sit", "sit_cool", "pres", "treaty_until", "reg_prev", "reg_hist", "sit_seq",
 ]
 ## 进存档、不进哈希
 const EXTRA: PackedStringArray = ["chron", "hist", "last", "annals", "marks"]
@@ -219,6 +220,16 @@ var tm_value: PackedInt64Array = PackedInt64Array()
 var tm_until: PackedInt64Array = PackedInt64Array()
 
 # ── 危机 ──
+## 政治局势：进行中的局势（改革、革命风潮、列强叩关、战事、经济危机），每项一个字典；
+## sit_cool：各类局势的冷却（下标见 JCPolitics.KINDS）；pres：革命压力、列强压力（ppm）；
+## treaty_until：不平等条约到哪一季；reg_prev：受制（保护国）之前的政体；reg_hist：政体更替记录；sit_seq：局势编号
+var sit: Array = []
+var sit_cool: PackedInt64Array = PackedInt64Array()
+var pres: PackedInt64Array = PackedInt64Array()
+var treaty_until: int = 0
+var reg_prev: int = 0
+var reg_hist: Array = []
+var sit_seq: int = 0
 var cr_stage: PackedInt64Array = PackedInt64Array()
 var cr_since: PackedInt64Array = PackedInt64Array()
 var cr_bad: PackedInt64Array = PackedInt64Array()
@@ -246,7 +257,7 @@ func note(kind: String, key: String, args: Dictionary = {}) -> void:
 	if chron.size() > 400:
 		chron = chron.slice(chron.size() - 400)
 	# 国史：大事另记一份（赈济这种随灾情开开关关的不记）
-	var big: bool = kind == "milestone" or ANNAL_KEYS.has(key) or (key == "chron.crisis_up" and int(args.get("stage", 0)) >= 2)
+	var big: bool = kind == "milestone" or kind == "politics" or ANNAL_KEYS.has(key) or (key == "chron.crisis_up" and int(args.get("stage", 0)) >= 2)
 	if key == "chron.decree" and String(args.get("decree", "")) == "famine_relief":
 		big = false
 	if big:

@@ -165,6 +165,14 @@ var landmarks: Array = []
 var lidx: Dictionary = {}
 var events: Array = []
 var eidx: Dictionary = {}
+## 政治：政体（下标 = 「政体」政令的档位）、改革局势、改革关口、外部局势、压力参数
+var regimes: Array = []
+var regidx: Dictionary = {}
+var reforms: Array = []
+var refidx: Dictionary = {}
+var reform_stages: Array = []
+var crises: Dictionary = {}
+var pressure: Dictionary = {}
 var scenario: Dictionary = {}
 
 
@@ -211,6 +219,15 @@ func load_from(root: String) -> bool:
 	events = progress.get("events", [])
 	for i: int in events.size():
 		eidx[String(events[i]["id"])] = i
+	regimes = progress.get("regimes", [])
+	for i: int in regimes.size():
+		regidx[String(regimes[i]["id"])] = i
+	reforms = progress.get("reforms", [])
+	for i: int in reforms.size():
+		refidx[String(reforms[i]["id"])] = i
+	reform_stages = progress.get("reform_stages", [])
+	crises = progress.get("crises", {})
+	pressure = progress.get("pressure", {})
 	var to: Dictionary = progress.get("tech_order", {})
 	for k: Variant in to.keys():
 		var arr: PackedInt64Array = PackedInt64Array()

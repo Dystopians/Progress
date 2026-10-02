@@ -315,6 +315,9 @@ func fast_forward(n: int) -> Dictionary:
 		if not st.pend.is_empty() and int(steward.mode["events"]) != JCSteward.AUTO:
 			stop = "event"
 			break
+		if situation_asks() > 0 and int(steward.mode["events"]) != JCSteward.AUTO:
+			stop = "politics"
+			break
 		if _crisis_sum() > cr0:
 			stop = "crisis"
 			break
@@ -329,6 +332,15 @@ func fast_forward(n: int) -> Dictionary:
 	last_receipt = {"ok": st.over == 0, "q_from": q0, "q_to": st.q, "notes": notes, "steward": done,
 			"over": st.over == 1, "reason": String(last_receipt.get("reason", "")), "stop": stop, "turns": turns}
 	return {"turns": turns, "stop": stop}
+
+
+## 政局里等着拿主意的关口有几个（改革关口、革命、列强、战事、经济危机）。
+func situation_asks() -> int:
+	var n: int = 0
+	for s: Variant in st.sit:
+		if not ((s as Dictionary).get("ask", {}) as Dictionary).is_empty():
+			n += 1
+	return n
 
 
 func _crisis_sum() -> int:
@@ -419,6 +431,12 @@ func name_of(kind: String, id: String) -> String:
 		"landmark":
 			var l: int = int(ct.lidx.get(id, -1))
 			return String(ct.landmarks[l]["name"]) if l >= 0 else id
+		"regime":
+			var rg: int = int(ct.regidx.get(id, -1))
+			return String(ct.regimes[rg]["name"]) if rg >= 0 else id
+		"reform":
+			var rf: int = int(ct.refidx.get(id, -1))
+			return String(ct.reforms[rf]["name"]) if rf >= 0 else id
 	return id
 
 
@@ -468,7 +486,8 @@ func status() -> Dictionary:
 			"crisis": Array(st.cr_stage), "events": st.pend.size(), "advice": advisors.items.size(),
 			"proposals": proposals.size(), "over": st.over == 1, "over_reason": st.over_reason,
 			"pop": int(st.last.get("pop", 0)), "gdp": int(st.last.get("gdp", 0)), "living": int(st.last.get("living", 0)),
-			"unemp": int(st.last.get("unemp_ppm", 0)), "prestige": st.prestige, "orders": turn_orders().size()}
+			"unemp": int(st.last.get("unemp_ppm", 0)), "prestige": st.prestige, "orders": turn_orders().size(),
+			"asks": situation_asks(), "situations": st.sit.size(), "pres": Array(st.pres)}
 
 
 ## 界面视图（懒建）。

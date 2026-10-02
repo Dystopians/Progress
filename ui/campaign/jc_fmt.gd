@@ -157,6 +157,27 @@ static func _slot(game: JCGame, ks: String, v: Variant, raw: Dictionary) -> Stri
 			return game.name_of("need", String(v)) if game != null else String(v)
 		"method", "from", "to":
 			return game.name_of("method", String(v)) if game != null else String(v)
+		"regime", "regime_from":
+			return game.name_of("regime", String(v)) if game != null else String(v)
+		"reform":
+			return game.name_of("reform", String(v)) if game != null else String(v)
+		"sit":
+			return t("jc.sit.name.%s" % String(v))
+		"rstage":
+			return t("jc.sit.stage.%s" % String(v))
+		"opt":
+			return t("jc.sit.opt.%s.%s" % [String(raw.get("set", "")).trim_prefix("stage:"), String(v)])
+		"how":
+			return t("jc.pol.how.%s" % String(v))
+		"factor":
+			var fk: String = String(v)
+			if fk.begins_with("class:"):
+				return JwText.render("jc.pol.factor.class", {"class": game.name_of("class", fk.substr(6)) if game != null else fk})
+			return t("jc.pol.factor.%s" % fk) if fk != "" else ""
+		"x":
+			return _dec(int(v), PPM, 1)
+		"until":
+			return date(int(v), game.st.start_year) if game != null and game.is_ready() else str(v)
 		"owner":
 			return t("jc.owner.%s" % ("gov" if (str(v) == "1" or str(v) == "gov") else "private"))
 		"era", "world_era":

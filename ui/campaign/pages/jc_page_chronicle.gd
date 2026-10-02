@@ -5,8 +5,8 @@
 class_name JcPageChronicle
 extends JcPage
 
-const KINDS: PackedStringArray = ["all", "era", "crisis", "event", "build", "invest", "research", "decree", "fiscal", "trade",
-		"landmark"]
+const KINDS: PackedStringArray = ["all", "era", "politics", "crisis", "event", "build", "invest", "research", "decree", "fiscal",
+		"trade", "landmark"]
 const BIG_W: float = 300.0
 const BIG_H: float = 168.0
 ## 默认展开最近几个年代
@@ -252,6 +252,10 @@ func _glyph_of(g: JCGame, it: Dictionary) -> String:
 			return g.name_of("tech", aid)
 		"decree":
 			return g.name_of("decree", aid)
+		"reform":
+			return g.name_of("reform", aid)
+		"situation":
+			return t("jc.sit.name." + aid)
 	return JcFmt.chron(g, it)
 
 
@@ -267,6 +271,10 @@ func _art_of(it: Dictionary) -> String:
 		"decree":
 			# 分档的政令按定下的那一档配图
 			return JcUi.decree_art(id, int((it.get("args", {}) as Dictionary).get("level", -1)))
+		"reform":
+			return JcUi.REFORM_ART % id
+		"situation":
+			return JcUi.SITUATION_ART % id
 	return ""
 
 

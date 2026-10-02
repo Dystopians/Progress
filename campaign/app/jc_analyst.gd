@@ -243,7 +243,7 @@ func site_report(b: int, m: int, r: int) -> Dictionary:
 		if left <= 2:
 			warnings.append({"key": "warn.land_tight", "left": left})
 	if ct.b_deposit[b] != "" and block == "":
-		var dleft: int = int(ct.r_deposit[r].get(ct.b_deposit[b], 0)) - sim.inv.deposit_in_use(r, b)
+		var dleft: int = sim.inv.deposit_cap(r, ct.b_deposit[b]) - sim.inv.deposit_in_use(r, b)
 		if dleft <= 2:
 			warnings.append({"key": "warn.deposit_tight", "left": dleft})
 	# 回报
@@ -829,21 +829,35 @@ func export_room() -> Array:
 
 
 # ════════════════════════════ 国家形态 ════════════════════════════════════
-const REGIMES: PackedStringArray = ["empire", "enlightened", "constitutional", "republic", "socialist"]
+## 各政体的底色：集权（正）与放任（负）、维新（正）与守旧（负）、仁政与开放的偏移。
+const REGIME_AXES: Dictionary = {
+	"empire": {"cen": 20, "ref": 0}, "enlightened": {"cen": 10, "ref": 5},
+	"constitutional": {"cen": -5, "ref": 20}, "republic": {"cen": -15, "ref": 20},
+	"socialist": {"cen": 25, "ref": 15}, "merchant_republic": {"cen": -20, "ref": 15, "opn": 15},
+	"junta": {"cen": 30, "ref": 0, "ben": -10}, "warlords": {"cen": -40, "ref": -10, "ben": -20},
+	"one_party": {"cen": 30, "ref": 10, "ben": -5}, "protectorate": {"cen": -10, "ref": 5, "opn": 20},
+}
+## 说「朝廷」的政体（其余说「政府」；军政府、割据另有说法）
+const COURT_REGIMES: PackedStringArray = ["empire", "enlightened", "constitutional"]
 
 
 ## 国家形态：看政体与施行中的政令、税负、拨款，算出几个取向——仁政（正）与严苛（负）、集权与放任、开放与闭关、
-## 维新与守旧（各 −100…100），以及重农 / 重商 / 重工；再给一句评语（宽容仁厚的帝国、堕落的工人国家……）与依据。
+## 维新与守旧（各 −100…100），以及重农 / 重商 / 重工；再看眼下的局面（危亡、战事、革命、萧条、盛世、落后、
+## 穷兵、闭关、通商、工业、农本），给一句评语（宽容仁厚的帝国、开发独裁的军政府、堕落的工人国家……）与依据。
 ## 只是给玩家看的评语，不影响模拟。
-## 返回 {regime, tone, economy, title, axes: {benevolent, central, open, reform}, econ: {agrarian, mercantile, industrial},
+## 返回 {regime, tone, flavor, economy, title, title_keys, noun, gov, regime_name,
+##       axes: {benevolent, central, open, reform}, econ: {agrarian, mercantile, industrial},
 ##       good: [政令名…], harsh: [政令名…], notes: [{key, slots}]}
+## title 是「政体 × 施政风格」的评语键（总有文案）；title_keys 按先后列出更具体的候选（局面 × 政体 × 风格……），
+## 界面取第一个有文案的，用 noun（政体的称呼）填 {noun}。
 func regime_profile() -> Dictionary:
-	var reg: int = clampi(maxi(0, _dlvl("regime")), 0, REGIMES.size() - 1)
-	var regime: String = REGIMES[reg]
-	var ben: int = 0
-	var cen: int = [20, 10, -5, -15, 25][reg]
-	var opn: int = 0
-	var ref: int = (st.era - 1) * 15 + [0, 5, 20, 20, 15][reg]
+	var pol: JCPolitics = sim.politics
+	var regime: String = pol.regime_id()
+	var rax: Dictionary = REGIME_AXES.get(regime, {})
+	var ben: int = int(rax.get("ben", 0))
+	var cen: int = int(rax.get("cen", 0))
+	var opn: int = int(rax.get("opn", 0))
+	var ref: int = (st.era - 1) * 15 + int(rax.get("ref", 0))
 	var agr: int = 0
 	var mer: int = 0
 	var ind: int = 0
@@ -886,6 +900,8 @@ func regime_profile() -> Dictionary:
 	if st.arrears > 0:
 		ben -= 20
 		notes.append({"key": "jc.regime.n.arrears", "slots": {}})
+	if st.treaty_until > st.q:
+		notes.append({"key": "jc.regime.n.treaty", "slots": {}})
 	# 集权与放任
 	for p3: Array in [["land_survey", 10], ["single_whip", 10], ["central_bank", 10], ["income_tax", 10]]:
 		if _don(String(p3[0])):
@@ -929,6 +945,8 @@ func regime_profile() -> Dictionary:
 			mer += int(p7[1])
 	if sea == 2:
 		mer += 10
+	if regime == "merchant_republic":
+		mer += 20
 	for p8: Array in [["industrial_charter", 15], ["factory_act", 5], ["protective_tariff", 10]]:
 		if _don(String(p8[0])):
 			ind += int(p8[1])
@@ -941,24 +959,65 @@ func regime_profile() -> Dictionary:
 			best = int(e[1])
 			economy = String(e[0])
 	var tone: String = "benevolent" if ben >= 25 else ("harsh" if ben <= -20 else "steady")
-	# 评语：政体 × 施政风格；几种特别的组合另有说法
+	# 评语：政体 × 施政风格；再按眼下的局面找更贴切的说法
 	var title: String = "jc.regime.title.%s.%s" % [regime, tone]
+	var flavor: String = regime_flavor(economy, opn, sea)
+	var keys: Array = []
 	if regime == "socialist" and lab == 0:
-		# 工人国家禁罢工：不管别的政令多宽厚，都按严苛算（徽记、颜色跟着评语走）
+		# 工人国家禁罢工：不管别的政令多宽厚、局面如何，都按严苛算（徽记、颜色跟着评语走）
 		title = "jc.regime.title.socialist.harsh"
 		tone = "harsh"
-	elif regime == "empire" and sea == 0 and cp == 0:
-		title = "jc.regime.title.empire.closed"
-	elif regime == "empire" and opn >= 25 and economy == "mercantile" and tone != "harsh":
-		title = "jc.regime.title.empire.trading"
-	elif regime == "republic" and economy == "mercantile" and opn >= 20:
-		title = "jc.regime.title.republic.merchant"
-	return {"regime": regime, "tone": tone, "economy": economy, "title": title,
+	elif flavor != "":
+		keys.append("jc.regime.title.%s.%s.%s" % [regime, flavor, tone])
+		keys.append("jc.regime.title.%s.%s" % [regime, flavor])
+		keys.append("jc.regime.ftitle.%s.%s" % [flavor, tone])
+	keys.append(title)
+	var gov: String = "jc.regime.gov.court" if COURT_REGIMES.has(regime) else "jc.regime.gov.state"
+	if regime == "junta":
+		gov = "jc.regime.gov.junta"
+	elif regime == "warlords":
+		gov = "jc.regime.gov.warlords"
+	var ri: int = pol.regime()
+	return {"regime": regime, "tone": tone, "flavor": flavor, "economy": economy, "title": title, "title_keys": keys,
+			"noun": String(ct.regimes[ri].get("noun", "")) if ri < ct.regimes.size() else "", "gov": gov,
 			"regime_name": _dlevel_name("regime"),
 			"axes": {"benevolent": clampi(ben, -100, 100), "central": clampi(cen, -100, 100),
 				"open": clampi(opn, -100, 100), "reform": clampi(ref, -100, 100)},
 			"econ": {"agrarian": agr, "mercantile": mer, "industrial": ind},
 			"good": Array(good), "harsh": Array(harsh), "notes": notes}
+
+
+## 眼下的局面（评语用），按先后取第一个成立的：危亡（威信不到三成或有危机到了「危急」）、战事（列强叩关或开战）、
+## 革命、萧条、盛世（生活过百、威信过六成五、没有危机）、落后（世界进入第三时代后本国还落后）、穷兵（军饷一倍三以上）、
+## 闭关、通商、工业、农本；都不是返回空串。
+func regime_flavor(economy: String, opn: int, sea: int) -> String:
+	var pol: JCPolitics = sim.politics
+	var worst: int = 0
+	for i: int in st.cr_stage.size():
+		worst = maxi(worst, st.cr_stage[i])
+	if st.legitimacy < 300_000 or worst >= 2:
+		return "collapse"
+	if not pol.active("invasion").is_empty():
+		return "war"
+	if not pol.active("revolution").is_empty():
+		return "revolution"
+	if not pol.active("depression").is_empty():
+		return "depression"
+	if int(st.last.get("living", 0)) >= 1_000_000 and st.legitimacy >= 650_000 and worst == 0:
+		return "golden"
+	if st.world_era >= 3 and st.world_era > st.era:
+		return "backward"
+	if st.budget[JCState.BUD_ARMY] >= 1_300_000:
+		return "militarist"
+	if sea == 0:
+		return "closed"
+	if opn >= 25 and economy == "mercantile":
+		return "trading"
+	if economy == "industrial" and st.era >= 3:
+		return "industrial"
+	if economy == "agrarian":
+		return "agrarian"
+	return ""
 
 
 func _didx(id: String) -> int:

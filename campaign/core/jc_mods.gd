@@ -18,6 +18,7 @@
 ##   flags：granary_ops、relief、title_sales、reclaim、income_tax、pension、price_stability
 ##   interest_rate（±%）、tariff（±%）、price_level（%）、ships_output（±%）、electricity_bonus（±%）
 ##   forest_regrow / coal_shift / pollution_cut（±%）
+##   spending（±%，居民日用开支；经济危机时为负）
 class_name JCMods
 extends RefCounted
 
@@ -54,6 +55,40 @@ func rebuild(st: JCState, ct: JCContent) -> void:
 			_add(m3, scale)
 	for i: int in st.tm_target.size():
 		_add_raw(st.tm_target[i], st.tm_scope[i], st.tm_value[i])
+	for s: Variant in st.sit:
+		_add_sit(s as Dictionary, ct)
+
+
+## 政治局势（docs/61）：改革期间拥护的阶层情绪高涨、反对的不满（各 ±3 点）；外部局势按种类的影响；
+## 经济危机按所选办法缩减日用开支与投资（还没选时按「放任」算），保护关税时关税 +60%。
+func _add_sit(s: Dictionary, ct: JCContent) -> void:
+	var k: String = String(s.get("k", ""))
+	if k == "reform":
+		var rf_i: int = int(ct.refidx.get(String(s.get("id", "")), -1))
+		if rf_i < 0:
+			return
+		var rf: Dictionary = ct.reforms[rf_i]
+		for c: Variant in rf.get("pro", []):
+			_add_raw("support", String(c), 300)
+		for c2: Variant in rf.get("con", []):
+			_add_raw("support", String(c2), -300)
+		return
+	var cr: Dictionary = ct.crises.get(k, {})
+	for m: Dictionary in cr.get("effects", []):
+		_add(m, 1_000_000)
+	if k != "depression":
+		return
+	var opt: String = String(s.get("opt", ""))
+	if opt == "":
+		opt = String(cr.get("default", "let"))
+	for o: Variant in cr.get("options", []):
+		var od: Dictionary = o
+		if String(od.get("id", "")) != opt:
+			continue
+		_add_raw("spending", "", int(od.get("spending", 0)) * 100)
+		_add_raw("invest_prop", "", int(od.get("invest", 0)) * 100)
+		if opt == "tariff":
+			_add_raw("tariff", "", 6000)
 
 
 ## 带时代标签的地标加成：本国进入 eraband+2 时代后 40 季内线性归零（docs/57 §10）。
